@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Contributions · LJM Church</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="member-dashboard.js" defer></script>
+</head>
+
+<body>
+
+<header class="navbar">
+    <div class="logo">LJM Church Contributions</div>
+    <nav>
+        <a href="funds.html">Funds</a>
+        <a href="members.html">Members</a>
+        <a href="#">About</a>
+    </nav>
+</header>
+
+<main class="container">
+
+    <!-- Member Heading -->
+    <section class="fund-heading">
+        <h2 id="memberHeading">🙏 My Contributions</h2>
+        <p class="soft-subtext" id="memberSubText">
+            Thank you for your faithful giving
+        </p>
+    </section>
+
+    <!-- Member Summary -->
+    <section class="summary">
+        <div class="stat-card">
+            <h3>Total Given</h3>
+            <div class="stat-value" id="totalGiven">₹0</div>
+        </div>
+        <div class="stat-card">
+            <h3>Contributions</h3>
+            <div class="stat-value" id="totalEntries">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>Funds Supported</h3>
+            <div class="stat-value" id="fundCount">0</div>
+        </div>
+    </section>
+
+    <!-- Fund-wise Summary -->
+    <section class="charts">
+        <div class="chart-card">
+            <h3 class="section-title">Fund-wise Contribution</h3>
+            <div id="fundSummary"></div>
+        </div>
+    </section>
+
+    <!-- Timeline -->
+    <section class="timeline" id="memberTimeline"></section>
+
+</main>
+
+<footer class="premium-footer">
+    <div class="footer-bottom">
+        © 2026 · LJM Church Contributions · Built with ❤️
+    </div>
+</footer>
+
+</body>
+</html>

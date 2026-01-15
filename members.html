@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LJM Church Members Portal</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+/* ===== General Layout ===== */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f9f9f9;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* ===== Navbar ===== */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #2c3e50, #4ca1af);
+    color: #fff;
+    padding: 12px 24px;
+    flex-wrap: wrap;
+}
+.navbar .logo {
+    font-weight: 700;
+    font-size: 20px;
+}
+.navbar nav a {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 20px;
+    font-weight: 600;
+}
+.navbar nav a.active {
+    color: #ffd700;
+}
+
+/* ===== Page Heading ===== */
+.page-heading {
+    text-align: center;
+    margin: 30px 0 15px 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    text-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
+
+/* ===== Search Box ===== */
+#memberSearch {
+    width: 100%;
+    max-width: 400px;
+    display: block;
+    margin: 10px auto 30px auto;
+    padding: 12px 16px;
+    font-size: 18px;
+    border-radius: 12px;
+    border: 2px solid #2c3e50;
+    outline: none;
+    font-weight: 600;
+    color: #2c3e50;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+#memberSearch:focus {
+    border-color: #ffd700;
+    box-shadow: 0 0 12px rgba(255,215,0,0.4);
+}
+
+/* ===== Member List ===== */
+#memberList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 50px;
+}
+.member-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+.member-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.member-card .person-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+}
+.member-card .member-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .navbar nav a {
+        margin: 8px 0 0 0;
+    }
+    #memberSearch {
+        max-width: 100%;
+        font-size: 16px;
+        padding: 10px 14px;
+    }
+    .page-heading {
+        font-size: 24px;
+    }
+}
+</style>
+</head>
+<body>
+
+<header class="navbar">
+    <div class="logo">LJM Church Contributions</div>
+    <nav>
+        <a href="funds.html">Funds</a>
+        <a href="members.html" class="active">Members</a>
+        <a href="about.html">About</a>
+    </nav>
+</header>
+
+<main class="container">
+    <h2 class="page-heading">👤 Select Your Name to View Your Contributions</h2>
+    <input type="text" id="memberSearch" placeholder="Type your name..." autofocus>
+
+    <section id="memberList">
+        <!-- Member cards injected here -->
+    </section>
+</main>
+
+<footer class="premium-footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <div class="footer-logo">LJM Church Contributions</div>
+            <div class="footer-tagline">Giving with faith, transparency & purpose</div>
+        </div>
+        <div class="footer-right">
+            <a href="https://www.instagram.com/lightofjesusministry/" target="_blank" class="footer-icon">📸 Instagram</a>
+            <a href="https://www.youtube.com/@lightofjesusministrycbe" target="_blank" class="footer-icon">▶️ YouTube</a>
+            <a href="https://maps.app.goo.gl/weEebFuJnuj34d7h6" target="_blank" class="footer-icon">📍 Location</a>
+        </div>
+    </div>
+    <div class="footer-bottom">© 2026 · LJM Church Contributions · Built with ❤️</div>
+</footer>
+
+<script>
+// ===== GLOBAL CACHE USING SESSION STORAGE =====
+const FUND_URLS = [
+    "https://script.google.com/macros/s/AKfycbxllcIqvYX4aEQYOsad5OstQkkD6Kp33SDc6C96MOsESJ4m06oapTN4D_fiFbdawiOh/exec", // Tech
+    "https://script.google.com/macros/s/AKfycbz6Bk6yurNmTf3FcQ4ykvja7P1VWOMVTP4wDMTUa9wCHXAPNViB-UmhpdFKpiCzg_KA/exec"  // Christmas
+];
+
+let allMembers = [];
+
+// Fetch fund data with caching
+async function fetchFundData(force=false){
+    const now = Date.now();
+    let cached = sessionStorage.getItem("fundData");
+    let cachedTime = Number(sessionStorage.getItem("fundDataTime") || 0);
+
+    // Use cache if not expired
+    if(!force && cached && (now - cachedTime < 60000)){
+        return JSON.parse(cached);
+    }
+
+    try {
+        const results = await Promise.all(FUND_URLS.map(url => fetch(url).then(r => r.json())));
+        const mergedData = { contributions: [], goals:{} };
+
+        results.forEach((data, idx)=>{
+            if(data.contributions) mergedData.contributions.push(...data.contributions);
+            mergedData.goals[idx===0?"tech":"christmas"] = Number(data.goalAmount || 0);
+        });
+
+        // Cache in sessionStorage
+        sessionStorage.setItem("fundData", JSON.stringify(mergedData));
+        sessionStorage.setItem("fundDataTime", now);
+
+        return mergedData;
+    } catch(err){
+        console.error("Error fetching fund data:", err);
+        return { contributions: [], goals:{} };
+    }
+}
+
+// Auto-refresh cache every 60 seconds
+setInterval(()=>fetchFundData(true), 60000);
+
+// ===== MEMBER LIST LOGIC =====
+async function initMembersPage(){
+    const data = await fetchFundData();
+    const contributions = data.contributions;
+
+    // Unique sorted members
+    allMembers = [...new Set(contributions.map(c=>c.Member).filter(Boolean))].sort();
+
+    renderMemberList(allMembers);
+}
+
+function renderMemberList(members){
+    const container = document.getElementById("memberList");
+    container.innerHTML = "";
+    members.forEach(name=>{
+        const card = document.createElement("div");
+        card.className = "member-card";
+        card.innerHTML = `
+            <div class="person-icon">👤</div>
+            <div class="member-name">${name}</div>
+        `;
+        card.addEventListener("click", ()=> {
+            window.location.href = `member.html?name=${encodeURIComponent(name)}`;
+        });
+        container.appendChild(card);
+    });
+}
+
+// ===== SEARCH FILTER =====
+const searchInput = document.getElementById("memberSearch");
+searchInput.addEventListener("input", (e)=>{
+    const term = e.target.value.toLowerCase();
+    const filtered = allMembers.filter(m=>m.toLowerCase().includes(term));
+    renderMemberList(filtered);
+});
+
+// Auto-focus search box
+window.onload = ()=> searchInput.focus();
+
+// Initialize members page
+initMembersPage();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loading LJM Church Contributions</title>
+<style>
+body { display:flex; align-items:center; justify-content:center; height:100vh; font-family:Arial,sans-serif; background:#f9f9f9; margin:0; }
+.loader-container { text-align:center; }
+.loader { border: 6px solid #f3f3f3; border-top: 6px solid #2c7be5; border-radius:50%; width:60px; height:60px; animation: spin 1s linear infinite; margin:auto 0 20px; }
+@keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+h2 { color:#2c3e50; }
+</style>
+</head>
+<body>
+<div class="loader-container">
+    <div class="loader"></div>
+    <h2>Preparing Fund Data, please wait...</h2>
+</div>
+
+<script>
+const FUND_URLS = {
+    tech: "https://script.google.com/macros/s/AKfycbxllcIqvYX4aEQYOsad5OstQkkD6Kp33SDc6C96MOsESJ4m06oapTN4D_fiFbdawiOh/exec",
+    christmas: "https://script.google.com/macros/s/AKfycbz6Bk6yurNmTf3FcQ4ykvja7P1VWOMVTP4wDMTUa9wCHXAPNViB-UmhpdFKpiCzg_KA/exec"
+};
+const TTL = 60000; // 60s cache
+
+function getCachedFund(key) {
+    const cache = localStorage.getItem(key);
+    if (!cache) return null;
+    try {
+        const parsed = JSON.parse(cache);
+        if (Date.now() - parsed.lastFetched < TTL) return parsed.data;
+        return null;
+    } catch { return null; }
+}
+
+function setCachedFund(key, data) {
+    localStorage.setItem(key, JSON.stringify({ data, lastFetched: Date.now() }));
+}
+
+// Fetch a fund and store in localStorage if not cached
+async function fetchFundIfNeeded(key, url) {
+    const cached = getCachedFund(key + "FundData");
+    if (cached) return cached;
+
+    try {
+        const res = await fetch(url, { credentials:'omit' });
+        const data = await res.json();
+        setCachedFund(key + "FundData", { contributions: data.contributions || [], goalAmount: data.goalAmount || 0 });
+        return data;
+    } catch(err) {
+        console.error(`Error fetching ${key} fund:`, err);
+        return { contributions: [], goalAmount: 0 };
+    }
+}
+
+// Fetch both funds in parallel
+async function initAllFunds() {
+    await Promise.all([
+        fetchFundIfNeeded("tech", FUND_URLS.tech),
+        fetchFundIfNeeded("christmas", FUND_URLS.christmas)
+    ]);
+    // Redirect to main page (Tech Fund by default)
+    window.location.href = "index.html?fund=Tech Fund";
+}
+
+initAllFunds();
+</script>
+</body>
+</html>

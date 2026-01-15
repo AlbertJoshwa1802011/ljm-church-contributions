@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choose Fund</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header class="navbar">
+    <div class="logo">LJM Church Funds</div>
+    <nav>
+        <a href="funds.html">Funds</a>
+		<a href="members.html">Members</a>
+        <a href="#">About</a>
+    </nav>
+</header>
+
+<div class="container">
+
+    <h2 class="page-title">Choose a Fund</h2>
+    <p class="page-subtitle">
+        Select a fund to view contributions, progress and insights
+    </p>
+
+    <!-- ===== Funds Grid ===== -->
+    <div class="funds-grid">
+
+        <!-- Tech Fund -->
+        <div class="fund-card active" onclick="openFund('Tech Fund')">
+            <div class="fund-icon">💻</div>
+            <h3>Tech Fund</h3>
+            <p>Monthly contributions for technology & infrastructure</p>
+            <span class="fund-status active">Active</span>
+            <button>View Fund →</button>
+        </div>
+
+        <!-- Christmas Fund -->
+        <div class="fund-card archived" onclick="openFund('Christmas Fund')">
+            <div class="fund-icon">🎄</div>
+            <h3>Christmas Fund</h3>
+            <p>Seasonal contributions for Christmas celebrations</p>
+            <span class="fund-status archived">Archived</span>
+            <button>View Fund →</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ===== Footer ===== -->
+<footer class="premium-footer">
+    <div class="footer-inner">
+
+        <div class="footer-left">
+            <div class="footer-logo">🙏 LJM Church Contributions</div>
+            <div class="footer-tagline">
+                Giving with faith, transparency & purpose
+            </div>
+        </div>
+
+        <div class="footer-right">
+            <a href="https://www.instagram.com/lightofjesusministry/" target="_blank" class="footer-icon">
+                📸
+                <span>Instagram</span>
+            </a>
+            <a href="https://www.youtube.com/@lightofjesusministrycbe" target="_blank" class="footer-icon">
+                ▶️
+                <span>YouTube</span>
+            </a>
+            <a href="https://maps.app.goo.gl/weEebFuJnuj34d7h6" target="_blank" class="footer-icon">
+                📍
+                <span>Location</span>
+            </a>
+        </div>
+
+    </div>
+
+    <div class="footer-bottom">
+        © 2026 · LJM Church Contributions · Built with ❤️
+    </div>
+</footer>
+
+<script>
+function openFund(fundName) {
+    location.assign(`index.html?fund=${encodeURIComponent(fundName)}`);
+}
+</script>
+
+</body>
+</html>
