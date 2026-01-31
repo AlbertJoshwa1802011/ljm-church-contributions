@@ -14,20 +14,79 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchMemberData(memberName);
 });
 
-const API_URL = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=tech-contributions";
+const API_URL_TECH = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=tech-contributions";
+const API_URL_CHRISTMAS = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=christmas-fund";
 
-function fetchMemberData(memberName) {
-    fetch(API_URL, { credentials: "omit" })
-        .then(res => res.json())
-        .then(data => {
-            const contributions = data.contributions || [];
-            const memberData = contributions.filter(
-                c => (c.Member || "").toLowerCase() === memberName.toLowerCase()
-            );
+// Cache keys - use SAME keys as main dashboard for cache sharing
+const CACHE_KEY_TECH = "techFundData";
+const CACHE_KEY_CHRISTMAS = "christmasFundData";
 
-            renderMemberDashboard(memberName, memberData);
-        })
-        .catch(err => console.error("Error:", err));
+function getCachedFund(key) {
+    const cached = localStorage.getItem(key);
+    if (!cached) {
+        console.log(`[MEMBER CACHE] No cache found for key: ${key}`);
+        return null;
+    }
+    try {
+        const parsed = JSON.parse(cached);
+        // Always return cached data if it exists (no TTL check - same as main dashboard)
+        if (parsed.data) {
+            console.log(`[MEMBER CACHE] Cache found and valid for key: ${key}, using cached data (NO API CALL)`);
+            return parsed.data;
+        }
+        console.log(`[MEMBER CACHE] Cache exists but no data field for key: ${key}`);
+        return null;
+    } catch (e) {
+        console.error(`[MEMBER CACHE] Error parsing cache for key ${key}:`, e);
+        return null;
+    }
+}
+
+function setCachedFund(key, data) {
+    localStorage.setItem(key, JSON.stringify({ data, lastFetched: Date.now() }));
+}
+
+async function fetchFundData(url, cacheKey) {
+    // Check cache first - use it if available (NO API CALL if cache exists)
+    const cached = getCachedFund(cacheKey);
+    if (cached) {
+        console.log(`[MEMBER] Using cached data for ${cacheKey} (NO API CALL - instant load)`);
+        return cached;
+    }
+    
+    // No cache - fetch from API ONLY ONCE
+    console.log(`[MEMBER] No cache found for ${cacheKey}, fetching from API (FIRST TIME ONLY)`);
+    try {
+        const res = await fetch(url, { credentials: "omit" });
+        const data = await res.json();
+        setCachedFund(cacheKey, data);
+        console.log(`[MEMBER] Data cached for ${cacheKey} - future loads will use cache (NO API CALLS)`);
+        return data;
+    } catch (err) {
+        console.error("Error fetching fund data:", err);
+        return { contributions: [], goalAmount: 0 };
+    }
+}
+
+async function fetchMemberData(memberName) {
+    // Fetch both funds in parallel with caching
+    const [techData, christmasData] = await Promise.all([
+        fetchFundData(API_URL_TECH, CACHE_KEY_TECH),
+        fetchFundData(API_URL_CHRISTMAS, CACHE_KEY_CHRISTMAS)
+    ]);
+    
+    // Combine contributions from both funds
+    const allContributions = [
+        ...(techData.contributions || []),
+        ...(christmasData.contributions || [])
+    ];
+    
+    // Filter for this member
+    const memberData = allContributions.filter(
+        c => (c.Member || "").toLowerCase() === memberName.toLowerCase()
+    );
+
+    renderMemberDashboard(memberName, memberData);
 }
 
 function renderMemberDashboard(name, data) {
@@ -43,7 +102,7 @@ function renderMemberDashboard(name, data) {
     });
 
     // Summary
-    document.getElementById("totalGiven").innerText = "₹" + total;
+    document.getElementById("totalGiven").innerText = "₹" + total.toLocaleString('en-IN');
     document.getElementById("totalEntries").innerText = data.length;
     document.getElementById("fundCount").innerText =
         Object.keys(fundMap).length;
@@ -57,14 +116,25 @@ function renderMemberDashboard(name, data) {
         row.className = "fund-row";
         row.innerHTML = `
             <span>${fund}</span>
-            <strong>₹${amt}</strong>
+            <strong>₹${amt.toLocaleString('en-IN')}</strong>
         `;
         fundSummary.appendChild(row);
     });
 
     // Timeline
     const timeline = document.getElementById("memberTimeline");
+    if (!timeline) return;
+    
     timeline.innerHTML = "";
+
+    if (data.length === 0) {
+        // Hide timeline section if no contributions
+        timeline.style.display = "none";
+        return;
+    }
+
+    // Show timeline section
+    timeline.style.display = "block";
 
     data
         .sort((a, b) => new Date(b.Date) - new Date(a.Date))
