@@ -1,5 +1,18 @@
 document.addEventListener("DOMContentLoaded", async () => {
     // --------------------
+    // Clear cache on page refresh (F5, Ctrl+R, Ctrl+Shift+R, etc.)
+    // This ensures users get fresh data when they manually refresh
+    if (window.performance) {
+        const navEntries = performance.getEntriesByType("navigation");
+        if (navEntries.length > 0 && navEntries[0].type === "reload") {
+            // Clear fund cache on any page reload
+            localStorage.removeItem("techFundData");
+            localStorage.removeItem("christmasFundData");
+            console.log("[CACHE] Cache cleared on page reload - will fetch fresh data");
+        }
+    }
+    
+    // --------------------
     // Create loader IMMEDIATELY - before anything else
     const loader = document.createElement("div");
     loader.id = "startupLoader";
