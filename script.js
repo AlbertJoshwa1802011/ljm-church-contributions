@@ -38,10 +38,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const promises = [];
 
     if (!cachedTech) {
-        promises.push(fetchAndCacheFund("techFundData", "https://script.google.com/macros/s/AKfycbxllcIqvYX4aEQYOsad5OstQkkD6Kp33SDc6C96MOsESJ4m06oapTN4D_fiFbdawiOh/exec"));
+        promises.push(fetchAndCacheFund("techFundData", "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=tech-contributions"));
     }
     if (!cachedChristmas) {
-        promises.push(fetchAndCacheFund("christmasFundData", "https://script.google.com/macros/s/AKfycbz6Bk6yurNmTf3FcQ4ykvja7P1VWOMVTP4wDMTUa9wCHXAPNViB-UmhpdFKpiCzg_KA/exec"));
+        promises.push(fetchAndCacheFund("christmasFundData", "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=christmas-fund"));
     }
 
     // Wait for APIs to finish if any
@@ -111,7 +111,7 @@ function setCachedFund(fundKey, data) {
 // --------------------
 // Tech Fund
 function initDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbxllcIqvYX4aEQYOsad5OstQkkD6Kp33SDc6C96MOsESJ4m06oapTN4D_fiFbdawiOh/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=tech-contributions";
     const FUND_KEY = "techFundData";
     const TTL = 60000; // 60s
 
@@ -233,7 +233,7 @@ function initDashboard() {
 // --------------------
 // Christmas Fund (same caching logic)
 function initChristmasFundDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbz6Bk6yurNmTf3FcQ4ykvja7P1VWOMVTP4wDMTUa9wCHXAPNViB-UmhpdFKpiCzg_KA/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=christmas-fund";
     const FUND_KEY = "christmasFundData";
     const TTL = 60000;
 
