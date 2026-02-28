@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>LJM Church Members Portal</title>
 
 <link rel="stylesheet" href="style.css">
@@ -171,35 +174,49 @@ const FUND_URLS = [
     "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=christmas-fund"  // Christmas
 ];
 
-// Cache keys
-const CACHE_KEY_TECH = "membersTechFundData";
-const CACHE_KEY_CHRISTMAS = "membersChristmasFundData";
-const CACHE_TTL = 60000; // 60 seconds
+// Cache keys - use SAME keys as main dashboard for cache sharing
+const CACHE_KEY_TECH = "techFundData";
+const CACHE_KEY_CHRISTMAS = "christmasFundData";
+const CACHE_VERSION = 1;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 let allMembers = [];
 
 function getCachedFund(key) {
-    const cached = localStorage.getItem(key);
-    if (!cached) return null;
     try {
-        const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.timestamp < CACHE_TTL) {
-            return parsed.data;
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed.version !== CACHE_VERSION) {
+            localStorage.removeItem(key);
+            return null;
         }
+        const age = Date.now() - (parsed.lastFetched || 0);
+        // Expire if too old or negative (clock skew)
+        if (age < 0 || age > CACHE_TTL_MS) {
+            localStorage.removeItem(key);
+            return null;
+        }
+        return parsed.data || null;
     } catch (e) {
+        try { localStorage.removeItem(key); } catch (_) {}
         return null;
     }
-    return null;
 }
 
 function setCachedFund(key, data) {
-    localStorage.setItem(key, JSON.stringify({
-        data: data,
-        timestamp: Date.now()
-    }));
+    try {
+        localStorage.setItem(key, JSON.stringify({
+            data: data,
+            lastFetched: Date.now(),
+            version: CACHE_VERSION
+        }));
+    } catch (err) {
+        console.error("Cache save error:", err);
+    }
 }
 
-// Fetch fund data with localStorage caching
+// Fetch fund data with localStorage caching (5-min TTL)
 async function fetchFundData(force=false){
     // Check cache first (unless force refresh)
     if (!force) {
@@ -221,9 +238,11 @@ async function fetchFundData(force=false){
         }
     }
 
-    // Fetch from API
+    // Fetch from API with cache-busting
     try {
-        const results = await Promise.all(FUND_URLS.map(url => fetch(url).then(r => r.json())));
+        const results = await Promise.all(FUND_URLS.map(url => 
+            fetch(url + '&_t=' + Date.now(), { cache: 'no-store' }).then(r => r.json())
+        ));
         const mergedData = { contributions: [], goals:{} };
 
         results.forEach((data, idx)=>{
@@ -245,8 +264,8 @@ async function fetchFundData(force=false){
     }
 }
 
-// Auto-refresh cache every 60 seconds
-setInterval(()=>fetchFundData(true), 60000);
+// Auto-refresh cache every 5 minutes
+setInterval(()=>fetchFundData(true), CACHE_TTL_MS);
 
 // ===== MEMBER LIST LOGIC =====
 async function initMembersPage(){

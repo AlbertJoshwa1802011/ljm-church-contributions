@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Loading LJM Church Contributions</title>
 <style>
 body { display:flex; align-items:center; justify-content:center; height:100vh; font-family:Arial,sans-serif; background:#f9f9f9; margin:0; }
@@ -23,20 +26,28 @@ const FUND_URLS = {
     tech: "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=tech-contributions",
     christmas: "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=christmas-fund"
 };
-const TTL = 60000; // 60s cache
+const CACHE_VERSION = 1;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function getCachedFund(key) {
-    const cache = localStorage.getItem(key);
-    if (!cache) return null;
     try {
-        const parsed = JSON.parse(cache);
-        if (Date.now() - parsed.lastFetched < TTL) return parsed.data;
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed.version !== CACHE_VERSION) { localStorage.removeItem(key); return null; }
+        const age = Date.now() - (parsed.lastFetched || 0);
+        if (age < 0 || age > CACHE_TTL_MS) { localStorage.removeItem(key); return null; }
+        return parsed.data || null;
+    } catch (e) {
+        try { localStorage.removeItem(key); } catch (_) {}
         return null;
-    } catch { return null; }
+    }
 }
 
 function setCachedFund(key, data) {
-    localStorage.setItem(key, JSON.stringify({ data, lastFetched: Date.now() }));
+    try {
+        localStorage.setItem(key, JSON.stringify({ data, lastFetched: Date.now(), version: CACHE_VERSION }));
+    } catch (err) { /* storage full - continue without cache */ }
 }
 
 // Fetch a fund and store in localStorage if not cached
@@ -45,7 +56,7 @@ async function fetchFundIfNeeded(key, url) {
     if (cached) return cached;
 
     try {
-        const res = await fetch(url, { credentials:'omit' });
+        const res = await fetch(url + '&_t=' + Date.now(), { credentials:'omit', cache:'no-store' });
         const data = await res.json();
         setCachedFund(key + "FundData", { contributions: data.contributions || [], goalAmount: data.goalAmount || 0 });
         return data;

@@ -21,46 +21,60 @@ const API_URL_CHRISTMAS = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GR
 const CACHE_KEY_TECH = "techFundData";
 const CACHE_KEY_CHRISTMAS = "christmasFundData";
 
+// Cache configuration (must match script.js)
+const CACHE_VERSION = 1;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 function getCachedFund(key) {
-    const cached = localStorage.getItem(key);
-    if (!cached) {
-        console.log(`[MEMBER CACHE] No cache found for key: ${key}`);
-        return null;
-    }
     try {
-        const parsed = JSON.parse(cached);
-        // Always return cached data if it exists (no TTL check - same as main dashboard)
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed.version !== CACHE_VERSION) {
+            localStorage.removeItem(key);
+            return null;
+        }
+        const age = Date.now() - (parsed.lastFetched || 0);
+        // Expire if too old or negative (clock skew / invalid timestamp)
+        if (age < 0 || age > CACHE_TTL_MS) {
+            console.log(`[MEMBER CACHE] Expired: ${key} (age: ${Math.round(age / 1000)}s)`);
+            localStorage.removeItem(key);
+            return null;
+        }
         if (parsed.data) {
-            console.log(`[MEMBER CACHE] Cache found and valid for key: ${key}, using cached data (NO API CALL)`);
+            console.log(`[MEMBER CACHE] Hit: ${key} (age: ${Math.round(age / 1000)}s)`);
             return parsed.data;
         }
-        console.log(`[MEMBER CACHE] Cache exists but no data field for key: ${key}`);
         return null;
     } catch (e) {
-        console.error(`[MEMBER CACHE] Error parsing cache for key ${key}:`, e);
+        console.error(`[MEMBER CACHE] Error for ${key}:`, e);
+        try { localStorage.removeItem(key); } catch (_) {}
         return null;
     }
 }
 
 function setCachedFund(key, data) {
-    localStorage.setItem(key, JSON.stringify({ data, lastFetched: Date.now() }));
+    try {
+        localStorage.setItem(key, JSON.stringify({ data, lastFetched: Date.now(), version: CACHE_VERSION }));
+    } catch (err) {
+        console.error(`[MEMBER CACHE] Save error for ${key}:`, err);
+    }
 }
 
 async function fetchFundData(url, cacheKey) {
-    // Check cache first - use it if available (NO API CALL if cache exists)
+    // Check cache first (valid for 5 minutes)
     const cached = getCachedFund(cacheKey);
     if (cached) {
-        console.log(`[MEMBER] Using cached data for ${cacheKey} (NO API CALL - instant load)`);
+        console.log(`[MEMBER] Cache hit for ${cacheKey}`);
         return cached;
     }
     
-    // No cache - fetch from API ONLY ONCE
-    console.log(`[MEMBER] No cache found for ${cacheKey}, fetching from API (FIRST TIME ONLY)`);
+    // No valid cache - fetch fresh data from API
+    console.log(`[MEMBER] Cache miss/expired for ${cacheKey}, fetching from API`);
     try {
-        const res = await fetch(url, { credentials: "omit" });
+        const res = await fetch(url + '&_t=' + Date.now(), { credentials: "omit", cache: "no-store" });
         const data = await res.json();
         setCachedFund(cacheKey, data);
-        console.log(`[MEMBER] Data cached for ${cacheKey} - future loads will use cache (NO API CALLS)`);
         return data;
     } catch (err) {
         console.error("Error fetching fund data:", err);

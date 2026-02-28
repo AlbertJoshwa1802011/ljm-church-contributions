@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>LJM Church Contributions Portal</title>
 
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="fund-dashboard.js"></script>
-
 </head>
 <body>
 
@@ -17,12 +18,16 @@
     <nav>
        <a href="funds.html">Funds</a>	
        <a href="members.html">Members</a>
-        <a href="#">About</a>
+        <a href="about.html">About</a>
     </nav>
 </header>
 
+<!-- Silent update indicator -->
+<div class="update-indicator" id="updateIndicator" style="display: none;">
+    <span class="update-dot"></span> Refreshing data...
+</div>
+
 <main class="container">
-	
 
 <!-- Fund Heading -->
     <section class="fund-heading">
@@ -40,32 +45,63 @@
             </div>
         </div>
     </section>
-    
+
+    <!-- Bible Verse of the Day -->
+    <section class="bible-verse-section" id="bibleVerseSection">
+        <div class="verse-card">
+            <div class="verse-accent"></div>
+            <div class="verse-content">
+                <div class="verse-icon">📖</div>
+                <blockquote class="verse-text" id="bibleVerseText"></blockquote>
+                <cite class="verse-ref" id="bibleVerseRef"></cite>
+            </div>
+        </div>
+    </section>
+
     <!-- Summary Cards -->
     <section class="summary">
         <div class="stat-card">
             <h3>Goal Amount</h3>
             <div class="stat-value" id="goalAmount">Loading...</div>
+            <div class="stat-subdetail" id="goalSubdetail"></div>
         </div>
         <div class="stat-card">
             <h3>Total Collected</h3>
             <div class="stat-value" id="totalAmount">Loading...</div>
+            <div class="stat-subdetail" id="totalSubdetail"></div>
         </div>
         <div class="stat-card">
             <h3>Remaining</h3>
             <div class="stat-value" id="remainingAmount">Loading...</div>
+            <div class="stat-subdetail" id="remainingSubdetail"></div>
         </div>
         <div class="stat-card">
             <h3>Number of Contributions</h3>
             <div class="stat-value" id="entryCount">Loading...</div>
+            <div class="stat-subdetail" id="countSubdetail"></div>
         </div>
     </section>
 
-    <!-- Progress Bar -->
-    <section class="progress-section">
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar">0%</div>
+    <!-- Goal Progress Visual -->
+    <section class="goal-progress-section">
+        <div class="progress-visual-wrapper">
+            <div class="donut-wrapper">
+                <canvas id="goalDonutChart"></canvas>
+            </div>
+            <div class="progress-details">
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar">0%</div>
+                </div>
+                <div class="progress-milestones" id="progressMilestones"></div>
+                <div class="giving-pace" id="givingPace"></div>
+            </div>
         </div>
+    </section>
+
+    <!-- Giving Insights -->
+    <section class="giving-insights-section" id="givingInsightsSection">
+        <h3 class="insights-title">💡 Giving Insights</h3>
+        <div class="insights-grid" id="insightsGrid"></div>
     </section>
 	
 	<section class="top-contributors">
@@ -82,10 +118,7 @@
 
     <!-- Contributors List -->
     <section class="timeline" id="timelineContainer">
-        <h3 class="section-title" style="text-align: center; margin-bottom: 24px; font-size: 24px; font-weight: 700; color: #667eea;">
-            👥 All Contributors
-        </h3>
-        <!-- Contributors grid will be dynamically inserted here -->
+        <!-- Title and grid injected by script.js -->
     </section>
 
     <!-- Charts -->
@@ -93,7 +126,13 @@
         <div class="chart-card">
             <canvas id="categoryPieChart"></canvas>
         </div>
+        <div class="chart-card" id="distributionChartCard">
+            <canvas id="distributionPieChart"></canvas>
+        </div>
     </section>
+
+    <!-- Last Updated -->
+    <div class="last-updated" id="lastUpdated"></div>
 
 </main>
 
