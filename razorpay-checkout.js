@@ -180,12 +180,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     const ind = document.getElementById("updateIndicator");
                     if (ind) {
                         ind.style.display = "flex";
-                        ind.innerHTML = "<span class='update-dot'></span> Syncing Contribution...";
+                        let count = 8;
+                        const itv = setInterval(() => {
+                            count--;
+                            ind.innerHTML = `<span class='update-dot'></span> Verified! Syncing with Sheet... (${count}s)`;
+                            if (count <= 0) {
+                                clearInterval(itv);
+                                window.location.reload();
+                            }
+                        }, 1000);
+                    } else {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 8000);
                     }
-
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 8000);
                 },
                 "modal": {
                     "ondismiss": function() {
