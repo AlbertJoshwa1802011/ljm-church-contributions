@@ -70,6 +70,10 @@ function doPost(e) {
       if (sheet) {
         const proofOfPayment = `ID: ${paymentId} | Method: ${method} ${upiId ? '('+upiId+')' : ''} | Contact: ${contact}`;
         
+        // --- FIX: Find proper last row (avoid jumping to 1001) ---
+        const lastRow = sheet.getLastRow();
+        const nextRow = lastRow + 1;
+        
         let newRow = [
           memberName, 
           amountPaid, 
@@ -77,8 +81,14 @@ function doPost(e) {
           "Online (Verified)", 
           proofOfPayment
         ];
-        sheet.appendRow(newRow);
-        console.log("Row successfully appended to sheet.");
+        
+        // Write the row
+        sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);
+        
+        // --- STYLE: Color-code the new row (Light Purple for Razorpay) ---
+        sheet.getRange(nextRow, 1, 1, sheet.getLastColumn()).setBackground("#f3e5f5");
+        
+        console.log(`Row successfully added to row ${nextRow}`);
         
         // --- NEW: Immediate Email Alert for this payment ---
         try {
@@ -108,7 +118,8 @@ function doPost(e) {
         // Log to a separate "audit_log" sheet if it exists
         const auditSheet = ss.getSheetByName("audit_log");
         if (auditSheet) {
-          auditSheet.appendRow([new Date(), paymentId, memberName, amountPaid, fundName, JSON.stringify(payload)]);
+          const auditNextRow = auditSheet.getLastRow() + 1;
+          auditSheet.getRange(auditNextRow, 1, 1, 6).setValues([[new Date(), paymentId, memberName, amountPaid, fundName, JSON.stringify(payload)]]);
         }
       } else {
         console.error("Error: Sheet '" + fundName + "' not found.");
