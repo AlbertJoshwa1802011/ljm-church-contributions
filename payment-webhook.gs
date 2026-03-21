@@ -43,11 +43,14 @@ function doPost(e) {
     if (payload.event === "payment.captured") {
       const paymentEntity = payload.payload.payment.entity;
       
-      const amountPaid = paymentEntity.amount / 100; // Razorpay amounts are in paise/cents
+      const amountPaid = paymentEntity.amount / 100; // Razorpay amounts are in paise
       const paymentDate = new Date(paymentEntity.created_at * 1000);
-      const contactInfo = paymentEntity.email || paymentEntity.contact || "Unknown";
-      
-      // We pass notes when creating the payment order in frontend, like Member Name and Fund Name.
+      const paymentId = paymentEntity.id;
+      const method = paymentEntity.method;
+      const upiId = paymentEntity.vpa || ""; // UPI ID if available
+      const contact = paymentEntity.contact || "";
+
+      // We pass notes when creating the payment order in frontend
       const notes = paymentEntity.notes || {};
       const memberName = notes.memberName || "Online Contributor";
       let fundName = notes.fundName || "tech-contributions"; 
@@ -61,12 +64,23 @@ function doPost(e) {
       
       if (sheet) {
         // Tech Fund Format: Member | Amount | Date | Category | Notes
-        // Assuming headers are roughly: Member, Amount, Date, Category, Notes
-        // We will append loosely. Usually, you should match exactly to your columns.
-        // Looking at processTechFundFormat: 
-        // Tech Fund: Member | Amount | Date | Category | Notes
-        let newRow = [memberName, amountPaid, paymentDate, "Online Webhook", `Razorpay ID: ${paymentEntity.id}`];
+        // We will add more "Proof of Payment" into the Notes column
+        const proofOfPayment = `ID: ${paymentId} | Method: ${method} ${upiId ? '('+upiId+')' : ''} | Contact: ${contact}`;
+        
+        let newRow = [
+          memberName, 
+          amountPaid, 
+          paymentDate, 
+          "Online (Verified)", 
+          proofOfPayment
+        ];
         sheet.appendRow(newRow);
+        
+        // Log to a separate "audit_log" sheet if it exists
+        const auditSheet = ss.getSheetByName("audit_log");
+        if (auditSheet) {
+          auditSheet.appendRow([new Date(), paymentId, memberName, amountPaid, fundName, JSON.stringify(payload)]);
+        }
       }
     }
 
