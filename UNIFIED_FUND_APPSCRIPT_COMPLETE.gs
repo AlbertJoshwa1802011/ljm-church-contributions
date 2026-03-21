@@ -13,14 +13,15 @@
  * and "Most Active Month" on the dashboard shows the correct month (Jan vs Mar).
  */
 
-/** Returns YYYY-MM-DD for the given Date so calendar month is correct (no UTC shift). */
-function formatDateOnly(d) {
+/** Returns YYYY-MM-DD HH:mm:ss for the given Date so exact time is preserved */
+function formatDateTime(d) {
   const y = d.getFullYear();
-  let m = String(d.getMonth() + 1);
-  if (m.length === 1) m = '0' + m;
-  let day = String(d.getDate());
-  if (day.length === 1) day = '0' + day;
-  return y + '-' + m + '-' + day;
+  let m = String(d.getMonth() + 1).padStart(2, '0');
+  let day = String(d.getDate()).padStart(2, '0');
+  let hh = String(d.getHours()).padStart(2, '0');
+  let mm = String(d.getMinutes()).padStart(2, '0');
+  let ss = String(d.getSeconds()).padStart(2, '0');
+  return `${y}-${m}-${day} ${hh}:${mm}:${ss}`;
 }
 
 function doGet(e) {
@@ -148,10 +149,27 @@ function processTechFundFormat(headers, dataRows) {
         const dateVal = row[dateIdx];
         if (dateVal instanceof Date) {
           dateObj = dateVal;
+        } else if (typeof dateVal === 'number' && dateVal > 0) {
+          // Google Sheets stores dates as number of days since Dec 30 1899
+          const epoch = new Date(1899, 11, 30).getTime();
+          dateObj = new Date(epoch + dateVal * 86400000);
+          if (isNaN(dateObj.getTime())) dateObj = new Date();
         } else if (typeof dateVal === 'string' && dateVal.trim()) {
-          dateObj = new Date(dateVal.trim());
+          const s = dateVal.trim();
+          dateObj = new Date(s);
           if (isNaN(dateObj.getTime())) {
-            dateObj = new Date(); // Default to today if invalid
+            // Try parsing DD/MM/YYYY or DD-MM-YYYY manually
+            const slash = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+            if (slash) {
+              const a = parseInt(slash[1], 10), b = parseInt(slash[2], 10), y = parseInt(slash[3], 10);
+              let month = b - 1, day = a;
+              if (a > 12) { day = a; month = b - 1; }
+              else if (b > 12) { month = a - 1; day = b; }
+              dateObj = new Date(y, month, day);
+            }
+            if (!dateObj || isNaN(dateObj.getTime())) {
+              dateObj = new Date(); // Default to today if invalid
+            }
           }
         } else {
           dateObj = new Date(); // Default to today
@@ -160,8 +178,8 @@ function processTechFundFormat(headers, dataRows) {
         dateObj = new Date(); // Default to today
       }
 
-      // Output date as YYYY-MM-DD so frontend gets correct calendar month (no timezone shift)
-      const dateStr = formatDateOnly(dateObj);
+      // Output date as YYYY-MM-DD HH:mm:ss so frontend gets correct exact time
+      const dateStr = formatDateTime(dateObj);
 
       // Process category
       const category = (categoryIdx >= 0 && row[categoryIdx])
@@ -217,7 +235,7 @@ function processChristmasFundFormat(headers, dataRows) {
       const date = new Date(new Date().getFullYear(), monthIndex, 1);
 
       contributions.push({
-        Date: formatDateOnly(date),
+        Date: formatDateTime(date),
         Amount: amount,
         Category: "Christmas Fund",
         Notes: headers[i].toString().trim(),

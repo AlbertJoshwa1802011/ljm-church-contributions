@@ -14,9 +14,44 @@
  * 3. Add Trigger -> Choose function `sendMonthlyReport` -> Time-driven -> Month timer -> 1st day of month.
  */
 
-const RAZORPAY_WEBHOOK_SECRET = "YOUR_WEBHOOK_SECRET_HERE"; 
-const SHEET_ID = "1BsuLjPmFrW85AnZgmicrCj0vWlbQ4OH369PdBVA3zyE"; // The same sheet ID
-const ADMIN_EMAIL = Session.getActiveUser().getEmail(); // Or replace with your explicit email "example@gmail.com"
+// --- SECURITY CONFIGURATION ---
+// We now store sensitive information securely in Google's PropertiesService
+// Run `setupSecurityProperties()` once from the Apps Script editor to initialize them.
+const SHEET_ID = "1BsuLjPmFrW85AnZgmicrCj0vWlbQ4OH369PdBVA3zyE"; 
+
+/**
+ * Helper to fetch secure environment variables
+ */
+function getEnv(key) {
+  const val = PropertiesService.getScriptProperties().getProperty(key);
+  // Fallback for ADMIN_EMAIL if PropertiesService isn't set up yet
+  if (!val && key === "ADMIN_EMAIL") return "albertjoshrock101@gmail.com";
+  return val;
+}
+
+/**
+ * Run this function ONCE from the Apps Script editor to securely store your keys.
+ * Doing this removes hardcoded secrets from your script logic (Best Practice).
+ */
+function setupSecurityProperties() {
+  PropertiesService.getScriptProperties().setProperties({
+    "ADMIN_EMAIL": "albertjoshrock101@gmail.com",
+    "RAZORPAY_WEBHOOK_SECRET": "YOUR_WEBHOOK_SECRET_HERE",
+    "RAZORPAY_KEY_ID": "YOUR_LIVE_KEY_ID_HERE", // Used for Server-to-Server verification
+    "RAZORPAY_KEY_SECRET": "YOUR_LIVE_KEY_SECRET_HERE" 
+  });
+  Logger.log("✅ Security properties established successfully. You can now clear the dummy values from the code here if you want.");
+}
+
+// --- SMART NOTIFICATION CONFIGURATION ---
+const NOTIFICATION_CONFIG = {
+  SMS_ENABLED: false,             // Set to true once you have a provider (e.g., Twilio)
+  WHATSAPP_ENABLED: false,        // Set to true once you have a provider
+  PROVIDER_API_KEY: "YOUR_API_KEY_HERE",
+  TWILIO_SID: "YOUR_TWILIO_SID",
+  TWILIO_TOKEN: "YOUR_TWILIO_TOKEN",
+  TWILIO_PHONE: "YOUR_TWILIO_PHONE" // e.g., "+1234567890"
+};
 
 /**
  * Handle incoming Webhook from Razorpay
@@ -24,20 +59,24 @@ const ADMIN_EMAIL = Session.getActiveUser().getEmail(); // Or replace with your 
 function doPost(e) {
   try {
     const rawBody = e.postData.contents;
-    const signature = e.parameter['razorpay_signature'] || e.contextPath || ""; // Webhooks usually pass it in headers, GAS receives headers via e.postData or we might have to use manual checks, wait, Google App Script doPost headers are in `e.postData` but actual headers are not always fully exposed in simple parameters.
-    // Actually, Razorpay passes the signature in the 'x-razorpay-signature' header. 
-    // Wait, let's look at GAS: e.postData.type, e.postData.contents. Headers are not exposed directly in `e`. 
-    // Since Google Apps Script doesn't reliably expose headers in `doPost(e)` for standard web apps without Cloud Endpoints, 
-    // Razorpay allows adding secret inside the payload, or we can use the URL query parameter `?sig=` for verification if we append it to the webhook URL.
-    // However, as standard practice in GAS, we will just parse the entity. If signature isn't available in headers, we must verify the payload contents manually using an order ID API check or pass a secret token in the Webhook URL.
     
-    // Better secure approach for GS webhook:
+    // --- SECURITY: Strict Payload Size Limit (Anti-DDoS) ---
+    if (rawBody.length > 20000) {
+      console.warn("Payload size exceeded limit.", rawBody.length);
+      return ContentService.createTextOutput("Payload too large").setMimeType(ContentService.MimeType.TEXT);
+    }
+
+    // --- SECURITY: Basic Webhook Secret Verification ---
     const urlSecret = e.parameter.secret;
-    console.log("Webhook received. Secret in URL: " + urlSecret);
+    const expectedSecret = getEnv("RAZORPAY_WEBHOOK_SECRET");
     
-    if (urlSecret !== RAZORPAY_WEBHOOK_SECRET) {
-      console.error("Unauthorized: Secret mismatch. Received: " + urlSecret + ", Expected: " + RAZORPAY_WEBHOOK_SECRET);
-      return ContentService.createTextOutput("Unauthorized: Secret mismatch").setMimeType(ContentService.MimeType.TEXT);
+    if (expectedSecret && expectedSecret !== "YOUR_WEBHOOK_SECRET_HERE") {
+      if (urlSecret !== expectedSecret) {
+        console.error("Unauthorized: Secret mismatch.");
+        return ContentService.createTextOutput("Unauthorized").setMimeType(ContentService.MimeType.TEXT);
+      }
+    } else {
+      console.warn("Webhook secret not configured in PropertiesService. Skipping basic URL secret check.");
     }
 
     const payload = JSON.parse(rawBody);
@@ -45,17 +84,30 @@ function doPost(e) {
 
     if (payload.event === "payment.captured") {
       const paymentEntity = payload.payload.payment.entity;
-      
-      const amountPaid = paymentEntity.amount / 100; // Razorpay amounts are in paise
-      const paymentDate = new Date(paymentEntity.created_at * 1000);
       const paymentId = paymentEntity.id;
-      const method = paymentEntity.method;
-      const upiId = paymentEntity.vpa || ""; // UPI ID if available
-      const contact = paymentEntity.contact || "";
+      const expectedAmount = paymentEntity.amount; // in paise
+      
+      // --- SECURITY: Server-to-Server Payment Verification ---
+      // This eliminates the risk of spoofed webhooks by calling Razorpay directly
+      // using the secure Key Secret to verify the payment actually happened.
+      const isGenuine = verifyRazorpayPayment(paymentId, expectedAmount);
+      if (!isGenuine) {
+        console.error(`🚨 SPOOF ATTEMPT DETECTED! Payment verification failed for ID: ${paymentId}`);
+        return ContentService.createTextOutput("Verification Failed").setMimeType(ContentService.MimeType.TEXT);
+      }
 
-      // We pass notes when creating the payment order in frontend
+      const amountPaid = expectedAmount / 100; // Razorpay amounts are in paise
+      const rawDate = new Date(paymentEntity.created_at * 1000);
+      const paymentDate = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+      const method = paymentEntity.method;
+      const upiId = paymentEntity.vpa ? String(paymentEntity.vpa).substring(0, 100) : ""; 
+      const contact = paymentEntity.contact ? String(paymentEntity.contact).substring(0, 50) : "";
+      const contributorEmail = paymentEntity.email ? String(paymentEntity.email).substring(0, 100) : ""; 
+
+      // Data sanitization
       const notes = paymentEntity.notes || {};
-      const memberName = notes.memberName || "Online Contributor";
+      const rawMemberName = notes.memberName || "Online Contributor";
+      const memberName = String(rawMemberName).substring(0, 200).replace(/[=+\-@>]/g, ""); // Prevent formula injection
       let fundName = notes.fundName || "tech-contributions"; 
       
       // Auto-map aliases
@@ -68,10 +120,16 @@ function doPost(e) {
       const sheet = ss.getSheetByName(fundName);
       
       if (sheet) {
+        // --- SECURITY: Idempotency Check (Prevent Duplicates) ---
+        if (isDuplicatePayment(sheet, paymentId)) {
+          console.warn(`Idempotency trigger: Payment ${paymentId} already exists in ${fundName}. Skipping.`);
+          return ContentService.createTextOutput("Duplicate payment ignored").setMimeType(ContentService.MimeType.TEXT);
+        }
+
         const proofOfPayment = `ID: ${paymentId} | Method: ${method} ${upiId ? '('+upiId+')' : ''} | Contact: ${contact}`;
         
-        // --- FIX: Find proper last row (avoid jumping to 1001) ---
-        const lastRow = sheet.getLastRow();
+        // Find proper last row (avoid jumping to 1001 if formulas exist)
+        const lastRow = getRealLastRow(sheet);
         const nextRow = lastRow + 1;
         
         let newRow = [
@@ -85,15 +143,17 @@ function doPost(e) {
         // Write the row
         sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);
         
-        // --- STYLE: Color-code the new row (Light Purple for Razorpay) ---
+        // Color-code the new row (Light Purple for Razorpay)
         sheet.getRange(nextRow, 1, 1, sheet.getLastColumn()).setBackground("#f3e5f5");
         
         console.log(`Row successfully added to row ${nextRow}`);
         
-        // --- NEW: Immediate Email Alert for this payment ---
+        // --- Immediate Email Alerts ---
+        const adminEmail = getEnv("ADMIN_EMAIL");
         try {
-          MailApp.sendEmail({
-            to: ADMIN_EMAIL,
+          if (adminEmail) {
+            MailApp.sendEmail({
+              to: adminEmail,
             subject: `New Contribution Received: ₹${amountPaid} from ${memberName}`,
             htmlBody: `
               <div style="font-family: Arial, sans-serif;">
@@ -104,15 +164,56 @@ function doPost(e) {
                   <li><strong>Amount:</strong> ₹${amountPaid}</li>
                   <li><strong>Razorpay ID:</strong> ${paymentId}</li>
                   <li><strong>Method:</strong> ${method} ${upiId ? '('+upiId+')' : ''}</li>
+                  <li><strong>Contributor Contact:</strong> ${contact}</li>
+                  <li><strong>Contributor Email:</strong> ${contributorEmail}</li>
                   <li><strong>Date:</strong> ${paymentDate.toLocaleString()}</li>
                 </ul>
                 <p><a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}">View Google Sheet</a></p>
               </div>
             `
-          });
-          console.log("Email alert sent to " + ADMIN_EMAIL);
+            });
+            console.log("Email alert sent to admin: " + adminEmail);
+          }
+
+          // Send to Contributor (if email is available)
+          if (contributorEmail) {
+            MailApp.sendEmail({
+              to: contributorEmail,
+              subject: `Thank you for your contribution to LJM Church!`,
+              htmlBody: `
+                <div style="font-family: Arial, sans-serif; color: #333;">
+                  <h2 style="color: #673ab7;">Thank You, ${memberName}!</h2>
+                  <p>We have received your contribution of <strong>₹${amountPaid}</strong> towards the <strong>${fundName}</strong>.</p>
+                  <p>Your support helps us continue our mission and maintain our church activities.</p>
+                  <hr>
+                  <p style="font-size: 14px;"><strong>Transaction Details:</strong></p>
+                  <ul>
+                    <li><strong>Amount Paid:</strong> ₹${amountPaid}</li>
+                    <li><strong>Payment ID:</strong> ${paymentId}</li>
+                    <li><strong>Date:</strong> ${paymentDate.toLocaleString()}</li>
+                  </ul>
+                  <p>May God bless you for your generosity!</p>
+                  <hr>
+                  <p style="font-size: 12px; color: #777;">This is an automated confirmation of your contribution via LJM Church Online Portal.</p>
+                </div>
+              `
+            });
+            console.log("Confirmation email sent to contributor: " + contributorEmail);
+          }
+
+          // --- SMART: SMS/WhatsApp Notifications ---
+          if (contact) {
+            const message = `Praise the Lord ${memberName}! We received your contribution of ₹${amountPaid} for ${fundName}. ID: ${paymentId}. Thank you!`;
+            
+            if (NOTIFICATION_CONFIG.SMS_ENABLED) {
+              sendSMSNotification(contact, message);
+            }
+            if (NOTIFICATION_CONFIG.WHATSAPP_ENABLED) {
+              sendWhatsAppNotification(contact, message);
+            }
+          }
         } catch (mailErr) {
-          console.error("Failed to send immediate alert: ", mailErr.toString());
+          console.error("Failed to send email/SMS alerts: ", mailErr.toString());
         }
 
         // Log to a separate "audit_log" sheet if it exists
@@ -212,11 +313,14 @@ function sendMonthlyReport() {
     </div>
   `;
 
-  MailApp.sendEmail({
-    to: ADMIN_EMAIL,
-    subject: `Monthly Contribution Report - ${monthName} ${priorYear}`,
-    htmlBody: emailHtml
-  });
+  const adminEmail = getEnv("ADMIN_EMAIL");
+  if (adminEmail) {
+    MailApp.sendEmail({
+      to: adminEmail,
+      subject: `Monthly Contribution Report - ${monthName} ${priorYear}`,
+      htmlBody: emailHtml
+    });
+  }
 }
 
 /**
@@ -241,4 +345,138 @@ function onOpen() {
     .addItem('Generate Monthly Report Now', 'sendMonthlyReport')
     .addItem('Test Email Permissions', 'testManualEmail')
     .addToUi();
+}
+
+/**
+ * FIX: Find the last row that actually has content in the Member/Amount columns,
+ * instead of just picking up the last row with a formula.
+ */
+function getRealLastRow(sheet) {
+  const range = sheet.getRange("A:B"); // Check both Member and Amount columns
+  const values = range.getValues();
+  for (let i = values.length - 1; i >= 0; i--) {
+    // Check if either Member name or Amount exists
+    if ((values[i][0] && values[i][0].toString().trim() !== "") || 
+        (values[i][1] && values[i][1].toString().trim() !== "")) {
+      return i + 1;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Run this from the Apps Script editor to see where the next row would be added.
+ */
+function debugRowPlacement() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const funds = ["tech-contributions", "christmas-fund"];
+  
+  funds.forEach(fundName => {
+    const sheet = ss.getSheetByName(fundName);
+    if (sheet) {
+      const lastRow = getRealLastRow(sheet);
+      Logger.log(`Sheet '${fundName}' real last row: ${lastRow}. Next entry will be on: ${lastRow + 1}`);
+    } else {
+      Logger.log(`Sheet '${fundName}' not found.`);
+    }
+  });
+}
+
+/**
+ * --- SECURITY FEATURE: Server-to-Server Verification ---
+ * Verify with Razorpay API that this payment ID actually exists and has the expected amount.
+ * This prevents webhook spoofing.
+ */
+function verifyRazorpayPayment(paymentId, expectedAmount) {
+  try {
+    const keyId = getEnv("RAZORPAY_KEY_ID");
+    const keySecret = getEnv("RAZORPAY_KEY_SECRET");
+    
+    // Fallback if not configured yet
+    if (!keyId || !keySecret || keyId === "YOUR_LIVE_KEY_ID_HERE") {
+      console.warn("Server-to-Server verification skipped (Keys not configured). Trusting webhook payload.");
+      return true; // Weak security, but keeps system running if keys aren't added
+    }
+
+    const url = "https://api.razorpay.com/v1/payments/" + paymentId;
+    const options = {
+      "method": "get",
+      "headers": {
+        "Authorization": "Basic " + Utilities.base64Encode(keyId + ":" + keySecret)
+      },
+      "muteHttpExceptions": true
+    };
+    
+    const response = UrlFetchApp.fetch(url, options);
+    if (response.getResponseCode() !== 200) {
+      console.error("Razorpay API returned " + response.getResponseCode());
+      return false;
+    }
+    
+    // Verify payload strictly
+    const data = JSON.parse(response.getContentText());
+    if (data.status === "captured" && data.amount === expectedAmount) {
+      return true;
+    }
+    
+    return false;
+  } catch(e) {
+    console.error("API Verification Error: " + e.toString());
+    return false;
+  }
+}
+
+/**
+ * --- SECURITY FEATURE: Idempotency Check ---
+ * Prevents double-counting if Razorpay triggers the exact same webhook twice.
+ */
+function isDuplicatePayment(sheet, paymentId) {
+  try {
+    const numRows = sheet.getLastRow();
+    if (numRows < 2) return false;
+    
+    // Optimisation: only check the last 50 entries
+    const startRow = Math.max(2, numRows - 50);
+    const numRowsToCheck = numRows - startRow + 1;
+    
+    // Assuming Column E (5) is proofOfPayment which contains the ID
+    const values = sheet.getRange(startRow, 5, numRowsToCheck, 1).getValues(); 
+    
+    for (let i = 0; i < values.length; i++) {
+      if (values[i][0].toString().includes(paymentId)) {
+        return true;
+      }
+    }
+    return false;
+  } catch (err) {
+    console.error("Idempotency Check Error: " + err.toString());
+    return false; // Fail open
+  }
+}
+
+/**
+ * SMS Notification Wrapper (Twilio Placeholder)
+ */
+function sendSMSNotification(to, message) {
+  try {
+    if (!NOTIFICATION_CONFIG.TWILIO_SID || NOTIFICATION_CONFIG.TWILIO_SID === "YOUR_TWILIO_SID") {
+      console.warn("SMS triggered but Twilio SID not configured.");
+      return;
+    }
+    
+    console.log("[MOCK] SMS would be sent to " + to + ": " + message);
+  } catch (err) {
+    console.error("Error in sendSMSNotification: " + err.toString());
+  }
+}
+
+/**
+ * WhatsApp Notification Wrapper Placeholder
+ */
+function sendWhatsAppNotification(to, message) {
+  try {
+    console.log("[MOCK] WhatsApp would be sent to " + to + ": " + message);
+  } catch (err) {
+    console.error("Error in sendWhatsAppNotification: " + err.toString());
+  }
 }

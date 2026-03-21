@@ -2,6 +2,9 @@
  * RAZORPAY CHECKOUT LOGIC & PREMIUM MODAL
  */
 
+// SECURITY NOTE: This is the Razorpay PUBLIC Key ID. 
+// It is perfectly safe and necessary for this ID to be exposed in frontend JavaScript code.
+// NEVER expose the Razorpay KEY SECRET here. The Secret is kept securely on the backend (payment-webhook.gs).
 const RAZORPAY_TEST_KEY_ID = "rzp_live_STrG9mXFNPWfMM";
 
 function getFundContext() {

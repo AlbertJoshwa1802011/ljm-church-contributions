@@ -1,7 +1,18 @@
 // ==================================================
 // LJM Church Contributions - Main Dashboard Script
-// Smart caching, premium UX, instant load
+// Smart caching, premium UX, instant load, Secure
 // ==================================================
+
+// Helper: escape HTML to prevent XSS attacks
+function escapeHtml(unsafe) {
+    if (unsafe == null) return '';
+    return String(unsafe)
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
 
 // --------------------
 // Cache configuration (shared across pages via localStorage)
@@ -180,6 +191,28 @@ function animateValue(elementId, targetValue, prefix = '', duration = 1200) {
 }
 
 // --------------------
+// Trend Badge Component
+function renderTrendBadge(containerId, trend) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+
+    if (trend.direction === 'neutral') {
+        el.innerHTML = '';
+        return;
+    }
+
+    const color = trend.direction === 'up' ? '#2ecc71' : '#e74c3c';
+    const bg = trend.direction === 'up' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)';
+    const arrow = trend.direction === 'up' ? '↑' : '↓';
+
+    el.innerHTML = `
+        <span class="trend-badge" style="background: ${bg}; color: ${color}; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-left: 8px;">
+            ${arrow} ${Math.abs(trend.percent)}%
+        </span>
+    `;
+}
+
+// --------------------
 // Modal: How we calculate (for stat cards and insight cards)
 function initInsightModal() {
     const modal = document.getElementById('insightModal');
@@ -204,13 +237,8 @@ function initInsightModal() {
         document.body.style.overflow = '';
     }
 
-    function escapeHtml(text) {
-        if (text == null) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
+    // We use the global escapeHtml function now
+    
     function getStatCardContent(type) {
         const ctx = window.__insightContext || {};
         const goal = ctx.goalAmount != null ? ctx.goalAmount : 0;
@@ -264,18 +292,28 @@ function initInsightModal() {
                 return bestHtml;
             }
             case 'estimated': {
-                let estHtml = `<p><strong>Estimated to Goal</strong> = how many months until we reach the goal, using our current average collection per month (total so far ÷ number of months with data).</p><p>About <strong>${ctx.monthsToGoal != null ? ctx.monthsToGoal : 0}</strong> month(s) at current pace. Roughly <strong>${ctx.moreNeeded != null ? ctx.moreNeeded : 0}</strong> more contributions needed at average rate.</p>`;
-                if (ctx.avgPerMonth != null && ctx.avgPerMonth > 0) {
-                    estHtml += `<p class="insight-modal-summary">Average: <strong>₹${Math.round(ctx.avgPerMonth).toLocaleString('en-IN')}/month</strong> over ${ctx.monthsWithData != null ? ctx.monthsWithData : 0} month(s) with data.</p>`;
-                }
-                const months = ctx.monthlyBreakdown;
-                if (months && months.length > 0) {
-                    estHtml += '<div class="contributor-detail-list-wrapper"><table class="contributor-detail-list"><thead><tr><th>Month</th><th>Collected</th><th>#</th></tr></thead><tbody>';
-                    months.forEach((m) => {
-                        estHtml += `<tr><td>${escapeHtml(m.label)}</td><td>₹${Number(m.total).toLocaleString('en-IN')}</td><td>${m.count}</td></tr>`;
-                    });
-                    estHtml += '</tbody></table></div>';
-                }
+                const remaining = ctx.remaining;
+                const pace = ctx.monthsToGoal;
+                const date = new Date();
+                date.setMonth(date.getDate() + pace);
+                const dateStr = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+                let estHtml = `
+                    <div class="human-insight">
+                        <p class="insight-primary">🎯 <strong>Goal Projection:</strong> Based on your current giving pace, we are on track to reach the goal by <strong>${dateStr}</strong>.</p>
+                        <p>That's about <strong>${pace} month${pace !== 1 ? 's' : ''}</strong> away.</p>
+                        <div class="insight-metric-grid">
+                            <div class="metric-item">
+                                <span class="label">Needed</span>
+                                <span class="value">₹${remaining.toLocaleString('en-IN')}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="label">Monthly Rate</span>
+                                <span class="value">₹${Math.round(ctx.avgPerMonth).toLocaleString('en-IN')}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
                 return estHtml;
             }
             default: return '<p>No details available.</p>';
@@ -292,7 +330,7 @@ function initInsightModal() {
             const titles = { goal: 'How we calculate: Goal Amount', total: 'How we calculate: Total Collected', remaining: 'How we calculate: Remaining', count: 'How we calculate: Number of Contributions' };
             openModal(titles[statType] || 'Calculation details', getStatCardContent(statType));
         } else if (insightType) {
-            const titles = { unique: 'How we calculate: Unique Contributors', avg: 'How we calculate: Average Contribution', bestMonth: 'How we calculate: Most Active Month', estimated: 'How we calculate: Estimated to Goal' };
+            const titles = { unique: 'How we calculate: Unique Contributors', avg: 'How we calculate: Average Contribution', bestMonth: 'How we calculate: Most Active Month', estimated: 'How we calculate: Estimated to Goal', source: 'How we calculate: Giving Channels' };
             openModal(titles[insightType] || 'Calculation details', getInsightCardContent(insightType));
         }
     }
@@ -403,15 +441,15 @@ function parseContributionDate(value) {
         if (value > 0 && value < 100000) {
             const epoch = new Date(1899, 11, 30).getTime();
             const d = new Date(epoch + value * 86400000);
-            return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            return isNaN(d.getTime()) ? null : d;
         }
         const d = new Date(value);
-        return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return isNaN(d.getTime()) ? null : d;
     }
 
     if (typeof value !== 'string') {
         const d = new Date(value);
-        return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return isNaN(d.getTime()) ? null : d;
     }
 
     const s = value.trim();
@@ -422,11 +460,11 @@ function parseContributionDate(value) {
         if (n > 0 && n < 100000) {
             const epoch = new Date(1899, 11, 30).getTime();
             const d = new Date(epoch + n * 86400000);
-            return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            return isNaN(d.getTime()) ? null : d;
         }
         if (n > 1e12) {
             const d = new Date(n);
-            return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            return isNaN(d.getTime()) ? null : d;
         }
     }
 
@@ -459,7 +497,7 @@ function parseContributionDate(value) {
 
     const d = new Date(value);
     if (isNaN(d.getTime())) return null;
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return d;
 }
 
 // --------------------
@@ -540,6 +578,18 @@ function renderGivingInsights(contributions, goalAmount) {
     const avgContribution = contributions.length > 0 ? Math.round(totalAmount / contributions.length) : 0;
     const avgPerPerson = uniqueMembers > 0 ? Math.round(totalAmount / uniqueMembers) : 0;
 
+    const sources = { Online: 0, Manual: 0 };
+    contributions.forEach(c => {
+        const amt = Number(c.Amount) || 0;
+        const notes = (c.Notes || "").toLowerCase();
+        const category = (c.Category || "").toLowerCase();
+        if (notes.includes("razorpay") || notes.includes("online") || category.includes("online")) {
+            sources.Online += amt;
+        } else {
+            sources.Manual += amt;
+        }
+    });
+
     const byMonth = getMonthlyBreakdown(contributions);
     const monthEntries = Object.entries(byMonth).map(([k, v]) => [v.label, v.total]);
     const bestMonth = monthEntries.sort((a, b) => b[1] - a[1])[0];
@@ -557,24 +607,28 @@ function renderGivingInsights(contributions, goalAmount) {
         count: byMonth[k].count
     }));
 
+    const trend = calculateTrend(contributions);
+
     const insights = [
         { key: 'unique', icon: '👥', value: uniqueMembers, label: 'Unique Contributors',
-            detail: avgPerPerson > 0 ? '₹' + avgPerPerson.toLocaleString('en-IN') + ' avg per person' : '' },
-        { key: 'avg', icon: '💰', value: '₹' + avgContribution.toLocaleString('en-IN'), label: 'Average Contribution',
+            detail: avgPerPerson > 0 ? '₹' + avgPerPerson.toLocaleString('en-IN') + ' per person' : '' },
+        { key: 'avg', icon: '💰', value: '₹' + avgContribution.toLocaleString('en-IN'), label: 'Avg Contribution',
             detail: contributions.length + ' total entries' },
         { key: 'bestMonth', icon: '📅', value: bestMonth ? bestMonth[0] : 'N/A', label: 'Most Active Month',
-            detail: bestMonth ? '₹' + bestMonth[1].toLocaleString('en-IN') + ' collected' : '' },
+            detail: trend.direction !== 'neutral' ? `${trend.icon} ${Math.abs(trend.percent)}% vs last mo` : 'Stable giving pace' },
         { key: 'estimated', icon: '🎯',
             value: remaining > 0 ? (monthsToGoal > 0 ? '~' + monthsToGoal + ' mo' : 'Keep going!') : 'Done!',
-            label: remaining > 0 ? 'Estimated to Goal' : 'Goal Reached! 🎉',
-            detail: remaining > 0 ? moreNeeded + ' more contributions needed at avg rate' : 'Praise the Lord!' }
+            label: remaining > 0 ? 'Goal Timeline' : 'Goal Reached! 🎉',
+            detail: remaining > 0 ? `At ₹${Math.round(avgPerMonth).toLocaleString('en-IN')}/mo` : 'Praise the Lord!' },
+        { key: 'source', icon: '🔀', value: (totalAmount > 0 ? Math.round((sources.Online / totalAmount) * 100) : 0) + '%', label: 'Online / UPI Share',
+            detail: `₹${sources.Online.toLocaleString('en-IN')} Online · ₹${sources.Manual.toLocaleString('en-IN')} Manual` }
     ];
 
     window.__insightContext = {
         goalAmount, totalAmount, remaining, entryCount: contributions.length,
         uniqueMembers, avgContribution, avgPerPerson, bestMonth,
         monthsToGoal, moreNeeded, monthsWithData: Object.keys(byMonth).length,
-        contributorList, monthlyBreakdown, avgPerMonth
+        contributorList, monthlyBreakdown, avgPerMonth, sources
     };
 
     grid.innerHTML = '';
@@ -596,7 +650,7 @@ function renderGivingInsights(contributions, goalAmount) {
 }
 
 // --------------------
-// Distribution Pie Chart (contribution share by member)
+// Distribution Pie Chart (shares with percentage)
 function renderDistributionPie(contributions) {
     const canvas = document.getElementById('distributionPieChart');
     if (!canvas || typeof Chart === 'undefined') return;
@@ -608,7 +662,6 @@ function renderDistributionPie(contributions) {
         memberMap[member] = (memberMap[member] || 0) + (Number(c.Amount) || 0);
     });
 
-    // Sort by amount, show top 8 + "Others"
     const sorted = Object.entries(memberMap).sort((a, b) => b[1] - a[1]);
     const top = sorted.slice(0, 8);
     const othersTotal = sorted.slice(8).reduce((sum, [, amt]) => sum + amt, 0);
@@ -646,26 +699,130 @@ function renderDistributionPie(contributions) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: { duration: 700 },
+            animation: { duration: 700, easing: 'easeOutQuart' },
             plugins: {
-                legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16 } },
+                legend: { position: 'bottom', labels: { font: { size: 12, family: 'Inter' }, padding: 16 } },
                 title: {
                     display: true,
                     text: '🥧 Contribution Share by Member',
-                    font: { size: window.innerWidth < 768 ? 14 : 16, weight: 'bold' }
+                    font: { size: 16, weight: 'bold', family: 'Inter' }
                 },
                 tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#333',
+                    bodyColor: '#666',
+                    borderColor: '#667eea',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
                     callbacks: {
                         label: function(context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const pct = Math.round((context.raw / total) * 100);
-                            return context.label + ': ₹' + context.raw.toLocaleString('en-IN') + ' (' + pct + '%)';
+                            return ` ${context.label}: ₹${Number(context.raw).toLocaleString('en-IN')} (${pct}%)`;
                         }
                     }
                 }
             }
         }
     });
+}
+
+    });
+}
+
+// --------------------
+// Source Distribution Chart (Online vs Manual)
+function renderSourceChart(contributions) {
+    const canvas = document.getElementById('sourcePieChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (!contributions || contributions.length === 0) return;
+
+    const sources = { Online: 0, Manual: 0 };
+    contributions.forEach(c => {
+        const amt = Number(c.Amount) || 0;
+        const notes = (c.Notes || "").toLowerCase();
+        const category = (c.Category || "").toLowerCase();
+        if (notes.includes("razorpay") || notes.includes("online") || category.includes("online")) {
+            sources.Online += amt;
+        } else {
+            sources.Manual += amt;
+        }
+    });
+
+    const ctx = canvas.getContext('2d');
+    if (window._sourcePieChart && typeof window._sourcePieChart.destroy === 'function') {
+        window._sourcePieChart.destroy();
+    }
+
+    window._sourcePieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Online / UPI', 'Manual (Cash/GPay)'],
+            datasets: [{
+                data: [sources.Online, sources.Manual],
+                backgroundColor: ['#667eea', '#f1c40f'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 12, family: 'Inter' }, padding: 16 } },
+                title: {
+                    display: true,
+                    text: '🔀 Contribution Channel (Amount)',
+                    font: { size: 16, weight: 'bold', family: 'Inter' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total > 0 ? Math.round((context.raw / total) * 100) : 0;
+                            return ` ${context.label}: ₹${Number(context.raw).toLocaleString('en-IN')} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * TREND CALCULATOR: Compares this month vs last month
+ */
+function calculateTrend(contributions) {
+    const now = new Date();
+    const currentMonthKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthKey = lastMonth.getFullYear() + '-' + String(lastMonth.getMonth() + 1).padStart(2, '0');
+
+    let currentTotal = 0, lastTotal = 0;
+    let currentCount = 0, lastCount = 0;
+
+    contributions.forEach(c => {
+        const d = parseContributionDate(c.Date);
+        if (!d) return;
+        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        if (key === currentMonthKey) {
+            currentTotal += Number(c.Amount) || 0;
+            currentCount++;
+        }
+        if (key === lastMonthKey) {
+            lastTotal += Number(c.Amount) || 0;
+            lastCount++;
+        }
+    });
+
+    const diff = currentTotal - lastTotal;
+    const percent = lastTotal > 0 ? Math.round((diff / lastTotal) * 100) : 0;
+    const direction = diff > 0 ? 'up' : (diff < 0 ? 'down' : 'neutral');
+    const icon = diff > 0 ? '📈' : (diff < 0 ? '📉' : '➖');
+
+    return { percent, direction, icon, currentTotal, lastTotal, currentCount, lastCount };
 }
 
 // --------------------
@@ -980,10 +1137,15 @@ async function initDashboard() {
                     else if (rank === 3) medal = "🥉";
                     else if (rank <= 10) medal = "⭐";
 
+                    const safeMember = escapeHtml(contributor.Member);
+                    card.style.cursor = 'pointer';
+                    card.setAttribute('role', 'button');
+                    card.setAttribute('tabindex', '0');
+                    card.onclick = () => openContributorDetailModal(contributor.Member, data);
                     card.innerHTML = `
                         <div class="contributor-rank">${medal} #${rank}</div>
-                        <div class="contributor-avatar">${contributor.Member.charAt(0).toUpperCase()}</div>
-                        <div class="contributor-name">${contributor.Member}</div>
+                        <div class="contributor-avatar">${safeMember.charAt(0).toUpperCase()}</div>
+                        <div class="contributor-name">${safeMember}</div>
                         <div class="contributor-amount">₹${contributor.Total.toLocaleString('en-IN')}</div>
                         <div class="contributor-count">${contributor.Entries} contribution${contributor.Entries !== 1 ? 's' : ''}</div>
                     `;
@@ -1031,6 +1193,10 @@ async function initDashboard() {
             const uniqueContributors = new Set(data.map(c => c.Member).filter(Boolean)).size;
             const avgContribution = data.length > 0 ? Math.round(totalCollected / data.length) : 0;
 
+            // ---- TRENDS ----
+            const trend = calculateTrend(data);
+            const lastDataCount = (data.length - (trend.direction !== 'neutral' ? 1 : 0)); // simple mock for prev count
+
             // Animated stat values
             animateValue("goalAmount", goalAmount, "🎯 ₹");
             animateValue("totalAmount", totalCollected, "💰 ₹");
@@ -1041,15 +1207,19 @@ async function initDashboard() {
             }
             animateValue("entryCount", data.length, "📝 ");
 
+            // Render Trend Badges
+            renderTrendBadge("totalSubdetail", trend);
+            renderTrendBadge("countSubdetail", {
+                direction: trend.currentCount > trend.lastCount ? 'up' : (trend.currentCount < trend.lastCount ? 'down' : 'neutral'),
+                percent: trend.lastCount > 0 ? Math.abs(Math.round(((trend.currentCount - trend.lastCount) / trend.lastCount) * 100)) : 0,
+                icon: trend.currentCount > trend.lastCount ? '📈' : '📉'
+            });
+
             // Sub-details for stat cards
             const goalSub = document.getElementById("goalSubdetail");
             if (goalSub) goalSub.textContent = "For the glory of God";
-            const totalSub = document.getElementById("totalSubdetail");
-            if (totalSub) totalSub.textContent = Math.round(progressPercent) + "% of goal achieved";
             const remainSub = document.getElementById("remainingSubdetail");
             if (remainSub) remainSub.textContent = remaining > 0 ? "Keep giving — we're getting closer!" : "Praise the Lord! 🙌";
-            const countSub = document.getElementById("countSubdetail");
-            if (countSub) countSub.textContent = "Avg ₹" + avgContribution.toLocaleString('en-IN') + " · " + uniqueContributors + " givers";
 
             // Motivational banner based on progress
             if (banner) {
@@ -1096,6 +1266,12 @@ async function initDashboard() {
 
             // Distribution pie chart
             try { renderDistributionPie(data); } catch (e) { console.error("Distribution pie error:", e); }
+
+            // Source distribution chart
+            try { renderSourceChart(data); } catch (e) { console.error("Source chart error:", e); }
+
+            // Source distribution chart
+            try { renderSourceChart(data); } catch (e) { console.error("Source chart error:", e); }
 
             // Top contributors
             try { renderTopContributors(data); } catch (e) { console.error("Top contributors error:", e); }
@@ -1220,10 +1396,15 @@ async function initChristmasFundDashboard() {
                     else if (rank === 3) medal = "🥉";
                     else if (rank <= 10) medal = "⭐";
 
+                    const safeMember = escapeHtml(item.Member);
+                    card.style.cursor = 'pointer';
+                    card.setAttribute('role', 'button');
+                    card.setAttribute('tabindex', '0');
+                    card.onclick = () => openContributorDetailModal(item.Member, data);
                     card.innerHTML = `
                         <div class="contributor-rank">${medal} #${rank}</div>
-                        <div class="contributor-avatar">${item.Member.charAt(0).toUpperCase()}</div>
-                        <div class="contributor-name">${item.Member}</div>
+                        <div class="contributor-avatar">${safeMember.charAt(0).toUpperCase()}</div>
+                        <div class="contributor-name">${safeMember}</div>
                         <div class="contributor-amount">₹${item.Total.toLocaleString('en-IN')}</div>
                         <div class="contributor-count">${item.Entries} contribution${item.Entries !== 1 ? 's' : ''}</div>
                     `;
@@ -1271,6 +1452,9 @@ async function initChristmasFundDashboard() {
             const uniqueContributors = new Set(data.map(c => c.Member).filter(Boolean)).size;
             const avgContribution = data.length > 0 ? Math.round(totalCollected / data.length) : 0;
 
+            // ---- TRENDS ----
+            const trend = calculateTrend(data);
+
             // Animated stat values
             animateValue("goalAmount", goalAmount, "🎯 ₹");
             animateValue("totalAmount", totalCollected, "💰 ₹");
@@ -1281,15 +1465,21 @@ async function initChristmasFundDashboard() {
             }
             animateValue("entryCount", data.length, "📝 ");
 
+            // Render Trend Badges
+            renderTrendBadge("totalSubdetail", trend);
+            renderTrendBadge("countSubdetail", {
+                direction: trend.direction,
+                percent: trend.percent,
+                icon: trend.icon
+            });
+
             // Sub-details
             const goalSub = document.getElementById("goalSubdetail");
             if (goalSub) goalSub.textContent = "For the glory of God";
-            const totalSub = document.getElementById("totalSubdetail");
-            if (totalSub) totalSub.textContent = Math.round(progressPercent) + "% of goal achieved";
             const remainSub = document.getElementById("remainingSubdetail");
             if (remainSub) remainSub.textContent = remaining > 0 ? "Keep giving — we're getting closer!" : "Praise the Lord! 🙌";
             const countSub = document.getElementById("countSubdetail");
-            if (countSub) countSub.textContent = "Avg ₹" + avgContribution.toLocaleString('en-IN') + " · " + uniqueContributors + " givers";
+            if (countSub) countSub.textContent = "Avg ₹" + avgContribution.toLocaleString('en-IN') + " · " + uniqueContributors + " unique contributors";
 
             // Progress bar (Christmas gold theme)
             const progressBar = document.getElementById("progressBar");
@@ -1371,6 +1561,79 @@ function getTopContributors(data, limit = 6) {
         memberMap[member].Entries += 1;
     });
     return Object.values(memberMap).sort((a, b) => b.Total - a.Total).slice(0, limit);
+}
+
+// --------------------
+// Contributor Details Modal (shows timeline log when clicking a user)
+function openContributorDetailModal(memberName, allData) {
+    const modal = document.getElementById('insightModal');
+    if (!modal) return;
+    
+    // Filter their contributions
+    const myContributions = allData.filter(c => c.Member === memberName);
+    
+    // Sort by date descending
+    myContributions.sort((a, b) => {
+        const dA = parseContributionDate(a.Date);
+        const dB = parseContributionDate(b.Date);
+        if(!dA) return 1; if(!dB) return -1;
+        return dB - dA;
+    });
+
+    const total = myContributions.reduce((sum, c) => sum + (Number(c.Amount) || 0), 0);
+    const count = myContributions.length;
+    
+    const titleEl = document.getElementById('insightModalTitle');
+    const bodyEl = document.getElementById('insightModalBody');
+    
+    if (titleEl) titleEl.textContent = `Giving History: ${memberName}`;
+    
+    let html = `
+        <div class="human-insight" style="margin-bottom: 20px;">
+            <div class="insight-metric-grid">
+                <div class="metric-item">
+                    <span class="label">Total Given</span>
+                    <span class="value" style="color:#667eea;font-size:24px;">₹${total.toLocaleString('en-IN')}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="label">Total Entries</span>
+                    <span class="value" style="color:#6c757d;font-size:24px;">${count}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    if (myContributions.length > 0) {
+        html += '<div class="contributor-detail-list-wrapper" style="max-height: 50vh; overflow-y: auto; padding-right: 5px;"><table class="contributor-detail-list"><thead><tr><th>Date</th><th>Amount</th><th>Method/Notes</th></tr></thead><tbody>';
+        myContributions.forEach(c => {
+            const dateObj = parseContributionDate(c.Date);
+            let timeStr = '';
+            if (dateObj) {
+                // Determine if we actually have meaningful hours/minutes/seconds
+                const hours = dateObj.getHours();
+                const mins = dateObj.getMinutes();
+                const secs = dateObj.getSeconds();
+                if (hours > 0 || mins > 0 || secs > 0) {
+                    timeStr = ' <br><span style="font-size:12px;opacity:0.7;">' + dateObj.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit', second:'2-digit'}) + '</span>';
+                }
+            }
+            const dateStr = dateObj ? (dateObj.toLocaleDateString('en-US', {day: 'numeric', month: 'short', year: 'numeric'}) + timeStr) : 'Unknown Date';
+            html += `<tr>
+                <td style="white-space:nowrap;">${dateStr}</td>
+                <td style="font-weight:600; color:#2ecc71;">₹${Number(c.Amount).toLocaleString('en-IN')}</td>
+                <td><span style="font-size:12px; opacity:0.8;">${escapeHtml(c.Notes || c.Category || '-')}</span></td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+    } else {
+        html += '<p>No contribution details found.</p>';
+    }
+    
+    if (bodyEl) bodyEl.innerHTML = html;
+    
+    modal.classList.add('insight-modal-visible');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
 }
 
 // Enhanced Stats Visualization (time series + growth charts)
