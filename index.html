@@ -9,6 +9,7 @@
 <title>LJM Church Contributions Portal</title>
 
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="payment-modal.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -33,6 +34,11 @@
     <section class="fund-heading">
         <h2 id="fundHeading">Loading Fund...</h2>
         <p class="fund-subtitle" id="fundSubtitle">Together we build, together we grow</p>
+        <div style="margin-top: 15px;">
+            <button id="rzp-button1" class="cta-button" style="display: none; background: linear-gradient(135deg, #673ab7, #9c27b0); color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 16px; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(103, 58, 183, 0.4); transition: transform 0.2s, box-shadow 0.2s;">
+                ✨ Contribute via Google Pay
+            </button>
+        </div>
     </section>
     
     <!-- Motivational Banner (only for Tech Fund) -->
@@ -58,29 +64,39 @@
         </div>
     </section>
 
-    <!-- Summary Cards -->
+    <!-- Summary Cards (click for explanation) -->
     <section class="summary">
-        <div class="stat-card">
-            <h3>Goal Amount</h3>
+        <div class="stat-card" data-stat-type="goal" tabindex="0" role="button" aria-label="Goal Amount - click for calculation details">
+            <h3>Goal Amount <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
             <div class="stat-value" id="goalAmount">Loading...</div>
             <div class="stat-subdetail" id="goalSubdetail"></div>
         </div>
-        <div class="stat-card">
-            <h3>Total Collected</h3>
+        <div class="stat-card" data-stat-type="total" tabindex="0" role="button" aria-label="Total Collected - click for calculation details">
+            <h3>Total Collected <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
             <div class="stat-value" id="totalAmount">Loading...</div>
             <div class="stat-subdetail" id="totalSubdetail"></div>
         </div>
-        <div class="stat-card">
-            <h3>Remaining</h3>
+        <div class="stat-card" data-stat-type="remaining" tabindex="0" role="button" aria-label="Remaining - click for calculation details">
+            <h3>Remaining <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
             <div class="stat-value" id="remainingAmount">Loading...</div>
             <div class="stat-subdetail" id="remainingSubdetail"></div>
         </div>
-        <div class="stat-card">
-            <h3>Number of Contributions</h3>
+        <div class="stat-card" data-stat-type="count" tabindex="0" role="button" aria-label="Number of Contributions - click for calculation details">
+            <h3>Number of Contributions <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
             <div class="stat-value" id="entryCount">Loading...</div>
             <div class="stat-subdetail" id="countSubdetail"></div>
         </div>
     </section>
+
+    <!-- Modal: How we calculate -->
+    <div id="insightModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="insightModalTitle" aria-hidden="true">
+        <div class="insight-modal-backdrop"></div>
+        <div class="insight-modal-content">
+            <button type="button" class="insight-modal-close" aria-label="Close">×</button>
+            <h2 id="insightModalTitle" class="insight-modal-title"></h2>
+            <div id="insightModalBody" class="insight-modal-body"></div>
+        </div>
+    </div>
 
     <!-- Goal Progress Visual -->
     <section class="goal-progress-section">
@@ -168,8 +184,63 @@
     </div>
 </footer>
 
+<!-- Premium Contribution Modal -->
+<div id="contributionModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="contribModalTitle" aria-hidden="true" style="z-index: 1000;">
+    <div class="insight-modal-backdrop" id="contribModalBackdrop"></div>
+    <div class="insight-modal-content premium-contrib-modal">
+        <button type="button" class="insight-modal-close" id="contribModalClose" aria-label="Close">×</button>
+        <div class="contrib-header">
+            <span class="contrib-icon">✨</span>
+            <h2 id="contribModalTitle">Make a Contribution</h2>
+            <p>Your support makes a difference.</p>
+        </div>
+        
+        <div class="contrib-body">
+            <!-- Toggle -->
+            <div class="contrib-toggle-group">
+                <button class="contrib-toggle active" id="btnExistingMember">Existing Member</button>
+                <button class="contrib-toggle" id="btnNewMember">New Member</button>
+            </div>
+
+            <!-- Existing Member Select -->
+            <div class="contrib-field" id="existingMemberField">
+                <label for="existingMemberSelect">Select Member</label>
+                <select id="existingMemberSelect" class="contrib-input">
+                    <option value="">Loading members...</option>
+                </select>
+            </div>
+
+            <!-- New Member Input -->
+            <div class="contrib-field" id="newMemberField" style="display:none;">
+                <label for="newMemberInput">Full Name</label>
+                <input type="text" id="newMemberInput" class="contrib-input" placeholder="e.g. John Doe">
+                <div class="new-member-greeting">🌟 Welcome! We are thrilled to have you!</div>
+            </div>
+
+            <!-- Amount -->
+            <div class="contrib-field">
+                <label>Amount</label>
+                <div class="contrib-amount-wrapper">
+                    <span class="currency-symbol">₹</span>
+                    <input type="number" id="contribAmount" class="contrib-input amount-input" placeholder="0" min="1">
+                </div>
+                <div class="contrib-chips">
+                    <button class="amount-chip" data-val="500">₹500</button>
+                    <button class="amount-chip" data-val="1000">₹1k</button>
+                    <button class="amount-chip" data-val="2000">₹2k</button>
+                    <button class="amount-chip" data-val="5000">₹5k</button>
+                </div>
+            </div>
+            
+            <button id="proceedToPayBtn" class="proceed-btn">Proceed to Pay</button>
+        </div>
+    </div>
+</div>
 
 
+
+
+
+<script src="razorpay-checkout.js"></script>
 <script src="script.js"></script>
-</body>
 </html>

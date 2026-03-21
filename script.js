@@ -64,6 +64,60 @@ function setCachedFund(fundKey, data) {
     }
 }
 
+// Members list cache (shared with members.html; 5 min TTL for fast Members page load)
+const MEMBERS_LIST_CACHE_KEY = 'membersListCache';
+function setCachedMembersList(members) {
+    try {
+        localStorage.setItem(MEMBERS_LIST_CACHE_KEY, JSON.stringify({
+            members: Array.isArray(members) ? members : [],
+            lastFetched: Date.now(),
+            version: CACHE_VERSION
+        }));
+        console.log('[CACHE] Saved members list');
+    } catch (e) {
+        try { localStorage.removeItem(MEMBERS_LIST_CACHE_KEY); } catch (_) {}
+    }
+}
+function getCachedMembersList() {
+    try {
+        const raw = localStorage.getItem(MEMBERS_LIST_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed.version !== CACHE_VERSION) {
+            localStorage.removeItem(MEMBERS_LIST_CACHE_KEY);
+            return null;
+        }
+        const age = Date.now() - (parsed.lastFetched || 0);
+        if (age < 0 || age > CACHE_TTL_MS) {
+            localStorage.removeItem(MEMBERS_LIST_CACHE_KEY);
+            return null;
+        }
+        return Array.isArray(parsed.members) ? parsed.members : null;
+    } catch (e) {
+        try { localStorage.removeItem(MEMBERS_LIST_CACHE_KEY); } catch (_) {}
+        return null;
+    }
+}
+
+// Preload members list in background (so Members page opens fast)
+async function preloadMembersList() {
+    const techUrl = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=tech-contributions";
+    const christmasUrl = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=christmas-fund";
+    try {
+        const [techRes, christmasRes] = await Promise.all([
+            fetch(techUrl + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' }),
+            fetch(christmasUrl + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' })
+        ]);
+        const tech = await techRes.json();
+        const christmas = await christmasRes.json();
+        const contributions = [...(tech.contributions || []), ...(christmas.contributions || [])];
+        const members = [...new Set(contributions.map(c => c.Member).filter(Boolean))].sort();
+        setCachedMembersList(members);
+    } catch (err) {
+        console.error('[CACHE] Members preload failed:', err);
+    }
+}
+
 // --------------------
 // Bible Verses about Giving
 const BIBLE_VERSES = [
@@ -126,6 +180,138 @@ function animateValue(elementId, targetValue, prefix = '', duration = 1200) {
 }
 
 // --------------------
+// Modal: How we calculate (for stat cards and insight cards)
+function initInsightModal() {
+    const modal = document.getElementById('insightModal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('insightModalTitle');
+    const bodyEl = document.getElementById('insightModalBody');
+    const backdrop = modal.querySelector('.insight-modal-backdrop');
+    const closeBtn = modal.querySelector('.insight-modal-close');
+
+    function openModal(title, bodyHtml) {
+        if (titleEl) titleEl.textContent = title;
+        if (bodyEl) bodyEl.innerHTML = bodyHtml;
+        modal.classList.add('insight-modal-visible');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modal.classList.remove('insight-modal-visible');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    function escapeHtml(text) {
+        if (text == null) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function getStatCardContent(type) {
+        const ctx = window.__insightContext || {};
+        const goal = ctx.goalAmount != null ? ctx.goalAmount : 0;
+        const total = ctx.totalAmount != null ? ctx.totalAmount : 0;
+        const remaining = Math.max(goal - total, 0);
+        const count = ctx.entryCount != null ? ctx.entryCount : 0;
+        const summaryLine = `<p class="insight-modal-summary">Current: Goal ₹${Number(goal).toLocaleString('en-IN')} · Collected ₹${Number(total).toLocaleString('en-IN')} · Remaining ₹${Number(remaining).toLocaleString('en-IN')} · <strong>${count}</strong> contribution${count !== 1 ? 's' : ''}</p>`;
+        switch (type) {
+            case 'goal':
+                return summaryLine + `<p><strong>Goal Amount</strong> is the target we are working towards for this fund.</p><p>Current goal: <strong>₹${Number(goal).toLocaleString('en-IN')}</strong></p>`;
+            case 'total':
+                return summaryLine + `<p><strong>Total Collected</strong> = sum of all contribution amounts.</p><p>Formula: each contribution's <code>Amount</code> is added up.</p><p>Current total: <strong>₹${Number(total).toLocaleString('en-IN')}</strong></p>`;
+            case 'remaining':
+                return summaryLine + `<p><strong>Remaining</strong> = Goal − Total collected.</p><p>Formula: <code>Remaining = ${Number(goal).toLocaleString('en-IN')} − ${Number(total).toLocaleString('en-IN')}</code></p><p>Current remaining: <strong>₹${Number(remaining).toLocaleString('en-IN')}</strong></p>`;
+            case 'count':
+                return summaryLine + `<p><strong>Number of Contributions</strong> = count of all contribution entries (each row in our records).</p><p>Current count: <strong>${count}</strong> contribution${count !== 1 ? 's' : ''}</p>`;
+            default: return '<p>No details available.</p>';
+        }
+    }
+
+    function getInsightCardContent(type) {
+        const ctx = window.__insightContext || {};
+        switch (type) {
+            case 'unique': {
+                let html = `<p><strong>Unique Contributors</strong> = number of different people who have given at least once (we count unique <code>Member</code> names).</p><p>Current: <strong>${ctx.uniqueMembers != null ? ctx.uniqueMembers : 0}</strong> people. Average per person: ₹${Number(ctx.avgPerPerson || 0).toLocaleString('en-IN')}.</p>`;
+                const list = ctx.contributorList;
+                if (list && list.length > 0) {
+                    html += '<div class="contributor-detail-list-wrapper"><table class="contributor-detail-list"><thead><tr><th>Name</th><th>Total</th><th>#</th><th>Avg</th></tr></thead><tbody>';
+                    list.forEach((c) => {
+                        const avgPerEntry = c.Entries > 0 ? Math.round(c.Total / c.Entries) : 0;
+                        html += `<tr><td>${escapeHtml(c.Member)}</td><td>₹${Number(c.Total).toLocaleString('en-IN')}</td><td>${c.Entries}</td><td>₹${avgPerEntry.toLocaleString('en-IN')}</td></tr>`;
+                    });
+                    html += '</tbody></table></div>';
+                }
+                return html;
+            }
+            case 'avg':
+                return `<p><strong>Average Contribution</strong> = Total collected ÷ number of contribution entries.</p><p>Formula: <code>Total ÷ ${ctx.entryCount != null ? ctx.entryCount : 0} entries</code>. Current average: <strong>₹${Number(ctx.avgContribution || 0).toLocaleString('en-IN')}</strong> per entry.</p>`;
+            case 'bestMonth': {
+                let bestHtml = `<p><strong>Most Active Month</strong> = the calendar month with the highest total amount collected.</p>`;
+                const months = ctx.monthlyBreakdown;
+                if (months && months.length > 0) {
+                    bestHtml += '<div class="contributor-detail-list-wrapper"><table class="contributor-detail-list"><thead><tr><th>Month</th><th>Collected</th><th>#</th></tr></thead><tbody>';
+                    months.forEach((m) => {
+                        bestHtml += `<tr><td>${escapeHtml(m.label)}</td><td>₹${Number(m.total).toLocaleString('en-IN')}</td><td>${m.count}</td></tr>`;
+                    });
+                    bestHtml += '</tbody></table></div>';
+                } else {
+                    bestHtml += '<p>No monthly data yet.</p>';
+                }
+                return bestHtml;
+            }
+            case 'estimated': {
+                let estHtml = `<p><strong>Estimated to Goal</strong> = how many months until we reach the goal, using our current average collection per month (total so far ÷ number of months with data).</p><p>About <strong>${ctx.monthsToGoal != null ? ctx.monthsToGoal : 0}</strong> month(s) at current pace. Roughly <strong>${ctx.moreNeeded != null ? ctx.moreNeeded : 0}</strong> more contributions needed at average rate.</p>`;
+                if (ctx.avgPerMonth != null && ctx.avgPerMonth > 0) {
+                    estHtml += `<p class="insight-modal-summary">Average: <strong>₹${Math.round(ctx.avgPerMonth).toLocaleString('en-IN')}/month</strong> over ${ctx.monthsWithData != null ? ctx.monthsWithData : 0} month(s) with data.</p>`;
+                }
+                const months = ctx.monthlyBreakdown;
+                if (months && months.length > 0) {
+                    estHtml += '<div class="contributor-detail-list-wrapper"><table class="contributor-detail-list"><thead><tr><th>Month</th><th>Collected</th><th>#</th></tr></thead><tbody>';
+                    months.forEach((m) => {
+                        estHtml += `<tr><td>${escapeHtml(m.label)}</td><td>₹${Number(m.total).toLocaleString('en-IN')}</td><td>${m.count}</td></tr>`;
+                    });
+                    estHtml += '</tbody></table></div>';
+                }
+                return estHtml;
+            }
+            default: return '<p>No details available.</p>';
+        }
+    }
+
+    function onCardClick(e) {
+        const card = e.target.closest('.stat-card[data-stat-type], .insight-card[data-insight-type]');
+        if (!card) return;
+        e.preventDefault();
+        const statType = card.getAttribute('data-stat-type');
+        const insightType = card.getAttribute('data-insight-type');
+        if (statType) {
+            const titles = { goal: 'How we calculate: Goal Amount', total: 'How we calculate: Total Collected', remaining: 'How we calculate: Remaining', count: 'How we calculate: Number of Contributions' };
+            openModal(titles[statType] || 'Calculation details', getStatCardContent(statType));
+        } else if (insightType) {
+            const titles = { unique: 'How we calculate: Unique Contributors', avg: 'How we calculate: Average Contribution', bestMonth: 'How we calculate: Most Active Month', estimated: 'How we calculate: Estimated to Goal' };
+            openModal(titles[insightType] || 'Calculation details', getInsightCardContent(insightType));
+        }
+    }
+
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (backdrop) backdrop.addEventListener('click', closeModal);
+    modal.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('insight-modal-visible')) closeModal();
+    });
+    document.addEventListener('click', onCardClick);
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const card = e.target.closest('.stat-card[data-stat-type], .insight-card[data-insight-type]');
+        if (card) onCardClick(e);
+    });
+}
+
+// --------------------
 // Goal Donut Chart
 function renderGoalDonut(collected, goal) {
     const canvas = document.getElementById('goalDonutChart');
@@ -154,6 +340,7 @@ function renderGoalDonut(collected, goal) {
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            animation: { duration: 700 },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -208,7 +395,98 @@ function renderMilestones(progressPercent) {
 }
 
 // --------------------
-// Giving Pace Calculator
+// Parse contribution date: use date part only so month is never wrong
+function parseContributionDate(value) {
+    if (value == null) return null;
+
+    if (typeof value === 'number') {
+        if (value > 0 && value < 100000) {
+            const epoch = new Date(1899, 11, 30).getTime();
+            const d = new Date(epoch + value * 86400000);
+            return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+        const d = new Date(value);
+        return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    if (typeof value !== 'string') {
+        const d = new Date(value);
+        return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    const s = value.trim();
+    if (!s) return null;
+
+    if (/^-?\d+$/.test(s)) {
+        const n = parseInt(s, 10);
+        if (n > 0 && n < 100000) {
+            const epoch = new Date(1899, 11, 30).getTime();
+            const d = new Date(epoch + n * 86400000);
+            return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+        if (n > 1e12) {
+            const d = new Date(n);
+            return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+    }
+
+    // YYYY-MM-DD or YYYY/MM/DD (with or without time after)
+    const iso = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (iso) {
+        const y = parseInt(iso[1], 10), mo = parseInt(iso[2], 10) - 1, day = parseInt(iso[3], 10);
+        const d = new Date(y, mo, day);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    // DD/MM/YYYY or DD-MM-YYYY (day > 12 unambiguously; else treat as DD/MM)
+    const slash = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (slash) {
+        const a = parseInt(slash[1], 10), b = parseInt(slash[2], 10), y = parseInt(slash[3], 10);
+        let month, day;
+        if (a > 12) {
+            day = a;
+            month = b - 1;
+        } else if (b > 12) {
+            month = a - 1;
+            day = b;
+        } else {
+            day = a;
+            month = b - 1;
+        }
+        const d = new Date(y, month, day);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return null;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+// --------------------
+// Shared: monthly breakdown (calendar months; optional per-day visibility)
+// Uses each contribution's Date. API must send the actual contribution date per row;
+// if the backend sends the same timestamp for every row, all amounts show in one month.
+function getMonthlyBreakdown(contributions) {
+    const byMonth = {};
+    contributions.forEach(c => {
+        const d = parseContributionDate(c.Date);
+        if (!d) return;
+        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const amount = Number(c.Amount) || 0;
+        if (!byMonth[key]) {
+            byMonth[key] = { total: 0, count: 0, label: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), days: [] };
+        }
+        byMonth[key].total += amount;
+        byMonth[key].count += 1;
+        const dayNum = d.getDate();
+        if (!byMonth[key].days.includes(dayNum)) byMonth[key].days.push(dayNum);
+    });
+    Object.keys(byMonth).forEach(k => byMonth[k].days.sort((a, b) => a - b));
+    return byMonth;
+}
+
+// --------------------
+// Giving Pace Calculator (month-aware, with explicit monthly breakdown)
 function renderGivingPace(contributions, goalAmount, totalCollected) {
     const paceEl = document.getElementById('givingPace');
     if (!paceEl) return;
@@ -216,35 +494,43 @@ function renderGivingPace(contributions, goalAmount, totalCollected) {
     const remaining = Math.max(goalAmount - totalCollected, 0);
     if (remaining <= 0) {
         paceEl.innerHTML = '🎉 <strong>Goal achieved!</strong> Praise the Lord for your faithfulness!';
+        paceEl.classList.add('giving-pace-loaded');
         return;
     }
 
-    // Calculate monthly average
-    const monthlyTotals = {};
-    contributions.forEach(c => {
-        const d = new Date(c.Date);
-        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        monthlyTotals[key] = (monthlyTotals[key] || 0) + (Number(c.Amount) || 0);
-    });
-
-    const months = Object.keys(monthlyTotals).length;
-    if (months === 0) {
+    const byMonth = getMonthlyBreakdown(contributions);
+    const monthKeys = Object.keys(byMonth).sort();
+    const monthsWithData = monthKeys.length;
+    if (monthsWithData === 0) {
         paceEl.textContent = '';
         return;
     }
 
-    const avgPerMonth = totalCollected / months;
+    const avgPerMonth = totalCollected / monthsWithData;
     const monthsToGoal = Math.ceil(remaining / avgPerMonth);
-
     const targetDate = new Date();
     targetDate.setMonth(targetDate.getMonth() + monthsToGoal);
     const dateStr = targetDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-    paceEl.innerHTML = `📈 At current pace (<strong>₹${Math.round(avgPerMonth).toLocaleString('en-IN')}/month</strong>), we'll reach our goal by <strong>${dateStr}</strong>`;
+    const monthLabels = monthKeys.map(k => byMonth[k].label);
+    const rangeLabel = monthLabels.length >= 2 ? `${monthLabels[0]} – ${monthLabels[monthLabels.length - 1]}` : monthLabels[0];
+
+    let monthSummaryHtml = '';
+    monthKeys.forEach(k => {
+        const M = byMonth[k];
+        const daysStr = (M.days && M.days.length) ? ' on ' + M.days.map(d => d + (d === 1 || d === 21 || d === 31 ? 'st' : d === 2 || d === 22 ? 'nd' : d === 3 || d === 23 ? 'rd' : 'th')).join(', ') : '';
+        monthSummaryHtml += `<span class="pace-month-item">${M.label}: ₹${Math.round(M.total).toLocaleString('en-IN')} (${M.count} contribution${M.count !== 1 ? 's' : ''}${daysStr})</span>`;
+    });
+
+    paceEl.innerHTML = `
+        <div class="giving-pace-main">📈 Based on <strong>${monthsWithData} month${monthsWithData !== 1 ? 's' : ''}</strong> of data (${rangeLabel}), average <strong>₹${Math.round(avgPerMonth).toLocaleString('en-IN')}/month</strong> → goal by <strong>${dateStr}</strong>.</div>
+        <div class="giving-pace-breakdown" id="givingPaceBreakdown">${monthSummaryHtml}</div>
+    `;
+    paceEl.classList.add('giving-pace-loaded');
 }
 
 // --------------------
-// Giving Insights
+// Giving Insights (uses same monthly breakdown as pace)
 function renderGivingInsights(contributions, goalAmount) {
     const grid = document.getElementById('insightsGrid');
     if (!grid) return;
@@ -254,53 +540,55 @@ function renderGivingInsights(contributions, goalAmount) {
     const avgContribution = contributions.length > 0 ? Math.round(totalAmount / contributions.length) : 0;
     const avgPerPerson = uniqueMembers > 0 ? Math.round(totalAmount / uniqueMembers) : 0;
 
-    // Monthly breakdown
-    const monthlyTotals = {};
-    contributions.forEach(c => {
-        const d = new Date(c.Date);
-        const key = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        monthlyTotals[key] = (monthlyTotals[key] || 0) + (Number(c.Amount) || 0);
-    });
-    const bestMonth = Object.entries(monthlyTotals).sort((a, b) => b[1] - a[1])[0];
+    const byMonth = getMonthlyBreakdown(contributions);
+    const monthEntries = Object.entries(byMonth).map(([k, v]) => [v.label, v.total]);
+    const bestMonth = monthEntries.sort((a, b) => b[1] - a[1])[0];
 
-    // Estimated completion
     const remaining = Math.max(goalAmount - totalAmount, 0);
-    const months = Object.keys(monthlyTotals).length;
-    const avgPerMonth = months > 0 ? totalAmount / months : 0;
+    const monthsWithData = Object.keys(byMonth).length;
+    const avgPerMonth = monthsWithData > 0 ? totalAmount / monthsWithData : 0;
     const monthsToGoal = avgPerMonth > 0 ? Math.ceil(remaining / avgPerMonth) : 0;
-
-    // How many more at average rate
     const moreNeeded = avgContribution > 0 ? Math.ceil(remaining / avgContribution) : 0;
+    const contributorList = getTopContributors(contributions, 1000);
+    const monthKeysSorted = Object.keys(byMonth).sort();
+    const monthlyBreakdown = monthKeysSorted.map(k => ({
+        label: byMonth[k].label,
+        total: byMonth[k].total,
+        count: byMonth[k].count
+    }));
 
     const insights = [
-        {
-            icon: '👥', value: uniqueMembers, label: 'Unique Contributors',
-            detail: avgPerPerson > 0 ? '₹' + avgPerPerson.toLocaleString('en-IN') + ' avg per person' : ''
-        },
-        {
-            icon: '💰', value: '₹' + avgContribution.toLocaleString('en-IN'), label: 'Average Contribution',
-            detail: contributions.length + ' total entries'
-        },
-        {
-            icon: '📅', value: bestMonth ? bestMonth[0] : 'N/A', label: 'Most Active Month',
-            detail: bestMonth ? '₹' + bestMonth[1].toLocaleString('en-IN') + ' collected' : ''
-        },
-        {
-            icon: '🎯',
+        { key: 'unique', icon: '👥', value: uniqueMembers, label: 'Unique Contributors',
+            detail: avgPerPerson > 0 ? '₹' + avgPerPerson.toLocaleString('en-IN') + ' avg per person' : '' },
+        { key: 'avg', icon: '💰', value: '₹' + avgContribution.toLocaleString('en-IN'), label: 'Average Contribution',
+            detail: contributions.length + ' total entries' },
+        { key: 'bestMonth', icon: '📅', value: bestMonth ? bestMonth[0] : 'N/A', label: 'Most Active Month',
+            detail: bestMonth ? '₹' + bestMonth[1].toLocaleString('en-IN') + ' collected' : '' },
+        { key: 'estimated', icon: '🎯',
             value: remaining > 0 ? (monthsToGoal > 0 ? '~' + monthsToGoal + ' mo' : 'Keep going!') : 'Done!',
             label: remaining > 0 ? 'Estimated to Goal' : 'Goal Reached! 🎉',
-            detail: remaining > 0 ? moreNeeded + ' more contributions needed at avg rate' : 'Praise the Lord!'
-        }
+            detail: remaining > 0 ? moreNeeded + ' more contributions needed at avg rate' : 'Praise the Lord!' }
     ];
+
+    window.__insightContext = {
+        goalAmount, totalAmount, remaining, entryCount: contributions.length,
+        uniqueMembers, avgContribution, avgPerPerson, bestMonth,
+        monthsToGoal, moreNeeded, monthsWithData: Object.keys(byMonth).length,
+        contributorList, monthlyBreakdown, avgPerMonth
+    };
 
     grid.innerHTML = '';
     insights.forEach(insight => {
         const card = document.createElement('div');
         card.className = 'insight-card';
+        card.setAttribute('data-insight-type', insight.key);
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', insight.label + ' - click for calculation details');
         card.innerHTML = `
             <div class="insight-icon">${insight.icon}</div>
             <div class="insight-value">${insight.value}</div>
-            <div class="insight-label">${insight.label}</div>
+            <div class="insight-label">${insight.label} <span class="card-info-icon">ℹ️</span></div>
             <div class="insight-detail">${insight.detail}</div>
         `;
         grid.appendChild(card);
@@ -358,6 +646,7 @@ function renderDistributionPie(contributions) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 700 },
             plugins: {
                 legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16 } },
                 title: {
@@ -409,10 +698,10 @@ async function silentBackgroundRefresh(selectedFund) {
     try {
         let apiUrl, fundKey;
         if (selectedFund === 'christmasfund') {
-            apiUrl = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=christmas-fund";
+            apiUrl = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=christmas-fund";
             fundKey = "christmasFundData";
         } else {
-            apiUrl = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=tech-contributions";
+            apiUrl = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=tech-contributions";
             fundKey = "techFundData";
         }
 
@@ -531,6 +820,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     initBibleVerse();
 
     // --------------------
+    // Modal for "how we calculate" (stat and insight cards)
+    initInsightModal();
+
+    // --------------------
     // Initialize dashboard
     console.log("Initializing dashboard for fund:", selectedFund);
 
@@ -602,7 +895,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // TECH FUND DASHBOARD
 // ==================================================
 async function initDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=tech-contributions";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=tech-contributions";
     const FUND_KEY = "techFundData";
 
     let contributionsData = [];
@@ -619,16 +912,6 @@ async function initDashboard() {
     if (banner) banner.style.display = "block";
 
     const fetchData = async () => {
-        const cached = getCachedFund(FUND_KEY);
-        if (cached) {
-            contributionsData = cached.contributions || [];
-            goalAmount = cached.goalAmount || 0;
-            currentDisplayCount = 0;
-            renderDashboard();
-            renderTopContributors(contributionsData);
-            return;
-        }
-
         try {
             const res = await fetch(API_URL + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' });
             if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -641,6 +924,14 @@ async function initDashboard() {
             renderTopContributors(contributionsData);
         } catch (err) {
             console.error("Error fetching Tech Fund:", err);
+            const cached = getCachedFund(FUND_KEY);
+            if (cached) {
+                contributionsData = cached.contributions || [];
+                goalAmount = cached.goalAmount || 0;
+                currentDisplayCount = 0;
+                renderDashboard();
+                renderTopContributors(contributionsData);
+            }
         }
     };
 
@@ -733,12 +1024,12 @@ async function initDashboard() {
                 }
             }
 
-            // ---- STATS ----
+            // ---- STATS (single source of truth: all from data) ----
             const totalCollected = data.reduce((sum, c) => sum + (Number(c.Amount) || 0), 0);
             const remaining = Math.max(goalAmount - totalCollected, 0);
             const progressPercent = goalAmount > 0 ? Math.min((totalCollected / goalAmount) * 100, 100) : 0;
-            const uniqueContributors = new Set(contributionsData.map(c => c.Member).filter(Boolean)).size;
-            const avgContribution = contributionsData.length > 0 ? Math.round(totalCollected / contributionsData.length) : 0;
+            const uniqueContributors = new Set(data.map(c => c.Member).filter(Boolean)).size;
+            const avgContribution = data.length > 0 ? Math.round(totalCollected / data.length) : 0;
 
             // Animated stat values
             animateValue("goalAmount", goalAmount, "🎯 ₹");
@@ -748,7 +1039,7 @@ async function initDashboard() {
             } else {
                 document.getElementById("remainingAmount").innerHTML = "🎉 Goal Achieved!";
             }
-            animateValue("entryCount", contributionsData.length, "📝 ");
+            animateValue("entryCount", data.length, "📝 ");
 
             // Sub-details for stat cards
             const goalSub = document.getElementById("goalSubdetail");
@@ -797,22 +1088,22 @@ async function initDashboard() {
             // Milestones
             try { renderMilestones(progressPercent); } catch (e) { console.error("Milestones error:", e); }
 
-            // Giving pace
-            try { renderGivingPace(contributionsData, goalAmount, totalCollected); } catch (e) { console.error("Pace error:", e); }
+            // Giving pace (uses same data for consistency)
+            try { renderGivingPace(data, goalAmount, totalCollected); } catch (e) { console.error("Pace error:", e); }
 
-            // Giving insights
-            try { renderGivingInsights(contributionsData, goalAmount); } catch (e) { console.error("Insights error:", e); }
+            // Giving insights (sets __insightContext from same data)
+            try { renderGivingInsights(data, goalAmount); } catch (e) { console.error("Insights error:", e); }
 
             // Distribution pie chart
-            try { renderDistributionPie(contributionsData); } catch (e) { console.error("Distribution pie error:", e); }
+            try { renderDistributionPie(data); } catch (e) { console.error("Distribution pie error:", e); }
 
             // Top contributors
-            try { renderTopContributors(contributionsData); } catch (e) { console.error("Top contributors error:", e); }
+            try { renderTopContributors(data); } catch (e) { console.error("Top contributors error:", e); }
 
             // Enhanced Stats (time series + growth charts)
             const renderCharts = () => {
                 if (typeof Chart !== 'undefined') {
-                    try { renderEnhancedStats(contributionsData); } catch (e) {
+                    try { renderEnhancedStats(data); } catch (e) {
                         const cc = document.querySelector('.chart-card');
                         if (cc) cc.innerHTML = '<p style="text-align:center;color:#6c757d;padding:40px;">Unable to load statistics</p>';
                     }
@@ -839,13 +1130,15 @@ async function initDashboard() {
     setInterval(() => fetchData(), CACHE_TTL_MS);
 
     await fetchData();
+    // Preload members list in background so Members page opens fast
+    preloadMembersList();
 }
 
 // ==================================================
 // CHRISTMAS FUND DASHBOARD
 // ==================================================
 async function initChristmasFundDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=christmas-fund";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=christmas-fund";
     const FUND_KEY = "christmasFundData";
 
     let contributionsData = [];
@@ -859,16 +1152,6 @@ async function initChristmasFundDashboard() {
     if (banner) banner.style.display = "none";
 
     const fetchData = async () => {
-        const cached = getCachedFund(FUND_KEY);
-        if (cached) {
-            contributionsData = cached.contributions || [];
-            goalAmount = cached.goalAmount || 0;
-            currentDisplayCount = 0;
-            renderDashboard();
-            renderTopContributors(contributionsData);
-            return;
-        }
-
         try {
             const res = await fetch(API_URL + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' });
             if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -881,6 +1164,14 @@ async function initChristmasFundDashboard() {
             renderTopContributors(contributionsData);
         } catch (err) {
             console.error("Error fetching Christmas Fund:", err);
+            const cached = getCachedFund(FUND_KEY);
+            if (cached) {
+                contributionsData = cached.contributions || [];
+                goalAmount = cached.goalAmount || 0;
+                currentDisplayCount = 0;
+                renderDashboard();
+                renderTopContributors(contributionsData);
+            }
         }
     };
 
@@ -973,12 +1264,12 @@ async function initChristmasFundDashboard() {
                 }
             }
 
-            // ---- STATS ----
+            // ---- STATS (single source of truth: all from data) ----
             const totalCollected = data.reduce((sum, c) => sum + (Number(c.Amount) || 0), 0);
             const remaining = Math.max(goalAmount - totalCollected, 0);
             const progressPercent = goalAmount > 0 ? Math.min((totalCollected / goalAmount) * 100, 100) : 0;
-            const uniqueContributors = new Set(contributionsData.map(c => c.Member).filter(Boolean)).size;
-            const avgContribution = contributionsData.length > 0 ? Math.round(totalCollected / contributionsData.length) : 0;
+            const uniqueContributors = new Set(data.map(c => c.Member).filter(Boolean)).size;
+            const avgContribution = data.length > 0 ? Math.round(totalCollected / data.length) : 0;
 
             // Animated stat values
             animateValue("goalAmount", goalAmount, "🎯 ₹");
@@ -988,7 +1279,7 @@ async function initChristmasFundDashboard() {
             } else {
                 document.getElementById("remainingAmount").innerHTML = "🎉 Goal Achieved!";
             }
-            animateValue("entryCount", contributionsData.length, "📝 ");
+            animateValue("entryCount", data.length, "📝 ");
 
             // Sub-details
             const goalSub = document.getElementById("goalSubdetail");
@@ -1020,15 +1311,15 @@ async function initChristmasFundDashboard() {
             // ---- NEW FEATURES ----
             try { renderGoalDonut(totalCollected, goalAmount); } catch (e) { console.error("Donut error:", e); }
             try { renderMilestones(progressPercent); } catch (e) { console.error("Milestones error:", e); }
-            try { renderGivingPace(contributionsData, goalAmount, totalCollected); } catch (e) { console.error("Pace error:", e); }
-            try { renderGivingInsights(contributionsData, goalAmount); } catch (e) { console.error("Insights error:", e); }
-            try { renderDistributionPie(contributionsData); } catch (e) { console.error("Distribution pie error:", e); }
-            try { renderTopContributors(contributionsData); } catch (e) { console.error("Top contributors error:", e); }
+            try { renderGivingPace(data, goalAmount, totalCollected); } catch (e) { console.error("Pace error:", e); }
+            try { renderGivingInsights(data, goalAmount); } catch (e) { console.error("Insights error:", e); }
+            try { renderDistributionPie(data); } catch (e) { console.error("Distribution pie error:", e); }
+            try { renderTopContributors(data); } catch (e) { console.error("Top contributors error:", e); }
 
             // Enhanced Stats
             const renderCharts = () => {
                 if (typeof Chart !== 'undefined') {
-                    try { renderEnhancedStats(contributionsData); } catch (e) {
+                    try { renderEnhancedStats(data); } catch (e) {
                         const cc = document.querySelector('.chart-card');
                         if (cc) cc.innerHTML = '<p style="text-align:center;color:#6c757d;padding:40px;">Unable to load statistics</p>';
                     }
@@ -1062,6 +1353,7 @@ async function initChristmasFundDashboard() {
 
     setInterval(() => fetchData(), CACHE_TTL_MS);
     await fetchData();
+    preloadMembersList();
 }
 
 // ==================================================
@@ -1086,7 +1378,10 @@ function renderEnhancedStats(contributions) {
     const chartCard = document.querySelector('.chart-card');
     if (!chartCard || typeof Chart === 'undefined') return;
 
-    const sortedContributions = [...contributions].sort((a, b) => new Date(a.Date) - new Date(b.Date));
+    const sortedContributions = [...contributions]
+        .map(c => ({ ...c, _parsedDate: parseContributionDate(c.Date) }))
+        .filter(c => c._parsedDate)
+        .sort((a, b) => a._parsedDate - b._parsedDate);
 
     if (sortedContributions.length === 0) {
         chartCard.innerHTML = '<p style="text-align:center;color:#6c757d;padding:40px;">No data available yet</p>';
@@ -1094,11 +1389,13 @@ function renderEnhancedStats(contributions) {
     }
 
     const timeSeriesData = {};
-    const contributorGrowth = {};
+    const contributorGrowthCumulative = {};
+    const newContributorsPerMonth = {};
     let uniqueContributors = new Set();
+    const firstContributionMonth = {};
 
     sortedContributions.forEach((c) => {
-        const date = new Date(c.Date);
+        const date = c._parsedDate;
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const amount = Number(c.Amount) || 0;
 
@@ -1106,18 +1403,31 @@ function renderEnhancedStats(contributions) {
         timeSeriesData[monthKey].total += amount;
         timeSeriesData[monthKey].count += 1;
 
-        uniqueContributors.add(c.Member);
-        contributorGrowth[monthKey] = uniqueContributors.size;
+        const member = c.Member && c.Member.trim() ? c.Member.trim() : null;
+        if (member && !firstContributionMonth[member]) {
+            firstContributionMonth[member] = monthKey;
+            newContributorsPerMonth[monthKey] = (newContributorsPerMonth[monthKey] || 0) + 1;
+        }
+        if (member) uniqueContributors.add(member);
+        contributorGrowthCumulative[monthKey] = uniqueContributors.size;
     });
 
     const months = Object.keys(timeSeriesData).sort();
     const amounts = months.map(m => timeSeriesData[m].total);
-    const contributorCounts = months.map(m => contributorGrowth[m] || 0);
+    const contributorCounts = months.map(m => contributorGrowthCumulative[m] || 0);
+    const newPerMonth = months.map(m => newContributorsPerMonth[m] || 0);
 
     const totalContributors = uniqueContributors.size;
+    const lastMonthKey = months[months.length - 1];
+    const newInLastMonth = lastMonthKey ? (newContributorsPerMonth[lastMonthKey] || 0) : 0;
+    const lastMonthLabel = lastMonthKey ? (() => { const [y, m] = lastMonthKey.split('-'); return new Date(y, m - 1).toLocaleDateString('en-US', { month: 'long' }); })() : '';
     const totalAmount = contributions.reduce((sum, c) => sum + (Number(c.Amount) || 0), 0);
     const avgContribution = contributions.length > 0 ? Math.round(totalAmount / contributions.length) : 0;
     const largestContribution = contributions.length > 0 ? Math.max(...contributions.map(c => Number(c.Amount) || 0)) : 0;
+
+    const contributorSummaryText = lastMonthLabel && totalContributors > 0
+        ? `${totalContributors} people have contributed so far${newInLastMonth > 0 ? `; ${newInLastMonth} first gave in ${lastMonthLabel}.` : '.'}`
+        : (totalContributors > 0 ? `${totalContributors} people have contributed so far.` : 'No contributors yet.');
 
     chartCard.innerHTML = `
         <div class="stats-container">
@@ -1139,6 +1449,7 @@ function renderEnhancedStats(contributions) {
                     <div class="stat-mini-label">Largest Contribution</div>
                 </div>
             </div>
+            <p class="contributor-growth-summary">${contributorSummaryText}</p>
             <div class="chart-container">
                 <canvas id="timeSeriesChart"></canvas>
             </div>
@@ -1175,6 +1486,7 @@ function renderEnhancedStats(contributions) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 750 },
             plugins: {
                 legend: { display: true, position: 'top' },
                 title: { display: true, text: 'Contributions Over Time', font: { size: window.innerWidth < 768 ? 14 : 16, weight: 'bold' } }
@@ -1186,7 +1498,7 @@ function renderEnhancedStats(contributions) {
         }
     });
 
-    // Contributor Growth Chart
+    // Contributor Growth Chart: cumulative total + new per month
     const growthCtx = document.getElementById('contributorGrowthChart').getContext('2d');
     if (window.contributorGrowthChart && typeof window.contributorGrowthChart.destroy === 'function') window.contributorGrowthChart.destroy();
     window.contributorGrowthChart = new Chart(growthCtx, {
@@ -1194,22 +1506,32 @@ function renderEnhancedStats(contributions) {
         data: {
             labels: months.map(m => {
                 const [year, month] = m.split('-');
-                return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'short' });
+                return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
             }),
-            datasets: [{
-                label: 'Number of Contributors',
-                data: contributorCounts,
-                backgroundColor: 'rgba(118, 75, 162, 0.6)',
-                borderColor: '#764ba2',
-                borderWidth: 2
-            }]
+            datasets: [
+                {
+                    label: 'Total contributors (by end of month)',
+                    data: contributorCounts,
+                    backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                    borderColor: '#667eea',
+                    borderWidth: 2
+                },
+                {
+                    label: 'New contributors this month',
+                    data: newPerMonth,
+                    backgroundColor: 'rgba(72, 187, 120, 0.7)',
+                    borderColor: '#48bb78',
+                    borderWidth: 2
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 750 },
             plugins: {
                 legend: { display: true, position: 'top' },
-                title: { display: true, text: 'Contributor Growth Over Time', font: { size: window.innerWidth < 768 ? 14 : 16, weight: 'bold' } }
+                title: { display: true, text: 'Contributor growth: total so far & new each month', font: { size: window.innerWidth < 768 ? 14 : 16, weight: 'bold' } }
             },
             scales: {
                 y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: window.innerWidth < 768 ? 10 : 12 } } },

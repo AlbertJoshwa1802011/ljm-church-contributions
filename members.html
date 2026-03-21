@@ -170,17 +170,48 @@ body {
 <script>
 // ===== GLOBAL CACHE USING LOCAL STORAGE =====
 const FUND_URLS = [
-    "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=tech-contributions", // Tech
-    "https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec?fund=christmas-fund"  // Christmas
+    "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=tech-contributions", // Tech
+    "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=christmas-fund"  // Christmas
 ];
 
 // Cache keys - use SAME keys as main dashboard for cache sharing
 const CACHE_KEY_TECH = "techFundData";
 const CACHE_KEY_CHRISTMAS = "christmasFundData";
+const MEMBERS_LIST_CACHE_KEY = "membersListCache";
 const CACHE_VERSION = 1;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 let allMembers = [];
+
+function getCachedMembersList() {
+    try {
+        const raw = localStorage.getItem(MEMBERS_LIST_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed.version !== CACHE_VERSION) {
+            localStorage.removeItem(MEMBERS_LIST_CACHE_KEY);
+            return null;
+        }
+        const age = Date.now() - (parsed.lastFetched || 0);
+        if (age < 0 || age > CACHE_TTL_MS) return null;
+        return Array.isArray(parsed.members) ? parsed.members : null;
+    } catch (e) {
+        try { localStorage.removeItem(MEMBERS_LIST_CACHE_KEY); } catch (_) {}
+        return null;
+    }
+}
+
+function setCachedMembersList(members) {
+    try {
+        localStorage.setItem(MEMBERS_LIST_CACHE_KEY, JSON.stringify({
+            members: Array.isArray(members) ? members : [],
+            lastFetched: Date.now(),
+            version: CACHE_VERSION
+        }));
+    } catch (e) {
+        try { localStorage.removeItem(MEMBERS_LIST_CACHE_KEY); } catch (_) {}
+    }
+}
 
 function getCachedFund(key) {
     try {
@@ -268,13 +299,29 @@ async function fetchFundData(force=false){
 setInterval(()=>fetchFundData(true), CACHE_TTL_MS);
 
 // ===== MEMBER LIST LOGIC =====
+function isPageReload() {
+    try {
+        const nav = performance.getEntriesByType && performance.getEntriesByType("navigation");
+        return nav && nav[0] && nav[0].type === "reload";
+    } catch (e) { return false; }
+}
+
 async function initMembersPage(){
-    const data = await fetchFundData();
-    const contributions = data.contributions;
+    const forceRefresh = isPageReload();
+    if (forceRefresh) {
+        localStorage.removeItem(MEMBERS_LIST_CACHE_KEY);
+    }
 
-    // Unique sorted members
+    const cachedMembers = !forceRefresh ? getCachedMembersList() : null;
+    if (cachedMembers && cachedMembers.length >= 0) {
+        allMembers = cachedMembers;
+        renderMemberList(allMembers);
+    }
+
+    const data = await fetchFundData(forceRefresh || !cachedMembers);
+    const contributions = data.contributions || [];
     allMembers = [...new Set(contributions.map(c=>c.Member).filter(Boolean))].sort();
-
+    setCachedMembersList(allMembers);
     renderMemberList(allMembers);
 }
 

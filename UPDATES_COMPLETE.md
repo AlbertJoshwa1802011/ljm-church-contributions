@@ -36,7 +36,7 @@ I've updated all your website files to use the new unified Apps Script URL with 
 
 **Base URL:**
 ```
-https://script.google.com/macros/s/AKfycbyn7BAXvOI-GRNI3DfFBXc6tBAgcuwlKu2PWgJ-JKi-ShZEP-eOnzmvxC01AjGsevQd/exec
+https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec
 ```
 
 **With Parameters:**

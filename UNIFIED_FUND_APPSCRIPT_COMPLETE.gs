@@ -1,21 +1,24 @@
 /**
  * Unified Fund Handler - Supports Both Christmas Fund and Tech Fund
- * 
+ *
  * This function handles both fund types intelligently:
  * - Christmas Fund: Uses month-based columns (September, October, etc.)
  * - Tech Fund: Uses standard format (Member | Amount | Date | Category | Notes)
- * 
+ *
  * Usage:
  * - Christmas Fund: ?fund=christmas-fund
  * - Tech Fund: ?fund=tech-contributions (or ?fund=tech)
+ *
+ * Date fix: Date is output as YYYY-MM-DD so each row keeps its real calendar date
+ * and "Most Active Month" on the dashboard shows the correct month (Jan vs Mar).
  */
 
 /** Returns YYYY-MM-DD for the given Date so calendar month is correct (no UTC shift). */
 function formatDateOnly(d) {
-  var y = d.getFullYear();
-  var m = String(d.getMonth() + 1);
+  const y = d.getFullYear();
+  let m = String(d.getMonth() + 1);
   if (m.length === 1) m = '0' + m;
-  var day = String(d.getDate());
+  let day = String(d.getDate());
   if (day.length === 1) day = '0' + day;
   return y + '-' + m + '-' + day;
 }
@@ -26,7 +29,7 @@ function doGet(e) {
 
   // Determine fund from parameter or default
   let fundName = (e.parameter.fund || "christmas-fund").toLowerCase();
-  
+
   // Map common aliases
   if (fundName === "tech" || fundName === "techfund") {
     fundName = "tech-contributions";
@@ -75,7 +78,7 @@ function doGet(e) {
   const configSheet = ss.getSheetByName("config");
   if (configSheet) {
     const configData = configSheet.getDataRange().getValues();
-    
+
     // Determine goal key based on fund
     let goalKey;
     if (fundName === "tech-contributions" || fundName === "tech") {
@@ -127,13 +130,13 @@ function processTechFundFormat(headers, dataRows) {
 
   const contributions = dataRows
     .map(row => {
-      const member = (memberIdx >= 0 && row[memberIdx]) 
-        ? row[memberIdx].toString().trim() 
+      const member = (memberIdx >= 0 && row[memberIdx])
+        ? row[memberIdx].toString().trim()
         : '';
-      const amount = (amountIdx >= 0 && row[amountIdx]) 
-        ? Number(row[amountIdx]) 
+      const amount = (amountIdx >= 0 && row[amountIdx])
+        ? Number(row[amountIdx])
         : 0;
-      
+
       // Skip empty rows
       if (!member || amount <= 0) {
         return null;
@@ -148,26 +151,26 @@ function processTechFundFormat(headers, dataRows) {
         } else if (typeof dateVal === 'string' && dateVal.trim()) {
           dateObj = new Date(dateVal.trim());
           if (isNaN(dateObj.getTime())) {
-            dateObj = new Date();
+            dateObj = new Date(); // Default to today if invalid
           }
         } else {
-          dateObj = new Date();
+          dateObj = new Date(); // Default to today
         }
       } else {
-        dateObj = new Date();
+        dateObj = new Date(); // Default to today
       }
 
       // Output date as YYYY-MM-DD so frontend gets correct calendar month (no timezone shift)
       const dateStr = formatDateOnly(dateObj);
 
       // Process category
-      const category = (categoryIdx >= 0 && row[categoryIdx]) 
-        ? row[categoryIdx].toString().trim() 
+      const category = (categoryIdx >= 0 && row[categoryIdx])
+        ? row[categoryIdx].toString().trim()
         : 'Tech Fund';
 
       // Process notes
-      const notes = (notesIdx >= 0 && row[notesIdx]) 
-        ? row[notesIdx].toString().trim() 
+      const notes = (notesIdx >= 0 && row[notesIdx])
+        ? row[notesIdx].toString().trim()
         : '';
 
       return {

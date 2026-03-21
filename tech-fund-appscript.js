@@ -15,6 +15,14 @@
  * 3. Use the Web App URL in your website
  */
 
+/** Returns YYYY-MM-DD for the given Date so calendar month is correct (no UTC shift). */
+function formatDateOnly(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
 function doGet() {
   const SHEET_ID = "1BsuLjPmFrW85AnZgmicrCj0vWlbQ4OH369PdBVA3zyE"; // Tech Fund Sheet ID
   const ss = SpreadsheetApp.openById(SHEET_ID);
@@ -68,25 +76,26 @@ function doGet() {
         return null;
       }
 
-      // Process date - handles both Date objects and text formats like "January 12, 2026"
+      // Process date - handles both Date objects and text like "January 12, 2026"
       let dateObj;
       if (dateIdx >= 0 && row[dateIdx]) {
         const dateVal = row[dateIdx];
         if (dateVal instanceof Date) {
           dateObj = dateVal;
         } else if (typeof dateVal === 'string' && dateVal.trim()) {
-          // Try parsing the date string (handles formats like "January 12, 2026")
-          dateObj = new Date(dateVal);
-          // Check if date is valid
+          dateObj = new Date(dateVal.trim());
           if (isNaN(dateObj.getTime())) {
-            dateObj = new Date(); // Default to today if invalid
+            dateObj = new Date();
           }
         } else {
-          dateObj = new Date(); // Default to today if invalid
+          dateObj = new Date();
         }
       } else {
-        dateObj = new Date(); // Default to today if no date column
+        dateObj = new Date();
       }
+
+      // Output date as YYYY-MM-DD so frontend gets correct calendar month (no timezone shift)
+      const dateStr = formatDateOnly(dateObj);
 
       // Process category
       const category = (categoryIdx >= 0 && row[categoryIdx]) 
@@ -99,7 +108,7 @@ function doGet() {
         : '';
 
       return {
-        Date: dateObj.toISOString(),
+        Date: dateStr,
         Amount: amount,
         Category: category,
         Notes: notes,
