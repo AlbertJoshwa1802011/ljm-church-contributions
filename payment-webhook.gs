@@ -218,3 +218,27 @@ function sendMonthlyReport() {
     htmlBody: emailHtml
   });
 }
+
+/**
+ * Run this manually from the Apps Script editor to test if your Email permissions are working.
+ */
+function testManualEmail() {
+  const email = Session.getActiveUser().getEmail();
+  MailApp.sendEmail({
+    to: email,
+    subject: "Test Email from LJM Church Script",
+    body: "If you are reading this, your Apps Script is authorized to send emails! ✅"
+  });
+  Logger.log("Test email sent to: " + email);
+}
+
+/**
+ * Add a custom menu to the spreadsheet.
+ */
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('LJM Church Extras')
+    .addItem('Generate Monthly Report Now', 'sendMonthlyReport')
+    .addItem('Test Email Permissions', 'testManualEmail')
+    .addToUi();
+}
