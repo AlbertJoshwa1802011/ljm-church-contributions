@@ -32,13 +32,16 @@ function doPost(e) {
     // However, as standard practice in GAS, we will just parse the entity. If signature isn't available in headers, we must verify the payload contents manually using an order ID API check or pass a secret token in the Webhook URL.
     
     // Better secure approach for GS webhook:
-    // Add ?secret=YOUR_WEBHOOK_SECRET to your webhook URL in Razorpay.
     const urlSecret = e.parameter.secret;
+    console.log("Webhook received. Secret in URL: " + urlSecret);
+    
     if (urlSecret !== RAZORPAY_WEBHOOK_SECRET) {
-      return ContentService.createTextOutput("Unauthorized").setStatusCode(401);
+      console.error("Unauthorized: Secret mismatch. Received: " + urlSecret + ", Expected: " + RAZORPAY_WEBHOOK_SECRET);
+      return ContentService.createTextOutput("Unauthorized: Secret mismatch").setMimeType(ContentService.MimeType.TEXT);
     }
 
     const payload = JSON.parse(rawBody);
+    console.log("Payload Event: " + payload.event);
 
     if (payload.event === "payment.captured") {
       const paymentEntity = payload.payload.payment.entity;
@@ -59,12 +62,12 @@ function doPost(e) {
       if (fundName.toLowerCase().includes("tech")) fundName = "tech-contributions";
       if (fundName.toLowerCase().includes("christmas")) fundName = "christmas-fund";
 
+      console.log(`Processing payment for ${memberName} (${amountPaid}) into ${fundName}`);
+
       const ss = SpreadsheetApp.openById(SHEET_ID);
       const sheet = ss.getSheetByName(fundName);
       
       if (sheet) {
-        // Tech Fund Format: Member | Amount | Date | Category | Notes
-        // We will add more "Proof of Payment" into the Notes column
         const proofOfPayment = `ID: ${paymentId} | Method: ${method} ${upiId ? '('+upiId+')' : ''} | Contact: ${contact}`;
         
         let newRow = [
@@ -75,6 +78,7 @@ function doPost(e) {
           proofOfPayment
         ];
         sheet.appendRow(newRow);
+        console.log("Row successfully appended to sheet.");
         
         // --- NEW: Immediate Email Alert for this payment ---
         try {
@@ -96,22 +100,25 @@ function doPost(e) {
               </div>
             `
           });
+          console.log("Email alert sent to " + ADMIN_EMAIL);
         } catch (mailErr) {
-          console.error("Failed to send immediate alert:", mailErr);
+          console.error("Failed to send immediate alert: ", mailErr.toString());
         }
-        // --- End of Alert ---
 
         // Log to a separate "audit_log" sheet if it exists
         const auditSheet = ss.getSheetByName("audit_log");
         if (auditSheet) {
           auditSheet.appendRow([new Date(), paymentId, memberName, amountPaid, fundName, JSON.stringify(payload)]);
         }
+      } else {
+        console.error("Error: Sheet '" + fundName + "' not found.");
       }
     }
 
     return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
+    console.error("General Error in doPost: " + error.toString());
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() })).setMimeType(ContentService.MimeType.JSON);
   }
 }
