@@ -76,6 +76,31 @@ function doPost(e) {
         ];
         sheet.appendRow(newRow);
         
+        // --- NEW: Immediate Email Alert for this payment ---
+        try {
+          MailApp.sendEmail({
+            to: ADMIN_EMAIL,
+            subject: `New Contribution Received: ₹${amountPaid} from ${memberName}`,
+            htmlBody: `
+              <div style="font-family: Arial, sans-serif;">
+                <h2>New Contribution Alert</h2>
+                <p>A new payment has been successfully recorded for the <strong>${fundName}</strong>.</p>
+                <ul>
+                  <li><strong>Member:</strong> ${memberName}</li>
+                  <li><strong>Amount:</strong> ₹${amountPaid}</li>
+                  <li><strong>Razorpay ID:</strong> ${paymentId}</li>
+                  <li><strong>Method:</strong> ${method} ${upiId ? '('+upiId+')' : ''}</li>
+                  <li><strong>Date:</strong> ${paymentDate.toLocaleString()}</li>
+                </ul>
+                <p><a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}">View Google Sheet</a></p>
+              </div>
+            `
+          });
+        } catch (mailErr) {
+          console.error("Failed to send immediate alert:", mailErr);
+        }
+        // --- End of Alert ---
+
         // Log to a separate "audit_log" sheet if it exists
         const auditSheet = ss.getSheetByName("audit_log");
         if (auditSheet) {
