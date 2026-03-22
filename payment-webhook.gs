@@ -66,21 +66,28 @@ function doPost(e) {
       return ContentService.createTextOutput("Payload too large").setMimeType(ContentService.MimeType.TEXT);
     }
 
-    // --- SECURITY: Basic Webhook Secret Verification ---
-    const urlSecret = e.parameter.secret;
+    // --- SECURITY: Payload Verification ---
+    const headerSignature = e.parameter['x-razorpay-signature'] || (e.headers && e.headers['X-Razorpay-Signature']);
     const expectedSecret = getEnv("RAZORPAY_WEBHOOK_SECRET");
     
     if (expectedSecret && expectedSecret !== "YOUR_WEBHOOK_SECRET_HERE") {
-      if (urlSecret !== expectedSecret) {
-        console.error("Unauthorized: Secret mismatch.");
+      // 1. Check for Query Parameter 'secret' (Legacy/Simple)
+      const urlSecret = e.parameter.secret;
+      
+      // 2. Check for Standard Header-based Signature (Industry Standard)
+      const isSignatureValid = headerSignature ? verifySignature(rawBody, headerSignature, expectedSecret) : false;
+      
+      if (urlSecret !== expectedSecret && !isSignatureValid) {
+        console.error("Unauthorized: Both URL secret and Header signature failed.");
         return ContentService.createTextOutput("Unauthorized").setMimeType(ContentService.MimeType.TEXT);
       }
+      console.log(`Verified successfully via ${isSignatureValid ? 'Header Signature' : 'URL Secret'}`);
     } else {
-      console.warn("Webhook secret not configured in PropertiesService. Skipping basic URL secret check.");
+      console.warn("Webhook secret not configured in PropertiesService. Skipping security check (UNSAFE).");
     }
 
     const payload = JSON.parse(rawBody);
-    console.log("Payload Event: " + payload.event);
+    console.log(`Processing Webhook Event: ${payload.event} (ID: ${payload.payload?.payment?.entity?.id || 'N/A'})`);
 
     if (payload.event === "payment.captured") {
       const paymentEntity = payload.payload.payment.entity;
@@ -109,12 +116,15 @@ function doPost(e) {
       const rawMemberName = notes.memberName || "Online Contributor";
       const memberName = String(rawMemberName).substring(0, 200).replace(/[=+\-@>]/g, ""); // Prevent formula injection
       let fundName = notes.fundName || "tech-contributions"; 
+      const memberEmail = notes.memberEmail || contributorEmail || ""; // Use note or direct email
       
-      // Auto-map aliases
-      if (fundName.toLowerCase().includes("tech")) fundName = "tech-contributions";
-      if (fundName.toLowerCase().includes("christmas")) fundName = "christmas-fund";
+      // Auto-map aliases with robust normalization
+      const normalFund = fundName.toLowerCase().trim();
+      if (normalFund.includes("tech")) fundName = "tech-contributions";
+      else if (normalFund.includes("christmas")) fundName = "christmas-fund";
+      else fundName = "tech-contributions"; // Safe Default
 
-      console.log(`Processing payment for ${memberName} (${amountPaid}) into ${fundName}`);
+      console.log(`Mapping contribution to sheet: ${fundName} for member: ${memberName} (${memberEmail}) (Amount: ${amountPaid})`);
 
       const ss = SpreadsheetApp.openById(SHEET_ID);
       const sheet = ss.getSheetByName(fundName);
@@ -132,16 +142,20 @@ function doPost(e) {
         const lastRow = getRealLastRow(sheet);
         const nextRow = lastRow + 1;
         
+        // COLUMN STRUCTURE: [Member, Amount, Date, Email, Category, Notes]
         let newRow = [
           memberName, 
           amountPaid, 
           paymentDate, 
+          memberEmail,
           "Online (Verified)", 
           proofOfPayment
         ];
         
-        // Write the row
-        sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);
+        // Write the row and clear any validation that might block script entries
+        const targetRange = sheet.getRange(nextRow, 1, 1, newRow.length);
+        targetRange.setDataValidation(null); 
+        targetRange.setValues([newRow]);
         
         // Color-code the new row (Light Purple for Razorpay)
         sheet.getRange(nextRow, 1, 1, sheet.getLastColumn()).setBackground("#f3e5f5");
@@ -176,9 +190,9 @@ function doPost(e) {
           }
 
           // Send to Contributor (if email is available)
-          if (contributorEmail) {
+          if (memberEmail) {
             MailApp.sendEmail({
-              to: contributorEmail,
+              to: memberEmail,
               subject: `Thank you for your contribution to LJM Church!`,
               htmlBody: `
                 <div style="font-family: Arial, sans-serif; color: #333;">
@@ -451,6 +465,24 @@ function isDuplicatePayment(sheet, paymentId) {
   } catch (err) {
     console.error("Idempotency Check Error: " + err.toString());
     return false; // Fail open
+  }
+}
+
+/**
+ * Helper to verify Razorpay HMAC SHA256 Signature
+ */
+function verifySignature(payload, signature, secret) {
+  try {
+    const expectedSignature = Utilities.computeHmacSignature(
+      Utilities.MacAlgorithm.HMAC_SHA_256,
+      payload,
+      secret
+    ).map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+    
+    return expectedSignature === signature;
+  } catch (err) {
+    console.error("Signature verification error: " + err.toString());
+    return false;
   }
 }
 

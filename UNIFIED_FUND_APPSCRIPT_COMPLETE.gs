@@ -123,14 +123,17 @@ function doGet(e) {
  * Process Tech Fund format: Member | Amount | Date | Category | Notes
  */
 function processTechFundFormat(headers, dataRows) {
-  const memberIdx = headers.indexOf('member');
-  const amountIdx = headers.indexOf('amount');
-  const dateIdx = headers.indexOf('date');
-  const categoryIdx = headers.indexOf('category');
-  const notesIdx = headers.indexOf('notes');
+  // Use fuzzy detection for headers
+  const memberIdx = headers.findIndex(h => h.includes('member'));
+  const amountIdx = headers.findIndex(h => h.includes('amount'));
+  const dateIdx = headers.findIndex(h => h.includes('date'));
+  const categoryIdx = headers.findIndex(h => h.includes('category'));
+  const notesIdx = headers.findIndex(h => h.includes('notes'));
+
+  const scriptTz = Session.getScriptTimeZone();
 
   const contributions = dataRows
-    .map(row => {
+    .map((row, index) => {
       const member = (memberIdx >= 0 && row[memberIdx])
         ? row[memberIdx].toString().trim()
         : '';
@@ -143,63 +146,60 @@ function processTechFundFormat(headers, dataRows) {
         return null;
       }
 
-      // Process date (Date object from sheet or text like "January 12, 2026")
-      let dateObj;
-      if (dateIdx >= 0 && row[dateIdx]) {
-        const dateVal = row[dateIdx];
-        if (dateVal instanceof Date) {
-          dateObj = dateVal;
-        } else if (typeof dateVal === 'number' && dateVal > 0) {
-          // Google Sheets stores dates as number of days since Dec 30 1899
+      // Process date (Date object from sheet or text)
+      let dateObj = null;
+      let rawDateVal = (dateIdx >= 0) ? row[dateIdx] : null;
+
+      if (rawDateVal) {
+        if (rawDateVal instanceof Date) {
+          dateObj = rawDateVal;
+        } else if (typeof rawDateVal === 'number' && rawDateVal > 0) {
+          // Serial date from Google Sheets
           const epoch = new Date(1899, 11, 30).getTime();
-          dateObj = new Date(epoch + dateVal * 86400000);
-          if (isNaN(dateObj.getTime())) dateObj = new Date();
-        } else if (typeof dateVal === 'string' && dateVal.trim()) {
-          const s = dateVal.trim();
-          dateObj = new Date(s);
-          if (isNaN(dateObj.getTime())) {
-            // Try parsing DD/MM/YYYY or DD-MM-YYYY manually
-            const slash = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-            if (slash) {
-              const a = parseInt(slash[1], 10), b = parseInt(slash[2], 10), y = parseInt(slash[3], 10);
-              let month = b - 1, day = a;
-              if (a > 12) { day = a; month = b - 1; }
-              else if (b > 12) { month = a - 1; day = b; }
-              dateObj = new Date(y, month, day);
-            }
-            if (!dateObj || isNaN(dateObj.getTime())) {
-              dateObj = new Date(); // Default to today if invalid
-            }
+          dateObj = new Date(epoch + rawDateVal * 86400000);
+        } else if (typeof rawDateVal === 'string' && rawDateVal.trim()) {
+          const s = rawDateVal.trim();
+          
+          // 1. Try ISO-like YYYY-MM-DD HH:mm:ss
+          const iso = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:\s+(\d{1,2}):(\d{1,2}):(\d{1,2}))?/);
+          if (iso) {
+            const y = parseInt(iso[1], 10);
+            const mo = parseInt(iso[2], 10) - 1;
+            const d = parseInt(iso[3], 10);
+            const hh = iso[4] ? parseInt(iso[4], 10) : 0;
+            const min = iso[5] ? parseInt(iso[5], 10) : 0;
+            const sec = iso[6] ? parseInt(iso[6], 10) : 0;
+            dateObj = new Date(y, mo, d, hh, min, sec);
           }
-        } else {
-          dateObj = new Date(); // Default to today
+          
+          if (!dateObj || isNaN(dateObj.getTime())) {
+            dateObj = new Date(s);
+          }
         }
-      } else {
-        dateObj = new Date(); // Default to today
+      } 
+      
+      // Safety: If no date found, default to Today
+      if (!dateObj || isNaN(dateObj.getTime())) {
+        dateObj = new Date();
       }
 
-      // Output date as YYYY-MM-DD HH:mm:ss so frontend gets correct exact time
-      const dateStr = formatDateTime(dateObj);
+      // Output date as YYYY-MM-DD HH:mm:ss using native Spreadsheet logic
+      const dateStr = Utilities.formatDate(dateObj, scriptTz, "yyyy-MM-dd HH:mm:ss");
 
-      // Process category
-      const category = (categoryIdx >= 0 && row[categoryIdx])
-        ? row[categoryIdx].toString().trim()
-        : 'Tech Fund';
-
-      // Process notes
-      const notes = (notesIdx >= 0 && row[notesIdx])
-        ? row[notesIdx].toString().trim()
-        : '';
+      // Process category/notes
+      const category = (categoryIdx >= 0 && row[categoryIdx]) ? row[categoryIdx].toString().trim() : 'Tech Fund';
+      const notes = (notesIdx >= 0 && row[notesIdx]) ? row[notesIdx].toString().trim() : '';
 
       return {
         Date: dateStr,
         Amount: amount,
         Category: category,
         Notes: notes,
-        Member: member
+        Member: member,
+        _debug: { dateType: typeof rawDateVal, dateIdx: dateIdx, rowIdx: index + 2 }
       };
     })
-    .filter(c => c !== null); // Remove null entries
+    .filter(c => c !== null);
 
   return contributions;
 }

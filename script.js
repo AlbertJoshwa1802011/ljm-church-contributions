@@ -17,7 +17,7 @@ function escapeHtml(unsafe) {
 // --------------------
 // Cache configuration (shared across pages via localStorage)
 const CACHE_VERSION = 1;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds (reduced for faster debugging)
 
 // Helper: get cached fund (with TTL enforcement - works on all devices including Android)
 function getCachedFund(fundKey) {
@@ -112,8 +112,8 @@ function getCachedMembersList() {
 
 // Preload members list in background (so Members page opens fast)
 async function preloadMembersList() {
-    const techUrl = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=tech-contributions";
-    const christmasUrl = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=christmas-fund";
+    const techUrl = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=tech-contributions";
+    const christmasUrl = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=christmas-fund";
     try {
         const [techRes, christmasRes] = await Promise.all([
             fetch(techUrl + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' }),
@@ -166,49 +166,47 @@ function initBibleVerse() {
 function animateValue(elementId, targetValue, prefix = '', duration = 1200) {
     const el = document.getElementById(elementId);
     if (!el) return;
-
-    // If target is 0, just set it
-    if (targetValue === 0) {
-        el.textContent = prefix + '0';
-        return;
-    }
+    
+    // Reset any previous animation
+    if (el._anim) cancelAnimationFrame(el._anim);
 
     const startTime = performance.now();
+    const startValue = 0;
 
     function update(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-        const current = Math.round(targetValue * eased);
+        const easeProgress = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        const current = Math.floor(startValue + easeProgress * (targetValue - startValue));
+        
         el.textContent = prefix + current.toLocaleString('en-IN');
-
+        
         if (progress < 1) {
-            requestAnimationFrame(update);
+            el._anim = requestAnimationFrame(update);
         }
     }
-
-    requestAnimationFrame(update);
+    el._anim = requestAnimationFrame(update);
 }
 
-// --------------------
-// Trend Badge Component
-function renderTrendBadge(containerId, trend) {
+/**
+ * TREND INDICATOR: Renders a premium growth badge next to a value
+ */
+function updateTrendIndicator(containerId, trend) {
     const el = document.getElementById(containerId);
     if (!el) return;
 
-    if (trend.direction === 'neutral') {
-        el.innerHTML = '';
+    if (!trend || trend.direction === 'neutral') {
+        el.innerHTML = `<span class="trend-badge trend-neutral">New</span>`;
         return;
     }
 
-    const color = trend.direction === 'up' ? '#2ecc71' : '#e74c3c';
-    const bg = trend.direction === 'up' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)';
-    const arrow = trend.direction === 'up' ? '↑' : '↓';
-
+    const isPositive = trend.direction === 'up';
+    const badgeClass = isPositive ? 'trend-up' : 'trend-down';
+    const icon = isPositive ? '▲' : '▼';
+    
     el.innerHTML = `
-        <span class="trend-badge" style="background: ${bg}; color: ${color}; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-left: 8px;">
-            ${arrow} ${Math.abs(trend.percent)}%
-        </span>
+        <span class="trend-badge ${badgeClass}">${icon} ${Math.abs(trend.percent)}%</span>
+        <span style="color: #64748b; font-size: 11px; margin-left: 4px;">vs last month</span>
     `;
 }
 
@@ -326,8 +324,21 @@ function initInsightModal() {
         e.preventDefault();
         const statType = card.getAttribute('data-stat-type');
         const insightType = card.getAttribute('data-insight-type');
+        
+        if (statType === 'collected') {
+            const contributions = window._currentContributions || [];
+            renderTrendChart(contributions, 'collected');
+            return;
+        }
+        
+        if (statType === 'count') {
+            const contributions = window._currentContributions || [];
+            renderTrendChart(contributions, 'count');
+            return;
+        }
+
         if (statType) {
-            const titles = { goal: 'How we calculate: Goal Amount', total: 'How we calculate: Total Collected', remaining: 'How we calculate: Remaining', count: 'How we calculate: Number of Contributions' };
+            const titles = { goal: 'How we calculate: Goal Amount', remaining: 'How we calculate: Remaining' };
             openModal(titles[statType] || 'Calculation details', getStatCardContent(statType));
         } else if (insightType) {
             const titles = { unique: 'How we calculate: Unique Contributors', avg: 'How we calculate: Average Contribution', bestMonth: 'How we calculate: Most Active Month', estimated: 'How we calculate: Estimated to Goal', source: 'How we calculate: Giving Channels' };
@@ -468,11 +479,16 @@ function parseContributionDate(value) {
         }
     }
 
-    // YYYY-MM-DD or YYYY/MM/DD (with or without time after)
-    const iso = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    // YYYY-MM-DD or YYYY-MM-DD HH:mm:ss
+    const iso = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:\s+(\d{1,2}):(\d{1,2}):(\d{1,2}))?/);
     if (iso) {
-        const y = parseInt(iso[1], 10), mo = parseInt(iso[2], 10) - 1, day = parseInt(iso[3], 10);
-        const d = new Date(y, mo, day);
+        const y = parseInt(iso[1], 10);
+        const mo = parseInt(iso[2], 10) - 1;
+        const day = parseInt(iso[3], 10);
+        const hh = iso[4] ? parseInt(iso[4], 10) : 0;
+        const mm = iso[5] ? parseInt(iso[5], 10) : 0;
+        const ss = iso[6] ? parseInt(iso[6], 10) : 0;
+        const d = new Date(y, mo, day, hh, mm, ss);
         return isNaN(d.getTime()) ? null : d;
     }
 
@@ -728,7 +744,123 @@ function renderDistributionPie(contributions) {
     });
 }
 
+// --------------------
+// Trend Chart (Line Chart for Growth)
+function renderTrendChart(contributions, type = 'collected') {
+    const modalBody = document.getElementById('insightModalBody');
+    const modalTitle = document.getElementById('insightModalTitle');
+    const modal = document.getElementById('insightModal');
+    
+    if (!modalBody || !modalTitle || !modal) return;
+
+    modalTitle.textContent = type === 'collected' ? '📈 Collection Growth Trend' : '📊 Contribution Frequency';
+    modalBody.innerHTML = `
+        <p style="margin-bottom: 20px; font-size: 14px; color: #64748b;">
+            ${type === 'collected' 
+                ? 'Tracking the cumulative collection over time. Each point represents the total amount reached on that date.'
+                : 'Tracking the number of contributions over time.'}
+        </p>
+        <div style="height: 300px; width: 100%; position: relative;">
+            <canvas id="trendLineChart"></canvas>
+        </div>
+        <div id="trendSummary" style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; font-size: 13px;">
+            Loading summary...
+        </div>
+    `;
+
+    modal.classList.add('insight-modal-visible');
+
+    // Process data for trend chart
+    const sorted = [...contributions]
+        .map(c => ({ ...c, DateObj: parseContributionDate(c.Date) }))
+        .filter(c => c.DateObj)
+        .sort((a, b) => a.DateObj - b.DateObj);
+
+    const labels = [];
+    const dataPoints = [];
+    let runningTotal = 0;
+
+    // Group by date to show cleaner line
+    const dateMap = {};
+    sorted.forEach(c => {
+        const dStr = c.DateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        const val = Number(c.Amount) || 0;
+        if (!dateMap[dStr]) dateMap[dStr] = { amt: 0, count: 0 };
+        dateMap[dStr].amt += val;
+        dateMap[dStr].count += 1;
     });
+
+    Object.entries(dateMap).forEach(([date, vals]) => {
+        labels.push(date);
+        if (type === 'collected') {
+            runningTotal += vals.amt;
+            dataPoints.push(runningTotal);
+        } else {
+            runningTotal += vals.count;
+            dataPoints.push(runningTotal);
+        }
+    });
+
+    const ctx = document.getElementById('trendLineChart').getContext('2d');
+    
+    if (window._currentTrendChart) window._currentTrendChart.destroy();
+
+    window._currentTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: type === 'collected' ? 'Total Collected (₹)' : 'Total Count',
+                data: dataPoints,
+                borderColor: type === 'collected' ? '#10b981' : '#8b5cf6',
+                backgroundColor: type === 'collected' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(139, 92, 246, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 4,
+                pointBackgroundColor: '#fff',
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.dataset.label}: ${type === 'collected' ? '₹' : ''}${context.raw.toLocaleString('en-IN')}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                y: { 
+                    beginAtZero: true, 
+                    grid: { color: '#f1f5f9' },
+                    ticks: { font: { size: 10 }, callback: value => type === 'collected' ? '₹' + value.toLocaleString('en-IN') : value }
+                }
+            }
+        }
+    });
+
+    const summaryEl = document.getElementById('trendSummary');
+    if (summaryEl) {
+        const total = dataPoints[dataPoints.length - 1];
+        const days = labels.length;
+        const avg = Math.round(total / (days || 1));
+        summaryEl.innerHTML = `
+            <strong>Performance Summary:</strong><br>
+            • Projected pace: ${type === 'collected' ? '₹' + avg.toLocaleString('en-IN') : avg + ' entries'} per recorded day.<br>
+            • Current milestone: ${type === 'collected' ? '₹' : ''}${total.toLocaleString('en-IN')} reached over ${days} active donation days.
+        `;
+    }
 }
 
 // --------------------
@@ -855,10 +987,10 @@ async function silentBackgroundRefresh(selectedFund) {
     try {
         let apiUrl, fundKey;
         if (selectedFund === 'christmasfund') {
-            apiUrl = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=christmas-fund";
+            apiUrl = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=christmas-fund";
             fundKey = "christmasFundData";
         } else {
-            apiUrl = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=tech-contributions";
+            apiUrl = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=tech-contributions";
             fundKey = "techFundData";
         }
 
@@ -1052,7 +1184,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // TECH FUND DASHBOARD
 // ==================================================
 async function initDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=tech-contributions";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=tech-contributions";
     const FUND_KEY = "techFundData";
 
     let contributionsData = [];
@@ -1074,6 +1206,7 @@ async function initDashboard() {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const data = await res.json();
             contributionsData = data.contributions || [];
+            window._currentContributions = contributionsData;
             goalAmount = data.goalAmount || 0;
             setCachedFund(FUND_KEY, { contributions: contributionsData, goalAmount });
             currentDisplayCount = 0;
@@ -1084,6 +1217,7 @@ async function initDashboard() {
             const cached = getCachedFund(FUND_KEY);
             if (cached) {
                 contributionsData = cached.contributions || [];
+                window._currentContributions = contributionsData;
                 goalAmount = cached.goalAmount || 0;
                 currentDisplayCount = 0;
                 renderDashboard();
@@ -1208,8 +1342,8 @@ async function initDashboard() {
             animateValue("entryCount", data.length, "📝 ");
 
             // Render Trend Badges
-            renderTrendBadge("totalSubdetail", trend);
-            renderTrendBadge("countSubdetail", {
+            updateTrendIndicator("totalSubdetail", trend);
+            updateTrendIndicator("countSubdetail", {
                 direction: trend.currentCount > trend.lastCount ? 'up' : (trend.currentCount < trend.lastCount ? 'down' : 'neutral'),
                 percent: trend.lastCount > 0 ? Math.abs(Math.round(((trend.currentCount - trend.lastCount) / trend.lastCount) * 100)) : 0,
                 icon: trend.currentCount > trend.lastCount ? '📈' : '📉'
@@ -1270,9 +1404,6 @@ async function initDashboard() {
             // Source distribution chart
             try { renderSourceChart(data); } catch (e) { console.error("Source chart error:", e); }
 
-            // Source distribution chart
-            try { renderSourceChart(data); } catch (e) { console.error("Source chart error:", e); }
-
             // Top contributors
             try { renderTopContributors(data); } catch (e) { console.error("Top contributors error:", e); }
 
@@ -1314,7 +1445,7 @@ async function initDashboard() {
 // CHRISTMAS FUND DASHBOARD
 // ==================================================
 async function initChristmasFundDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=christmas-fund";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=christmas-fund";
     const FUND_KEY = "christmasFundData";
 
     let contributionsData = [];
@@ -1333,6 +1464,7 @@ async function initChristmasFundDashboard() {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const data = await res.json();
             contributionsData = data.contributions || [];
+            window._currentContributions = contributionsData;
             goalAmount = data.goalAmount || 0;
             setCachedFund(FUND_KEY, { contributions: contributionsData, goalAmount });
             currentDisplayCount = 0;
@@ -1343,6 +1475,7 @@ async function initChristmasFundDashboard() {
             const cached = getCachedFund(FUND_KEY);
             if (cached) {
                 contributionsData = cached.contributions || [];
+                window._currentContributions = contributionsData;
                 goalAmount = cached.goalAmount || 0;
                 currentDisplayCount = 0;
                 renderDashboard();
@@ -1466,8 +1599,8 @@ async function initChristmasFundDashboard() {
             animateValue("entryCount", data.length, "📝 ");
 
             // Render Trend Badges
-            renderTrendBadge("totalSubdetail", trend);
-            renderTrendBadge("countSubdetail", {
+            updateTrendIndicator("totalSubdetail", trend);
+            updateTrendIndicator("countSubdetail", {
                 direction: trend.direction,
                 percent: trend.percent,
                 icon: trend.icon
@@ -1505,6 +1638,7 @@ async function initChristmasFundDashboard() {
             try { renderGivingInsights(data, goalAmount); } catch (e) { console.error("Insights error:", e); }
             try { renderDistributionPie(data); } catch (e) { console.error("Distribution pie error:", e); }
             try { renderTopContributors(data); } catch (e) { console.error("Top contributors error:", e); }
+            try { renderSourceChart(data); } catch (e) { console.error("Source chart error:", e); }
 
             // Enhanced Stats
             const renderCharts = () => {

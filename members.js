@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=tech-contributions";
+  "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=tech-contributions";
 
 let allMembers = [];
 

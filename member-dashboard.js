@@ -14,8 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchMemberData(memberName);
 });
 
-const API_URL_TECH = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=tech-contributions";
-const API_URL_CHRISTMAS = "https://script.google.com/macros/s/AKfycbwqbSnRsc7mq6kIE_6i9hmnMQz3n37YgCmljJaDeCt-XYGHtTbcthMsjEIbNhzm5qlc/exec?fund=christmas-fund";
+const API_URL_TECH = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=tech-contributions";
+const API_URL_CHRISTMAS = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=christmas-fund";
 
 // Cache keys - use SAME keys as main dashboard for cache sharing
 const CACHE_KEY_TECH = "techFundData";

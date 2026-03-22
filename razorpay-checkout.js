@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputNew = document.getElementById("newMemberInput");
     
     const inputAmount = document.getElementById("contribAmount");
+    const inputEmail = document.getElementById("contribEmail"); // New
     const amountChips = document.querySelectorAll(".amount-chip");
     
     const proceedBtn = document.getElementById("proceedToPayBtn");
@@ -144,6 +145,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            const email = inputEmail ? inputEmail.value.trim() : "";
+            if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+                alert("Please enter a valid email address to receive your receipt.");
+                return;
+            }
+
             const amount = Number(amtStr);
             const fundName = getFundContext();
             
@@ -206,11 +213,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 "prefill": {
                     "name": memberName,
-                    "email": "",
+                    "email": email,
                     "contact": ""
                 },
                 "notes": {
                     "memberName": memberName,
+                    "memberEmail": email,
                     "fundName": fundName
                 },
                 "theme": {

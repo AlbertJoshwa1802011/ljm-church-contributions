@@ -71,8 +71,8 @@
             <div class="stat-value" id="goalAmount">Loading...</div>
             <div class="stat-subdetail" id="goalSubdetail"></div>
         </div>
-        <div class="stat-card" data-stat-type="total" tabindex="0" role="button" aria-label="Total Collected - click for calculation details">
-            <h3>Total Collected <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
+        <div class="stat-card" data-stat-type="collected" id="totalCollectedCard" tabindex="0" role="button" aria-label="Total Collected - click to see growth trend">
+            <h3>Total Collected <span class="trend-chart-icon">📈</span></h3>
             <div class="stat-value" id="totalAmount">Loading...</div>
             <div class="stat-subdetail" id="totalSubdetail"></div>
         </div>
@@ -81,8 +81,8 @@
             <div class="stat-value" id="remainingAmount">Loading...</div>
             <div class="stat-subdetail" id="remainingSubdetail"></div>
         </div>
-        <div class="stat-card" data-stat-type="count" tabindex="0" role="button" aria-label="Number of Contributions - click for calculation details">
-            <h3>Number of Contributions <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
+        <div class="stat-card" data-stat-type="count" id="entryCountCard" tabindex="0" role="button" aria-label="Number of Contributions - click to see entry trend">
+            <h3>Contributions <span class="trend-chart-icon">📊</span></h3>
             <div class="stat-value" id="entryCount">Loading...</div>
             <div class="stat-subdetail" id="countSubdetail"></div>
         </div>
@@ -218,6 +218,13 @@
                 <label for="newMemberInput">Full Name</label>
                 <input type="text" id="newMemberInput" class="contrib-input" placeholder="e.g. John Doe">
                 <div class="new-member-greeting">🌟 Welcome! We are thrilled to have you!</div>
+            </div>
+
+            <!-- Email Address (New) -->
+            <div class="contrib-field" id="emailField">
+                <label for="contribEmail">Email Address</label>
+                <input type="email" id="contribEmail" class="contrib-input" placeholder="e.g. john@example.com">
+                <div class="field-hint">Used for sending your contribution receipt 📧</div>
             </div>
 
             <!-- Amount -->
