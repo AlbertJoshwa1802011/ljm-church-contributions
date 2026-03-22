@@ -114,9 +114,30 @@ function doGet(e) {
   return ContentService
     .createTextOutput(JSON.stringify({
       goalAmount: goalAmount,
-      contributions: contributions
+      contributions: contributions,
+      memberEmails: extractMemberEmails(headers, dataRows) // New: mapping for auto-fill
     }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Extracts a mapping of Member Name -> Email from the data rows
+ */
+function extractMemberEmails(headers, dataRows) {
+  const memberIdx = headers.indexOf('member');
+  const emailIdx = headers.indexOf('email');
+  
+  const mapping = {};
+  if (memberIdx === -1 || emailIdx === -1) return mapping;
+  
+  dataRows.forEach(row => {
+    const member = row[memberIdx] ? row[memberIdx].toString().trim() : "";
+    const email = row[emailIdx] ? row[emailIdx].toString().trim() : "";
+    if (member && email && email.includes('@')) {
+      mapping[member] = email;
+    }
+  });
+  return mapping;
 }
 
 /**

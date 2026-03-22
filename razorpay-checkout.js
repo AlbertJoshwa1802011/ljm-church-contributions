@@ -64,6 +64,23 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Auto-fill email based on selected member
+    if (selectExisting) {
+        selectExisting.addEventListener("change", () => {
+            const memberName = selectExisting.value;
+            const emails = window._memberEmails || {};
+            if (memberName && emails[memberName]) {
+                const emailInput = document.getElementById("contribEmail");
+                if (emailInput) {
+                    emailInput.value = emails[memberName];
+                    // Visual feedback
+                    emailInput.style.backgroundColor = "#e8f5e9";
+                    setTimeout(() => { emailInput.style.backgroundColor = ""; }, 1000);
+                }
+            }
+        });
+    }
+
     // Modal behavior
     function openModal() {
         modal.style.display = "flex";

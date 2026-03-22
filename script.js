@@ -1207,8 +1207,9 @@ async function initDashboard() {
             const data = await res.json();
             contributionsData = data.contributions || [];
             window._currentContributions = contributionsData;
+            window._memberEmails = data.memberEmails || {}; 
             goalAmount = data.goalAmount || 0;
-            setCachedFund(FUND_KEY, { contributions: contributionsData, goalAmount });
+            setCachedFund(FUND_KEY, { contributions: contributionsData, goalAmount, memberEmails: window._memberEmails });
             currentDisplayCount = 0;
             renderDashboard();
             renderTopContributors(contributionsData);
@@ -1465,8 +1466,9 @@ async function initChristmasFundDashboard() {
             const data = await res.json();
             contributionsData = data.contributions || [];
             window._currentContributions = contributionsData;
+            window._memberEmails = data.memberEmails || {}; 
             goalAmount = data.goalAmount || 0;
-            setCachedFund(FUND_KEY, { contributions: contributionsData, goalAmount });
+            setCachedFund(FUND_KEY, { contributions: contributionsData, goalAmount, memberEmails: window._memberEmails });
             currentDisplayCount = 0;
             renderDashboard();
             renderTopContributors(contributionsData);

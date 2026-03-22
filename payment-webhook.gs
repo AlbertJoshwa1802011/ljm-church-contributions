@@ -142,15 +142,24 @@ function doPost(e) {
         const lastRow = getRealLastRow(sheet);
         const nextRow = lastRow + 1;
         
-        // COLUMN STRUCTURE: [Member, Amount, Date, Email, Category, Notes]
+        // COLUMN STRUCTURE: [Member, Amount, Date, Category, Notes, Proof/ID, Email]
+        // We move email to the end to avoid shifting existing columns (Category/Notes/EntryDate)
         let newRow = [
           memberName, 
           amountPaid, 
           paymentDate, 
-          memberEmail,
           "Online (Verified)", 
-          proofOfPayment
+          "Payment Received via Razorpay Portal",
+          proofOfPayment,
+          memberEmail
         ];
+
+        // Ensure "Email" header exists for auto-fill logic
+        const headerRange = sheet.getRange(1, 1, 1, sheet.getLastColumn() > 7 ? sheet.getLastColumn() : 7);
+        const currentHeaders = headerRange.getValues()[0].map(h => h.toString().toLowerCase().trim());
+        if (!currentHeaders.includes("email")) {
+          sheet.getRange(1, 7).setValue("Email"); // Always put it in Col G
+        }
         
         // Write the row and clear any validation that might block script entries
         const targetRange = sheet.getRange(nextRow, 1, 1, newRow.length);
