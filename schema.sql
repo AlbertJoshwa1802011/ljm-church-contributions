@@ -7,8 +7,11 @@ CREATE TABLE IF NOT EXISTS members (
     email TEXT,
     phone TEXT,
     is_verified INTEGER DEFAULT 0, -- 0 = No, 1 = Yes
+    first_join_date TEXT,
+    recurring_reminders TEXT DEFAULT 'Yes',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+-- NOTE: pre-existing databases get first_join_date / recurring_reminders via migrations/0002_dynamic_funds_audit.sql
 
 -- 2. Contributions Table (Idempotent via unique proof_id)
 CREATE TABLE IF NOT EXISTS contributions (
@@ -80,10 +83,72 @@ CREATE TABLE IF NOT EXISTS member_roles (
 );
 
 -- Seed Default Roles
-INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members"]');
+INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit"]');
 INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('editor', '["edit_purchases","edit_wishlist"]');
+-- Keep existing super_admin rows in sync with the scope list above (idempotent)
+UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit"]' WHERE role_name = 'super_admin';
 
 -- Seed Default Super Admins
 INSERT OR IGNORE INTO member_roles (email, role_name) VALUES ('albertjoshrock101@gmail.com', 'super_admin');
 INSERT OR IGNORE INTO member_roles (email, role_name) VALUES ('thinkmuthu@gmail.com', 'super_admin');
 INSERT OR IGNORE INTO member_roles (email, role_name) VALUES ('augustinraja261@gmail.com', 'super_admin');
+
+-- 8. Dynamic Funds Registry
+CREATE TABLE IF NOT EXISTS funds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT UNIQUE NOT NULL,              -- URL/API key, e.g. 'building-fund'
+    name TEXT NOT NULL,                     -- Display name, e.g. 'Building Fund'
+    description TEXT,
+    goal_amount REAL DEFAULT 0,
+    status TEXT DEFAULT 'active',           -- 'active' | 'archived' | 'deleted' (soft delete)
+    visibility TEXT DEFAULT 'public',       -- 'public' | 'members' (only assigned members can view)
+    is_system INTEGER DEFAULT 0,            -- 1 = legacy fund (Tech/Christmas): cannot be deleted or renamed via API
+    created_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by TEXT,
+    updated_at DATETIME
+);
+
+-- 9. Member-to-Fund Assignment
+CREATE TABLE IF NOT EXISTS fund_members (
+    fund_id INTEGER NOT NULL,
+    member_id INTEGER NOT NULL,
+    added_by TEXT,
+    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (fund_id, member_id)
+);
+
+-- 10. Activity / Audit Log (admin operations + user view events)
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_email TEXT,                        -- verified email when available
+    actor_type TEXT DEFAULT 'anonymous',     -- 'admin' | 'member' | 'anonymous'
+    action TEXT NOT NULL,                    -- e.g. 'fund.create', 'purchase.add', 'view.page'
+    entity_type TEXT,
+    entity_id TEXT,
+    details TEXT,                            -- JSON blob: changed fields, page path, etc.
+    ip TEXT,
+    user_agent TEXT,
+    verified INTEGER DEFAULT 0,              -- 1 = actor identity cryptographically verified (Google ID token)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_logs_created ON activity_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_logs_actor ON activity_logs(actor_email);
+CREATE INDEX IF NOT EXISTS idx_logs_action ON activity_logs(action);
+
+-- 11. Performance indexes for fast retrieval
+CREATE INDEX IF NOT EXISTS idx_contrib_fund_date ON contributions(fund, date DESC);
+CREATE INDEX IF NOT EXISTS idx_contrib_member ON contributions(member_name);
+CREATE INDEX IF NOT EXISTS idx_members_email ON members(email);
+
+-- Seed legacy funds (goal pulled from config so live values are preserved)
+INSERT OR IGNORE INTO funds (slug, name, goal_amount, is_system, status, visibility)
+SELECT 'tech-contributions', 'Tech Fund', CAST(value AS REAL), 1, 'active', 'public'
+FROM config WHERE key = 'tech_goal_amount';
+
+INSERT OR IGNORE INTO funds (slug, name, goal_amount, is_system, status, visibility)
+SELECT 'christmas-fund', 'Christmas Fund', CAST(value AS REAL), 1, 'active', 'public'
+FROM config WHERE key = 'christmas_goal_amount';
+
+-- Config flags
+INSERT OR IGNORE INTO config (key, value) VALUES ('force_login', 'false');

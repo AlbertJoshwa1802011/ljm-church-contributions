@@ -17,3 +17,6 @@ post-implementation-setup.md
 DEPLOYMENT_GUIDE.md
 PURCHASES_SHEET_SETUP.md
 *.log
+
+# Wrangler local dev state
+.wrangler/

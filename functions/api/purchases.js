@@ -2,43 +2,7 @@
 // Handles D1 purchases table mutations (admin-only) and listings (public).
 // Backwards compatible with Google Apps Script query string routing.
 
-// Helper: Check if an email has a specific permission scope dynamically from SQL
-async function checkPermission(email, requiredPermission, db, env) {
-  if (!email) return false;
-  
-  // Bootstrap safety fallback for original admins
-  const hardcodedAdmins = (env.ADMIN_WHITELIST || "albertjoshrock101@gmail.com,thinkmuthu@gmail.com,augustinraja261@gmail.com")
-    .split(",")
-    .map(e => e.trim().toLowerCase());
-  
-  if (hardcodedAdmins.includes(email.toLowerCase().trim())) {
-    return true;
-  }
-
-  // Handle raw token matching for backwards compatibility
-  if (env.ADMIN_API_TOKEN && email === env.ADMIN_API_TOKEN) {
-    return true;
-  }
-
-  try {
-    const userRole = await db.prepare("SELECT role_name FROM member_roles WHERE LOWER(email) = LOWER(?)")
-      .bind(email.trim())
-      .first();
-    
-    if (!userRole) return false;
-
-    const rolePerms = await db.prepare("SELECT permissions FROM roles WHERE role_name = ?")
-      .bind(userRole.role_name)
-      .first();
-
-    if (!rolePerms) return false;
-
-    const permissions = JSON.parse(rolePerms.permissions || "[]");
-    return permissions.includes(requiredPermission);
-  } catch (_) {
-    return false;
-  }
-}
+import { requireAuth, audit } from "./_lib.js";
 
 // GET: Handles both public listings and action-routed admin mutations (GET requests with action parameters)
 export async function onRequestGet(context) {
@@ -50,15 +14,19 @@ export async function onRequestGet(context) {
   const action = url.searchParams.get("action");
 
   if (action) {
-    // Validate authorization dynamically from D1
-    const providedToken = (url.searchParams.get("token") || request.headers.get("Authorization") || "").trim();
-    const authorized = await checkPermission(providedToken, "edit_purchases", db, env);
-    if (!authorized) {
-      return new Response(JSON.stringify({ success: false, message: "Unauthorized Admin Token" }), { 
-        status: 200, 
-        headers: { "Content-Type": "application/json" } 
+    // Validate authorization (Google ID token or legacy email token) + permission scope
+    const auth = await requireAuth(context, "edit_purchases");
+    if (!auth.ok) {
+      // Keep the legacy 200-with-success:false shape this endpoint always used
+      return new Response(JSON.stringify({ success: false, message: "Unauthorized Admin Token" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
       });
     }
+    const logMutation = (act, id, details) => audit(context, {
+      actorEmail: auth.email, actorType: "admin", verified: auth.verified,
+      action: act, entityType: "purchase", entityId: id, details
+    });
 
     try {
       const P = (key) => url.searchParams.get(key) || "";
@@ -87,6 +55,8 @@ export async function onRequestGet(context) {
           P("externalSources")
         )
         .run();
+
+        await logMutation("purchase.add", id, { name: P("productName"), cost, fund: P("fundSource") });
 
         return new Response(JSON.stringify({ success: true, message: "Purchase added to D1 successfully", id }), {
           headers: { "Content-Type": "application/json" }
@@ -119,6 +89,8 @@ export async function onRequestGet(context) {
         )
         .run();
 
+        await logMutation("purchase.update", id, { name: P("productName"), cost, fund: P("fundSource") });
+
         return new Response(JSON.stringify({ success: true, message: "Purchase updated in D1 successfully" }), {
           headers: { "Content-Type": "application/json" }
         });
@@ -128,6 +100,8 @@ export async function onRequestGet(context) {
         if (!id) return new Response(JSON.stringify({ success: false, message: "Missing purchase id" }), { headers: { "Content-Type": "application/json" } });
 
         await db.prepare("DELETE FROM purchases WHERE id = ?").bind(id).run();
+
+        await logMutation("purchase.delete", id, null);
 
         return new Response(JSON.stringify({ success: true, message: "Purchase deleted from D1 successfully" }), {
           headers: { "Content-Type": "application/json" }
