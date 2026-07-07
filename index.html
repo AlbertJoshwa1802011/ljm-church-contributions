@@ -11,15 +11,25 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="payment-modal.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
 <header class="navbar">
     <div class="logo">LJM Church Contributions</div>
     <nav>
-       <a href="funds.html">Funds</a>	
+       <a href="funds.html">Funds</a>
        <a href="members.html">Members</a>
+        <a href="impact.html">What We Bought</a>
         <a href="about.html">About</a>
+        <!-- Google Login Section -->
+        <div id="authContainer" style="display: inline-flex; align-items: center; margin-left: 15px; gap: 8px;">
+            <span style="color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500;">🔐</span>
+            <div id="googleSignInBtn" style="border-radius: 20px; overflow: hidden; opacity: 0; transition: opacity 0.5s;"></div>
+        </div>
+        <span id="userInfo" style="display: none; color: white; margin-left:15px; font-weight: 500; font-size: 14px;"></span>
+        <a href="admin.html" id="adminLink" style="display: none; color: #ffeb3b; font-weight: bold; margin-left: 15px; text-decoration: none; font-size: 14px; border: 1px dashed #ffeb3b; padding: 4px 8px; border-radius: 4px;">Admin Dashboard ⚡</a>
     </nav>
 </header>
 
@@ -76,8 +86,18 @@
             <div class="stat-value" id="totalAmount">Loading...</div>
             <div class="stat-subdetail" id="totalSubdetail"></div>
         </div>
+        <div class="stat-card" data-stat-type="spent" tabindex="0" role="button" aria-label="Spent on Products - click for details">
+            <h3>Spent on Products <span class="card-info-icon" aria-hidden="true">🛍️</span></h3>
+            <div class="stat-value" id="spentAmount">Loading...</div>
+            <div class="stat-subdetail" id="spentSubdetail"></div>
+        </div>
+        <div class="stat-card" data-stat-type="balance" tabindex="0" role="button" aria-label="Available Balance - money in hand right now">
+            <h3>Available Balance <span class="card-info-icon" aria-hidden="true">💼</span></h3>
+            <div class="stat-value" id="balanceAmount">Loading...</div>
+            <div class="stat-subdetail" id="balanceSubdetail"></div>
+        </div>
         <div class="stat-card" data-stat-type="remaining" tabindex="0" role="button" aria-label="Remaining - click for calculation details">
-            <h3>Remaining <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
+            <h3>Remaining to Goal <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
             <div class="stat-value" id="remainingAmount">Loading...</div>
             <div class="stat-subdetail" id="remainingSubdetail"></div>
         </div>
@@ -153,6 +173,11 @@
     <!-- Last Updated -->
     <div class="last-updated" id="lastUpdated"></div>
 
+    <!-- Diagnostic Console (Hidden by default, used for debugging) -->
+    <div id="debugConsole" style="display: none; background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 11px; margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto; border: 1px solid #333;">
+        <div style="border-bottom: 1px solid #333; margin-bottom: 5px; font-weight: bold;">🔍 Auth Diagnostics</div>
+        <div id="debugLogs"></div>
+    </div>
 </main>
 
 <footer class="premium-footer">
@@ -188,7 +213,7 @@
 </footer>
 
 <!-- Premium Contribution Modal -->
-<div id="contributionModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="contribModalTitle" aria-hidden="true" style="z-index: 1000;">
+<div id="contributionModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="contribModalTitle" aria-hidden="true">
     <div class="insight-modal-backdrop" id="contribModalBackdrop"></div>
     <div class="insight-modal-content premium-contrib-modal">
         <button type="button" class="insight-modal-close" id="contribModalClose" aria-label="Close">×</button>
@@ -220,16 +245,40 @@
                 <div class="new-member-greeting">🌟 Welcome! We are thrilled to have you!</div>
             </div>
 
-            <!-- Email Address (New) -->
-            <div class="contrib-field" id="emailField">
-                <label for="contribEmail">Email Address</label>
-                <input type="email" id="contribEmail" class="contrib-input" placeholder="e.g. john@example.com">
-                <div class="field-hint">Used for sending your contribution receipt 📧</div>
+            <!-- Month Paid For (New) -->
+            <div class="contrib-field" id="monthField">
+                <label for="monthSelect">Month for Contribution</label>
+                <select id="monthSelect" class="contrib-input">
+                    <option value="">Current Month</option>
+                    <option value="January">January</option>
+                    <option value="February">February</option>
+                    <option value="March">March</option>
+                    <option value="April">April</option>
+                    <option value="May">May</option>
+                    <option value="June">June</option>
+                    <option value="July">July</option>
+                    <option value="August">August</option>
+                    <option value="September">September</option>
+                    <option value="October">October</option>
+                    <option value="November">November</option>
+                    <option value="December">December</option>
+                </select>
+                <div class="field-hint">Select which month you are paying for 📅</div>
+            </div>
+
+            <!-- Payment Status Preview (New) -->
+            <div id="paymentStatusPreview" class="payment-status-preview">
+                <div class="status-title">
+                    <span>📊 Your 2026 Progress:</span>
+                </div>
+                <div class="month-pills" id="monthStatusPills">
+                    <!-- Status pills injected by razorpay-checkout.js -->
+                </div>
             </div>
 
             <!-- Amount -->
             <div class="contrib-field">
-                <label>Amount</label>
+                <label for="contribAmount">Amount</label>
                 <div class="contrib-amount-wrapper">
                     <span class="currency-symbol">₹</span>
                     <input type="number" id="contribAmount" class="contrib-input amount-input" placeholder="0" min="1">
@@ -239,6 +288,24 @@
                     <button class="amount-chip" data-val="1000">₹1k</button>
                     <button class="amount-chip" data-val="2000">₹2k</button>
                     <button class="amount-chip" data-val="5000">₹5k</button>
+                </div>
+            </div>
+
+            <!-- Email (for receipt) -->
+            <div class="contrib-field" style="margin-top: 25px;">
+                <label for="contribEmail">Email Address <span style="font-weight: normal; color: #888; font-size: 11px;">(for receipt)</span></label>
+                <div class="contrib-amount-wrapper">
+                    <span class="currency-symbol" style="font-size: 14px;">📧</span>
+                    <input type="email" id="contribEmail" class="contrib-input amount-input" placeholder="your@email.com" style="font-size: 16px; font-weight: 500;">
+                </div>
+            </div>
+
+            <!-- Mobile Number (Optional) -->
+            <div class="contrib-field" style="margin-top: 15px;">
+                <label for="contribPhone">Mobile Number <span style="font-weight: normal; color: #888; font-size: 11px;">(optional)</span></label>
+                <div class="contrib-amount-wrapper">
+                    <span class="currency-symbol" style="font-size: 14px;">📱</span>
+                    <input type="tel" id="contribPhone" class="contrib-input amount-input" placeholder="e.g. 9876543210" style="font-size: 16px; font-weight: 500;">
                 </div>
             </div>
             
@@ -251,6 +318,89 @@
 
 
 
+<!-- Local preview mock data (inert on production URLs) -->
+<script src="purchases-mock.js"></script>
 <script src="razorpay-checkout.js"></script>
 <script src="script.js"></script>
+<script src="admin-session.js"></script>
+
+<script>
+window.addEventListener('load', () => {
+    if (window.location.protocol === 'file:') {
+        const container = document.getElementById('googleSignInBtn');
+        if (container) {
+            container.innerHTML = '<button class="premium-login-btn" onclick="mockLogin()"><span class="btn-icon">🔐</span> Church Login (Dev)</button>';
+        }
+        return;
+    }
+
+    google.accounts.id.initialize({
+        client_id: '915064946962-eohgis92a3jmfk3fi7hkh8uc21971clo.apps.googleusercontent.com',
+        callback: handleCredentialResponse,
+        use_fedcm_for_prompt: false
+    });
+
+    const btnContainer = document.getElementById('googleSignInBtn');
+    google.accounts.id.renderButton(
+        btnContainer,
+        { theme: 'filled_black', size: 'medium', shape: 'pill', text: 'signin', width: 160 }
+    );
+    setTimeout(() => { btnContainer.style.opacity = '1'; }, 300);
+
+    LJMAdmin.readSession().then(s => {
+        if (s) onIdentityVerified({ success: true, email: s.email, name: s.name, isAdmin: true });
+    });
+});
+
+function mockLogin() {
+    LJMAdmin.createSession("admin@ljmchurch.com", "Dev Admin").then(() => {
+        LJMAdmin.showAdminBar();
+        onIdentityVerified({ success: true, email: "admin@ljmchurch.com", isAdmin: true, message: "Dev Preview Active" });
+    });
+}
+
+function handleCredentialResponse(response) {
+    try {
+        const payload = JSON.parse(atob(response.credential.split('.')[1]));
+        const isAdmin = LJMAdmin.isAdmin(payload.email);
+
+        if (isAdmin) {
+            LJMAdmin.createSession(payload.email, payload.name).then(() => {
+                LJMAdmin.showAdminBar();
+            });
+        }
+
+        onIdentityVerified({
+            success: true,
+            email: payload.email,
+            name: payload.name,
+            isAdmin: isAdmin
+        });
+    } catch (e) {
+        console.error("Token decode error:", e);
+        onIdentityVerified({ success: false, message: "Could not read your Google account info." });
+    }
+}
+
+function onIdentityVerified(result) {
+    const userInfo = document.getElementById('userInfo');
+    const adminLink = document.getElementById('adminLink');
+    const authContainer = document.getElementById('authContainer');
+
+    if (result && result.success) {
+        if (userInfo) {
+            userInfo.textContent = "Welcome, " + (result.name || result.email.split('@')[0]);
+            userInfo.style.display = "inline";
+        }
+        if (result.isAdmin && adminLink) {
+            adminLink.style.display = "inline";
+        }
+        if (authContainer) authContainer.style.display = "none";
+    } else {
+        alert("Authentication failed: " + (result ? result.message : "Unknown error"));
+        if (authContainer) authContainer.style.display = "inline-flex";
+        if (userInfo) userInfo.style.display = "none";
+    }
+}
+</script>
 </html>

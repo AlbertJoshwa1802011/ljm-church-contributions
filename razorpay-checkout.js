@@ -27,12 +27,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputNew = document.getElementById("newMemberInput");
     
     const inputAmount = document.getElementById("contribAmount");
-    const inputEmail = document.getElementById("contribEmail"); // New
+    const inputEmail = document.getElementById("contribEmail");
+    const inputPhone = document.getElementById("contribPhone");
     const amountChips = document.querySelectorAll(".amount-chip");
     
     const proceedBtn = document.getElementById("proceedToPayBtn");
     
     let isNewMember = false;
+    let paymentInProgress = false;
 
     if (!btn || !modal) return;
 
@@ -42,54 +44,126 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 1000);
 
     // Load existing members
+    let memberLoadInterval = null;
+    let membersAlreadyLoaded = false;
     function loadMembers() {
-        // Try getting members from existing script.js function if available
         let members = [];
         if (typeof getCachedMembersList === 'function') {
             members = getCachedMembersList() || [];
         }
         
-        // Populate select
-        selectExisting.innerHTML = '<option value="">-- Select your name --</option>';
+        if (members.length === 0 && window._currentContributions) {
+            members = Array.from(new Set(window._currentContributions.map(c => c.Member))).filter(Boolean);
+        }
+        
         if (members && members.length > 0) {
-            // alphabetical sort
+            const currentSelection = selectExisting.value;
+
+            if (membersAlreadyLoaded && currentSelection) {
+                const sortedMembers = members.slice().sort();
+                const existingOptions = Array.from(selectExisting.options).slice(1).map(o => o.value);
+                const listsMatch = sortedMembers.length === existingOptions.length &&
+                    sortedMembers.every((m, i) => m === existingOptions[i]);
+                if (listsMatch) {
+                    if (memberLoadInterval) {
+                        clearInterval(memberLoadInterval);
+                        memberLoadInterval = null;
+                    }
+                    return true;
+                }
+            }
+
+            selectExisting.innerHTML = '<option value="">-- Select your name --</option>';
             members.sort().forEach(m => {
                 const opt = document.createElement("option");
                 opt.value = m;
                 opt.textContent = m;
                 selectExisting.appendChild(opt);
             });
+
+            if (currentSelection) {
+                const stillExists = Array.from(selectExisting.options).some(o => o.value === currentSelection);
+                if (stillExists) {
+                    selectExisting.value = currentSelection;
+                }
+            }
+
+            membersAlreadyLoaded = true;
+            if (memberLoadInterval) {
+                clearInterval(memberLoadInterval);
+                memberLoadInterval = null;
+            }
+            return true;
         } else {
-            selectExisting.innerHTML = '<option value="">No members found yet</option>';
+            selectExisting.innerHTML = '<option value="">Syncing members from sheet... 🔄</option>';
+            return false;
         }
     }
 
-    // Auto-fill email based on selected member
-    if (selectExisting) {
-        selectExisting.addEventListener("change", () => {
-            const memberName = selectExisting.value;
-            const emails = window._memberEmails || {};
-            if (memberName && emails[memberName]) {
-                const emailInput = document.getElementById("contribEmail");
-                if (emailInput) {
-                    emailInput.value = emails[memberName];
-                    // Visual feedback
-                    emailInput.style.backgroundColor = "#e8f5e9";
-                    setTimeout(() => { emailInput.style.backgroundColor = ""; }, 1000);
-                }
-            }
-        });
-    }
+    // Listen for data-ready event from script.js
+    document.addEventListener('LJM_DATA_READY', () => {
+        console.log("🚀 LJM_DATA_READY received in checkout script");
+        loadMembers();
+    });
 
     // Modal behavior
     function openModal() {
         modal.style.display = "flex";
         modal.classList.add("insight-modal-visible");
-        loadMembers();
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = "hidden";
+        
+        const success = loadMembers();
+        
+        // If not ready, start polling every 500ms for up to 5s
+        if (!success) {
+            let attempts = 0;
+            if (memberLoadInterval) clearInterval(memberLoadInterval);
+            memberLoadInterval = setInterval(() => {
+                attempts++;
+                const ready = loadMembers();
+                if (ready || attempts > 10) {
+                    clearInterval(memberLoadInterval);
+                    memberLoadInterval = null;
+                    if (!ready && selectExisting.innerHTML.includes("Syncing")) {
+                        selectExisting.innerHTML = '<option value="">No members found yet</option>';
+                    }
+                }
+            }, 500);
+        }
     }
     
     function closeModal() {
         modal.classList.remove("insight-modal-visible");
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = "";
+        if (memberLoadInterval) {
+            clearInterval(memberLoadInterval);
+            memberLoadInterval = null;
+        }
+        membersAlreadyLoaded = false;
+
+        isNewMember = false;
+        if (btnExisting) btnExisting.classList.add("active");
+        if (btnNew) btnNew.classList.remove("active");
+        if (fieldExisting) fieldExisting.style.display = "block";
+        if (fieldNew) fieldNew.style.display = "none";
+        if (selectExisting) selectExisting.value = "";
+        if (inputNew) inputNew.value = "";
+        if (inputAmount) inputAmount.value = "";
+        if (inputEmail) inputEmail.value = "";
+        if (inputPhone) inputPhone.value = "";
+        if (proceedBtn) {
+            proceedBtn.disabled = false;
+            proceedBtn.innerText = "Proceed to Pay";
+        }
+        paymentInProgress = false;
+        amountChips.forEach(c => c.classList.remove("selected"));
+        const preview = document.getElementById('paymentStatusPreview');
+        if (preview) preview.classList.remove('visible');
+        const monthEl = document.getElementById('monthSelect');
+        if (monthEl) monthEl.value = "";
+
         setTimeout(() => { modal.style.display = "none"; }, 300);
     }
 
@@ -100,6 +174,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
     if(closeBtn) closeBtn.addEventListener("click", closeModal);
     if(backdrop) backdrop.addEventListener("click", closeModal);
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal.classList.contains("insight-modal-visible")) closeModal();
+    });
 
     // Toggles
     if (btnExisting && btnNew) {
@@ -117,6 +194,58 @@ document.addEventListener("DOMContentLoaded", () => {
             btnExisting.classList.remove("active");
             fieldNew.style.display = "block";
             fieldExisting.style.display = "none";
+            const preview = document.getElementById('paymentStatusPreview');
+            if (preview) preview.classList.remove('visible');
+        });
+
+        // Dynamic Status Preview on name selection
+        selectExisting.addEventListener("change", () => {
+            const name = selectExisting.value;
+            const preview = document.getElementById('paymentStatusPreview');
+            const pills = document.getElementById('monthStatusPills');
+            
+            if (!name) {
+                preview.classList.remove('visible');
+                if (inputEmail) inputEmail.value = "";
+                return;
+            }
+
+            // Auto-fill email if available
+            if (inputEmail && window._memberEmails && window._memberEmails[name]) {
+                inputEmail.value = window._memberEmails[name];
+            } else if (inputEmail) {
+                inputEmail.value = "";
+            }
+
+            // Auto-fill phone if available
+            if (inputPhone && window._memberPhones && window._memberPhones[name]) {
+                inputPhone.value = window._memberPhones[name];
+            } else if (inputPhone) {
+                inputPhone.value = "";
+            }
+
+            const contributions = window._currentContributions || [];
+            const memberData = contributions.filter(c => (c.Member || "").toLowerCase() === name.toLowerCase());
+            const monthsPaid = new Set();
+            const currentYear = new Date().getFullYear();
+            
+            memberData.forEach(c => {
+                const d = new Date(c.Date);
+                if (d && d.getFullYear() === currentYear) monthsPaid.add(d.getMonth());
+                // Also check notes for manual month labels
+                const notes = (c.Notes || "").toLowerCase();
+                const monthNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+                monthNames.forEach((m, idx) => { if (notes.includes(m)) monthsPaid.add(idx); });
+            });
+
+            const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            pills.innerHTML = monthNamesShort.map((m, i) => `
+                <span class="month-pill" style="opacity: ${monthsPaid.has(i) ? '1' : '0.4'}; background: ${monthsPaid.has(i) ? '#10b981' : '#fce7f3'}; color: ${monthsPaid.has(i) ? '#fff' : '#9d174d'}">
+                    ${m} ${monthsPaid.has(i) ? '✓' : ''}
+                </span>
+            `).join('');
+
+            preview.classList.add('visible');
         });
     }
 
@@ -140,6 +269,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Proceed to Pay
     if (proceedBtn) {
         proceedBtn.addEventListener("click", async () => {
+            if (paymentInProgress) return;
+
             let memberName = "";
             
             if (isNewMember) {
@@ -157,8 +288,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const amtStr = inputAmount.value;
-            if (!amtStr || isNaN(amtStr) || Number(amtStr) <= 0) {
-                alert("Please enter a valid amount.");
+            const parsedAmount = Math.floor(Number(amtStr));
+            if (!amtStr || isNaN(amtStr) || parsedAmount < 1 || parsedAmount > 500000) {
+                alert("Please enter a valid amount (between ₹1 and ₹5,00,000).");
                 return;
             }
 
@@ -168,30 +300,48 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const amount = Number(amtStr);
+            const phone = inputPhone ? inputPhone.value.trim() : "";
+
+            const amount = parsedAmount;
             const fundName = getFundContext();
-            
-            // Visual feedback
+            const monthEl = document.getElementById('monthSelect');
+            const selectedMonth = monthEl ? monthEl.value : '';
+
+            paymentInProgress = true;
             const originalText = proceedBtn.innerText;
             proceedBtn.innerText = "Loading Secure Checkout...";
             proceedBtn.disabled = true;
 
-            // Lazy Load Razorpay to avoid continuous background network calls
             if (typeof Razorpay === 'undefined') {
-                await new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-                    script.onload = resolve;
-                    script.onerror = reject;
-                    document.body.appendChild(script);
-                }).catch(() => {
+                if (!window._razorpayLoadPromise) {
+                    window._razorpayLoadPromise = new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                        script.onload = resolve;
+                        script.onerror = () => {
+                            window._razorpayLoadPromise = null;
+                            reject();
+                        };
+                        document.body.appendChild(script);
+                    });
+                }
+                try {
+                    await window._razorpayLoadPromise;
+                } catch {
                     alert("Failed to load secure checkout. Please check your connection.");
                     proceedBtn.innerText = originalText;
                     proceedBtn.disabled = false;
-                });
+                    paymentInProgress = false;
+                    return;
+                }
             }
 
-            if (typeof Razorpay === 'undefined') return;
+            if (typeof Razorpay === 'undefined') {
+                proceedBtn.innerText = originalText;
+                proceedBtn.disabled = false;
+                paymentInProgress = false;
+                return;
+            }
 
             // Store info gracefully via Razorpay instance
             var options = {
@@ -201,6 +351,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 "name": "LJM Church",
                 "description": "Contribution towards " + (fundName.includes("tech") ? "Tech Fund" : "Christmas Fund"),
                 "handler": function (response) {
+                    paymentInProgress = false;
+                    proceedBtn.innerText = originalText;
+                    proceedBtn.disabled = false;
                     closeModal();
                     alert("Thank you! Payment successful. Payment ID: " + response.razorpay_payment_id + ". Your contribution will reflect shortly.");
                     
@@ -226,17 +379,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     "ondismiss": function() {
                         proceedBtn.innerText = originalText;
                         proceedBtn.disabled = false;
+                        paymentInProgress = false;
                     }
                 },
                 "prefill": {
                     "name": memberName,
                     "email": email,
-                    "contact": ""
+                    "contact": phone
                 },
                 "notes": {
                     "memberName": memberName,
                     "memberEmail": email,
-                    "fundName": fundName
+                    "memberPhone": phone,
+                    "fundName": fundName,
+                    "month": selectedMonth || (new Date().toLocaleString('default', { month: 'long' }))
                 },
                 "theme": {
                     "color": "#673ab7"
@@ -249,12 +405,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         alert("Payment Failed. Reason: " + response.error.description);
                         proceedBtn.innerText = originalText;
                         proceedBtn.disabled = false;
+                        paymentInProgress = false;
                 });
                 rzp1.open();
             } catch (err) {
                 alert("Could not load secure checkout properly.");
                 proceedBtn.innerText = originalText;
                 proceedBtn.disabled = false;
+                paymentInProgress = false;
             }
         });
     }

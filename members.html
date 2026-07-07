@@ -130,6 +130,52 @@ body {
         font-size: 24px;
     }
 }
+/* ===== Verification Badges ===== */
+.verify-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 10px;
+    transition: all 0.2s;
+}
+.verify-badge.verified {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+.verify-badge.unverified {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    cursor: pointer;
+}
+.verify-badge.unverified:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+}
+
+/* ===== OTP Modal Specifics ===== */
+.otp-input-container {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin: 20px 0;
+}
+.otp-input {
+    width: 45px;
+    height: 55px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    color: #1e293b;
+}
+.otp-input:focus {
+    border-color: #6366f1;
+    outline: none;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.2);
+}
 </style>
 </head>
 <body>
@@ -139,6 +185,7 @@ body {
     <nav>
         <a href="funds.html">Funds</a>
         <a href="members.html" class="active">Members</a>
+        <a href="impact.html">What We Bought</a>
         <a href="about.html">About</a>
     </nav>
 </header>
@@ -151,6 +198,42 @@ body {
         <!-- Member cards injected here -->
     </section>
 </main>
+
+<!-- OTP Verification Modal -->
+<div id="otpModal" class="insight-modal" style="z-index: 10001;">
+    <div class="insight-modal-backdrop" onclick="closeOTPModal()"></div>
+    <div class="insight-modal-content" style="max-width: 400px; text-align: center;">
+        <button class="insight-modal-close" onclick="closeOTPModal()">×</button>
+        <h3 class="insight-modal-title" id="otpModalTitle">Verify Profile</h3>
+        <p id="otpModalDesc" style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
+            We'll send a 6-digit code to verify your profile.
+        </p>
+        
+        <div id="otpStep1">
+            <div style="margin-bottom: 20px; text-align: left;">
+                <label style="font-size: 13px; font-weight: 600; color: #475569;">Email Address</label>
+                <input type="email" id="otpEmail" class="contrib-input" readonly style="background: #f1f5f9;">
+            </div>
+            <button class="cta-button" id="btnSendOTP" style="width: 100%;">Send Verification Code</button>
+        </div>
+
+        <div id="otpStep2" style="display: none;">
+            <p style="font-size: 13px; color: #475569;">Enter the 6-digit code sent to your email:</p>
+            <div class="otp-input-container">
+                <input type="text" maxlength="1" class="otp-input" onkeyup="handleOtpInput(this, 1)">
+                <input type="text" maxlength="1" class="otp-input" onkeyup="handleOtpInput(this, 2)">
+                <input type="text" maxlength="1" class="otp-input" onkeyup="handleOtpInput(this, 3)">
+                <input type="text" maxlength="1" class="otp-input" onkeyup="handleOtpInput(this, 4)">
+                <input type="text" maxlength="1" class="otp-input" onkeyup="handleOtpInput(this, 5)">
+                <input type="text" maxlength="1" class="otp-input" onkeyup="handleOtpInput(this, 6)">
+            </div>
+            <button class="cta-button" id="btnVerifyOTP" style="width: 100%;">Verify & Complete</button>
+            <p style="margin-top: 15px; font-size: 12px; color: #64748b;">
+                Didn't get the code? <a href="#" onclick="showOtpStep1()" style="color: #6366f1;">Try again</a>
+            </p>
+        </div>
+    </div>
+</div>
 
 <footer class="premium-footer">
     <div class="footer-inner">
@@ -167,11 +250,12 @@ body {
     <div class="footer-bottom">© 2026 · LJM Church Contributions · Built with ❤️</div>
 </footer>
 
+<script src="admin-session.js"></script>
 <script>
 // ===== GLOBAL CACHE USING LOCAL STORAGE =====
 const FUND_URLS = [
-    "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=tech-contributions", // Tech
-    "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=christmas-fund"  // Christmas
+    "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=tech-contributions", // Tech
+    "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=christmas-fund"  // Christmas
 ];
 
 // Cache keys - use SAME keys as main dashboard for cache sharing
@@ -263,7 +347,9 @@ async function fetchFundData(force=false){
                 goals: {
                     tech: cachedTech.goalAmount || 0,
                     christmas: cachedChristmas.goalAmount || 0
-                }
+                },
+                memberStatus: cachedTech.memberStatus || {},
+                memberEmails: cachedTech.memberEmails || {}
             };
             return mergedData;
         }
@@ -279,6 +365,8 @@ async function fetchFundData(force=false){
         results.forEach((data, idx)=>{
             if(data.contributions) mergedData.contributions.push(...data.contributions);
             mergedData.goals[idx===0?"tech":"christmas"] = Number(data.goalAmount || 0);
+            if(data.memberStatus) mergedData.memberStatus = data.memberStatus;
+            if(data.memberEmails) mergedData.memberEmails = data.memberEmails;
             
             // Cache each fund separately in localStorage
             if (idx === 0) {
@@ -319,6 +407,8 @@ async function initMembersPage(){
     }
 
     const data = await fetchFundData(forceRefresh || !cachedMembers);
+    window._memberStatus = data.memberStatus || {};
+    window._memberEmails = data.memberEmails || {};
     const contributions = data.contributions || [];
     allMembers = [...new Set(contributions.map(c=>c.Member).filter(Boolean))].sort();
     setCachedMembersList(allMembers);
@@ -331,11 +421,19 @@ function renderMemberList(members){
     members.forEach(name=>{
         const card = document.createElement("div");
         card.className = "member-card";
+        const isVerified = window._memberStatus && window._memberStatus[name];
         card.innerHTML = `
             <div class="person-icon">👤</div>
             <div class="member-name">${name}</div>
+            <div class="verify-badge ${isVerified ? 'verified' : 'unverified'}">
+                ${isVerified ? 'Verified ✓' : 'Verify Profile'}
+            </div>
         `;
-        card.addEventListener("click", ()=> {
+        card.addEventListener("click", (e)=> {
+            if (e.target.classList.contains('unverified')) {
+                openOTPModal(name);
+                return;
+            }
             window.location.href = `member.html?name=${encodeURIComponent(name)}`;
         });
         container.appendChild(card);
@@ -348,6 +446,99 @@ searchInput.addEventListener("input", (e)=>{
     const term = e.target.value.toLowerCase();
     const filtered = allMembers.filter(m=>m.toLowerCase().includes(term));
     renderMemberList(filtered);
+});
+
+// ===== OTP VERIFICATION LOGIC =====
+let currentMemberForOTP = "";
+
+function openOTPModal(name) {
+    currentMemberForOTP = name;
+    document.getElementById('otpModalTitle').innerText = `Verify ${name}`;
+    document.getElementById('otpEmail').value = (window._memberEmails && window._memberEmails[name]) || "";
+    showOtpStep1();
+    document.getElementById('otpModal').classList.add('insight-modal-visible');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeOTPModal() {
+    document.getElementById('otpModal').classList.remove('insight-modal-visible');
+    document.body.style.overflow = '';
+}
+
+function showOtpStep1() {
+    document.getElementById('otpStep1').style.display = 'block';
+    document.getElementById('otpStep2').style.display = 'none';
+}
+
+function showOtpStep2() {
+    document.getElementById('otpStep1').style.display = 'none';
+    document.getElementById('otpStep2').style.display = 'block';
+    // Focus first input
+    const inputs = document.querySelectorAll('.otp-input');
+    if (inputs[0]) inputs[0].focus();
+}
+
+function handleOtpInput(input, index) {
+    if (input.value && index < 6) {
+        document.querySelectorAll('.otp-input')[index].focus();
+    }
+}
+
+document.getElementById('btnSendOTP').addEventListener('click', () => {
+    const email = document.getElementById('otpEmail').value;
+    const phone = ""; // We can add phone lookup here later if needed
+    
+    if (!email) {
+        alert("No email address found for this member. Please contact admin to update your profile.");
+        return;
+    }
+
+    document.getElementById('btnSendOTP').innerText = "Sending...";
+    document.getElementById('btnSendOTP').disabled = true;
+
+    google.script.run
+        .withSuccessHandler(res => {
+            alert(res.message);
+            if (res.status === "success") showOtpStep2();
+            document.getElementById('btnSendOTP').innerText = "Send Verification Code";
+            document.getElementById('btnSendOTP').disabled = false;
+        })
+        .withFailureHandler(err => {
+            alert("Error: " + err);
+            document.getElementById('btnSendOTP').innerText = "Send Verification Code";
+            document.getElementById('btnSendOTP').disabled = false;
+        })
+        .sendOTP(email, phone);
+});
+
+document.getElementById('btnVerifyOTP').addEventListener('click', () => {
+    const email = document.getElementById('otpEmail').value;
+    const code = Array.from(document.querySelectorAll('.otp-input')).map(i => i.value).join('');
+    
+    if (code.length < 6) {
+        alert("Please enter the full 6-digit code.");
+        return;
+    }
+
+    document.getElementById('btnVerifyOTP').innerText = "Verifying...";
+    document.getElementById('btnVerifyOTP').disabled = true;
+
+    google.script.run
+        .withSuccessHandler(res => {
+            alert(res.message);
+            if (res.status === "success") {
+                closeOTPModal();
+                initMembersPage(); // Refresh list to show badge
+            }
+            document.getElementById('btnVerifyOTP').innerText = "Verify & Complete";
+            document.getElementById('btnVerifyOTP').disabled = false;
+        })
+        .withFailureHandler(err => {
+            alert("Error: " + err);
+            document.getElementById('btnVerifyOTP').innerText = "Verify & Complete";
+            document.getElementById('btnVerifyOTP').disabled = false;
+        })
+        .verifyOTP(email, code);
 });
 
 // Auto-focus search box
