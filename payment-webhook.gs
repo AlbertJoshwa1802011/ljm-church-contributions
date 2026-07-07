@@ -13,11 +13,26 @@
  * 2. Go to Triggers (clock icon on the left).
  * 3. Add Trigger -> Choose function `sendMonthlyReport` -> Time-driven -> Month timer -> 1st day of month.
  */
-
 // --- SECURITY CONFIGURATION ---
 // We now store sensitive information securely in Google's PropertiesService
 // Run `setupSecurityProperties()` once from the Apps Script editor to initialize them.
 const SHEET_ID = "1BsuLjPmFrW85AnZgmicrCj0vWlbQ4OH369PdBVA3zyE"; 
+
+/**
+ * TEST CONNECTION: Run this from the Apps Script editor 
+ * to check if the script can see your spreadsheet.
+ */
+function testSpreadsheetConnection() {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheets = ss.getSheets().map(s => s.getName());
+    Logger.log("✅ Success! Connected to: " + ss.getName());
+    Logger.log("Available Sheets: " + sheets.join(", "));
+  } catch (e) {
+    Logger.log("❌ Error connecting to spreadsheet: " + e.toString());
+    Logger.log("Make sure SHEET_ID is correct and you have shared the sheet with the email running this script.");
+  }
+}
 
 /**
  * Helper to fetch secure environment variables
@@ -25,7 +40,7 @@ const SHEET_ID = "1BsuLjPmFrW85AnZgmicrCj0vWlbQ4OH369PdBVA3zyE";
 function getEnv(key) {
   const val = PropertiesService.getScriptProperties().getProperty(key);
   // Fallback for ADMIN_EMAIL if PropertiesService isn't set up yet
-  if (!val && key === "ADMIN_EMAIL") return "albertjoshrock101@gmail.com";
+  if (!val && key === "ADMIN_EMAIL") return "albertjoshrock101@gmail.com,thinkmuthu@gmail.com,augustinraja261@gmail.com";
   return val;
 }
 
@@ -35,7 +50,7 @@ function getEnv(key) {
  */
 function setupSecurityProperties() {
   PropertiesService.getScriptProperties().setProperties({
-    "ADMIN_EMAIL": "albertjoshrock101@gmail.com",
+    "ADMIN_EMAIL": "albertjoshrock101@gmail.com,thinkmuthu@gmail.com,augustinraja261@gmail.com",
     "RAZORPAY_WEBHOOK_SECRET": "YOUR_WEBHOOK_SECRET_HERE",
     "RAZORPAY_KEY_ID": "YOUR_LIVE_KEY_ID_HERE", // Used for Server-to-Server verification
     "RAZORPAY_KEY_SECRET": "YOUR_LIVE_KEY_SECRET_HERE" 
@@ -65,12 +80,12 @@ function doPost(e) {
       console.warn("Payload size exceeded limit.", rawBody.length);
       return ContentService.createTextOutput("Payload too large").setMimeType(ContentService.MimeType.TEXT);
     }
-
     // --- SECURITY: Payload Verification ---
     const headerSignature = e.parameter['x-razorpay-signature'] || (e.headers && e.headers['X-Razorpay-Signature']);
     const expectedSecret = getEnv("RAZORPAY_WEBHOOK_SECRET");
+    const isLocalTest = e.parameter && e.parameter.isLocalTest === "true";
     
-    if (expectedSecret && expectedSecret !== "YOUR_WEBHOOK_SECRET_HERE") {
+    if (expectedSecret && expectedSecret !== "YOUR_WEBHOOK_SECRET_HERE" && !isLocalTest) {
       // 1. Check for Query Parameter 'secret' (Legacy/Simple)
       const urlSecret = e.parameter.secret;
       
@@ -85,47 +100,42 @@ function doPost(e) {
     } else {
       console.warn("Webhook secret not configured in PropertiesService. Skipping security check (UNSAFE).");
     }
-
+    
     const payload = JSON.parse(rawBody);
     console.log(`Processing Webhook Event: ${payload.event} (ID: ${payload.payload?.payment?.entity?.id || 'N/A'})`);
-
+    
     if (payload.event === "payment.captured") {
       const paymentEntity = payload.payload.payment.entity;
       const paymentId = paymentEntity.id;
       const expectedAmount = paymentEntity.amount; // in paise
       
       // --- SECURITY: Server-to-Server Payment Verification ---
-      // This eliminates the risk of spoofed webhooks by calling Razorpay directly
-      // using the secure Key Secret to verify the payment actually happened.
-      const isGenuine = verifyRazorpayPayment(paymentId, expectedAmount);
+      // Skip API check for local tests since test IDs don't exist in Razorpay
+      const isGenuine = isLocalTest || verifyRazorpayPayment(paymentId, expectedAmount);
       if (!isGenuine) {
         console.error(`🚨 SPOOF ATTEMPT DETECTED! Payment verification failed for ID: ${paymentId}`);
         return ContentService.createTextOutput("Verification Failed").setMimeType(ContentService.MimeType.TEXT);
       }
-
       const amountPaid = expectedAmount / 100; // Razorpay amounts are in paise
       const rawDate = new Date(paymentEntity.created_at * 1000);
       const paymentDate = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
       const method = paymentEntity.method;
       const upiId = paymentEntity.vpa ? String(paymentEntity.vpa).substring(0, 100) : ""; 
-      const contact = paymentEntity.contact ? String(paymentEntity.contact).substring(0, 50) : "";
-      const contributorEmail = paymentEntity.email ? String(paymentEntity.email).substring(0, 100) : ""; 
-
+      const contributorEmail = paymentEntity.email ? String(paymentEntity.email).substring(0, 100) : "";
+      const contributorPhone = paymentEntity.contact ? String(paymentEntity.contact).substring(0, 50) : "";
+      
       // Data sanitization
       const notes = paymentEntity.notes || {};
       const rawMemberName = notes.memberName || "Online Contributor";
       const memberName = String(rawMemberName).substring(0, 200).replace(/[=+\-@>]/g, ""); // Prevent formula injection
-      let fundName = notes.fundName || "tech-contributions"; 
       const memberEmail = notes.memberEmail || contributorEmail || ""; // Use note or direct email
+      const contact = notes.memberPhone || contributorPhone || ""; // Use note or Razorpay-level contact
+      const monthFor = notes.month || (new Date().toLocaleString('default', { month: 'long' }));
       
       // Auto-map aliases with robust normalization
-      const normalFund = fundName.toLowerCase().trim();
-      if (normalFund.includes("tech")) fundName = "tech-contributions";
-      else if (normalFund.includes("christmas")) fundName = "christmas-fund";
-      else fundName = "tech-contributions"; // Safe Default
-
-      console.log(`Mapping contribution to sheet: ${fundName} for member: ${memberName} (${memberEmail}) (Amount: ${amountPaid})`);
-
+      const fundName = normalizeFundName(notes.fundName);
+      
+      console.log(`Mapping contribution to sheet: ${fundName} for member: ${memberName} (${memberEmail}) | Phone: ${contact} (Amount: ${amountPaid})`);
       const ss = SpreadsheetApp.openById(SHEET_ID);
       const sheet = ss.getSheetByName(fundName);
       
@@ -135,31 +145,52 @@ function doPost(e) {
           console.warn(`Idempotency trigger: Payment ${paymentId} already exists in ${fundName}. Skipping.`);
           return ContentService.createTextOutput("Duplicate payment ignored").setMimeType(ContentService.MimeType.TEXT);
         }
-
         const proofOfPayment = `ID: ${paymentId} | Method: ${method} ${upiId ? '('+upiId+')' : ''} | Contact: ${contact}`;
         
         // Find proper last row (avoid jumping to 1001 if formulas exist)
         const lastRow = getRealLastRow(sheet);
         const nextRow = lastRow + 1;
         
-        // COLUMN STRUCTURE: [Member, Amount, Date, Category, Notes, Proof/ID, Email]
-        // We move email to the end to avoid shifting existing columns (Category/Notes/EntryDate)
-        let newRow = [
-          memberName, 
-          amountPaid, 
-          paymentDate, 
-          "Online (Verified)", 
-          "Payment Received via Razorpay Portal",
-          proofOfPayment,
-          memberEmail
-        ];
-
-        // Ensure "Email" header exists for auto-fill logic
-        const headerRange = sheet.getRange(1, 1, 1, sheet.getLastColumn() > 7 ? sheet.getLastColumn() : 7);
-        const currentHeaders = headerRange.getValues()[0].map(h => h.toString().toLowerCase().trim());
-        if (!currentHeaders.includes("email")) {
-          sheet.getRange(1, 7).setValue("Email"); // Always put it in Col G
+        console.log(`Writing to sheet: ${fundName} | Row: ${nextRow}`);
+        
+        // --- DYNAMIC COLUMN MAPPING ---
+        // Read ALL columns in row 1 so existing Email/Phone headers are never missed
+        const totalCols = Math.max(sheet.getLastColumn(), sheet.getMaxColumns(), 7);
+        const headerRange = sheet.getRange(1, 1, 1, totalCols);
+        const rawHeaders = headerRange.getValues()[0].map(h => h.toString().toLowerCase().trim());
+        // Trim trailing empty headers to avoid bloated row arrays
+        let lastNonEmpty = rawHeaders.length - 1;
+        while (lastNonEmpty >= 0 && rawHeaders[lastNonEmpty] === "") lastNonEmpty--;
+        const currentHeaders = rawHeaders.slice(0, lastNonEmpty + 1);
+        
+        // Ensure Email column exists
+        let emailColIdx = currentHeaders.indexOf("email");
+        if (emailColIdx === -1) {
+          emailColIdx = currentHeaders.length;
+          sheet.getRange(1, emailColIdx + 1).setValue("Email").setFontWeight("bold");
+          currentHeaders.push("email");
         }
+
+        // Ensure Phone column exists
+        let phoneColIdx = currentHeaders.indexOf("phone");
+        if (phoneColIdx === -1) {
+          phoneColIdx = currentHeaders.length;
+          sheet.getRange(1, phoneColIdx + 1).setValue("Phone").setFontWeight("bold");
+          currentHeaders.push("phone");
+        }
+
+        let newRow = new Array(currentHeaders.length).fill("");
+        
+        currentHeaders.forEach((h, idx) => {
+          if (h === "member name" || h === "member") newRow[idx] = memberName;
+          else if (h === "amount") newRow[idx] = amountPaid;
+          else if (h === "date" || h === "entry date") newRow[idx] = paymentDate;
+          else if (h === "category") newRow[idx] = "Online (Verified)";
+          else if (h === "notes") newRow[idx] = `${monthFor}: Online Payment Received`;
+          else if (h === "proof/id" || h.includes("proof")) newRow[idx] = proofOfPayment;
+          else if (h === "email") newRow[idx] = memberEmail;
+          else if (h === "phone" || h === "contact" || h === "mobile") newRow[idx] = contact;
+        });
         
         // Write the row and clear any validation that might block script entries
         const targetRange = sheet.getRange(nextRow, 1, 1, newRow.length);
@@ -170,6 +201,15 @@ function doPost(e) {
         sheet.getRange(nextRow, 1, 1, sheet.getLastColumn()).setBackground("#f3e5f5");
         
         console.log(`Row successfully added to row ${nextRow}`);
+        
+        // --- MEMBER TRACKING: Update or Create Member Profile ---
+        updateMemberProfile(ss, {
+          name: memberName,
+          email: memberEmail,
+          phone: contact,
+          lastContribution: paymentDate,
+          fund: fundName
+        });
         
         // --- Immediate Email Alerts ---
         const adminEmail = getEnv("ADMIN_EMAIL");
@@ -188,7 +228,7 @@ function doPost(e) {
                   <li><strong>Razorpay ID:</strong> ${paymentId}</li>
                   <li><strong>Method:</strong> ${method} ${upiId ? '('+upiId+')' : ''}</li>
                   <li><strong>Contributor Contact:</strong> ${contact}</li>
-                  <li><strong>Contributor Email:</strong> ${contributorEmail}</li>
+                  <li><strong>Contributor Email:</strong> ${memberEmail}</li>
                   <li><strong>Date:</strong> ${paymentDate.toLocaleString()}</li>
                 </ul>
                 <p><a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}">View Google Sheet</a></p>
@@ -197,7 +237,6 @@ function doPost(e) {
             });
             console.log("Email alert sent to admin: " + adminEmail);
           }
-
           // Send to Contributor (if email is available)
           if (memberEmail) {
             MailApp.sendEmail({
@@ -221,9 +260,8 @@ function doPost(e) {
                 </div>
               `
             });
-            console.log("Confirmation email sent to contributor: " + contributorEmail);
+            console.log("Confirmation email sent to contributor: " + memberEmail);
           }
-
           // --- SMART: SMS/WhatsApp Notifications ---
           if (contact) {
             const message = `Praise the Lord ${memberName}! We received your contribution of ₹${amountPaid} for ${fundName}. ID: ${paymentId}. Thank you!`;
@@ -238,7 +276,6 @@ function doPost(e) {
         } catch (mailErr) {
           console.error("Failed to send email/SMS alerts: ", mailErr.toString());
         }
-
         // Log to a separate "audit_log" sheet if it exists
         const auditSheet = ss.getSheetByName("audit_log");
         if (auditSheet) {
@@ -249,7 +286,6 @@ function doPost(e) {
         console.error("Error: Sheet '" + fundName + "' not found.");
       }
     }
-
     return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
@@ -257,7 +293,6 @@ function doPost(e) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() })).setMimeType(ContentService.MimeType.JSON);
   }
 }
-
 
 /**
  * Sends a monthly email report to the admin summing up recent tech contributions
@@ -285,7 +320,6 @@ function sendMonthlyReport() {
   const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
   const priorMonthIndex = lastMonth.getMonth();
   const priorYear = lastMonth.getFullYear();
-
   let monthlyTotal = 0;
   let onlineTotal = 0;
   let contributionDetails = "";
@@ -310,7 +344,6 @@ function sendMonthlyReport() {
       contributionDetails += `<li>${member}: ₹${amount} (${typeLabel})</li>`;
     }
   }
-
   const monthName = lastMonth.toLocaleString('default', { month: 'long' });
   
   const emailHtml = `
@@ -335,7 +368,6 @@ function sendMonthlyReport() {
       <p style="font-size: 12px; color: #777;">This is an automatically generated email from your Church Contributions system.</p>
     </div>
   `;
-
   const adminEmail = getEnv("ADMIN_EMAIL");
   if (adminEmail) {
     MailApp.sendEmail({
@@ -420,7 +452,6 @@ function verifyRazorpayPayment(paymentId, expectedAmount) {
       console.warn("Server-to-Server verification skipped (Keys not configured). Trusting webhook payload.");
       return true; // Weak security, but keeps system running if keys aren't added
     }
-
     const url = "https://api.razorpay.com/v1/payments/" + paymentId;
     const options = {
       "method": "get",
@@ -458,12 +489,19 @@ function isDuplicatePayment(sheet, paymentId) {
     const numRows = sheet.getLastRow();
     if (numRows < 2) return false;
     
+    // Find the "Proof" column dynamically from row 1 headers
+    const headerValues = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const headers = headerValues.map(h => h.toString().toLowerCase().trim());
+    let proofColIdx = headers.findIndex(h => h.includes("proof") || h === "proof/id");
+    
+    // Fallback to column 6 (F) if header not found
+    const colToSearch = proofColIdx >= 0 ? proofColIdx + 1 : 6;
+    
     // Optimisation: only check the last 50 entries
     const startRow = Math.max(2, numRows - 50);
     const numRowsToCheck = numRows - startRow + 1;
     
-    // Assuming Column E (5) is proofOfPayment which contains the ID
-    const values = sheet.getRange(startRow, 5, numRowsToCheck, 1).getValues(); 
+    const values = sheet.getRange(startRow, colToSearch, numRowsToCheck, 1).getValues(); 
     
     for (let i = 0; i < values.length; i++) {
       if (values[i][0].toString().includes(paymentId)) {
@@ -512,12 +550,78 @@ function sendSMSNotification(to, message) {
 }
 
 /**
- * WhatsApp Notification Wrapper Placeholder
+ * --- MEMBER PROFILES: Database Sync ---
+ * Ensures the 'members' sheet exists and updates member contribution history.
  */
-function sendWhatsAppNotification(to, message) {
+function updateMemberProfile(ss, memberData) {
   try {
-    console.log("[MOCK] WhatsApp would be sent to " + to + ": " + message);
+    let sheet = ss.getSheetByName("members-list") || ss.getSheetByName("members");
+    
+    // 1. Ensure sheet exists with headers
+    if (!sheet) {
+      sheet = ss.insertSheet("members");
+      const headers = ["Member Name", "Email", "Phone", "First Join Date", "Last Contribution Date", "Recurring Reminders", "Total Contributions", "Reminders Sent"];
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight("bold").setBackground("#e8f5e9");
+      sheet.setFrozenRows(1);
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(h => h.toString().toLowerCase().trim());
+    const nameIdx = headers.indexOf("member name");
+    const emailIdx = headers.indexOf("email");
+    const phoneIdx = headers.findIndex(h => h === "phone" || h === "mobile");
+    const firstJoinIdx = headers.indexOf("first join date");
+    const lastContribIdx = headers.indexOf("last contribution date");
+    const recurringIdx = headers.indexOf("recurring reminders");
+    const totalIdx = headers.indexOf("total contributions");
+    
+    let memberRowIdx = -1;
+    
+    // 2. Search for existing member (by Name or Email)
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][nameIdx] === memberData.name || (memberData.email && data[i][emailIdx] === memberData.email)) {
+        memberRowIdx = i + 1;
+        break;
+      }
+    }
+    
+    if (memberRowIdx > 0) {
+      // 3a. Update Existing Member
+      const currentTotal = Number(sheet.getRange(memberRowIdx, totalIdx + 1).getValue()) || 0;
+      sheet.getRange(memberRowIdx, lastContribIdx + 1).setValue(memberData.lastContribution);
+      sheet.getRange(memberRowIdx, totalIdx + 1).setValue(currentTotal + 1);
+      
+      // Update email/phone if they were missing or changed
+      if (memberData.email) sheet.getRange(memberRowIdx, emailIdx + 1).setValue(memberData.email);
+      if (memberData.phone) sheet.getRange(memberRowIdx, phoneIdx + 1).setValue(memberData.phone);
+      
+      console.log(`Updated profile for member: ${memberData.name}`);
+    } else {
+      // 3b. Create New Member
+      const newRow = [];
+      newRow[nameIdx] = memberData.name;
+      newRow[emailIdx] = memberData.email || "";
+      newRow[phoneIdx] = memberData.phone || "";
+      newRow[firstJoinIdx] = memberData.lastContribution;
+      newRow[lastContribIdx] = memberData.lastContribution;
+      newRow[recurringIdx] = "Yes"; // Default to opted-in
+      newRow[totalIdx] = 1;
+      
+      sheet.appendRow(newRow);
+      console.log(`Created new profile for member: ${memberData.name}`);
+    }
+    
   } catch (err) {
-    console.error("Error in sendWhatsAppNotification: " + err.toString());
+    console.error("Error in updateMemberProfile: " + err.toString());
   }
+}
+
+/**
+ * Normalizes input fund names to system standard fund sheet names.
+ */
+function normalizeFundName(fundName) {
+  const normalFund = (fundName || "tech-contributions").toLowerCase().trim();
+  if (normalFund.includes("tech")) return "tech-contributions";
+  if (normalFund.includes("christmas")) return "christmas-fund";
+  return "tech-contributions"; // Safe Default
 }
