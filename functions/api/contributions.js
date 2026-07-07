@@ -43,7 +43,7 @@ export async function onRequestGet(context) {
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
-          "Cache-Control": "public, max-age=15"
+          "Cache-Control": "public, max-age=15, s-maxage=300"
         }
       });
     }
@@ -118,7 +118,7 @@ export async function onRequestGet(context) {
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, max-age=15" // Cache client-side for 15 seconds
+        "Cache-Control": "public, max-age=15, s-maxage=300" // Cache client-side and CDN edge
       }
     });
 
