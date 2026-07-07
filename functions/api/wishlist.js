@@ -1,43 +1,7 @@
 // Cloudflare Pages Function: /api/wishlist
 // Handles listing (public) and CRUD operations (admin-only) for the Church Contribution Wishlist.
 
-// Helper: Check if an email has a specific permission scope dynamically from SQL
-async function checkPermission(email, requiredPermission, db, env) {
-  if (!email) return false;
-  
-  // Bootstrap safety fallback for original admins
-  const hardcodedAdmins = (env.ADMIN_WHITELIST || "albertjoshrock101@gmail.com,thinkmuthu@gmail.com,augustinraja261@gmail.com")
-    .split(",")
-    .map(e => e.trim().toLowerCase());
-  
-  if (hardcodedAdmins.includes(email.toLowerCase().trim())) {
-    return true;
-  }
-
-  // Handle raw token matching for backwards compatibility
-  if (env.ADMIN_API_TOKEN && email === env.ADMIN_API_TOKEN) {
-    return true;
-  }
-
-  try {
-    const userRole = await db.prepare("SELECT role_name FROM member_roles WHERE LOWER(email) = LOWER(?)")
-      .bind(email.trim())
-      .first();
-    
-    if (!userRole) return false;
-
-    const rolePerms = await db.prepare("SELECT permissions FROM roles WHERE role_name = ?")
-      .bind(userRole.role_name)
-      .first();
-
-    if (!rolePerms) return false;
-
-    const permissions = JSON.parse(rolePerms.permissions || "[]");
-    return permissions.includes(requiredPermission);
-  } catch (_) {
-    return false;
-  }
-}
+import { requireAuth, audit } from "./_lib.js";
 
 // 1. GET: Fetch entire wishlist (Public)
 export async function onRequestGet(context) {
@@ -69,10 +33,8 @@ export async function onRequestPost(context) {
   const db = env.DB;
   if (!db) return new Response(JSON.stringify({ error: "D1 database missing" }), { status: 500 });
 
-  const url = new URL(request.url);
-  const providedToken = (url.searchParams.get("token") || request.headers.get("Authorization") || "").trim();
-  const authorized = await checkPermission(providedToken, "edit_wishlist", db, env);
-  if (!authorized) {
+  const auth = await requireAuth(context, "edit_wishlist");
+  if (!auth.ok) {
     return new Response(JSON.stringify({ error: "Unauthorized: edit_wishlist permission required" }), { status: 401 });
   }
 
@@ -90,6 +52,12 @@ export async function onRequestPost(context) {
     .bind(name, Number(cost), priority || "Medium", notes || "")
     .run();
 
+    await audit(context, {
+      actorEmail: auth.email, actorType: "admin", verified: auth.verified,
+      action: "wishlist.add", entityType: "wishlist", entityId: result.meta.last_row_id,
+      details: { name, cost: Number(cost), priority: priority || "Medium" }
+    });
+
     return new Response(JSON.stringify({ success: true, message: "Wishlist item added successfully", id: result.meta.last_row_id }), {
       headers: { "Content-Type": "application/json" }
     });
@@ -104,10 +72,8 @@ export async function onRequestPut(context) {
   const db = env.DB;
   if (!db) return new Response(JSON.stringify({ error: "D1 database missing" }), { status: 500 });
 
-  const url = new URL(request.url);
-  const providedToken = (url.searchParams.get("token") || request.headers.get("Authorization") || "").trim();
-  const authorized = await checkPermission(providedToken, "edit_wishlist", db, env);
-  if (!authorized) {
+  const auth = await requireAuth(context, "edit_wishlist");
+  if (!auth.ok) {
     return new Response(JSON.stringify({ error: "Unauthorized: edit_wishlist permission required" }), { status: 401 });
   }
 
@@ -125,6 +91,12 @@ export async function onRequestPut(context) {
     .bind(name, Number(cost), priority || "Medium", notes || "", Number(id))
     .run();
 
+    await audit(context, {
+      actorEmail: auth.email, actorType: "admin", verified: auth.verified,
+      action: "wishlist.update", entityType: "wishlist", entityId: id,
+      details: { name, cost: Number(cost), priority: priority || "Medium" }
+    });
+
     return new Response(JSON.stringify({ success: true, message: "Wishlist item updated successfully" }), {
       headers: { "Content-Type": "application/json" }
     });
@@ -139,10 +111,8 @@ export async function onRequestDelete(context) {
   const db = env.DB;
   if (!db) return new Response(JSON.stringify({ error: "D1 database missing" }), { status: 500 });
 
-  const url = new URL(request.url);
-  const providedToken = (url.searchParams.get("token") || request.headers.get("Authorization") || "").trim();
-  const authorized = await checkPermission(providedToken, "edit_wishlist", db, env);
-  if (!authorized) {
+  const auth = await requireAuth(context, "edit_wishlist");
+  if (!auth.ok) {
     return new Response(JSON.stringify({ error: "Unauthorized: edit_wishlist permission required" }), { status: 401 });
   }
 
@@ -156,6 +126,11 @@ export async function onRequestDelete(context) {
     await db.prepare("DELETE FROM wishlist WHERE id = ?")
       .bind(Number(id))
       .run();
+
+    await audit(context, {
+      actorEmail: auth.email, actorType: "admin", verified: auth.verified,
+      action: "wishlist.delete", entityType: "wishlist", entityId: id
+    });
 
     return new Response(JSON.stringify({ success: true, message: "Wishlist item deleted successfully" }), {
       headers: { "Content-Type": "application/json" }

@@ -1,0 +1,15 @@
+{
+  // Cloudflare Pages configuration for LJM Church Contributions portal.
+  // Static site (no build step) + Pages Functions in /functions/api with a D1 binding.
+  "name": "light-of-jesus-ministry-contributions",
+  "compatibility_date": "2026-06-01",
+  "pages_build_output_dir": ".",
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ljm-contributions-db",
+      "database_id": "c8fad1c1-9d94-43dd-8a96-ce6b131c900c"
+    }
+  ]
+}

@@ -56,12 +56,19 @@ export async function onRequestGet(context) {
       fund = "tech-contributions"; // Fallback default
     }
 
-    // 2. Fetch Goal Amount from D1 config table
-    const goalKey = fund === "tech-contributions" ? "tech_goal_amount" : "christmas_goal_amount";
-    const goalResult = await db.prepare("SELECT value FROM config WHERE key = ?")
-      .bind(goalKey)
-      .first();
-    const goalAmount = goalResult ? Number(goalResult.value) || 0 : 0;
+    // 2. Fetch Goal Amount — funds table is the source of truth; config keys are the legacy fallback
+    let goalAmount = 0;
+    try {
+      const fundRow = await db.prepare("SELECT goal_amount FROM funds WHERE slug = ?").bind(fund).first();
+      if (fundRow) goalAmount = Number(fundRow.goal_amount) || 0;
+    } catch (_) { /* funds table may not exist yet (pre-0002 database) */ }
+    if (!goalAmount) {
+      const goalKey = fund === "tech-contributions" ? "tech_goal_amount" : "christmas_goal_amount";
+      const goalResult = await db.prepare("SELECT value FROM config WHERE key = ?")
+        .bind(goalKey)
+        .first();
+      goalAmount = goalResult ? Number(goalResult.value) || 0 : 0;
+    }
 
     // 3. Fetch Contributions for this fund
     const contributionsQuery = await db.prepare(
@@ -90,8 +97,10 @@ export async function onRequestGet(context) {
     });
 
     // 5. Fetch Purchases ("What We Bought" stats)
+    // Spent = fund_contribution only (the portion actually taken from the fund),
+    // not total sticker cost — external donor top-ups must not reduce the balance.
     const purchasesQuery = await db.prepare(
-      "SELECT SUM(amount) as total, COUNT(id) as count FROM purchases WHERE fund = ?"
+      "SELECT SUM(fund_contribution) as total, COUNT(id) as count FROM purchases WHERE fund = ? AND status = 'Active'"
     )
     .bind(fund)
     .first();

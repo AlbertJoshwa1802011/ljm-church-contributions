@@ -1135,14 +1135,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Initializing dashboard for fund:", selectedFund);
 
     try {
-        if (selectedFund === "christmasfund") {
+        const LEGACY_TECH = ["tech", "techfund", "tech-contributions"];
+        const LEGACY_XMAS = ["christmas", "christmasfund", "christmas-fund"];
+
+        if (LEGACY_XMAS.includes(selectedFund)) {
             await initChristmasFundDashboard();
-        } else {
+        } else if (LEGACY_TECH.includes(selectedFund)) {
             await initDashboard();
+        } else {
+            // Dynamic fund: same dashboard pipeline, served by /api/funds?slug=…
+            await initDashboard({ slug: selectedFund });
         }
 
         const heading = document.getElementById("fundHeading");
-        if (heading) {
+        if (heading && (LEGACY_TECH.includes(selectedFund) || LEGACY_XMAS.includes(selectedFund))) {
             heading.textContent = selectedFund.includes("christmas")
                 ? "🎄 Christmas Fund Contributions"
                 : "💻 Tech Fund Contributions";
@@ -1204,16 +1210,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ==================================================
 // TECH FUND DASHBOARD
 // ==================================================
-async function initDashboard() {
-    const API_URL = "/api/contributions?fund=tech-contributions";
-    const FUND_KEY = "techFundData";
+async function initDashboard(dynamicFund) {
+    // dynamicFund: { slug } — reuses this whole pipeline for admin-created funds
+    // (the /api/funds?slug= payload is shaped identically to /api/contributions)
+    const API_URL = dynamicFund
+        ? "/api/funds?slug=" + encodeURIComponent(dynamicFund.slug)
+        : "/api/contributions?fund=tech-contributions";
+    const FUND_KEY = dynamicFund ? "fundData_" + dynamicFund.slug : "techFundData";
 
     let contributionsData = [];
     let goalAmount = 0;
     let currentDisplayCount = 0;
 
     const heading = document.getElementById("fundHeading");
-    if (heading) heading.textContent = "💻 Tech Fund Contributions";
+    if (heading) heading.textContent = dynamicFund ? "⛪ Loading fund…" : "💻 Tech Fund Contributions";
 
     const subtitle = document.getElementById("fundSubtitle");
     if (subtitle) subtitle.textContent = "Let your contributions bring glory to Jesus";
@@ -1232,6 +1242,11 @@ async function initDashboard() {
             window._memberPhones = data.memberPhones || {};
             window._memberStatus = data.memberStatus || {};
             goalAmount = data.goalAmount || 0;
+            // Dynamic funds carry their display name in the payload
+            if (dynamicFund && data.fund && heading) {
+                heading.textContent = "⛪ " + data.fund.name + " Contributions";
+                if (subtitle && data.fund.description) subtitle.textContent = data.fund.description;
+            }
             // NEW: "What We Bought" aggregates for this fund
             window._spentOnProducts = Number(data.spentOnProducts) || 0;
             window._productsBoughtCount = Number(data.productsBoughtCount) || 0;
