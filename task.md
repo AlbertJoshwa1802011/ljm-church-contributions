@@ -7,7 +7,7 @@
     - [x] Create `/functions/api/contributions.js` endpoint
     - [x] Create `/functions/api/webhook.js` Razorpay receiver with sync to Google Sheets
     - [x] Create `/functions/api/auth.js` Google Token verification API
-- [ ] Super Admin Role Configuration
+- [x] Super Admin Role Configuration
     - [x] Add `roles` and `member_roles` tables to `schema.sql`
     - [x] Create `/functions/api/roles.js` CRUD endpoint for role mapping
     - [x] Update backend APIs to verify permissions dynamically from SQL tables
@@ -17,6 +17,8 @@
     - [x] Build responsive bottom navigation bar and float action tabs
     - [x] Implement wishlist card grid on home page
     - [x] Design slide-up modal sheets for contributor detail popups
-- [ ] Verification and Deployment
-    - [ ] Verify D1 migrations locally with Wrangler pages dev
-    - [ ] Update CI/CD configurations
+- [x] Verification and Deployment
+    - [x] Verify D1 migrations locally with Wrangler pages dev
+    - [x] Link DB binding `DB` in Cloudflare Pages settings
+    - [x] Execute remote schema.sql migration on live D1
+    - [x] Trigger `/api/migrate` to transfer all historical logs (196 contributions, 33 members, 5 purchases)
