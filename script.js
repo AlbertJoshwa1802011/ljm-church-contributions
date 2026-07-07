@@ -17,10 +17,10 @@ function escapeHtml(unsafe) {
 // --------------------
 // Cache configuration (shared across pages via localStorage)
 const CACHE_VERSION = 1;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 180 * 1000; // 3 minutes
 
 // Helper: get cached fund (with TTL enforcement - works on all devices including Android)
-function getCachedFund(fundKey) {
+function getCachedFund(fundKey, ignoreExpiry = false) {
     try {
         const raw = localStorage.getItem(fundKey);
         if (!raw) return null;
@@ -32,13 +32,16 @@ function getCachedFund(fundKey) {
         }
 
         const age = Date.now() - (parsed.lastFetched || 0);
-        // Expire if too old OR if age is negative (device clock skew / invalid timestamp)
-        if (age < 0 || age > CACHE_TTL_MS) {
-            if (age > CACHE_TTL_MS) {
-                console.log(`[CACHE] Expired: ${fundKey} (age: ${Math.round(age / 1000)}s)`);
+        
+        if (!ignoreExpiry) {
+            // Expire if too old OR if age is negative (device clock skew / invalid timestamp)
+            if (age < 0 || age > CACHE_TTL_MS) {
+                if (age > CACHE_TTL_MS) {
+                    console.log(`[CACHE] Expired: ${fundKey} (age: ${Math.round(age / 1000)}s)`);
+                }
+                localStorage.removeItem(fundKey);
+                return null;
             }
-            localStorage.removeItem(fundKey);
-            return null;
         }
 
         if (parsed.data) {
@@ -1255,7 +1258,7 @@ async function initDashboard() {
             }));
         } catch (err) {
             console.error("Error fetching Tech Fund:", err);
-            const cached = getCachedFund(FUND_KEY);
+            const cached = getCachedFund(FUND_KEY, true);
             if (cached) {
                 contributionsData = cached.contributions || [];
                 window._currentContributions = contributionsData;
@@ -1266,7 +1269,7 @@ async function initDashboard() {
                 window._spentOnProducts = Number(cached.spentOnProducts) || 0;
                 window._productsBoughtCount = Number(cached.productsBoughtCount) || 0;
                 // LOCAL PREVIEW: apply mock override when running from file:// or ?mock=1
-                if (window.__LJM_USE_MOCK_PURCHASES__ && window.__LJM_PURCHASES_MOCK__) {
+                if (window.__LJM_USE_MOCK_PURCHASES__ && window.__LJM_USE_MOCK_PURCHASES__) {
                     const mock = window.__LJM_PURCHASES_MOCK__;
                     const techKey = "Tech Fund";
                     window._spentOnProducts = (mock.fundContribByFund && mock.fundContribByFund[techKey]) || 0;
@@ -1275,6 +1278,23 @@ async function initDashboard() {
                 currentDisplayCount = 0;
                 renderDashboard();
                 renderTopContributors(contributionsData);
+            } else {
+                // Render error state if API fails and no cached data is available at all
+                contributionsData = [];
+                goalAmount = 0;
+                window._spentOnProducts = 0;
+                window._productsBoughtCount = 0;
+                renderDashboard([]);
+                const timeline = document.getElementById("timelineContainer");
+                if (timeline) {
+                    timeline.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">⚠️</div>
+                            <h3>Connection Timeout</h3>
+                            <p>Unable to retrieve contributions data from the server. Please check your internet or try refreshing.</p>
+                        </div>
+                    `;
+                }
             }
         }
     };
@@ -1572,7 +1592,7 @@ async function initChristmasFundDashboard() {
             }));
         } catch (err) {
             console.error("Error fetching Christmas Fund:", err);
-            const cached = getCachedFund(FUND_KEY);
+            const cached = getCachedFund(FUND_KEY, true);
             if (cached) {
                 contributionsData = cached.contributions || [];
                 window._currentContributions = contributionsData;
@@ -1591,6 +1611,23 @@ async function initChristmasFundDashboard() {
                 currentDisplayCount = 0;
                 renderDashboard();
                 renderTopContributors(contributionsData);
+            } else {
+                // Render error state if API fails and no cached data is available at all
+                contributionsData = [];
+                goalAmount = 0;
+                window._spentOnProducts = 0;
+                window._productsBoughtCount = 0;
+                renderDashboard([]);
+                const timeline = document.getElementById("timelineContainer");
+                if (timeline) {
+                    timeline.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">⚠️</div>
+                            <h3>Connection Timeout</h3>
+                            <p>Unable to retrieve contributions data from the server. Please check your internet or try refreshing.</p>
+                        </div>
+                    `;
+                }
             }
         }
     };
