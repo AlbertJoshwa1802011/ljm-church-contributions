@@ -32,8 +32,8 @@
         Select a fund to view contributions, progress and insights
     </p>
 
-    <!-- ===== Funds Grid ===== -->
-    <div class="funds-grid">
+    <!-- ===== Funds Grid (system funds static; admin-created funds appended dynamically) ===== -->
+    <div class="funds-grid" id="fundsGrid">
 
         <!-- Tech Fund -->
         <div class="fund-card active" onclick="openFund('Tech Fund')">
@@ -90,10 +90,35 @@
 </footer>
 
 <script src="admin-session.js"></script>
+<script src="portal-telemetry.js"></script>
 <script>
 function openFund(fundName) {
     location.assign(`index.html?fund=${encodeURIComponent(fundName)}`);
 }
+
+// Append admin-created funds after the two system fund cards
+(function () {
+    var ICONS = ["🏛️", "🎸", "📖", "🕯️", "🎤", "🚌", "🏕️", "🎨"];
+    fetch("/api/funds").then(function (r) { return r.json(); }).then(function (d) {
+        var grid = document.getElementById("fundsGrid");
+        if (!grid || !d || !d.funds) return;
+        d.funds.filter(function (f) { return !f.isSystem && f.status === "active"; })
+            .forEach(function (f, i) {
+                var card = document.createElement("div");
+                card.className = "fund-card active";
+                card.onclick = function () { location.assign("index.html?fund=" + encodeURIComponent(f.slug)); };
+                var pct = f.goalAmount > 0 ? Math.min(Math.round((f.totalCollected / f.goalAmount) * 100), 100) : 0;
+                card.innerHTML =
+                    '<div class="fund-icon">' + ICONS[i % ICONS.length] + "</div>" +
+                    "<h3></h3><p></p>" +
+                    '<span class="fund-status active">Active · ' + pct + "% funded</span>" +
+                    "<button>View Fund →</button>";
+                card.querySelector("h3").textContent = f.name;
+                card.querySelector("p").textContent = f.description || "Church fund";
+                grid.appendChild(card);
+            });
+    }).catch(function () { /* dynamic cards are optional; static funds always render */ });
+})();
 </script>
 
 </body>

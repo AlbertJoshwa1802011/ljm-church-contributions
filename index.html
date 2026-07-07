@@ -393,6 +393,7 @@
 <script src="razorpay-checkout.js"></script>
 <script src="script.js"></script>
 <script src="admin-session.js"></script>
+<script src="portal-telemetry.js"></script>
 
 <script>
 window.addEventListener('load', () => {
@@ -455,6 +456,7 @@ let currentCredentialToken = null;
 async function handleCredentialResponse(response) {
     try {
         currentCredentialToken = response.credential;
+        try { sessionStorage.setItem('ljmUserIdToken', response.credential); } catch (_) {}
         const payload = JSON.parse(atob(response.credential.split('.')[1]));
         const isAdmin = LJMAdmin.isAdmin(payload.email);
 
