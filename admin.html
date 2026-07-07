@@ -2,1863 +2,1207 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin Dashboard | LJM Church</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Console — LJM Church Contributions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
+        /* ─────────────────────────────────────────────
+           Claude-style light theme — scoped to admin only
+           ───────────────────────────────────────────── */
         :root {
-            --bg-dark: #0b0f1a;
-            --bg-card: #151b2e;
-            --bg-card-hover: #1a2238;
-            --text-primary: #f0f2f8;
-            --text-secondary: #7b8ab8;
-            --accent-purple: #8b5cf6;
-            --accent-blue: #6366f1;
-            --accent-cyan: #22d3ee;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --border: rgba(139, 92, 246, 0.08);
+            --bg: #faf9f5;
+            --bg-soft: #f4f2ec;
+            --surface: #ffffff;
+            --border: #e8e5dc;
+            --border-strong: #d9d5c9;
+            --text: #1f1e1a;
+            --text-soft: #6e6a5e;
+            --text-faint: #a09a8a;
+            --accent: #d97757;
+            --accent-deep: #c05f3f;
+            --accent-soft: #fbeee8;
+            --green: #5f8d4e;
+            --green-soft: #eef4ea;
+            --red: #b3452f;
+            --red-soft: #fbeae5;
+            --amber: #b98a2e;
+            --amber-soft: #f9f1df;
+            --radius: 14px;
+            --shadow: 0 1px 2px rgba(60,50,30,0.05), 0 4px 16px rgba(60,50,30,0.06);
+            --shadow-lift: 0 2px 6px rgba(60,50,30,0.08), 0 10px 32px rgba(60,50,30,0.10);
+            --serif: "Lora", Georgia, serif;
+            --sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, .serif { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01em; }
+
+        /* ── Auth gate ── */
+        #authGate {
+            position: fixed; inset: 0; z-index: 1000;
+            background: var(--bg);
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 10px; padding: 24px; text-align: center;
+        }
+        #authGate .gate-mark {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: var(--accent-soft); color: var(--accent-deep);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; margin-bottom: 8px;
+        }
+        #authGate h1 { font-size: 30px; }
+        #authGate p { color: var(--text-soft); max-width: 380px; margin-bottom: 14px; }
+        #authGate .gate-err { color: var(--red); font-size: 13px; min-height: 18px; }
+        #devLoginBtn button {
+            padding: 11px 26px; border-radius: 999px; border: 1px solid var(--accent);
+            background: var(--accent-soft); color: var(--accent-deep);
+            font: 600 14px var(--sans); cursor: pointer;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-
-        html, body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
+        /* ── Layout ── */
+        #app { display: none; min-height: 100vh; }
+        #app.ready { display: flex; }
+        aside {
+            width: 232px; flex-shrink: 0;
+            background: var(--bg-soft);
+            border-right: 1px solid var(--border);
+            padding: 22px 12px;
+            display: flex; flex-direction: column; gap: 2px;
+            position: sticky; top: 0; height: 100vh; overflow-y: auto;
         }
-
-        /* ─────── MOBILE-FIRST TOP NAV ─────── */
-        .top-nav {
-            background: linear-gradient(180deg, #111827, var(--bg-dark));
-            border-bottom: 1px solid var(--border);
-            padding: 12px 16px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .logo {
-            font-size: 17px;
-            font-weight: 700;
-            color: var(--accent-purple);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 4px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            padding-bottom: 2px;
-        }
-
-        .nav-links::-webkit-scrollbar { display: none; }
-
+        .brand { padding: 0 12px 18px; }
+        .brand .b-title { font-family: var(--serif); font-size: 19px; font-weight: 700; }
+        .brand .b-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
         .nav-item {
-            padding: 8px 14px;
-            border-radius: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
-            white-space: nowrap;
-            transition: all 0.2s;
-            flex-shrink: 0;
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px; border-radius: 10px; cursor: pointer;
+            color: var(--text-soft); font-weight: 500; font-size: 13.5px;
+            border: none; background: transparent; width: 100%; text-align: left;
+            font-family: var(--sans); transition: background .15s, color .15s;
         }
+        .nav-item:hover { background: rgba(217,119,87,0.08); color: var(--text); }
+        .nav-item.active { background: var(--surface); color: var(--accent-deep); font-weight: 600; box-shadow: var(--shadow); }
+        .nav-item .ni-icon { width: 20px; text-align: center; }
+        .nav-footer { margin-top: auto; padding: 12px; font-size: 11.5px; color: var(--text-faint); border-top: 1px solid var(--border); }
+        .nav-footer .who { color: var(--text-soft); font-weight: 600; word-break: break-all; }
+        .nav-footer a { color: var(--accent-deep); cursor: pointer; text-decoration: none; }
 
-        .nav-item:hover {
-            background: rgba(139, 92, 246, 0.08);
-            color: var(--text-primary);
-        }
+        main { flex: 1; padding: 30px 34px 60px; max-width: 1180px; min-width: 0; }
+        .page-head { margin-bottom: 22px; }
+        .page-head h2 { font-size: 26px; }
+        .page-head p { color: var(--text-soft); margin-top: 3px; }
 
-        .nav-item.active {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(99, 102, 241, 0.1));
-            color: var(--accent-purple);
-            font-weight: 600;
-        }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeUp .25s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-        /* ─────── MAIN CONTENT ─────── */
-        .main-content {
-            padding: 20px 16px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .page-header h1 {
-            font-size: 20px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .last-updated-tag {
-            font-size: 10px;
-            color: var(--text-secondary);
-            opacity: 0.7;
-        }
-
-        /* ─────── ERROR BANNER ─────── */
-        .error-banner {
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            color: var(--danger);
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 13px;
-            display: none;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        /* ─────── STAT CARDS (Fixed height — no jumping) ─────── */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            min-height: 100px; /* ← FIXED HEIGHT prevents jumping */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .stat-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 6px;
-        }
-
-        .stat-icon { font-size: 22px; flex-shrink: 0; }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 0.4px;
-            text-transform: uppercase;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            min-height: 32px; /* ← FIXED MIN-HEIGHT prevents reflow */
-            line-height: 32px;
-            display: flex;
-            align-items: center;
-        }
-
-        .stat-value .skeleton-bar {
-            width: 80px;
-            height: 24px;
-            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 4px;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        /* ─────── CHARTS ─────── */
-        .charts-row {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
+        /* ── Cards / KPIs ── */
         .card {
-            background: var(--bg-card);
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); box-shadow: var(--shadow);
+            padding: 20px 22px; margin-bottom: 18px;
         }
-
-        .card-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: var(--text-primary);
+        .card h3 { font-size: 17px; margin-bottom: 12px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 14px; margin-bottom: 18px; }
+        .kpi {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 16px 18px; box-shadow: var(--shadow);
         }
+        .kpi .k-label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); }
+        .kpi .k-value { font-family: var(--serif); font-size: 24px; font-weight: 700; margin-top: 5px; }
+        .kpi .k-sub { font-size: 11.5px; color: var(--text-soft); margin-top: 2px; }
+        .charts-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; }
+        @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
 
-        .chart-container {
-            position: relative;
-            width: 100%;
-            height: 200px;
+        /* ── Forms ── */
+        label.f-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-soft); margin: 0 0 4px; }
+        .input, select.input, textarea.input {
+            width: 100%; padding: 9px 12px; border-radius: 10px;
+            border: 1px solid var(--border-strong); background: var(--surface);
+            font: 400 13.5px var(--sans); color: var(--text); outline: none;
+            transition: border-color .15s, box-shadow .15s;
         }
-
-        /* ─────── TABLE → MOBILE CARDS ─────── */
-        .members-section .card-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .search-input {
-            background: rgba(139, 92, 246, 0.06);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            width: 100%;
-            max-width: 300px;
-            transition: border-color 0.2s;
-        }
-
-        .search-input::placeholder { color: var(--text-secondary); opacity: 0.5; }
-        .search-input:focus { outline: none; border-color: var(--accent-purple); }
-
-        .controls-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-
-        /* Mobile member cards (used on small screens) */
-        .member-cards-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .member-card-item {
-            background: var(--bg-card-hover);
-            border-radius: 10px;
-            padding: 14px;
-            border: 1px solid var(--border);
-        }
-
-        .member-card-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-
-        .member-card-name {
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .member-card-email {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 2px;
-            word-break: break-all;
-        }
-
-        .member-card-stats {
-            display: flex;
-            gap: 16px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 8px;
-        }
-
-        .member-card-stats strong {
-            color: var(--text-primary);
-        }
-
-        /* Desktop table (hidden on mobile) */
-        .table-wrapper { display: none; overflow-x: auto; }
-
-        table { width: 100%; border-collapse: collapse; }
-
-        th {
-            text-align: left;
-            color: var(--text-secondary);
-            padding: 10px 12px;
-            font-weight: 600;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-            font-size: 13px;
-        }
-
-        tr:hover td { background: rgba(139, 92, 246, 0.03); }
-
-        .badge {
-            padding: 3px 7px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
-        .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
-
-        /* ─────── BUTTONS ─────── */
+        .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.14); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+        .form-grid .span-all { grid-column: 1 / -1; }
         .btn {
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 12px;
-            transition: opacity 0.2s;
-            white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 9px 18px; border-radius: 999px; cursor: pointer;
+            font: 600 13.5px var(--sans); border: 1px solid transparent;
+            transition: transform .1s, box-shadow .15s, background .15s;
         }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-deep); }
+        .btn-outline { background: var(--surface); border-color: var(--border-strong); color: var(--text-soft); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent-deep); }
+        .btn-danger { background: var(--red-soft); color: var(--red); border-color: transparent; }
+        .btn-danger:hover { background: var(--red); color: #fff; }
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+        .msg { font-size: 12.5px; color: var(--text-soft); }
+        .msg.ok { color: var(--green); } .msg.err { color: var(--red); }
 
-        .btn:hover { opacity: 0.9; }
-        .btn:active { transform: scale(0.97); }
+        /* ── Tables ── */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); padding: 8px 10px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
+        td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        tr:hover td { background: var(--bg-soft); }
+        .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+        .pill-green { background: var(--green-soft); color: var(--green); }
+        .pill-amber { background: var(--amber-soft); color: var(--amber); }
+        .pill-red { background: var(--red-soft); color: var(--red); }
+        .pill-accent { background: var(--accent-soft); color: var(--accent-deep); }
+        .pill-grey { background: var(--bg-soft); color: var(--text-soft); }
 
-        .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+        .empty { color: var(--text-faint); font-size: 13px; padding: 18px 0; text-align: center; }
+        .skel { display: inline-block; width: 70px; height: 16px; border-radius: 6px; background: linear-gradient(90deg, var(--bg-soft), #eceadf, var(--bg-soft)); background-size: 200% 100%; animation: sh 1.2s infinite; }
+        @keyframes sh { to { background-position: -200% 0; } }
 
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-        }
-        .btn-outline:hover {
-            border-color: var(--accent-purple);
-            color: var(--accent-purple);
-        }
+        .fund-card-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+        .fund-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; background: var(--surface); box-shadow: var(--shadow); }
+        .fund-card .fc-name { font-family: var(--serif); font-size: 17px; font-weight: 700; }
+        .fund-card .fc-slug { font-size: 11px; color: var(--text-faint); font-family: monospace; }
+        .fund-card .fc-bar { height: 6px; border-radius: 4px; background: var(--bg-soft); margin: 10px 0 6px; overflow: hidden; }
+        .fund-card .fc-bar > div { height: 100%; background: var(--accent); border-radius: 4px; }
+        .fund-card .fc-meta { font-size: 12px; color: var(--text-soft); display: flex; justify-content: space-between; }
+        .fund-card .fc-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .mini-btn { padding: 5px 12px; font-size: 12px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-soft); font-weight: 600; }
+        .mini-btn:hover { border-color: var(--accent); color: var(--accent-deep); }
+        .mini-btn.danger:hover { border-color: var(--red); color: var(--red); }
 
-        /* ─────── LOADING ─────── */
-        .loading-overlay {
-            text-align: center;
-            padding: 30px;
-            color: var(--text-secondary);
-            font-size: 13px;
-        }
+        .check-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 6px; }
+        .check-grid label { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--text-soft); cursor: pointer; }
 
-        .loading-spinner {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent-purple);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 8px;
-        }
+        .toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle .tr { position: absolute; inset: 0; border-radius: 999px; background: var(--border-strong); transition: .2s; cursor: pointer; }
+        .toggle .tr::before { content: ""; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+        .toggle input:checked + .tr { background: var(--accent); }
+        .toggle input:checked + .tr::before { transform: translateX(20px); }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ─────── DESKTOP (>768px) ─────── */
-        @media (min-width: 769px) {
-            .main-content { padding: 28px 36px; }
-            .page-header h1 { font-size: 24px; }
-
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 16px;
+        /* ── Mobile ── */
+        #mobileNav { display: none; }
+        @media (max-width: 820px) {
+            aside { display: none; }
+            main { padding: 18px 16px 90px; }
+            #mobileNav {
+                display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+                background: rgba(250,249,245,0.95); backdrop-filter: blur(12px);
+                border-top: 1px solid var(--border); overflow-x: auto; padding: 6px 8px; gap: 4px;
             }
-
-            .stat-card { min-height: 110px; padding: 20px; }
-            .stat-value { font-size: 28px; min-height: 36px; line-height: 36px; }
-
-            .charts-row {
-                grid-template-columns: 5fr 3fr;
-                gap: 16px;
-            }
-
-            .chart-container { height: 240px; }
-
-            /* Show table, hide cards */
-            .table-wrapper { display: block; }
-            .member-cards-list { display: none !important; }
-            .search-input { max-width: 240px; }
-
-            .card { padding: 22px; }
-        }
-
-        /* ─────── LARGE DESKTOP (>1100px) ─────── */
-        @media (min-width: 1100px) {
-            .nav-links { justify-content: flex-start; }
+            #mobileNav .nav-item { flex-direction: column; gap: 2px; font-size: 10px; padding: 6px 10px; flex-shrink: 0; }
+            #mobileNav .ni-icon { font-size: 17px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ─── AUTH GATE OVERLAY ─── -->
-    <div id="adminAuthGate" style="
-        position: fixed; inset: 0; z-index: 9999;
-        background: var(--bg-dark);
-        display: flex; align-items: center; justify-content: center;
-        flex-direction: column; gap: 24px;
-    ">
-        <div style="text-align:center; max-width: 380px; padding: 0 20px;">
-            <div style="font-size: 48px; margin-bottom: 16px;">⛪</div>
-            <h1 style="font-size: 22px; font-weight: 700;
-                background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
-                -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-                margin-bottom: 8px;">
-                LJM Admin Dashboard
-            </h1>
-            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 28px;">
-                Sign in with your authorized Google account to continue.
-            </p>
-            <div id="adminGoogleSignInBtn" style="display: flex; justify-content: center; opacity: 0; transition: opacity 0.5s;"></div>
-            <div id="adminDevLoginBtn" style="display: none; margin-top: 12px;"></div>
-            <p id="adminAuthMsg" style="color: var(--danger); font-size: 13px; margin-top: 16px; display: none;"></p>
-        </div>
+    <!-- ── Auth Gate ── -->
+    <div id="authGate">
+        <div class="gate-mark">⛪</div>
+        <h1>Admin Console</h1>
+        <p>Light of Jesus Ministry — sign in with an authorized Google account to manage funds, members, and records.</p>
+        <div id="googleBtn"></div>
+        <div id="devLoginBtn" style="display:none;"></div>
+        <div class="gate-err" id="gateErr"></div>
     </div>
 
-    <!-- ─── TOP NAVIGATION (mobile-friendly) ─── -->
-    <div class="top-nav">
-        <div class="nav-brand">
-            <div class="logo">⛪ LJM ADMIN</div>
-            <a href="index.html" class="btn btn-sm btn-outline">← Portal</a>
-        </div>
-        <div class="nav-links">
-            <a href="admin.html" class="nav-item active">📊 Dashboard</a>
-            <a href="members.html" class="nav-item">👥 Members</a>
-            <a href="funds.html" class="nav-item">💰 Funds</a>
-            <a href="impact.html" class="nav-item">🛍️ What We Bought</a>
-            <a href="index.html" class="nav-item">🏠 Home</a>
-        </div>
-    </div>
-
-    <!-- ─── MAIN CONTENT ─── -->
-    <div class="main-content">
-
-        <!-- Error -->
-        <div class="error-banner" id="errorBanner">
-            ⚠️ <span id="errorMessage">Failed to load data.</span>
-        </div>
-
-        <!-- Header -->
-        <div class="page-header">
-            <h1>Dashboard Overview</h1>
-            <div class="header-right">
-                <span class="last-updated-tag" id="lastUpdatedTag"></span>
-                <button class="btn" id="refreshBtn">🔄 Refresh</button>
+    <!-- ── App shell ── -->
+    <div id="app">
+        <aside>
+            <div class="brand">
+                <div class="b-title">LJM Console</div>
+                <div class="b-sub">Church Contributions Admin</div>
             </div>
-        </div>
+            <nav id="sideNav"></nav>
+            <div class="nav-footer">
+                Signed in as<br><span class="who" id="whoami">—</span><br>
+                <a id="logoutLink">Sign out</a> · <a href="index.html">View site ↗</a>
+            </div>
+        </aside>
 
-        <!-- Stats (fixed-height cards — no jumping) -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-row">
-                    <span class="stat-icon">💰</span>
-                    <span class="stat-label">Total (YTD)</span>
+        <main>
+            <!-- OVERVIEW -->
+            <div class="section" id="section-overview">
+                <div class="page-head"><h2>Overview</h2><p>Live picture across every fund.</p></div>
+                <div class="kpi-grid" id="kpiGrid"></div>
+                <div class="charts-grid">
+                    <div class="card"><h3>Giving trend</h3><canvas id="trendChart" height="210"></canvas></div>
+                    <div class="card"><h3>Fund distribution</h3><canvas id="distChart" height="210"></canvas></div>
                 </div>
-                <div class="stat-value" id="totalYTD"><span class="skeleton-bar"></span></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-row">
-                    <span class="stat-icon">👥</span>
-                    <span class="stat-label">Members</span>
-                </div>
-                <div class="stat-value" id="activeMembers"><span class="skeleton-bar"></span></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-row">
-                    <span class="stat-icon">📈</span>
-                    <span class="stat-label">Growth</span>
-                </div>
-                <div class="stat-value" id="monthlyGrowth"><span class="skeleton-bar"></span></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-row">
-                    <span class="stat-icon">🔁</span>
-                    <span class="stat-label">Recurring</span>
-                </div>
-                <div class="stat-value" id="recurringCount"><span class="skeleton-bar"></span></div>
-            </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="charts-row">
-            <div class="card">
-                <div class="card-title">📊 Giving Trend (Monthly)</div>
-                <div class="chart-container">
-                    <canvas id="givingTrendChart"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-title">🔔 Reminder Status</div>
-                <div class="chart-container">
-                    <canvas id="fundDistributionChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Members -->
-        <div class="card members-section">
-            <div class="card-title">
-                <span>👥 Members & Subscriptions</span>
-            </div>
-            <div class="controls-row">
-                <input type="text" class="search-input" id="memberSearchInput" placeholder="🔍 Search member...">
-                <a href="members.html" class="btn btn-sm btn-outline">View All →</a>
-            </div>
-
-            <!-- Mobile: Card layout -->
-            <div class="member-cards-list" id="memberCardsList">
-                <div class="loading-overlay">
-                    <div class="loading-spinner"></div>
-                    <div>Loading members...</div>
+                <div class="card">
+                    <h3>Recent contributions</h3>
+                    <div class="table-wrap"><table id="recentTable"><thead><tr><th>Member</th><th>Amount</th><th>Fund</th><th>Date</th><th>Category</th></tr></thead><tbody></tbody></table></div>
                 </div>
             </div>
 
-            <!-- Desktop: Table layout -->
-            <div class="table-wrapper">
-                <table id="membersTable">
-                    <thead>
-                        <tr>
-                            <th>Member Name</th>
-                            <th>Contact</th>
-                            <th>Last Gift</th>
-                            <th>Total Gifts</th>
-                            <th>Reminder</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="membersTableBody">
-                        <tr>
-                            <td colspan="6">
-                                <div class="loading-overlay">
-                                    <div class="loading-spinner"></div>
-                                    <div>Loading members...</div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ─── PURCHASES MANAGER ("What We Bought") ─── -->
-        <div class="card" style="margin-top: 24px;">
-            <div class="card-title">
-                <span>🛍️ What We Bought — Purchases</span>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">
-                Add a new purchase below. It appears instantly on the public
-                <a href="impact.html" target="_blank" style="color: var(--accent-purple);">What We Bought</a>
-                page, and its cost is subtracted from the fund's Available Balance.
-            </p>
-
-            <!-- Admin token -->
-            <div style="background: rgba(139, 92, 246, 0.06); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 16px;">
-                <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:6px;">
-                    Admin Token (your admin email, or ADMIN_API_TOKEN)
-                </label>
-                <input type="text" id="purchaseAdminToken" placeholder="e.g. albertjoshrock101@gmail.com"
-                    style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background: var(--bg-dark); color: var(--text-primary); font-size:13px;">
-                <small style="color: var(--text-secondary); font-size:11px;">
-                    Stored only in this browser (localStorage). Needed to add/edit/delete.
-                </small>
-            </div>
-
-            <!-- Add / Edit form -->
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Product Name *</label>
-                    <input type="text" id="p_name" placeholder="e.g. Zoom G2 FOUR Guitar Processor" class="purchase-input">
-                </div>
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Total Cost (₹) *</label>
-                    <input type="number" step="0.01" id="p_cost" placeholder="17001.81" class="purchase-input">
-                </div>
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Purchase Date *</label>
-                    <input type="date" id="p_date" class="purchase-input">
-                </div>
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Fund Source *</label>
-                    <select id="p_fund" class="purchase-input">
-                        <option value="Tech Fund">Tech Fund</option>
-                        <option value="Christmas Fund">Christmas Fund</option>
-                    </select>
-                </div>
-
-                <!-- NEW: Funding breakdown -->
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--accent-purple); margin-bottom:4px;">💰 From Fund (₹) *</label>
-                    <input type="number" step="0.01" id="p_fundContribution" placeholder="15000" class="purchase-input">
-                    <small style="color: var(--text-secondary); font-size:10px;">Amount taken from the fund above. Reduces the fund's Available Balance.</small>
-                </div>
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--warning); margin-bottom:4px;">🤝 From External (₹)</label>
-                    <input type="number" step="0.01" id="p_externalContribution" placeholder="2001.81" class="purchase-input">
-                    <small style="color: var(--text-secondary); font-size:10px;">Money from other donors (e.g. family top-up). 0 if not applicable.</small>
-                </div>
-                <div style="grid-column: 1 / -1;">
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">External Sources Note</label>
-                    <input type="text" id="p_externalSources" placeholder="e.g. Albert's dad (₹2,000) + personal top-up (₹1.81)" class="purchase-input">
-                </div>
-
-                <div style="grid-column: 1 / -1;">
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Photo URL (Google Drive direct link or any public image)</label>
-                    <input type="url" id="p_photo" placeholder="https://..." class="purchase-input">
-                </div>
-                <div style="grid-column: 1 / -1;">
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Vendor Link (Amazon, Flipkart, etc.)</label>
-                    <input type="url" id="p_vendor" placeholder="https://www.amazon.in/..." class="purchase-input">
-                </div>
-                <div style="grid-column: 1 / -1;">
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Description</label>
-                    <textarea id="p_desc" rows="2" placeholder="Short story about the purchase..." class="purchase-input"></textarea>
-                </div>
-            </div>
-
-            <div id="p_balanceCheck" style="margin-top:10px; font-size:12px; color: var(--text-secondary);"></div>
-
-            <div style="display:flex; gap:10px; margin-top:14px; flex-wrap: wrap;">
-                <button id="p_saveBtn" class="btn" style="background: var(--accent-purple); color:#fff; border:none;">💾 Save Purchase</button>
-                <button id="p_clearBtn" class="btn btn-outline">Clear Form</button>
-                <button id="p_refreshBtn" class="btn btn-outline">🔄 Refresh List</button>
-                <span id="p_msg" style="align-self:center; font-size:12px; color: var(--text-secondary);"></span>
-            </div>
-
-            <!-- Existing purchases -->
-            <div style="margin-top: 22px;">
-                <h4 style="font-size:14px; font-weight:700; color: var(--text-primary); margin-bottom:10px;">
-                    Existing Purchases (<span id="p_count">–</span>)
-                </h4>
-                <div id="p_list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
-                    <div style="color: var(--text-secondary); font-size:12px;">Loading...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ─── WISHLIST MANAGER ─── -->
-        <div class="card" style="margin-top: 24px;">
-            <div class="card-title">
-                <span>📋 Church Contribution Wishlist Manager</span>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">
-                Add or edit items the church plans to buy in the future. Normal users see this as a read-only list on the home page.
-            </p>
-
-            <!-- Add / Edit form -->
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Item Name *</label>
-                    <input type="text" id="w_name" placeholder="e.g. Stage LED Screen Panel" class="purchase-input">
-                </div>
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Estimated Cost (₹) *</label>
-                    <input type="number" id="w_cost" placeholder="e.g. 50000" class="purchase-input">
-                </div>
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Priority *</label>
-                    <select id="w_priority" class="purchase-input">
-                        <option value="High">🔴 High</option>
-                        <option value="Medium" selected>🟡 Medium</option>
-                        <option value="Low">🟢 Low</option>
-                    </select>
-                </div>
-                <div style="grid-column: 1 / -1;">
-                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Notes / Description</label>
-                    <textarea id="w_desc" rows="2" placeholder="Describe what this is and why it's needed..." class="purchase-input"></textarea>
-                </div>
-            </div>
-
-            <div style="display:flex; gap:10px; margin-top:14px; flex-wrap: wrap;">
-                <button id="w_saveBtn" class="btn" style="background: var(--accent-purple); color:#fff; border:none;">💾 Save Wishlist Item</button>
-                <button id="w_clearBtn" class="btn btn-outline">Clear Form</button>
-                <button id="w_refreshBtn" class="btn btn-outline">🔄 Refresh List</button>
-                <span id="w_msg" style="align-self:center; font-size:12px; color: var(--text-secondary);"></span>
-            </div>
-
-            <!-- Existing wishlist items -->
-            <div style="margin-top: 22px;">
-                <h4 style="font-size:14px; font-weight:700; color: var(--text-primary); margin-bottom:10px;">
-                    Planned Items (<span id="w_count">–</span>)
-                </h4>
-                <div id="w_list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
-                    <div style="color: var(--text-secondary); font-size:12px;">Loading...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ─── SUPER ADMIN ROLES CONFIGURATION ─── -->
-        <div class="card" style="margin-top: 24px;">
-            <div class="card-title">
-                <span>🛡️ Super Admin Role Configuration</span>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">
-                Create custom administrative roles, configure their specific permission scopes, and link user emails directly to roles.
-            </p>
-
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
-                <!-- Section 1: Link Email to Role -->
-                <div style="border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
-                    <h4 style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: var(--text-primary);">🔗 Link Email to Role</h4>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <div>
-                            <label style="display:block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">User Email Address</label>
-                            <input type="email" id="role_email" placeholder="user@gmail.com" class="purchase-input">
-                        </div>
-                        <div>
-                            <label style="display:block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Select Role</label>
-                            <select id="role_select" class="purchase-input">
-                                <!-- Roles populated dynamically -->
+            <!-- FUNDS -->
+            <div class="section" id="section-funds">
+                <div class="page-head"><h2>Funds</h2><p>Create funds, set goals, assign members. Tech &amp; Christmas funds are protected system funds.</p></div>
+                <div class="card">
+                    <h3 id="fundFormTitle">Create a fund</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Fund name *</label><input class="input" id="f_name" placeholder="e.g. Building Fund"></div>
+                        <div><label class="f-label">Slug (URL key)</label><input class="input" id="f_slug" placeholder="auto from name"></div>
+                        <div><label class="f-label">Goal amount (₹)</label><input class="input" id="f_goal" type="number" placeholder="e.g. 100000"></div>
+                        <div><label class="f-label">Visibility</label>
+                            <select class="input" id="f_visibility">
+                                <option value="public">Public — everyone can view</option>
+                                <option value="members">Members-only — assigned members</option>
                             </select>
                         </div>
-                        <button id="btn_linkEmail" class="btn" style="background: var(--accent-purple); color: white; border: none; margin-top: 5px; width: 100%;">Link User Email</button>
+                        <div class="span-all"><label class="f-label">Description</label><textarea class="input" id="f_desc" rows="2" placeholder="What is this fund for?"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="f_saveBtn">Save fund</button>
+                        <button class="btn btn-outline" id="f_clearBtn">Clear</button>
+                        <span class="msg" id="f_msg"></span>
                     </div>
                 </div>
+                <div class="card">
+                    <h3>All funds</h3>
+                    <div class="fund-card-row" id="fundList"><div class="empty">Loading…</div></div>
+                </div>
+                <div class="card" id="fundMembersCard" style="display:none;">
+                    <h3 id="fmTitle">Assign members</h3>
+                    <p class="msg" style="margin-bottom:10px;">Members assigned to a <strong>members-only</strong> fund are the only ones who can view it (admins always can).</p>
+                    <div id="fmList" class="check-grid"></div>
+                    <div class="btn-row"><span class="msg" id="fm_msg"></span></div>
+                </div>
+            </div>
 
-                <!-- Section 2: Create Custom Role -->
-                <div style="border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
-                    <h4 style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: var(--text-primary);">🛠️ Create / Save Custom Role</h4>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <div>
-                            <label style="display:block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Role Name</label>
-                            <input type="text" id="custom_role_name" placeholder="e.g. stage_manager" class="purchase-input">
+            <!-- MEMBERS -->
+            <div class="section" id="section-members">
+                <div class="page-head"><h2>Members</h2><p>Every contributor with live totals, straight from the database.</p></div>
+                <div class="card">
+                    <div class="btn-row" style="margin: 0 0 12px;">
+                        <input class="input" id="memberSearch" placeholder="Search name, email, phone…" style="max-width:280px;">
+                        <button class="btn btn-outline" id="memberRefresh">Refresh</button>
+                        <span class="msg" id="memberMsg"></span>
+                    </div>
+                    <div class="table-wrap"><table id="membersTable"><thead><tr>
+                        <th>Member</th><th>Contact</th><th>Total given</th><th>Times</th><th>Last gift</th><th>Reminders</th><th></th>
+                    </tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- CONTRIBUTIONS -->
+            <div class="section" id="section-contributions">
+                <div class="page-head"><h2>Contributions</h2><p>Full ledger per fund.</p></div>
+                <div class="card">
+                    <div class="btn-row" style="margin:0 0 12px;">
+                        <select class="input" id="contribFund" style="max-width:240px;"></select>
+                        <input class="input" id="contribSearch" placeholder="Filter by member…" style="max-width:240px;">
+                        <span class="msg" id="contribMsg"></span>
+                    </div>
+                    <div class="table-wrap"><table id="contribTable"><thead><tr>
+                        <th>Member</th><th>Amount</th><th>Date</th><th>Category</th><th>Notes</th>
+                    </tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- PURCHASES -->
+            <div class="section" id="section-purchases">
+                <div class="page-head"><h2>Purchases</h2><p>“What We Bought” — records shown on the public impact page.</p></div>
+                <div class="card">
+                    <h3 id="p_formTitle">Add a purchase</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Product name *</label><input class="input" id="p_name"></div>
+                        <div><label class="f-label">Total cost (₹) *</label><input class="input" id="p_cost" type="number"></div>
+                        <div><label class="f-label">Purchase date *</label><input class="input" id="p_date" type="date"></div>
+                        <div><label class="f-label">Fund source *</label><select class="input" id="p_fund"></select></div>
+                        <div><label class="f-label">From fund (₹)</label><input class="input" id="p_fundContrib" type="number" placeholder="defaults to cost"></div>
+                        <div><label class="f-label">External top-up (₹)</label><input class="input" id="p_extContrib" type="number" placeholder="0"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="p_status"><option>Active</option><option>Hidden</option></select></div>
+                        <div><label class="f-label">Photo URL</label><input class="input" id="p_photo" placeholder="https://…"></div>
+                        <div><label class="f-label">Vendor link</label><input class="input" id="p_vendor" placeholder="https://…"></div>
+                        <div class="span-all"><label class="f-label">External sources credit</label><input class="input" id="p_extSources" placeholder="e.g. Albert's dad (₹2,000)"></div>
+                        <div class="span-all"><label class="f-label">Description</label><textarea class="input" id="p_desc" rows="2"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="p_saveBtn">Save purchase</button>
+                        <button class="btn btn-outline" id="p_clearBtn">Clear</button>
+                        <span class="msg" id="p_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Recorded purchases (<span id="p_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="p_table"><thead><tr>
+                        <th>Product</th><th>Cost</th><th>Fund</th><th>Date</th><th>Status</th><th></th>
+                    </tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- WISHLIST -->
+            <div class="section" id="section-wishlist">
+                <div class="page-head"><h2>Wishlist</h2><p>Planned purchases shown on the public home page.</p></div>
+                <div class="card">
+                    <h3 id="w_formTitle">Add wishlist item</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Item name *</label><input class="input" id="w_name"></div>
+                        <div><label class="f-label">Estimated cost (₹) *</label><input class="input" id="w_cost" type="number"></div>
+                        <div><label class="f-label">Priority</label><select class="input" id="w_priority"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+                        <div class="span-all"><label class="f-label">Notes</label><textarea class="input" id="w_notes" rows="2"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="w_saveBtn">Save item</button>
+                        <button class="btn btn-outline" id="w_clearBtn">Clear</button>
+                        <span class="msg" id="w_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Planned items (<span id="w_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="w_table"><thead><tr>
+                        <th>Item</th><th>Cost</th><th>Priority</th><th>Notes</th><th></th>
+                    </tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- ROLES -->
+            <div class="section" id="section-roles">
+                <div class="page-head"><h2>Roles &amp; access</h2><p>Define permission scopes and link Google emails to roles.</p></div>
+                <div class="card">
+                    <h3>Create / edit role</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Role name *</label><input class="input" id="r_name" placeholder="e.g. wishlist_editor"></div>
+                        <div class="span-all">
+                            <label class="f-label">Permissions</label>
+                            <div class="check-grid" id="r_perms"></div>
                         </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="r_saveBtn">Save role</button>
+                        <span class="msg" id="r_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Link email to role</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Google email *</label><input class="input" id="r_email" type="email" placeholder="user@gmail.com"></div>
+                        <div><label class="f-label">Role *</label><select class="input" id="r_roleSelect"></select></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="r_linkBtn">Link email</button>
+                        <span class="msg" id="r_linkMsg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Current configuration</h3>
+                    <div class="table-wrap"><table id="r_rolesTable"><thead><tr><th>Role</th><th>Permissions</th><th></th></tr></thead><tbody></tbody></table></div>
+                    <div style="height:14px;"></div>
+                    <div class="table-wrap"><table id="r_mapTable"><thead><tr><th>Email</th><th>Role</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- AUDIT -->
+            <div class="section" id="section-audit">
+                <div class="page-head"><h2>Audit log</h2><p>Every admin operation and visitor view event, newest first.</p></div>
+                <div class="card">
+                    <div class="btn-row" style="margin:0 0 12px;">
+                        <select class="input" id="a_type" style="max-width:160px;">
+                            <option value="">All actors</option><option value="admin">Admins</option>
+                            <option value="member">Members</option><option value="anonymous">Anonymous</option>
+                        </select>
+                        <select class="input" id="a_action" style="max-width:180px;">
+                            <option value="">All actions</option><option value="fund">Fund ops</option>
+                            <option value="purchase">Purchases</option><option value="wishlist">Wishlist</option>
+                            <option value="role">Roles</option><option value="member">Members</option>
+                            <option value="view">Views</option><option value="config">Settings</option>
+                            <option value="selftest">Self-tests</option>
+                        </select>
+                        <input class="input" id="a_actor" placeholder="Filter by email…" style="max-width:220px;">
+                        <button class="btn btn-outline" id="a_applyBtn">Apply</button>
+                        <span class="msg" id="a_msg"></span>
+                    </div>
+                    <div class="table-wrap"><table id="a_table"><thead><tr>
+                        <th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Details</th><th>IP</th>
+                    </tr></thead><tbody></tbody></table></div>
+                    <div class="btn-row">
+                        <button class="btn btn-outline" id="a_prevBtn">← Newer</button>
+                        <button class="btn btn-outline" id="a_nextBtn">Older →</button>
+                        <span class="msg" id="a_pageInfo"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div class="section" id="section-settings">
+                <div class="page-head"><h2>Settings</h2><p>Portal-wide configuration.</p></div>
+                <div class="card">
+                    <h3>Visitor sign-in</h3>
+                    <div style="display:flex; gap:14px; align-items:center;">
+                        <label class="toggle"><input type="checkbox" id="s_forceLogin"><span class="tr"></span></label>
                         <div>
-                            <label style="display:block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Assign Permissions</label>
-                            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-primary);">
-                                <label><input type="checkbox" value="edit_purchases" class="role-perm-check"> 🛍️ edit_purchases</label>
-                                <label><input type="checkbox" value="edit_wishlist" class="role-perm-check"> 📋 edit_wishlist</label>
-                                <label><input type="checkbox" value="manage_roles" class="role-perm-check"> 🛡️ manage_roles</label>
-                                <label><input type="checkbox" value="view_members" class="role-perm-check"> 👥 view_members</label>
-                            </div>
+                            <strong>Require Google sign-in to view the portal</strong>
+                            <div class="msg">When on, visitors must sign in before viewing fund data — view events become email-attributed in the audit log.</div>
                         </div>
-                        <button id="btn_saveRole" class="btn btn-outline" style="margin-top: 5px; width: 100%;">Save Custom Role</button>
+                    </div>
+                    <div class="btn-row"><span class="msg" id="s_msg"></span></div>
+                </div>
+                <div class="card">
+                    <h3>Fund goals (system funds)</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Tech Fund goal (₹)</label><input class="input" id="s_techGoal" type="number"></div>
+                        <div><label class="f-label">Christmas Fund goal (₹)</label><input class="input" id="s_xmasGoal" type="number"></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="s_saveGoals">Save goals</button>
+                        <span class="msg" id="s_goalMsg"></span>
                     </div>
                 </div>
             </div>
 
-            <!-- List Mappings & Custom Roles -->
-            <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                <div>
-                    <h5 style="margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text-primary);">Active Email Mappings</h5>
-                    <div id="emailMappingsList" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; background: var(--bg-dark);">
-                        Loading mappings...
+            <!-- SELF-TEST -->
+            <div class="section" id="section-selftest">
+                <div class="page-head"><h2>Production self-test</h2><p>Runs the full end-to-end suite against this deployment. Test records are auto-cleaned; real data is never touched.</p></div>
+                <div class="card">
+                    <div class="btn-row" style="margin:0;">
+                        <button class="btn btn-primary" id="st_runBtn">▶ Run self-test</button>
+                        <span class="msg" id="st_msg"></span>
                     </div>
-                </div>
-                <div>
-                    <h5 style="margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text-primary);">Configured Permission Roles</h5>
-                    <div id="rolesList" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; background: var(--bg-dark);">
-                        Loading roles...
-                    </div>
+                    <div id="st_results" style="margin-top:16px;"></div>
                 </div>
             </div>
-            <div style="margin-top: 10px; text-align: right;">
-                <span id="role_msg" style="font-size: 12px; color: var(--text-secondary);"></span>
-            </div>
-        </div>
+        </main>
 
-        <style>
-            .purchase-input {
-                width: 100%;
-                padding: 10px 12px;
-                border-radius: 8px;
-                border: 1px solid var(--border);
-                background: var(--bg-dark);
-                color: var(--text-primary);
-                font-size: 13px;
-                font-family: inherit;
-            }
-            .purchase-input:focus {
-                outline: none;
-                border-color: var(--accent-purple);
-                box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
-            }
-            .purchase-row {
-                background: var(--bg-card-hover);
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                padding: 12px;
-            }
-            .purchase-row .pr-name { font-weight:700; color: var(--text-primary); }
-            .purchase-row .pr-meta { color: var(--text-secondary); font-size:11px; margin-top:4px; }
-            .purchase-row .pr-actions { display:flex; gap:6px; margin-top:10px; }
-            .purchase-row .pr-actions button {
-                padding: 6px 10px;
-                font-size: 11px;
-                border-radius: 6px;
-                border: 1px solid var(--border);
-                background: transparent;
-                color: var(--text-secondary);
-                cursor: pointer;
-            }
-            .purchase-row .pr-actions button:hover { color: var(--accent-purple); border-color: var(--accent-purple); }
-            .purchase-row .pr-actions button.danger { color: var(--danger); }
-        </style>
+        <nav id="mobileNav"></nav>
     </div>
 
     <script src="admin-session.js"></script>
     <script>
     (function () {
-        const CLIENT_ID = "915064946962-eohgis92a3jmfk3fi7hkh8uc21971clo.apps.googleusercontent.com";
+        "use strict";
 
-        function unlockDashboard(email) {
-            document.getElementById("adminAuthGate").style.display = "none";
-            const tokenField = document.getElementById("purchaseAdminToken");
-            if (tokenField && !tokenField.value) {
-                tokenField.value = email;
-                localStorage.setItem("ljmAdminPurchaseToken", email);
-            }
-        }
+        // ═══════════════ Config & state ═══════════════
+        var CLIENT_ID = "915064946962-eohgis92a3jmfk3fi7hkh8uc21971clo.apps.googleusercontent.com";
+        var TOKEN_KEY = "ljmAdminApiToken";
+        var state = {
+            token: sessionStorage.getItem(TOKEN_KEY) || "",
+            email: "",
+            fundsCache: [],
+            membersCache: [],
+            purchasesCache: [],
+            wishlistCache: [],
+            auditOffset: 0,
+            editingFundSlug: null,
+            editingPurchaseId: null,
+            editingWishlistId: null,
+            loaded: {}
+        };
+        var PERMISSION_SCOPES = [
+            "edit_purchases", "edit_wishlist", "view_members",
+            "manage_roles", "manage_funds", "delete_funds", "view_audit"
+        ];
+        var NAV = [
+            ["overview", "☀️", "Overview"],
+            ["funds", "🏛️", "Funds"],
+            ["members", "👥", "Members"],
+            ["contributions", "📒", "Contributions"],
+            ["purchases", "🛍️", "Purchases"],
+            ["wishlist", "📋", "Wishlist"],
+            ["roles", "🛡️", "Roles"],
+            ["audit", "🧾", "Audit log"],
+            ["settings", "⚙️", "Settings"],
+            ["selftest", "🧪", "Self-test"]
+        ];
 
-        function showAuthError(msg) {
-            const el = document.getElementById("adminAuthMsg");
-            el.textContent = msg;
-            el.style.display = "block";
-        }
-
-        function handleAdminCredential(response) {
-            try {
-                const payload = JSON.parse(atob(response.credential.split(".")[1]));
-                if (LJMAdmin.isAdmin(payload.email)) {
-                    LJMAdmin.createSession(payload.email, payload.name).then(() => {
-                        LJMAdmin.showAdminBar();
-                        unlockDashboard(payload.email);
-                    });
-                } else {
-                    showAuthError("Access denied. " + payload.email + " is not an authorized admin.");
-                }
-            } catch (e) {
-                showAuthError("Could not verify your Google account.");
-            }
-        }
-
-        window.addEventListener("load", function () {
-            LJMAdmin.readSession().then(function (session) {
-                if (session) {
-                    unlockDashboard(session.email);
-                    return;
-                }
-
-                var isFile = window.location.protocol === "file:";
-                var isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-
-                if (isFile || isLocalhost) {
-                    var devBtn = document.getElementById("adminDevLoginBtn");
-                    devBtn.style.display = "block";
-                    devBtn.innerHTML =
-                        '<button onclick="window.__adminDevLogin()" style="' +
-                        "padding: 12px 28px; border-radius: 10px; border: 1px solid var(--accent-purple);" +
-                        "background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.1));" +
-                        'color: var(--accent-purple); font-weight: 600; font-size: 14px; cursor: pointer; font-family: Outfit, sans-serif;">' +
-                        "Admin Login (Dev)" +
-                        "</button>";
-                    document.getElementById("adminGoogleSignInBtn").style.display = "none";
-                    return;
-                }
-
-                if (typeof google !== "undefined" && google.accounts && google.accounts.id) {
-                    google.accounts.id.initialize({
-                        client_id: CLIENT_ID,
-                        callback: handleAdminCredential,
-                        use_fedcm_for_prompt: false
-                    });
-                    var btn = document.getElementById("adminGoogleSignInBtn");
-                    google.accounts.id.renderButton(btn, {
-                        theme: "filled_black", size: "large", shape: "pill", text: "signin_with", width: 260
-                    });
-                    setTimeout(function () { btn.style.opacity = "1"; }, 300);
-                } else {
-                    showAuthError("Google Sign-In is loading. Please refresh the page.");
-                }
+        function $(id) { return document.getElementById(id); }
+        function esc(s) {
+            return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+                return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
             });
-        });
+        }
+        function inr(n) { return "₹" + Number(n || 0).toLocaleString("en-IN"); }
+        function setMsg(id, text, cls) {
+            var el = $(id); if (!el) return;
+            el.textContent = text || "";
+            el.className = "msg" + (cls ? " " + cls : "");
+            if (text) setTimeout(function () { if (el.textContent === text) { el.textContent = ""; } }, 6000);
+        }
 
-        window.__adminDevLogin = function () {
-            LJMAdmin.createSession("admin@ljmchurch.com", "Dev Admin").then(() => {
-                LJMAdmin.showAdminBar();
-                unlockDashboard("admin@ljmchurch.com");
+        // Every admin call carries the token (Google ID token, or legacy email in dev)
+        function api(path, opts) {
+            opts = opts || {};
+            opts.headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+            if (state.token) opts.headers["Authorization"] = "Bearer " + state.token;
+            return fetch(path, opts).then(function (r) {
+                if (r.status === 401) {
+                    // Token rejected/expired — send back to the gate
+                    sessionStorage.removeItem(TOKEN_KEY);
+                    return r.json().catch(function () { return {}; }).then(function (d) {
+                        throw new Error(d.message || "Session expired — please sign in again.");
+                    });
+                }
+                return r.json();
             });
+        }
+
+        // ═══════════════ Auth gate ═══════════════
+        function parseJwtEmail(token) {
+            try { return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))); }
+            catch (_) { return null; }
+        }
+
+        function unlock(email, name) {
+            state.email = email;
+            $("authGate").style.display = "none";
+            $("app").classList.add("ready");
+            $("whoami").textContent = email;
+            if (window.LJMAdmin) {
+                LJMAdmin.createSession(email, name || "").then(function () { LJMAdmin.showAdminBar(); });
+            }
+            openSection("overview");
+        }
+
+        window.handleAdminCredential = function (response) {
+            var payload = parseJwtEmail(response.credential);
+            if (!payload || !payload.email) { $("gateErr").textContent = "Could not read Google credential."; return; }
+            state.token = response.credential;
+            sessionStorage.setItem(TOKEN_KEY, state.token);
+            // Verify server-side that this account holds any admin role before unlocking
+            api("/api/roles").then(function (d) {
+                if (d && d.success) { unlock(payload.email, payload.name); }
+                else {
+                    // Not a roles manager — may still hold a lesser role; probe members scope
+                    return api("/api/members").then(function (m) {
+                        if (m && m.success) unlock(payload.email, payload.name);
+                        else {
+                            return api("/api/purchases?action=noop").then(function () {
+                                $("gateErr").textContent = "This Google account has no admin role. Ask a super admin to link your email under Roles.";
+                                sessionStorage.removeItem(TOKEN_KEY);
+                            });
+                        }
+                    });
+                }
+            }).catch(function (e) { $("gateErr").textContent = e.message; });
         };
 
-        window.addEventListener("ljmAdminLogout", function () {
-            document.getElementById("adminAuthGate").style.display = "flex";
-        });
-    })();
-    </script>
-
-    <script>
-        // ─── CONFIG ───
-        const WEB_APP_URL = "/api/purchases";
-        let allMembersData = [];
-
-        // ─── LOAD DATA ───
-        function loadAdminData() {
-            showSkeletons();
-            hideError();
-
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                console.log("[Admin] Apps Script mode");
-                google.script.run
-                    .withSuccessHandler(d => updateUI(d))
-                    .withFailureHandler(e => showError("Apps Script error: " + e))
-                    .getAdminMemberData();
-            } else {
-                console.log("[Admin] Dev mode — fetching via public URL");
-                fetch(WEB_APP_URL + "?fund=tech-contributions", { credentials: "omit" })
-                    .then(r => r.json())
-                    .then(d => updateUIFromPublicAPI(d))
-                    .catch(e => showError("Network error: " + e));
+        function initGate() {
+            var host = location.hostname;
+            var isDev = location.protocol === "file:" || host === "localhost" || host === "127.0.0.1";
+            if (isDev) {
+                var box = $("devLoginBtn");
+                box.style.display = "block";
+                box.innerHTML = "<button>Admin login (dev)</button>";
+                box.querySelector("button").onclick = function () {
+                    var email = prompt("Dev admin email:", "albertjoshrock101@gmail.com");
+                    if (!email) return;
+                    state.token = email.trim();
+                    sessionStorage.setItem(TOKEN_KEY, state.token);
+                    unlock(email.trim(), "Dev Admin");
+                };
             }
-        }
+            var tries = 0;
+            (function waitGis() {
+                if (window.google && google.accounts && google.accounts.id) {
+                    google.accounts.id.initialize({ client_id: CLIENT_ID, callback: window.handleAdminCredential, use_fedcm_for_prompt: false });
+                    google.accounts.id.renderButton($("googleBtn"), { theme: "outline", size: "large", shape: "pill", text: "signin_with", width: 260 });
+                } else if (tries++ < 40) setTimeout(waitGis, 250);
+                else if (!isDev) $("gateErr").textContent = "Google Sign-In failed to load. Refresh the page.";
+            })();
 
-        // ─── SKELETON LOADERS (lightweight — no reflow) ───
-        function showSkeletons() {
-            ['totalYTD', 'activeMembers', 'monthlyGrowth', 'recurringCount'].forEach(id => {
-                document.getElementById(id).innerHTML = '<span class="skeleton-bar"></span>';
-            });
-        }
-
-        function showError(msg) {
-            const el = document.getElementById('errorBanner');
-            document.getElementById('errorMessage').textContent = msg;
-            el.style.display = 'flex';
-        }
-
-        function hideError() {
-            document.getElementById('errorBanner').style.display = 'none';
-        }
-
-        // ─── UPDATE UI (Apps Script) ───
-        function updateUI(data) {
-            if (data.error) { showError("Unauthorized or session expired."); return; }
-
-            allMembersData = data.members || [];
-            const s = data.totalStats || {};
-
-            setStatText('totalYTD', '₹' + (s.totalCollected || 0).toLocaleString('en-IN'));
-            setStatText('activeMembers', s.activeMembers || 0);
-            setStatText('recurringCount', s.recurringCount || 0);
-
-            const g = s.monthlyGrowth;
-            const gEl = document.getElementById('monthlyGrowth');
-            if (typeof g === 'number') {
-                gEl.textContent = (g >= 0 ? '+' : '') + g + '%';
-                gEl.style.color = g >= 0 ? 'var(--success)' : 'var(--danger)';
-            } else {
-                gEl.textContent = '—';
-                gEl.style.color = 'var(--text-secondary)';
-            }
-
-            renderMembers(allMembersData);
-            renderCharts(allMembersData);
-            updateTimestamp();
-        }
-
-        // ─── UPDATE UI (Public API fallback) ───
-        function updateUIFromPublicAPI(data) {
-            const contributions = data.contributions || [];
-            const memberMap = {};
-
-            contributions.forEach(c => {
-                const n = c.Member;
-                if (!n) return;
-                if (!memberMap[n]) {
-                    memberMap[n] = {
-                        MemberName: n,
-                        Email: (data.memberEmails && data.memberEmails[n]) || '',
-                        TotalContributions: 0, TotalAmount: 0,
-                        LastContributionDate: null, RecurringReminders: 'N/A'
-                    };
+            // Resume session: previous token still in storage
+            if (state.token) {
+                var email = state.token.indexOf(".") > -1 ? (parseJwtEmail(state.token) || {}).email : state.token;
+                if (email) {
+                    api("/api/roles").then(function (d) { if (d && d.success) unlock(email); })
+                        .catch(function () { /* stay on the gate */ });
                 }
-                memberMap[n].TotalContributions++;
-                memberMap[n].TotalAmount += (c.Amount || 0);
-                const d = new Date(c.Date);
-                if (!memberMap[n].LastContributionDate || d > new Date(memberMap[n].LastContributionDate)) {
-                    memberMap[n].LastContributionDate = c.Date;
-                }
-            });
-
-            const members = Object.values(memberMap);
-            allMembersData = members;
-            const total = members.reduce((s, m) => s + (m.TotalAmount || 0), 0);
-
-            // Monthly growth
-            const now = new Date();
-            const cm = now.getMonth(), cy = now.getFullYear();
-            let thisM = 0, lastM = 0;
-            contributions.forEach(c => {
-                const d = new Date(c.Date);
-                if (d.getFullYear() === cy && d.getMonth() === cm) thisM += (c.Amount || 0);
-                if (cm > 0 && d.getFullYear() === cy && d.getMonth() === cm - 1) lastM += (c.Amount || 0);
-                if (cm === 0 && d.getFullYear() === cy - 1 && d.getMonth() === 11) lastM += (c.Amount || 0);
-            });
-
-            setStatText('totalYTD', '₹' + total.toLocaleString('en-IN'));
-            setStatText('activeMembers', members.length);
-            setStatText('recurringCount', members.filter(m => m.RecurringReminders === 'Yes').length || '—');
-
-            const gEl = document.getElementById('monthlyGrowth');
-            if (lastM > 0) {
-                const pct = Math.round(((thisM - lastM) / lastM) * 100);
-                gEl.textContent = (pct >= 0 ? '+' : '') + pct + '%';
-                gEl.style.color = pct >= 0 ? 'var(--success)' : 'var(--danger)';
-            } else if (thisM > 0) {
-                gEl.textContent = '🚀 New';
-                gEl.style.color = 'var(--accent-cyan)';
-            } else {
-                gEl.textContent = '—';
-                gEl.style.color = 'var(--text-secondary)';
-            }
-
-            renderMembers(members);
-            renderChartsFromContributions(contributions, members);
-            updateTimestamp();
-        }
-
-        function setStatText(id, val) {
-            document.getElementById(id).textContent = val;
-        }
-
-        // ─── RENDER MEMBERS (Both table + mobile cards) ───
-        function renderMembers(members) {
-            // Desktop table
-            const tbody = document.getElementById('membersTableBody');
-            tbody.innerHTML = '';
-
-            // Mobile cards
-            const cardsList = document.getElementById('memberCardsList');
-            cardsList.innerHTML = '';
-
-            if (!members || members.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:24px;">No members found.</td></tr>';
-                cardsList.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:24px;">No members found.</div>';
-                return;
-            }
-
-            members.forEach(m => {
-                const name = m.MemberName || m.Member || '—';
-                const email = m.Email || '—';
-                const lastDate = m.LastContributionDate
-                    ? new Date(m.LastContributionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : 'N/A';
-                const gifts = m.TotalContributions || 0;
-                const recurring = m.RecurringReminders || 'N/A';
-                const badgeClass = recurring === 'Yes' ? 'badge-success' : 'badge-warning';
-
-                // Desktop row
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td style="font-weight:500;">${name}</td>
-                    <td style="color:var(--text-secondary);font-size:12px;">${email}</td>
-                    <td>${lastDate}</td>
-                    <td><strong>${gifts}</strong> gifts</td>
-                    <td><span class="badge ${badgeClass}">${recurring}</span></td>
-                    <td><button class="btn btn-sm" onclick="nudgeMember('${email}','${name}')">Nudge 💬</button></td>
-                `;
-                tbody.appendChild(row);
-
-                // Mobile card
-                const card = document.createElement('div');
-                card.className = 'member-card-item';
-                card.innerHTML = `
-                    <div class="member-card-top">
-                        <div>
-                            <div class="member-card-name">${name}</div>
-                            <div class="member-card-email">${email}</div>
-                        </div>
-                        <span class="badge ${badgeClass}">${recurring}</span>
-                    </div>
-                    <div class="member-card-stats">
-                        <span>🎁 <strong>${gifts}</strong> gifts</span>
-                        <span>📅 ${lastDate}</span>
-                    </div>
-                    <div style="margin-top:10px;">
-                        <button class="btn btn-sm" onclick="nudgeMember('${email}','${name}')">Nudge 💬</button>
-                    </div>
-                `;
-                cardsList.appendChild(card);
-            });
-        }
-
-        // ─── SEARCH ───
-        document.getElementById('memberSearchInput').addEventListener('input', e => {
-            const t = e.target.value.toLowerCase();
-            renderMembers(allMembersData.filter(m => {
-                const n = (m.MemberName || m.Member || '').toLowerCase();
-                const em = (m.Email || '').toLowerCase();
-                return n.includes(t) || em.includes(t);
-            }));
-        });
-
-        // ─── NUDGE ───
-        function nudgeMember(email, name) {
-            if (!email || email === '—') { alert('No email for this member.'); return; }
-            if (!confirm(`Send reminder to ${name} (${email})?`)) return;
-
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run
-                    .withSuccessHandler(r => alert(r.message || 'Sent!'))
-                    .withFailureHandler(e => alert('Error: ' + e))
-                    .triggerManualNudge(email);
-            } else {
-                alert(`[Dev Mode] Would send nudge to ${name} (${email}).`);
             }
         }
 
-        // ─── CHARTS (Apps Script) ───
-        function renderCharts(members) {
-            const sorted = [...members].sort((a, b) => (b.TotalContributions || 0) - (a.TotalContributions || 0)).slice(0, 8);
-            renderBarChart(
-                sorted.map(m => (m.MemberName || '').split(' ')[0]),
-                sorted.map(m => m.TotalContributions || 0),
-                'Top Contributors'
-            );
-            const yes = members.filter(m => m.RecurringReminders === 'Yes').length;
-            renderDoughnut(yes, members.length - yes);
-        }
-
-        // ─── CHARTS (Public API) ───
-        function renderChartsFromContributions(contributions, members) {
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const cy = new Date().getFullYear();
-            const mt = {};
-            contributions.forEach(c => {
-                const d = new Date(c.Date);
-                if (d.getFullYear() === cy) {
-                    const k = months[d.getMonth()];
-                    mt[k] = (mt[k] || 0) + (c.Amount || 0);
-                }
+        // ═══════════════ Navigation ═══════════════
+        function buildNav() {
+            var side = $("sideNav"), mob = $("mobileNav");
+            NAV.forEach(function (n) {
+                [side, mob].forEach(function (host) {
+                    var b = document.createElement("button");
+                    b.className = "nav-item"; b.dataset.section = n[0];
+                    b.innerHTML = '<span class="ni-icon">' + n[1] + "</span><span>" + n[2] + "</span>";
+                    b.onclick = function () { openSection(n[0]); };
+                    host.appendChild(b);
+                });
             });
-            const labels = months.filter(m => mt[m]);
-            renderBarChart(labels, labels.map(m => mt[m]), 'Monthly Giving (₹)');
-
-            const yes = members.filter(m => m.RecurringReminders === 'Yes').length;
-            renderDoughnut(yes, members.length - yes);
+        }
+        function openSection(name) {
+            document.querySelectorAll(".section").forEach(function (s) { s.classList.remove("active"); });
+            document.querySelectorAll(".nav-item").forEach(function (b) { b.classList.toggle("active", b.dataset.section === name); });
+            $("section-" + name).classList.add("active");
+            var loader = LOADERS[name];
+            if (loader && !state.loaded[name]) { state.loaded[name] = true; loader(); }
+            window.scrollTo({ top: 0 });
         }
 
-        // ─── CHART HELPERS ───
-        let barChart = null, doughChart = null;
+        // ═══════════════ Overview ═══════════════
+        function loadOverview() {
+            $("kpiGrid").innerHTML = new Array(6).fill('<div class="kpi"><span class="skel"></span><div class="k-value"><span class="skel" style="width:90px;"></span></div></div>').join("");
+            Promise.all([
+                fetch("/api/contributions?fund=tech-contributions&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
+                fetch("/api/contributions?fund=christmas-fund&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
+                api("/api/funds")
+            ]).then(function (res) {
+                var tech = res[0], xmas = res[1], fundsRes = res[2];
+                state.fundsCache = (fundsRes && fundsRes.funds) || [];
+                var all = [];
+                (tech.contributions || []).forEach(function (c) { c._fund = "Tech Fund"; all.push(c); });
+                (xmas.contributions || []).forEach(function (c) { c._fund = "Christmas Fund"; all.push(c); });
 
-        function renderBarChart(labels, data, label) {
-            if (barChart) barChart.destroy();
-            const ctx = document.getElementById('givingTrendChart').getContext('2d');
-            barChart = new Chart(ctx, {
-                type: 'bar',
+                var total = all.reduce(function (s, c) { return s + (Number(c.Amount) || 0); }, 0);
+                var names = {}; all.forEach(function (c) { if (c.Member) names[c.Member] = 1; });
+                var now = new Date(), cm = now.getMonth(), cy = now.getFullYear();
+                var thisM = 0, lastM = 0;
+                all.forEach(function (c) {
+                    var d = new Date(c.Date);
+                    if (d.getFullYear() === cy && d.getMonth() === cm) thisM += Number(c.Amount) || 0;
+                    var lm = cm === 0 ? 11 : cm - 1, ly = cm === 0 ? cy - 1 : cy;
+                    if (d.getFullYear() === ly && d.getMonth() === lm) lastM += Number(c.Amount) || 0;
+                });
+                var spent = (tech.spentOnProducts || 0) + (xmas.spentOnProducts || 0);
+                var avail = (tech.availableBalance || 0) + (xmas.availableBalance || 0);
+                var growth = lastM > 0 ? Math.round(((thisM - lastM) / lastM) * 100) + "%" : (thisM > 0 ? "New" : "—");
+
+                $("kpiGrid").innerHTML =
+                    kpi("Total collected", inr(total), all.length + " contributions") +
+                    kpi("This month", inr(thisM), "vs " + inr(lastM) + " last month") +
+                    kpi("Monthly growth", growth, "") +
+                    kpi("Contributors", Object.keys(names).length, "unique members") +
+                    kpi("Spent on products", inr(spent), "from funds") +
+                    kpi("Available balance", inr(avail), "in hand across funds");
+
+                renderTrend(all);
+                renderDist(state.fundsCache.length ? state.fundsCache : [
+                    { name: "Tech Fund", totalCollected: (tech.contributions || []).reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0) },
+                    { name: "Christmas Fund", totalCollected: (xmas.contributions || []).reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0) }
+                ]);
+
+                all.sort(function (a, b) { return new Date(b.Date) - new Date(a.Date); });
+                var tb = $("recentTable").querySelector("tbody");
+                tb.innerHTML = all.slice(0, 10).map(function (c) {
+                    return "<tr><td><strong>" + esc(c.Member) + "</strong></td><td>" + inr(c.Amount) + "</td><td>" + esc(c._fund) +
+                        "</td><td>" + esc(String(c.Date).substring(0, 10)) + "</td><td><span class='pill pill-grey'>" + esc(c.Category || "") + "</span></td></tr>";
+                }).join("") || '<tr><td colspan="5" class="empty">No contributions yet.</td></tr>';
+            }).catch(function (e) { $("kpiGrid").innerHTML = '<div class="empty">Failed to load: ' + esc(e.message) + "</div>"; });
+        }
+        function kpi(label, value, sub) {
+            return '<div class="kpi"><div class="k-label">' + label + '</div><div class="k-value">' + value + '</div><div class="k-sub">' + esc(sub) + "</div></div>";
+        }
+        var trendChart = null, distChart = null;
+        function renderTrend(all) {
+            var byMonth = {};
+            all.forEach(function (c) {
+                var d = new Date(c.Date); if (isNaN(d)) return;
+                var k = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+                byMonth[k] = (byMonth[k] || 0) + (Number(c.Amount) || 0);
+            });
+            var labels = Object.keys(byMonth).sort().slice(-12);
+            if (trendChart) trendChart.destroy();
+            trendChart = new Chart($("trendChart"), {
+                type: "bar",
+                data: { labels: labels, datasets: [{ label: "₹ given", data: labels.map(function (k) { return byMonth[k]; }), backgroundColor: "#d97757", borderRadius: 6 }] },
+                options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: "#eeeadf" } }, x: { grid: { display: false } } } }
+            });
+        }
+        function renderDist(funds) {
+            if (distChart) distChart.destroy();
+            distChart = new Chart($("distChart"), {
+                type: "doughnut",
                 data: {
-                    labels,
-                    datasets: [{
-                        label,
-                        data,
-                        backgroundColor: 'rgba(139,92,246,0.35)',
-                        borderColor: '#8b5cf6',
-                        borderWidth: 1.5,
-                        borderRadius: 5,
-                        hoverBackgroundColor: 'rgba(139,92,246,0.6)'
-                    }]
+                    labels: funds.map(function (f) { return f.name; }),
+                    datasets: [{ data: funds.map(function (f) { return f.totalCollected || 0; }), backgroundColor: ["#d97757", "#5f8d4e", "#b98a2e", "#7c6fb0", "#4e8d8d", "#b3452f"] }]
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: '#7b8ab8', font: { family: 'Outfit', size: 10 } } },
-                        y: { grid: { color: 'rgba(139,92,246,0.06)' }, ticks: { color: '#7b8ab8', font: { family: 'Outfit', size: 10 } } }
-                    }
-                }
+                options: { plugins: { legend: { position: "bottom" } }, cutout: "62%" }
             });
         }
 
-        function renderDoughnut(yes, no) {
-            if (doughChart) doughChart.destroy();
-            const ctx = document.getElementById('fundDistributionChart').getContext('2d');
-            doughChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Recurring', 'One-time'],
-                    datasets: [{
-                        data: [yes, no],
-                        backgroundColor: ['#10b981', '#6366f1'],
-                        borderColor: '#151b2e',
-                        borderWidth: 3,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: '#7b8ab8', font: { family: 'Outfit', size: 11 }, padding: 12, usePointStyle: true }
-                        }
-                    }
-                }
-            });
+        // ═══════════════ Funds ═══════════════
+        function loadFunds() {
+            api("/api/funds").then(function (d) {
+                state.fundsCache = d.funds || [];
+                var host = $("fundList");
+                if (!state.fundsCache.length) { host.innerHTML = '<div class="empty">No funds yet.</div>'; return; }
+                host.innerHTML = state.fundsCache.map(function (f) {
+                    var pct = f.goalAmount > 0 ? Math.min(Math.round((f.totalCollected / f.goalAmount) * 100), 100) : 0;
+                    var badges = "";
+                    if (f.isSystem) badges += ' <span class="pill pill-accent">system</span>';
+                    if (f.status === "archived") badges += ' <span class="pill pill-amber">archived</span>';
+                    if (f.visibility === "members") badges += ' <span class="pill pill-grey">members-only</span>';
+                    return '<div class="fund-card">' +
+                        '<div class="fc-name">' + esc(f.name) + badges + "</div>" +
+                        '<div class="fc-slug">' + esc(f.slug) + "</div>" +
+                        '<div class="fc-bar"><div style="width:' + pct + '%"></div></div>' +
+                        '<div class="fc-meta"><span>' + inr(f.totalCollected) + " of " + inr(f.goalAmount) + "</span><span>" + pct + "%</span></div>" +
+                        '<div class="fc-meta" style="margin-top:4px;"><span>Available ' + inr(f.availableBalance) + "</span><span>" + (f.memberCount || 0) + " assigned</span></div>" +
+                        '<div class="fc-actions">' +
+                        '<button class="mini-btn" data-act="edit" data-slug="' + esc(f.slug) + '">Edit</button>' +
+                        '<button class="mini-btn" data-act="assign" data-slug="' + esc(f.slug) + '">Members</button>' +
+                        (!f.isSystem ? '<button class="mini-btn danger" data-act="delete" data-slug="' + esc(f.slug) + '">Delete</button>' : "") +
+                        "</div></div>";
+                }).join("");
+                host.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () { fundAction(b.dataset.act, b.dataset.slug); };
+                });
+            }).catch(function (e) { $("fundList").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
         }
-
-        // ─── TIMESTAMP ───
-        function updateTimestamp() {
-            document.getElementById('lastUpdatedTag').textContent =
-                'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-        }
-
-        // ─── INIT ───
-        document.getElementById('refreshBtn').onclick = loadAdminData;
-        window.onload = loadAdminData;
-
-        // ════════════════════════════════════════════════════════════════
-        //  PURCHASES MANAGER — "What We Bought"
-        // ════════════════════════════════════════════════════════════════
-        (function () {
-            const $ = (id) => document.getElementById(id);
-            const TOKEN_KEY = "ljmAdminPurchaseToken";
-            const LIST_URL  = WEB_APP_URL + "?fund=purchases&_t=";
-
-            let editingId = null;
-            let cached = [];
-
-            // Restore token from previous session
-            const savedToken = localStorage.getItem(TOKEN_KEY);
-            if (savedToken) $("purchaseAdminToken").value = savedToken;
-            $("purchaseAdminToken").addEventListener("change", e => {
-                localStorage.setItem(TOKEN_KEY, e.target.value.trim());
-            });
-
-            // Default today's date
-            $("p_date").valueAsDate = new Date();
-
-            async function loadList() {
-                $("p_list").innerHTML = '<div style="color:var(--text-secondary); font-size:12px;">Loading...</div>';
-                try {
-                    const res = await fetch(LIST_URL + Date.now(), { cache: "no-store" });
-                    const data = await res.json();
-                    cached = Array.isArray(data.purchases) ? data.purchases : [];
-                    $("p_count").textContent = cached.length;
-                    renderList();
-                } catch (err) {
-                    $("p_list").innerHTML = `<div style="color: var(--danger); font-size:12px;">Failed: ${err}</div>`;
-                }
+        function fundAction(act, slug) {
+            var f = state.fundsCache.find(function (x) { return x.slug === slug; });
+            if (!f) return;
+            if (act === "edit") {
+                state.editingFundSlug = slug;
+                $("fundFormTitle").textContent = "Edit fund — " + f.name + (f.isSystem ? " (system: goal only)" : "");
+                $("f_name").value = f.name; $("f_slug").value = f.slug;
+                $("f_goal").value = f.goalAmount; $("f_desc").value = f.description || "";
+                $("f_visibility").value = f.visibility;
+                $("f_name").disabled = $("f_slug").disabled = $("f_desc").disabled = $("f_visibility").disabled = !!f.isSystem;
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            } else if (act === "delete") {
+                if (!confirm('Delete fund "' + f.name + '"?\n\nThis is a soft delete — contribution records are preserved. Only super admins can do this.')) return;
+                api("/api/funds?slug=" + encodeURIComponent(slug), { method: "DELETE" }).then(function (d) {
+                    setMsg("f_msg", d.message, d.success ? "ok" : "err");
+                    if (d.success) loadFunds();
+                }).catch(function (e) { setMsg("f_msg", e.message, "err"); });
+            } else if (act === "assign") {
+                openAssign(f);
             }
+        }
+        function openAssign(f) {
+            $("fundMembersCard").style.display = "block";
+            $("fmTitle").textContent = "Assign members — " + f.name;
+            $("fmList").innerHTML = '<div class="empty">Loading…</div>';
+            Promise.all([api("/api/members"), api("/api/funds?slug=" + encodeURIComponent(f.slug) + "&_t=" + Date.now())])
+                .then(function (res) {
+                    var members = (res[0].members || []);
+                    var assigned = {};
+                    ((res[1] && res[1].assignedMembers) || []).forEach(function (m) { assigned[m.id] = true; });
+                    if (!members.length) { $("fmList").innerHTML = '<div class="empty">No members in the database yet.</div>'; return; }
+                    $("fmList").innerHTML = members.map(function (m) {
+                        return '<label><input type="checkbox" data-mid="' + m.id + '"' + (assigned[m.id] ? " checked" : "") + "> " + esc(m.name) + (m.email ? ' <span style="color:var(--text-faint)">(' + esc(m.email) + ")</span>" : "") + "</label>";
+                    }).join("");
+                    $("fmList").querySelectorAll("input").forEach(function (cb) {
+                        cb.onchange = function () {
+                            api("/api/funds", {
+                                method: "POST",
+                                body: JSON.stringify({ action: cb.checked ? "add_member" : "remove_member", slug: f.slug, memberId: Number(cb.dataset.mid) })
+                            }).then(function (d) { setMsg("fm_msg", d.message, d.success ? "ok" : "err"); if (!d.success) cb.checked = !cb.checked; })
+                                .catch(function (e) { setMsg("fm_msg", e.message, "err"); cb.checked = !cb.checked; });
+                        };
+                    });
+                    $("fundMembersCard").scrollIntoView({ behavior: "smooth" });
+                }).catch(function (e) { $("fmList").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+        }
+        function clearFundForm() {
+            state.editingFundSlug = null;
+            $("fundFormTitle").textContent = "Create a fund";
+            ["f_name", "f_slug", "f_goal", "f_desc"].forEach(function (id) { $(id).value = ""; $(id).disabled = false; });
+            $("f_visibility").value = "public"; $("f_visibility").disabled = false;
+        }
+        function saveFund() {
+            var editing = state.editingFundSlug;
+            var payload = {
+                name: $("f_name").value.trim(),
+                slug: ($("f_slug").value || "").trim(),
+                goal_amount: Number($("f_goal").value) || 0,
+                description: $("f_desc").value.trim(),
+                visibility: $("f_visibility").value
+            };
+            if (!editing && !payload.name) { setMsg("f_msg", "Fund name is required", "err"); return; }
+            var req = editing
+                ? api("/api/funds", { method: "PUT", body: JSON.stringify(Object.assign(payload, { slug: editing })) })
+                : api("/api/funds", { method: "POST", body: JSON.stringify(payload) });
+            req.then(function (d) {
+                setMsg("f_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearFundForm(); loadFunds(); state.loaded.overview = false; }
+            }).catch(function (e) { setMsg("f_msg", e.message, "err"); });
+        }
 
-            function renderList() {
-                if (!cached.length) {
-                    $("p_list").innerHTML = '<div style="color: var(--text-secondary); font-size:12px;">No purchases yet. Add the first one above.</div>';
-                    return;
-                }
-                $("p_list").innerHTML = cached.map(p => `
-                    <div class="purchase-row" data-id="${p.id}">
-                        <div class="pr-name">${escapeHtml(p.name)}</div>
-                        <div class="pr-meta">
-                            ₹${Number(p.cost).toLocaleString("en-IN")} · ${escapeHtml(p.fund || "")} · ${escapeHtml(p.date || "")}
-                        </div>
-                        <div class="pr-meta" style="color: var(--text-secondary);">ID: ${escapeHtml(p.id || "")}</div>
-                        <div class="pr-actions">
-                            <button data-act="edit" data-id="${p.id}">✏️ Edit</button>
-                            <button data-act="del"  data-id="${p.id}" class="danger">🗑 Delete</button>
-                        </div>
-                    </div>
-                `).join("");
+        // ═══════════════ Members ═══════════════
+        function loadMembers() {
+            var tb = $("membersTable").querySelector("tbody");
+            tb.innerHTML = '<tr><td colspan="7" class="empty">Loading…</td></tr>';
+            api("/api/members").then(function (d) {
+                if (!d.success) { tb.innerHTML = '<tr><td colspan="7" class="empty">' + esc(d.message || "No access") + "</td></tr>"; return; }
+                state.membersCache = d.members || [];
+                renderMembers();
+            }).catch(function (e) { tb.innerHTML = '<tr><td colspan="7" class="empty">' + esc(e.message) + "</td></tr>"; });
+        }
+        function renderMembers() {
+            var q = ($("memberSearch").value || "").toLowerCase();
+            var rows = state.membersCache.filter(function (m) {
+                return !q || (m.name || "").toLowerCase().includes(q) || (m.email || "").toLowerCase().includes(q) || (m.phone || "").includes(q);
+            });
+            var tb = $("membersTable").querySelector("tbody");
+            tb.innerHTML = rows.map(function (m) {
+                var funds = Object.keys(m.funds || {}).map(function (f) {
+                    return '<span class="pill pill-grey">' + esc(f.replace("-contributions", "").replace("-fund", "")) + " " + inr(m.funds[f].amount) + "</span>";
+                }).join(" ");
+                return "<tr><td><strong>" + esc(m.name) + "</strong>" + (m.isVerified ? ' <span class="pill pill-green">verified</span>' : "") +
+                    "<div style='margin-top:3px;'>" + funds + "</div></td>" +
+                    "<td>" + esc(m.email || "—") + "<br><span style='color:var(--text-faint)'>" + esc(m.phone || "") + "</span></td>" +
+                    "<td><strong>" + inr(m.totalAmount) + "</strong></td>" +
+                    "<td>" + (m.totalContributions || 0) + "</td>" +
+                    "<td>" + esc((m.lastContributionDate || "—").substring(0, 10)) + "</td>" +
+                    "<td>" + (m.recurringReminders === "No" ? '<span class="pill pill-grey">off</span>' : '<span class="pill pill-green">on</span>') + "</td>" +
+                    '<td><button class="mini-btn" data-mid="' + m.id + '">Edit</button></td></tr>';
+            }).join("") || '<tr><td colspan="7" class="empty">No members match.</td></tr>';
+            tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                b.onclick = function () { editMember(Number(b.dataset.mid)); };
+            });
+        }
+        function editMember(id) {
+            var m = state.membersCache.find(function (x) { return x.id === id; });
+            if (!m) return;
+            var email = prompt("Email for " + m.name + ":", m.email || ""); if (email === null) return;
+            var phone = prompt("Phone for " + m.name + ":", m.phone || ""); if (phone === null) return;
+            var rem = confirm("Enable monthly reminder nudges for " + m.name + "?\nOK = Yes, Cancel = No");
+            api("/api/members", { method: "PUT", body: JSON.stringify({ id: id, email: email, phone: phone, recurringReminders: rem ? "Yes" : "No" }) })
+                .then(function (d) { setMsg("memberMsg", d.message, d.success ? "ok" : "err"); if (d.success) loadMembers(); })
+                .catch(function (e) { setMsg("memberMsg", e.message, "err"); });
+        }
 
-                $("p_list").querySelectorAll("button[data-act]").forEach(btn => {
-                    btn.onclick = () => {
-                        const act = btn.getAttribute("data-act");
-                        const id  = btn.getAttribute("data-id");
-                        const row = cached.find(x => x.id === id);
-                        if (!row) return;
-                        if (act === "edit") {
-                            editingId = id;
-                            $("p_name").value   = row.name || "";
-                            $("p_cost").value   = row.cost || 0;
-                            $("p_date").value   = row.date || "";
-                            $("p_fund").value   = row.fund || "Tech Fund";
-                            $("p_photo").value  = row.photo || "";
-                            $("p_vendor").value = row.vendor || "";
-                            $("p_desc").value   = row.description || "";
-                            // NEW funding breakdown fields
-                            $("p_fundContribution").value     = row.fundContribution != null ? row.fundContribution : (row.cost || 0);
-                            $("p_externalContribution").value = row.externalContribution != null ? row.externalContribution : 0;
-                            $("p_externalSources").value      = row.externalSources || "";
-                            updateBalanceCheck();
-                            $("p_saveBtn").textContent = "💾 Update Purchase";
-                            $("p_msg").textContent = `Editing ${id}`;
-                            window.scrollTo({ top: $("p_name").offsetTop - 100, behavior: "smooth" });
-                        }
-                        if (act === "del") {
-                            if (!confirm(`Delete "${row.name}" (${id})? This cannot be undone.`)) return;
-                            mutate("delete_purchase", { id });
-                        }
+        // ═══════════════ Contributions ═══════════════
+        function loadContributions() {
+            var sel = $("contribFund");
+            var options = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund", name: "Christmas Fund" }];
+            sel.innerHTML = options.map(function (f) { return '<option value="' + esc(f.slug) + '">' + esc(f.name) + "</option>"; }).join("");
+            sel.onchange = fetchContribTable;
+            $("contribSearch").oninput = renderContribTable;
+            fetchContribTable();
+        }
+        var contribRows = [];
+        function fetchContribTable() {
+            var slug = $("contribFund").value;
+            var tb = $("contribTable").querySelector("tbody");
+            tb.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
+            var isLegacy = slug === "tech-contributions" || slug === "christmas-fund";
+            var url = isLegacy ? "/api/contributions?fund=" + slug : "/api/funds?slug=" + encodeURIComponent(slug);
+            api(url + "&_t=" + Date.now()).then(function (d) {
+                contribRows = d.contributions || [];
+                setMsg("contribMsg", contribRows.length + " records · total " + inr(contribRows.reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0)));
+                renderContribTable();
+            }).catch(function (e) { tb.innerHTML = '<tr><td colspan="5" class="empty">' + esc(e.message) + "</td></tr>"; });
+        }
+        function renderContribTable() {
+            var q = ($("contribSearch").value || "").toLowerCase();
+            var tb = $("contribTable").querySelector("tbody");
+            var rows = contribRows.filter(function (c) { return !q || (c.Member || "").toLowerCase().includes(q); });
+            tb.innerHTML = rows.slice(0, 400).map(function (c) {
+                return "<tr><td><strong>" + esc(c.Member) + "</strong></td><td>" + inr(c.Amount) + "</td><td>" + esc(String(c.Date).substring(0, 16)) +
+                    "</td><td><span class='pill pill-grey'>" + esc(c.Category || "") + "</span></td><td style='max-width:340px'>" + esc(c.Notes || "") + "</td></tr>";
+            }).join("") || '<tr><td colspan="5" class="empty">No records.</td></tr>';
+        }
+
+        // ═══════════════ Purchases ═══════════════
+        function loadPurchases() {
+            var sel = $("p_fund");
+            var options = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund", name: "Christmas Fund" }];
+            sel.innerHTML = options.filter(function (f) { return f.status !== "archived"; })
+                .map(function (f) { return '<option value="' + esc(f.slug) + '">' + esc(f.name) + "</option>"; }).join("");
+            if (!$("p_date").value) $("p_date").valueAsDate = new Date();
+            fetchPurchases();
+        }
+        function fetchPurchases() {
+            api("/api/purchases?_t=" + Date.now()).then(function (d) {
+                state.purchasesCache = d.purchases || [];
+                $("p_count").textContent = state.purchasesCache.length;
+                var tb = $("p_table").querySelector("tbody");
+                tb.innerHTML = state.purchasesCache.map(function (p) {
+                    return "<tr><td><strong>" + esc(p.name) + "</strong><div style='color:var(--text-faint);font-size:11px;'>" + esc(p.id) + "</div></td>" +
+                        "<td>" + inr(p.cost) + (p.externalContribution ? "<div style='font-size:11px;color:var(--text-faint)'>fund " + inr(p.fundContribution) + "</div>" : "") + "</td>" +
+                        "<td>" + esc(p.fund || "") + "</td><td>" + esc(p.date || "") + "</td>" +
+                        "<td>" + (p.status === "Active" ? '<span class="pill pill-green">Active</span>' : '<span class="pill pill-grey">Hidden</span>') + "</td>" +
+                        '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + esc(p.id) + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + esc(p.id) + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="6" class="empty">No purchases recorded yet.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () { b.dataset.act === "edit" ? editPurchase(b.dataset.id) : deletePurchase(b.dataset.id); };
+                });
+            }).catch(function (e) { setMsg("p_msg", e.message, "err"); });
+        }
+        function editPurchase(id) {
+            var p = state.purchasesCache.find(function (x) { return x.id === id; });
+            if (!p) return;
+            state.editingPurchaseId = id;
+            $("p_formTitle").textContent = "Edit purchase — " + p.id;
+            $("p_name").value = p.name; $("p_cost").value = p.cost; $("p_date").value = (p.date || "").substring(0, 10);
+            var slug = p.fund === "Tech Fund" ? "tech-contributions" : p.fund === "Christmas Fund" ? "christmas-fund" : p.fund;
+            $("p_fund").value = slug;
+            $("p_fundContrib").value = p.fundContribution != null ? p.fundContribution : "";
+            $("p_extContrib").value = p.externalContribution || "";
+            $("p_status").value = p.status || "Active";
+            $("p_photo").value = p.photo || ""; $("p_vendor").value = p.vendor || "";
+            $("p_extSources").value = p.externalSources || ""; $("p_desc").value = p.description || "";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function deletePurchase(id) {
+            if (!confirm("Delete purchase " + id + "? This cannot be undone.")) return;
+            api("/api/purchases?action=delete_purchase&id=" + encodeURIComponent(id))
+                .then(function (d) { setMsg("p_msg", d.message, d.success ? "ok" : "err"); if (d.success) fetchPurchases(); })
+                .catch(function (e) { setMsg("p_msg", e.message, "err"); });
+        }
+        function clearPurchaseForm() {
+            state.editingPurchaseId = null;
+            $("p_formTitle").textContent = "Add a purchase";
+            ["p_name", "p_cost", "p_fundContrib", "p_extContrib", "p_photo", "p_vendor", "p_extSources", "p_desc"].forEach(function (id) { $(id).value = ""; });
+            $("p_status").value = "Active"; $("p_date").valueAsDate = new Date();
+        }
+        function savePurchase() {
+            var cost = Number($("p_cost").value) || 0;
+            var fundContrib = $("p_fundContrib").value !== "" ? Number($("p_fundContrib").value) : cost;
+            var extContrib = $("p_extContrib").value !== "" ? Number($("p_extContrib").value) : 0;
+            if (!$("p_name").value.trim() || !cost || !$("p_date").value) { setMsg("p_msg", "Name, cost and date are required", "err"); return; }
+            if (Math.abs((fundContrib + extContrib) - cost) > 1 && !confirm("Split (fund " + fundContrib + " + external " + extContrib + ") ≠ cost " + cost + ".\nSave anyway?")) return;
+            var params = new URLSearchParams({
+                action: state.editingPurchaseId ? "update_purchase" : "add_purchase",
+                id: state.editingPurchaseId || "",
+                productName: $("p_name").value.trim(),
+                cost: cost, purchaseDate: $("p_date").value, fundSource: $("p_fund").value,
+                photoURL: $("p_photo").value.trim(), vendorLink: $("p_vendor").value.trim(),
+                description: $("p_desc").value.trim(), status: $("p_status").value,
+                fundContribution: fundContrib, externalContribution: extContrib,
+                externalSources: $("p_extSources").value.trim()
+            });
+            api("/api/purchases?" + params.toString())
+                .then(function (d) { setMsg("p_msg", d.message, d.success ? "ok" : "err"); if (d.success) { clearPurchaseForm(); fetchPurchases(); } })
+                .catch(function (e) { setMsg("p_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Wishlist ═══════════════
+        function loadWishlist() {
+            api("/api/wishlist?_t=" + Date.now()).then(function (d) {
+                state.wishlistCache = d.wishlist || [];
+                $("w_count").textContent = state.wishlistCache.length;
+                var tb = $("w_table").querySelector("tbody");
+                var pillFor = { High: "pill-red", Medium: "pill-amber", Low: "pill-green" };
+                tb.innerHTML = state.wishlistCache.map(function (w) {
+                    return "<tr><td><strong>" + esc(w.name) + "</strong></td><td>" + inr(w.cost) + "</td>" +
+                        '<td><span class="pill ' + (pillFor[w.priority] || "pill-grey") + '">' + esc(w.priority) + "</span></td>" +
+                        "<td style='max-width:320px'>" + esc(w.notes || "") + "</td>" +
+                        '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + w.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + w.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">Wishlist is empty.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () { b.dataset.act === "edit" ? editWishlist(Number(b.dataset.id)) : deleteWishlist(Number(b.dataset.id)); };
+                });
+            }).catch(function (e) { setMsg("w_msg", e.message, "err"); });
+        }
+        function editWishlist(id) {
+            var w = state.wishlistCache.find(function (x) { return x.id === id; });
+            if (!w) return;
+            state.editingWishlistId = id;
+            $("w_formTitle").textContent = "Edit wishlist item — #" + id;
+            $("w_name").value = w.name; $("w_cost").value = w.cost;
+            $("w_priority").value = w.priority || "Medium"; $("w_notes").value = w.notes || "";
+        }
+        function deleteWishlist(id) {
+            if (!confirm("Delete wishlist item #" + id + "?")) return;
+            api("/api/wishlist?id=" + id, { method: "DELETE" })
+                .then(function (d) { setMsg("w_msg", d.message || d.error, d.success ? "ok" : "err"); if (d.success) loadWishlist(); })
+                .catch(function (e) { setMsg("w_msg", e.message, "err"); });
+        }
+        function clearWishlistForm() {
+            state.editingWishlistId = null;
+            $("w_formTitle").textContent = "Add wishlist item";
+            ["w_name", "w_cost", "w_notes"].forEach(function (id) { $(id).value = ""; });
+            $("w_priority").value = "Medium";
+        }
+        function saveWishlist() {
+            var payload = { name: $("w_name").value.trim(), cost: Number($("w_cost").value) || 0, priority: $("w_priority").value, notes: $("w_notes").value.trim() };
+            if (!payload.name || !payload.cost) { setMsg("w_msg", "Name and cost are required", "err"); return; }
+            var req = state.editingWishlistId
+                ? api("/api/wishlist", { method: "PUT", body: JSON.stringify(Object.assign(payload, { id: state.editingWishlistId })) })
+                : api("/api/wishlist", { method: "POST", body: JSON.stringify(payload) });
+            req.then(function (d) {
+                setMsg("w_msg", d.message || d.error, d.success ? "ok" : "err");
+                if (d.success) { clearWishlistForm(); loadWishlist(); }
+            }).catch(function (e) { setMsg("w_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Roles ═══════════════
+        function loadRoles() {
+            $("r_perms").innerHTML = PERMISSION_SCOPES.map(function (p) {
+                return '<label><input type="checkbox" value="' + p + '"> ' + p + "</label>";
+            }).join("");
+            fetchRoles();
+        }
+        function fetchRoles() {
+            api("/api/roles").then(function (d) {
+                if (!d.success) { setMsg("r_msg", d.message || "No access", "err"); return; }
+                var roles = d.roles || [], maps = d.mappings || [];
+                $("r_roleSelect").innerHTML = roles.map(function (r) { return "<option>" + esc(r.role_name) + "</option>"; }).join("");
+                var rt = $("r_rolesTable").querySelector("tbody");
+                rt.innerHTML = roles.map(function (r) {
+                    var perms; try { perms = JSON.parse(r.permissions).join(", "); } catch (_) { perms = r.permissions; }
+                    return "<tr><td><strong>" + esc(r.role_name) + "</strong></td><td style='color:var(--text-soft)'>" + esc(perms) + "</td>" +
+                        "<td>" + (r.role_name !== "super_admin" ? '<button class="mini-btn danger" data-role="' + esc(r.role_name) + '">Delete</button>' : "") + "</td></tr>";
+                }).join("");
+                rt.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Delete role '" + b.dataset.role + "'? Emails linked to it lose access.")) return;
+                        api("/api/roles?action=delete_role&roleName=" + encodeURIComponent(b.dataset.role), { method: "DELETE" })
+                            .then(function (d2) { setMsg("r_msg", d2.message, d2.success ? "ok" : "err"); fetchRoles(); });
                     };
                 });
-            }
+                var mt = $("r_mapTable").querySelector("tbody");
+                mt.innerHTML = maps.map(function (m) {
+                    return "<tr><td>" + esc(m.email) + "</td><td><span class='pill pill-accent'>" + esc(m.role_name) + "</span></td>" +
+                        '<td><button class="mini-btn danger" data-email="' + esc(m.email) + '">Unlink</button></td></tr>';
+                }).join("") || '<tr><td colspan="3" class="empty">No email mappings yet.</td></tr>';
+                mt.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Unlink " + b.dataset.email + "?")) return;
+                        api("/api/roles?action=unlink_email&email=" + encodeURIComponent(b.dataset.email), { method: "DELETE" })
+                            .then(function (d2) { setMsg("r_linkMsg", d2.message, d2.success ? "ok" : "err"); fetchRoles(); });
+                    };
+                });
+            }).catch(function (e) { setMsg("r_msg", e.message, "err"); });
+        }
+        function saveRole() {
+            var name = $("r_name").value.trim();
+            var perms = Array.prototype.slice.call($("r_perms").querySelectorAll("input:checked")).map(function (c) { return c.value; });
+            if (!name || !perms.length) { setMsg("r_msg", "Role name and at least one permission required", "err"); return; }
+            api("/api/roles", { method: "POST", body: JSON.stringify({ action: "save_role", roleName: name, permissions: perms }) })
+                .then(function (d) { setMsg("r_msg", d.message, d.success ? "ok" : "err"); if (d.success) { $("r_name").value = ""; fetchRoles(); } })
+                .catch(function (e) { setMsg("r_msg", e.message, "err"); });
+        }
+        function linkEmail() {
+            var email = $("r_email").value.trim(), role = $("r_roleSelect").value;
+            if (!email || !role) { setMsg("r_linkMsg", "Email and role required", "err"); return; }
+            api("/api/roles", { method: "POST", body: JSON.stringify({ action: "link_email", email: email, roleName: role }) })
+                .then(function (d) { setMsg("r_linkMsg", d.message, d.success ? "ok" : "err"); if (d.success) { $("r_email").value = ""; fetchRoles(); } })
+                .catch(function (e) { setMsg("r_linkMsg", e.message, "err"); });
+        }
 
-            function clearForm() {
-                editingId = null;
-                ["p_name","p_cost","p_photo","p_vendor","p_desc",
-                 "p_fundContribution","p_externalContribution","p_externalSources"]
-                    .forEach(id => $(id).value = "");
-                $("p_date").valueAsDate = new Date();
-                $("p_fund").value = "Tech Fund";
-                $("p_saveBtn").textContent = "💾 Save Purchase";
-                $("p_msg").textContent = "";
-                updateBalanceCheck();
-            }
+        // ═══════════════ Audit log ═══════════════
+        function loadAudit() { state.auditOffset = 0; fetchAudit(); }
+        function fetchAudit() {
+            var tb = $("a_table").querySelector("tbody");
+            tb.innerHTML = '<tr><td colspan="6" class="empty">Loading…</td></tr>';
+            var params = new URLSearchParams({ limit: 50, offset: state.auditOffset });
+            if ($("a_type").value) params.set("actorType", $("a_type").value);
+            if ($("a_action").value) params.set("action", $("a_action").value);
+            if ($("a_actor").value.trim()) params.set("actor", $("a_actor").value.trim());
+            api("/api/logs?" + params.toString()).then(function (d) {
+                if (!d.success) { tb.innerHTML = '<tr><td colspan="6" class="empty">' + esc(d.message || "view_audit permission required") + "</td></tr>"; return; }
+                var typePill = { admin: "pill-accent", member: "pill-green", anonymous: "pill-grey" };
+                tb.innerHTML = (d.logs || []).map(function (l) {
+                    var det = "";
+                    try { var o = JSON.parse(l.details); det = Object.keys(o).map(function (k) { return k + ": " + JSON.stringify(o[k]); }).join(", "); } catch (_) { det = l.details || ""; }
+                    return "<tr><td style='white-space:nowrap'>" + esc((l.createdAt || "").substring(0, 19)) + "</td>" +
+                        "<td>" + (l.actorEmail ? esc(l.actorEmail) : "<span style='color:var(--text-faint)'>anonymous</span>") +
+                        " <span class='pill " + (typePill[l.actorType] || "pill-grey") + "'>" + esc(l.actorType) + "</span>" +
+                        (l.verified ? " <span class='pill pill-green'>✓</span>" : "") + "</td>" +
+                        "<td><strong>" + esc(l.action) + "</strong></td>" +
+                        "<td>" + esc(l.entityId || "") + "</td>" +
+                        "<td style='max-width:300px; color:var(--text-soft); font-size:12px;'>" + esc(det.substring(0, 160)) + "</td>" +
+                        "<td style='color:var(--text-faint); font-size:11.5px;'>" + esc(l.ip || "") + "</td></tr>";
+                }).join("") || '<tr><td colspan="6" class="empty">No log entries match.</td></tr>';
+                $("a_pageInfo").textContent = (state.auditOffset + 1) + "–" + Math.min(state.auditOffset + 50, d.total) + " of " + d.total;
+                $("a_prevBtn").disabled = state.auditOffset === 0;
+                $("a_nextBtn").disabled = state.auditOffset + 50 >= d.total;
+            }).catch(function (e) { tb.innerHTML = '<tr><td colspan="6" class="empty">' + esc(e.message) + "</td></tr>"; });
+        }
 
-            // Live-update the balance-check hint below the form
-            function updateBalanceCheck() {
-                const el = $("p_balanceCheck");
-                if (!el) return;
-                const cost  = Number($("p_cost").value || 0);
-                const fund  = Number($("p_fundContribution").value || 0);
-                const ext   = Number($("p_externalContribution").value || 0);
-                const sum   = fund + ext;
-                if (!cost && !fund && !ext) { el.innerHTML = ""; return; }
-                const diff  = Math.abs(sum - cost);
-                if (cost && diff < 0.01) {
-                    el.innerHTML = `✅ Split adds up: <strong>₹${fund.toLocaleString("en-IN")}</strong> from fund + <strong>₹${ext.toLocaleString("en-IN")}</strong> external = <strong>₹${cost.toLocaleString("en-IN")}</strong>. Only the fund portion will reduce the balance.`;
-                    el.style.color = "var(--success)";
-                } else if (cost && sum > 0) {
-                    el.innerHTML = `⚠️ Split mismatch: Fund ₹${fund.toLocaleString("en-IN")} + External ₹${ext.toLocaleString("en-IN")} = ₹${sum.toLocaleString("en-IN")}, but Total Cost = ₹${cost.toLocaleString("en-IN")}.`;
-                    el.style.color = "var(--warning)";
-                } else {
-                    el.innerHTML = "";
-                }
-            }
-
-            ["p_cost","p_fundContribution","p_externalContribution"].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.addEventListener("input", updateBalanceCheck);
+        // ═══════════════ Settings ═══════════════
+        function loadSettings() {
+            fetch("/api/settings").then(function (r) { return r.json(); }).then(function (d) {
+                $("s_forceLogin").checked = (d.settings && d.settings.force_login) === "true";
             });
-
-            async function mutate(action, body) {
-                const token = ($("purchaseAdminToken").value || "").trim();
-                if (!token) {
-                    $("p_msg").textContent = "Please enter your admin token/email first.";
-                    $("p_msg").style.color = "var(--danger)";
-                    return;
-                }
-                $("p_msg").textContent = "Saving...";
-                $("p_msg").style.color = "var(--text-secondary)";
-
-                const params = new URLSearchParams();
-                params.set("action", action);
-                params.set("token", token);
-                Object.keys(body || {}).forEach(k => params.set(k, body[k]));
-
-                try {
-                    const res = await fetch(WEB_APP_URL + "?" + params.toString(), { cache: "no-store" });
-                    const data = await res.json();
-                    if (data.success) {
-                        $("p_msg").textContent = "✅ " + (data.message || "Done");
-                        $("p_msg").style.color = "var(--success)";
-                        clearForm();
-                        await loadList();
-                    } else {
-                        $("p_msg").textContent = "❌ " + (data.message || "Failed");
-                        $("p_msg").style.color = "var(--danger)";
-                    }
-                } catch (err) {
-                    $("p_msg").textContent = "❌ Network error: " + err;
-                    $("p_msg").style.color = "var(--danger)";
-                }
+            var tech = state.fundsCache.find(function (f) { return f.slug === "tech-contributions"; });
+            var xmas = state.fundsCache.find(function (f) { return f.slug === "christmas-fund"; });
+            if (tech) $("s_techGoal").value = tech.goalAmount;
+            if (xmas) $("s_xmasGoal").value = xmas.goalAmount;
+            if (!tech || !xmas) {
+                api("/api/funds").then(function (d) {
+                    (d.funds || []).forEach(function (f) {
+                        if (f.slug === "tech-contributions") $("s_techGoal").value = f.goalAmount;
+                        if (f.slug === "christmas-fund") $("s_xmasGoal").value = f.goalAmount;
+                    });
+                });
             }
+        }
+        function toggleForceLogin() {
+            var v = $("s_forceLogin").checked ? "true" : "false";
+            api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "force_login", value: v }) })
+                .then(function (d) { setMsg("s_msg", d.message, d.success ? "ok" : "err"); if (!d.success) $("s_forceLogin").checked = v !== "true"; })
+                .catch(function (e) { setMsg("s_msg", e.message, "err"); $("s_forceLogin").checked = v !== "true"; });
+        }
+        function saveGoals() {
+            Promise.all([
+                api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "tech_goal_amount", value: String(Number($("s_techGoal").value) || 0) }) }),
+                api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "christmas_goal_amount", value: String(Number($("s_xmasGoal").value) || 0) }) })
+            ]).then(function (res) {
+                var ok = res.every(function (d) { return d.success; });
+                setMsg("s_goalMsg", ok ? "Goals updated" : (res[0].message || res[1].message), ok ? "ok" : "err");
+            }).catch(function (e) { setMsg("s_goalMsg", e.message, "err"); });
+        }
 
-            $("p_saveBtn").onclick = () => {
-                const name = $("p_name").value.trim();
-                const cost = Number($("p_cost").value || 0);
-                const fundContribution     = Number($("p_fundContribution").value || 0);
-                const externalContribution = Number($("p_externalContribution").value || 0);
-                const externalSources      = $("p_externalSources").value.trim();
+        // ═══════════════ Self-test ═══════════════
+        function runSelfTest() {
+            $("st_runBtn").disabled = true;
+            setMsg("st_msg", "Running full suite — takes ~10 seconds…");
+            $("st_results").innerHTML = "";
+            api("/api/selftest?_t=" + Date.now()).then(function (d) {
+                $("st_runBtn").disabled = false;
+                if (d.cases) {
+                    setMsg("st_msg", d.passed + "/" + d.total + " passed", d.failed === 0 ? "ok" : "err");
+                    $("st_results").innerHTML = '<div class="table-wrap"><table><thead><tr><th></th><th>Case</th><th>Detail</th></tr></thead><tbody>' +
+                        d.cases.map(function (c) {
+                            return "<tr><td>" + (c.passed ? "✅" : "❌") + "</td><td><strong>" + esc(c.name) + "</strong></td><td style='color:var(--text-soft)'>" + esc(c.note) + "</td></tr>";
+                        }).join("") + "</tbody></table></div>";
+                } else {
+                    setMsg("st_msg", d.message || "Self-test requires super admin access", "err");
+                }
+            }).catch(function (e) { $("st_runBtn").disabled = false; setMsg("st_msg", e.message, "err"); });
+        }
 
-                if (!name || !cost) {
-                    $("p_msg").textContent = "Name and Total Cost are required.";
-                    $("p_msg").style.color = "var(--danger)";
-                    return;
-                }
-                if (!fundContribution) {
-                    $("p_msg").textContent = "Please enter how much came From Fund (required).";
-                    $("p_msg").style.color = "var(--danger)";
-                    return;
-                }
-                // Non-blocking sanity check: amounts should add up
-                const sum = fundContribution + externalContribution;
-                if (Math.abs(sum - cost) > 0.01) {
-                    if (!confirm(
-                        `The split doesn't add up:\n` +
-                        `  Fund (₹${fundContribution}) + External (₹${externalContribution}) = ₹${sum}\n` +
-                        `  Total Cost = ₹${cost}\n\n` +
-                        `Save anyway?`
-                    )) return;
-                }
+        // ═══════════════ Wire-up ═══════════════
+        var LOADERS = {
+            overview: loadOverview, funds: loadFunds, members: loadMembers,
+            contributions: loadContributions, purchases: loadPurchases,
+            wishlist: loadWishlist, roles: loadRoles, audit: loadAudit,
+            settings: loadSettings, selftest: function () {}
+        };
 
-                const body = {
-                    productName:          name,
-                    cost:                 cost,
-                    purchaseDate:         $("p_date").value,
-                    fundSource:           $("p_fund").value,
-                    photoURL:             $("p_photo").value.trim(),
-                    vendorLink:           $("p_vendor").value.trim(),
-                    description:          $("p_desc").value.trim(),
-                    fundContribution:     fundContribution,
-                    externalContribution: externalContribution,
-                    externalSources:      externalSources,
-                    status:               "Active"
-                };
-                if (editingId) body.id = editingId;
-                mutate(editingId ? "update_purchase" : "add_purchase", body);
+        document.addEventListener("DOMContentLoaded", function () {
+            buildNav();
+            initGate();
+            $("f_saveBtn").onclick = saveFund; $("f_clearBtn").onclick = clearFundForm;
+            $("f_name").oninput = function () { if (!state.editingFundSlug) $("f_slug").placeholder = $("f_name").value.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-"); };
+            $("memberRefresh").onclick = loadMembers;
+            $("memberSearch").oninput = renderMembers;
+            $("p_saveBtn").onclick = savePurchase; $("p_clearBtn").onclick = clearPurchaseForm;
+            $("w_saveBtn").onclick = saveWishlist; $("w_clearBtn").onclick = clearWishlistForm;
+            $("r_saveBtn").onclick = saveRole; $("r_linkBtn").onclick = linkEmail;
+            $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
+            $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };
+            $("a_nextBtn").onclick = function () { state.auditOffset += 50; fetchAudit(); };
+            $("s_forceLogin").onchange = toggleForceLogin;
+            $("s_saveGoals").onclick = saveGoals;
+            $("st_runBtn").onclick = runSelfTest;
+            $("logoutLink").onclick = function () {
+                sessionStorage.removeItem(TOKEN_KEY);
+                if (window.LJMAdmin) LJMAdmin.destroySession();
+                location.reload();
             };
-
-            $("p_clearBtn").onclick    = clearForm;
-            $("p_refreshBtn").onclick  = loadList;
-
-            function escapeHtml(s) {
-                return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-            }
-
-            loadList();
-        })();
-
-        // ─── WISHLIST MANAGER JS ───
-        (function () {
-            "use strict";
-
-            const WISHLIST_API_URL = "/api/wishlist";
-            let cachedWishlist = [];
-            let editingWishlistId = null;
-
-            const $ = id => document.getElementById(id);
-
-            async function loadWishlist() {
-                $("w_msg").textContent = "Loading wishlist...";
-                $("w_msg").style.color = "var(--text-secondary)";
-
-                try {
-                    const res = await fetch(WISHLIST_API_URL + "?_t=" + Date.now(), { cache: "no-store" });
-                    const data = await res.json();
-                    
-                    cachedWishlist = Array.isArray(data.wishlist) ? data.wishlist : [];
-                    $("w_count").textContent = cachedWishlist.length;
-
-                    const container = $("w_list");
-                    container.innerHTML = "";
-
-                    if (cachedWishlist.length === 0) {
-                        container.innerHTML = '<div style="color: var(--text-secondary); font-size:12px;">No items in wishlist yet.</div>';
-                        $("w_msg").textContent = "";
-                        return;
-                    }
-
-                    cachedWishlist.forEach(item => {
-                        const itemCard = document.createElement("div");
-                        itemCard.className = "purchase-item-card"; // Re-use same premium cards
-                        itemCard.style.borderLeft = item.priority === "High" ? "4px solid var(--danger)" : (item.priority === "Medium" ? "4px solid var(--warning)" : "4px solid var(--success)");
-                        itemCard.innerHTML = `
-                            <div class="p-card-header">
-                                <span class="p-card-id">#${item.id}</span>
-                                <span class="p-card-date" style="font-weight:700; color:${item.priority === 'High' ? 'var(--danger)' : 'var(--text-primary)'}">
-                                    ${item.priority} Priority
-                                </span>
-                            </div>
-                            <div class="p-card-name">${escapeHtml(item.name)}</div>
-                            <div class="p-card-cost">Est. Cost: ₹${Number(item.cost).toLocaleString('en-IN')}</div>
-                            <div class="p-card-notes">${escapeHtml(item.notes || "No description")}</div>
-                            <div class="p-card-actions">
-                                <button class="btn btn-sm btn-outline edit-btn">✏️ Edit</button>
-                                <button class="btn btn-sm btn-danger delete-btn">🗑️ Delete</button>
-                            </div>
-                        `;
-
-                        itemCard.querySelector(".edit-btn").onclick = () => editItem(item);
-                        itemCard.querySelector(".delete-btn").onclick = () => deleteItem(item.id);
-
-                        container.appendChild(itemCard);
-                    });
-
-                    $("w_msg").textContent = "";
-                } catch (err) {
-                    $("w_msg").textContent = "❌ Failed to load: " + err;
-                    $("w_msg").style.color = "var(--danger)";
-                }
-            }
-
-            function editItem(item) {
-                editingWishlistId = item.id;
-                $("w_name").value = item.name;
-                $("w_cost").value = item.cost;
-                $("w_priority").value = item.priority;
-                $("w_desc").value = item.notes || "";
-                $("w_saveBtn").textContent = "💾 Update Wishlist Item";
-                $("w_name").focus();
-            }
-
-            function clearForm() {
-                editingWishlistId = null;
-                $("w_name").value = "";
-                $("w_cost").value = "";
-                $("w_priority").value = "Medium";
-                $("w_desc").value = "";
-                $("w_saveBtn").textContent = "💾 Save Wishlist Item";
-            }
-
-            async function deleteItem(id) {
-                const token = ($("purchaseAdminToken").value || "").trim();
-                if (!token) {
-                    $("w_msg").textContent = "Admin Token required to delete.";
-                    $("w_msg").style.color = "var(--danger)";
-                    return;
-                }
-
-                if (!confirm(`Are you sure you want to delete wishlist item #${id}?`)) return;
-
-                $("w_msg").textContent = "Deleting...";
-                try {
-                    const res = await fetch(`${WISHLIST_API_URL}?id=${id}&token=${encodeURIComponent(token)}`, {
-                        method: "DELETE"
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        $("w_msg").textContent = "✅ Deleted successfully";
-                        $("w_msg").style.color = "var(--success)";
-                        clearForm();
-                        await loadWishlist();
-                    } else {
-                        $("w_msg").textContent = "❌ " + (data.error || "Delete failed");
-                        $("w_msg").style.color = "var(--danger)";
-                    }
-                } catch (err) {
-                    $("w_msg").textContent = "❌ Network error: " + err;
-                    $("w_msg").style.color = "var(--danger)";
-                }
-            }
-
-            async function saveItem() {
-                const token = ($("purchaseAdminToken").value || "").trim();
-                if (!token) {
-                    $("w_msg").textContent = "Admin Token required to save.";
-                    $("w_msg").style.color = "var(--danger)";
-                    return;
-                }
-
-                const name = $("w_name").value.trim();
-                const cost = $("w_cost").value.trim();
-                if (!name || !cost) {
-                    alert("Please fill out Name and Estimated Cost.");
-                    return;
-                }
-
-                const payload = {
-                    name,
-                    cost: Number(cost),
-                    priority: $("w_priority").value,
-                    notes: $("w_desc").value.trim()
-                };
-
-                if (editingWishlistId) {
-                    payload.id = editingWishlistId;
-                }
-
-                $("w_msg").textContent = "Saving...";
-                try {
-                    const method = editingWishlistId ? "PUT" : "POST";
-                    const res = await fetch(`${WISHLIST_API_URL}?token=${encodeURIComponent(token)}`, {
-                        method: method,
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await res.json();
-
-                    if (data.success) {
-                        $("w_msg").textContent = "✅ Saved successfully";
-                        $("w_msg").style.color = "var(--success)";
-                        clearForm();
-                        await loadWishlist();
-                    } else {
-                        $("w_msg").textContent = "❌ " + (data.error || "Save failed");
-                        $("w_msg").style.color = "var(--danger)";
-                    }
-                } catch (err) {
-                    $("w_msg").textContent = "❌ Network error: " + err;
-                    $("w_msg").style.color = "var(--danger)";
-                }
-            }
-
-            $("w_saveBtn").onclick = saveItem;
-            $("w_clearBtn").onclick = clearForm;
-            $("w_refreshBtn").onclick = loadWishlist;
-
-            function escapeHtml(s) {
-                return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-            }
-
-            // Stagger loading slightly after purchases list
-            setTimeout(loadWishlist, 200);
-        })();
-
-        // ─── ROLES CONFIGURATION JS ───
-        (function () {
-            "use strict";
-
-            const ROLES_API_URL = "/api/roles";
-            const $ = id => document.getElementById(id);
-
-            async function loadRolesData() {
-                const token = ($("purchaseAdminToken").value || "").trim();
-                if (!token) {
-                    $("emailMappingsList").innerHTML = '<div style="color: var(--text-secondary);">Provide Admin Token above to load roles.</div>';
-                    $("rolesList").innerHTML = '<div style="color: var(--text-secondary);">Provide Admin Token above to load roles.</div>';
-                    return;
-                }
-
-                $("role_msg").textContent = "Loading roles...";
-                $("role_msg").style.color = "var(--text-secondary)";
-
-                try {
-                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}`);
-                    const data = await res.json();
-
-                    if (!data.success) {
-                        $("emailMappingsList").innerHTML = `<div style="color: var(--danger);">${escapeHtml(data.message)}</div>`;
-                        $("rolesList").innerHTML = `<div style="color: var(--danger);">${escapeHtml(data.message)}</div>`;
-                        $("role_msg").textContent = "";
-                        return;
-                    }
-
-                    // 1. Populate Dropdown role select
-                    const select = $("role_select");
-                    select.innerHTML = "";
-                    data.roles.forEach(r => {
-                        const opt = document.createElement("option");
-                        opt.value = r.role_name;
-                        opt.textContent = r.role_name;
-                        select.appendChild(opt);
-                    });
-
-                    // 2. Render Email Mappings
-                    const mappingsContainer = $("emailMappingsList");
-                    mappingsContainer.innerHTML = "";
-                    if (data.mappings.length === 0) {
-                        mappingsContainer.innerHTML = '<div style="color: var(--text-secondary);">No active email mappings.</div>';
-                    } else {
-                        data.mappings.forEach(m => {
-                            const div = document.createElement("div");
-                            div.style.display = "flex";
-                            div.style.justifyContent = "space-between";
-                            div.style.alignItems = "center";
-                            div.style.padding = "6px 0";
-                            div.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-                            div.innerHTML = `
-                                <span><strong>${escapeHtml(m.email)}</strong> ➡️ <span style="color: var(--accent-purple);">${escapeHtml(m.role_name)}</span></span>
-                                <button class="btn btn-sm btn-danger unlink-btn" style="padding: 2px 6px; font-size:10px;">Unlink</button>
-                            `;
-                            div.querySelector(".unlink-btn").onclick = () => unlinkEmail(m.email);
-                            mappingsContainer.appendChild(div);
-                        });
-                    }
-
-                    // 3. Render Roles
-                    const rolesContainer = $("rolesList");
-                    rolesContainer.innerHTML = "";
-                    if (data.roles.length === 0) {
-                        rolesContainer.innerHTML = '<div style="color: var(--text-secondary);">No permission roles configured.</div>';
-                    } else {
-                        data.roles.forEach(r => {
-                            const div = document.createElement("div");
-                            div.style.display = "flex";
-                            div.style.justifyContent = "space-between";
-                            div.style.alignItems = "center";
-                            div.style.padding = "6px 0";
-                            div.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-                            
-                            let perms = [];
-                            try { perms = JSON.parse(r.permissions); } catch(_) {}
-                            
-                            div.innerHTML = `
-                                <div style="display:flex; flex-direction:column;">
-                                    <strong>${escapeHtml(r.role_name)}</strong>
-                                    <span style="color: var(--text-secondary); font-size:10px;">${escapeHtml(perms.join(", "))}</span>
-                                </div>
-                                <button class="btn btn-sm btn-danger delete-role-btn" style="padding: 2px 6px; font-size:10px;">Delete</button>
-                            `;
-                            div.querySelector(".delete-role-btn").onclick = () => deleteRole(r.role_name);
-                            rolesContainer.appendChild(div);
-                        });
-                    }
-
-                    $("role_msg").textContent = "";
-                } catch (err) {
-                    $("role_msg").textContent = "❌ Error: " + err;
-                    $("role_msg").style.color = "var(--danger)";
-                }
-            }
-
-            async function saveCustomRole() {
-                const token = ($("purchaseAdminToken").value || "").trim();
-                const roleName = $("custom_role_name").value.trim().toLowerCase();
-                
-                if (!token || !roleName) {
-                    alert("Admin token and custom role name are required.");
-                    return;
-                }
-
-                const checkedPerms = Array.from(document.querySelectorAll(".role-perm-check:checked")).map(el => el.value);
-
-                $("role_msg").textContent = "Saving role...";
-                try {
-                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            action: "save_role",
-                            roleName,
-                            permissions: checkedPerms
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        $("role_msg").textContent = "✅ Saved successfully";
-                        $("role_msg").style.color = "var(--success)";
-                        $("custom_role_name").value = "";
-                        document.querySelectorAll(".role-perm-check").forEach(el => el.checked = false);
-                        await loadRolesData();
-                    } else {
-                        $("role_msg").textContent = "❌ " + data.message;
-                        $("role_msg").style.color = "var(--danger)";
-                    }
-                } catch (err) {
-                    $("role_msg").textContent = "❌ Network error";
-                }
-            }
-
-            async function linkEmailToRole() {
-                const token = ($("purchaseAdminToken").value || "").trim();
-                const email = $("role_email").value.trim();
-                const roleName = $("role_select").value;
-
-                if (!token || !email || !roleName) {
-                    alert("All fields are required to link email.");
-                    return;
-                }
-
-                $("role_msg").textContent = "Linking email...";
-                try {
-                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            action: "link_email",
-                            email,
-                            roleName
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        $("role_msg").textContent = "✅ Linked successfully";
-                        $("role_msg").style.color = "var(--success)";
-                        $("role_email").value = "";
-                        await loadRolesData();
-                    } else {
-                        $("role_msg").textContent = "❌ " + data.message;
-                        $("role_msg").style.color = "var(--danger)";
-                    }
-                } catch (err) {
-                    $("role_msg").textContent = "❌ Network error";
-                }
-            }
-
-            async function unlinkEmail(email) {
-                const token = ($("purchaseAdminToken").value || "").trim();
-                if (!confirm(`Are you sure you want to unlink email: ${email}?`)) return;
-
-                $("role_msg").textContent = "Unlinking...";
-                try {
-                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}&action=unlink_email&email=${encodeURIComponent(email)}`, {
-                        method: "DELETE"
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        $("role_msg").textContent = "✅ Unlinked successfully";
-                        $("role_msg").style.color = "var(--success)";
-                        await loadRolesData();
-                    } else {
-                        $("role_msg").textContent = "❌ " + data.message;
-                        $("role_msg").style.color = "var(--danger)";
-                    }
-                } catch (err) {
-                    $("role_msg").textContent = "❌ Network error";
-                }
-            }
-
-            async function deleteRole(roleName) {
-                const token = ($("purchaseAdminToken").value || "").trim();
-                if (!confirm(`Are you sure you want to delete role '${roleName}'?`)) return;
-
-                $("role_msg").textContent = "Deleting role...";
-                try {
-                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}&action=delete_role&roleName=${encodeURIComponent(roleName)}`, {
-                        method: "DELETE"
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        $("role_msg").textContent = "✅ Role deleted";
-                        $("role_msg").style.color = "var(--success)";
-                        await loadRolesData();
-                    } else {
-                        $("role_msg").textContent = "❌ " + data.message;
-                        $("role_msg").style.color = "var(--danger)";
-                    }
-                } catch (err) {
-                    $("role_msg").textContent = "❌ Network error";
-                }
-            }
-
-            $("btn_saveRole").onclick = saveCustomRole;
-            $("btn_linkEmail").onclick = linkEmailToRole;
-
-            // Load data when token changes or page loads
-            $("purchaseAdminToken").addEventListener("change", loadRolesData);
-            setTimeout(loadRolesData, 400);
-
-            function escapeHtml(s) {
-                return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-            }
-        })();
+            window.addEventListener("ljmAdminLogout", function () {
+                sessionStorage.removeItem(TOKEN_KEY);
+                location.reload();
+            });
+        });
+    })();
     </script>
 </body>
 </html>
