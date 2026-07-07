@@ -179,6 +179,17 @@ function doPost(e) {
           currentHeaders.push("phone");
         }
 
+        // Ensure Proof/ID column exists
+        let proofColIdx = currentHeaders.indexOf("proof/id");
+        if (proofColIdx === -1) {
+          proofColIdx = currentHeaders.findIndex(h => h.includes("proof"));
+        }
+        if (proofColIdx === -1) {
+          proofColIdx = currentHeaders.length;
+          sheet.getRange(1, proofColIdx + 1).setValue("Proof/ID").setFontWeight("bold");
+          currentHeaders.push("proof/id");
+        }
+
         let newRow = new Array(currentHeaders.length).fill("");
         
         currentHeaders.forEach((h, idx) => {
