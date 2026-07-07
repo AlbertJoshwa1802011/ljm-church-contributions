@@ -25,7 +25,7 @@ export async function onRequestGet(context) {
 
   try {
     // 1. Fetch Tech Fund & Christmas Fund raw data from existing Apps Script webapp
-    const gasBaseUrl = env.GOOGLE_SHEETS_WEBAPP_URL || "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec";
+    const gasBaseUrl = env.GOOGLE_SHEETS_WEBAPP_URL || "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec";
     
     const [techRes, christmasRes, purchasesRes] = await Promise.all([
       fetch(`${gasBaseUrl}?fund=tech-contributions`),
