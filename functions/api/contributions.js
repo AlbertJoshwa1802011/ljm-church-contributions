@@ -123,8 +123,12 @@ export async function onRequestGet(context) {
     });
 
   } catch (err) {
+    let msg = err.message || err.toString();
+    if (msg.includes("no such table")) {
+      msg = `Database tables are missing. Please run D1 migrations: npx wrangler d1 execute ljm-contributions-db --remote --file=schema.sql (Original error: ${msg})`;
+    }
     return new Response(
-      JSON.stringify({ error: err.message || err.toString() }),
+      JSON.stringify({ error: msg }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
