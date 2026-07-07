@@ -94,6 +94,138 @@ function runAllWebhookTests() {
     failed++;
   }
 
+  // --- TEST 4: E2E doPost Integration Test ---
+  let originalSpreadsheetApp = null;
+  try {
+    // 1. Mock global SpreadsheetApp
+    originalSpreadsheetApp = SpreadsheetApp;
+    
+    let writtenRow = null;
+    let validationCleared = false;
+    let backgroundSet = false;
+    
+    SpreadsheetApp = {
+      openById: function(id) {
+        return {
+          getName: function() { return "LJM Church contributions mock"; },
+          getSheetByName: function(name) {
+            // Mock tech-contributions sheet
+            if (name === "tech-contributions") {
+              return {
+                getLastRow: function() { return 2; },
+                getMaxColumns: function() { return 7; },
+                getLastColumn: function() { return 6; },
+                getRange: function(row, col, numRows, numCols) {
+                  return {
+                    getValues: function() {
+                      if (row === 1) {
+                        return [["Member Name", "Amount", "Date", "Category", "Notes", "Proof/ID", "Email", "Phone"]];
+                      }
+                      return [["Muthukumar", 500, "2026-07-07 18:16:02", "Online (Verified)", "July: Online Payment Received", "ID: pay_old_123", "thinkmuthu@gmail.com", "9940940326"]];
+                    },
+                    setDataValidation: function(val) {
+                      validationCleared = true;
+                    },
+                    setValues: function(vals) {
+                      writtenRow = vals[0];
+                    },
+                    setBackground: function(color) {
+                      backgroundSet = true;
+                    },
+                    setValue: function(val) {
+                      // Mock setValue for headers
+                    }
+                  };
+                }
+              };
+            }
+            
+            // Mock members sheet
+            if (name === "members" || name === "members-list") {
+              return {
+                getLastRow: function() { return 2; },
+                getLastColumn: function() { return 8; },
+                getDataRange: function() {
+                  return {
+                    getValues: function() {
+                      return [
+                        ["Member Name", "Email", "Phone", "First Join Date", "Last Contribution Date", "Recurring Reminders", "Total Contributions", "Reminders Sent"],
+                        ["Test Member", "test_member@gmail.com", "+919999999999", "2026-07-07 11:40:00", "2026-07-07 11:40:00", "Yes", 1, 0]
+                      ];
+                    }
+                  };
+                },
+                getRange: function(r, c) {
+                  return {
+                    getValue: function() { return 1; },
+                    setValue: function() {}
+                  };
+                }
+              };
+            }
+            return null;
+          }
+        };
+      }
+    };
+    
+    // 2. Prepare mock request payload
+    const mockRequest = {
+      postData: {
+        contents: JSON.stringify({
+          event: "payment.captured",
+          payload: {
+            payment: {
+              entity: {
+                id: "pay_test_999",
+                amount: 150000, // 1500 INR in paise
+                created_at: 1783448400, // Unix timestamp for 2026-07-07 18:20:00 UTC
+                method: "upi",
+                vpa: "albert@okaxis",
+                email: "test_contributor@gmail.com",
+                contact: "+919999999999",
+                notes: {
+                  memberName: "Test Member",
+                  memberEmail: "test_member@gmail.com",
+                  fundName: "Tech Fund",
+                  month: "July"
+                }
+              }
+            }
+          }
+        })
+      },
+      parameter: {
+        isLocalTest: "true"
+      }
+    };
+    
+    // 3. Call doPost
+    const response = doPost(mockRequest);
+    const responseData = JSON.parse(response.getContent());
+    
+    assert(responseData.status === "success", "doPost returned success status");
+    assert(writtenRow !== null, "doPost wrote a row to the mock sheet");
+    if (writtenRow) {
+      assert(writtenRow[0] === "Test Member", "Correct member name written");
+      assert(writtenRow[1] === 1500, "Correct amount (converted from paise) written");
+      assert(writtenRow[3] === "Online (Verified)", "Correct Category written");
+      assert(writtenRow[4] === "July: Online Payment Received", "Correct Notes with month prefix written");
+      assert(writtenRow[5].includes("pay_test_999"), "Razorpay payment ID correctly written inside Proof/ID column");
+      assert(writtenRow[6] === "test_member@gmail.com", "Correct Email written");
+      assert(writtenRow[7] === "+919999999999", "Correct Phone number written");
+    }
+    
+  } catch (e) {
+    Logger.log("❌ Exception in Test 4: " + e.toString());
+    failed++;
+  } finally {
+    // 4. Restore original SpreadsheetApp
+    if (originalSpreadsheetApp) {
+      SpreadsheetApp = originalSpreadsheetApp;
+    }
+  }
+
   Logger.log(`\n📊 TEST SUMMARY:`);
   Logger.log(`   Passed: ${passed}`);
   Logger.log(`   Failed: ${failed}`);
