@@ -1,0 +1,19 @@
+# Local Config and Secrets
+secrets.gs
+workflowlogs.txt
+scratch_response.json
+temp-fix-sheet.gs
+twilio-service.gs
+run_local_server.py
+.claude/
+DEBUG_SHEET_HEADERS.gs
+DEPLOY_APPSCRIPT.gs
+PRODUCTION_DOGET.gs
+profile-service.gs
+purchases-handler.gs
+purchases-mock.js
+reminder-system.gs
+post-implementation-setup.md
+DEPLOYMENT_GUIDE.md
+PURCHASES_SHEET_SETUP.md
+*.log

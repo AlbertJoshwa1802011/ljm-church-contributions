@@ -1167,6 +1167,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Update last-updated timestamp
     updateLastUpdated(fundKey);
 
+    // Load Stage Planned Wishlist
+    loadHomeWishlist();
+
     // --------------------
     // Silent background refresh: if cached data was used, refresh silently after 8s
     if (hasCachedData) {
@@ -2236,4 +2239,53 @@ function showMemberDeepDive(name) {
     
     modal.classList.add('insight-modal-visible');
     document.body.style.overflow = 'hidden';
+}
+
+// ─── STAGE WISHLIST LOADER ───
+async function loadHomeWishlist() {
+    const container = document.getElementById("homeWishlistList");
+    if (!container) return;
+
+    try {
+        const res = await fetch("/api/wishlist?_t=" + Date.now());
+        const data = await res.json();
+        const wishlist = Array.isArray(data.wishlist) ? data.wishlist : [];
+
+        if (wishlist.length === 0) {
+            container.innerHTML = `<div style="color: var(--text-secondary); font-size: 13px; padding: 20px; text-align: center; grid-column: 1 / -1;">No planned upgrades currently listed.</div>`;
+            return;
+        }
+
+        container.innerHTML = "";
+        wishlist.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "wishlist-card";
+            card.style.borderLeft = item.priority === "High" ? "4px solid var(--danger)" : (item.priority === "Medium" ? "4px solid var(--warning)" : "4px solid var(--success)");
+            
+            // Build simple Google styling content
+            card.innerHTML = `
+                <div style="font-size: 11px; font-weight: 700; color: ${item.priority === 'High' ? 'var(--danger)' : 'var(--google-text-secondary)'}; text-transform: uppercase; margin-bottom: 6px;">
+                    ${item.priority} Priority
+                </div>
+                <div style="font-family: var(--font-heading); font-weight: 600; font-size: 15px; color: var(--google-text); margin-bottom: 4px;">
+                    ${escapeHtml(item.name)}
+                </div>
+                <div style="font-weight: 700; color: var(--google-blue); font-size: 14px; margin-bottom: 8px;">
+                    Est. Cost: ₹${Number(item.cost).toLocaleString('en-IN')}
+                </div>
+                <div style="font-size: 12px; color: var(--google-text-secondary); line-height: 1.4;">
+                    ${escapeHtml(item.notes || 'No description provided')}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (err) {
+        console.error("Failed to load wishlist:", err);
+        container.innerHTML = `<div style="color: var(--danger); font-size: 13px; padding: 20px; text-align: center; grid-column: 1 / -1;">Failed to load wishlist.</div>`;
+    }
+}
+
+function escapeHtml(s) {
+    return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }

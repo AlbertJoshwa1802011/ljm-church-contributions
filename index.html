@@ -140,6 +140,37 @@
         <div class="insights-grid" id="insightsGrid"></div>
     </section>
 	
+    <!-- Google Account Hub & Sign-In Card -->
+    <section class="google-card-wrapper" id="homeGoogleCard" style="margin-top: 20px; margin-bottom: 20px;">
+        <div class="google-card-header">
+            <h3>🔐 Church Member Portal</h3>
+            <p>Link your Google account to view your verified contribution logs and badges.</p>
+        </div>
+        <div id="googleCardBtnContainer">
+            <div id="googleCardSignInBtn" style="border-radius: 20px; overflow: hidden;"></div>
+        </div>
+        <div id="loggedInProfileCard" style="display: none;" class="logged-in-profile">
+            <img src="" id="profileAvatarImg" alt="Profile avatar" class="profile-avatar">
+            <div class="profile-info">
+                <div class="profile-name" id="profileNameText"></div>
+                <div class="profile-email" id="profileEmailText"></div>
+                <div style="font-size: 11px; margin-top: 2px;" id="profileMappingBadge"></div>
+            </div>
+            <button class="logout-btn" id="logoutProfileBtn" title="Logout">🚪</button>
+        </div>
+        <!-- Dynamic email linkage prompt -->
+        <div id="linkSuggestionBox" style="display: none;" class="link-suggestion-card">
+            <div class="link-suggestion-title">💡 Associate Your Account</div>
+            <div class="link-suggestion-desc">
+                We found an existing member record for <strong id="suggestedMemberName"></strong> with no email associated. Is this your account? If so, we can link it.
+            </div>
+            <div class="link-action-buttons">
+                <button class="link-btn-confirm" id="confirmLinkBtn">Link Account</button>
+                <button class="link-btn-dismiss" id="dismissLinkBtn">Dismiss</button>
+            </div>
+        </div>
+    </section>
+
 	<section class="top-contributors">
 	    <h3 class="top-title">🌟 Top Contributors</h3>
 	    <div class="top-grid" id="topContributorsGrid">
@@ -170,6 +201,21 @@
         </div>
     </section>
 
+    <!-- Wishlist / Planned Upgrades Section -->
+    <section class="wishlist-section" style="margin-top: 30px; margin-bottom: 20px;">
+        <div class="card">
+            <h3 class="section-title">📋 Stage Planned Upgrades & Wishlist</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                Below are the items our ministry is planning to procure next to advance our technology and stage setup.
+            </p>
+            <div id="homeWishlistList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">
+                    Loading wishlist...
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Last Updated -->
     <div class="last-updated" id="lastUpdated"></div>
 
@@ -179,6 +225,30 @@
         <div id="debugLogs"></div>
     </div>
 </main>
+
+<!-- Mobile Sticky Bottom Navigation -->
+<nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item active">
+        <span class="nav-icon">🏠</span>
+        <span>Dashboard</span>
+    </a>
+    <a href="members.html" class="bottom-nav-item">
+        <span class="nav-icon">👥</span>
+        <span>Members</span>
+    </a>
+    <!-- Quick Give Central Action Button -->
+    <a href="#" id="mobileQuickGiveBtn" class="bottom-nav-item action-btn" aria-label="Contribute Now">
+        <span class="nav-icon">✨</span>
+    </a>
+    <a href="impact.html" class="bottom-nav-item">
+        <span class="nav-icon">🛍️</span>
+        <span>Bought</span>
+    </a>
+    <a href="about.html" class="bottom-nav-item">
+        <span class="nav-icon">ℹ️</span>
+        <span>About</span>
+    </a>
+</nav>
 
 <footer class="premium-footer">
     <div class="footer-inner">
@@ -347,9 +417,30 @@ window.addEventListener('load', () => {
     );
     setTimeout(() => { btnContainer.style.opacity = '1'; }, 300);
 
+    const cardBtnContainer = document.getElementById('googleCardSignInBtn');
+    if (cardBtnContainer) {
+        google.accounts.id.renderButton(
+            cardBtnContainer,
+            { theme: 'outline', size: 'large', shape: 'pill', text: 'signin_with', width: 240 }
+        );
+    }
+
     LJMAdmin.readSession().then(s => {
         if (s) onIdentityVerified({ success: true, email: s.email, name: s.name, isAdmin: true });
     });
+
+    const mobileBtn = document.getElementById('mobileQuickGiveBtn');
+    if (mobileBtn) {
+        mobileBtn.onclick = (e) => {
+            e.preventDefault();
+            const payCard = document.querySelector('.card.payment-card') || document.querySelector('.search-section');
+            if (payCard) {
+                payCard.scrollIntoView({ behavior: 'smooth' });
+                const search = document.getElementById('searchInput');
+                if (search) search.focus();
+            }
+        };
+    }
 });
 
 function mockLogin() {
@@ -359,8 +450,11 @@ function mockLogin() {
     });
 }
 
-function handleCredentialResponse(response) {
+let currentCredentialToken = null;
+
+async function handleCredentialResponse(response) {
     try {
+        currentCredentialToken = response.credential;
         const payload = JSON.parse(atob(response.credential.split('.')[1]));
         const isAdmin = LJMAdmin.isAdmin(payload.email);
 
@@ -374,11 +468,78 @@ function handleCredentialResponse(response) {
             success: true,
             email: payload.email,
             name: payload.name,
+            picture: payload.picture,
             isAdmin: isAdmin
         });
+
+        // ─── Contact Cloudflare Worker /api/auth ───
+        try {
+            const authRes = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: response.credential })
+            });
+            if (authRes.ok) {
+                const authData = await authRes.json();
+                console.log("[AUTH] Worker Auth Response:", authData);
+                
+                // Show link suggestion if recommended
+                if (authData.mappingRecommendation) {
+                    const suggestBox = document.getElementById('linkSuggestionBox');
+                    const suggestName = document.getElementById('suggestedMemberName');
+                    if (suggestBox && suggestName) {
+                        suggestName.textContent = authData.mappingRecommendation;
+                        suggestBox.style.display = 'block';
+                        
+                        document.getElementById('confirmLinkBtn').onclick = () => confirmLink(authData.mappingRecommendation);
+                        document.getElementById('dismissLinkBtn').onclick = () => { suggestBox.style.display = 'none'; };
+                    }
+                }
+
+                if (authData.member) {
+                    const badge = document.getElementById('profileMappingBadge');
+                    if (badge) {
+                        badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${authData.member.name}</span>`;
+                    }
+                } else if (!authData.mappingRecommendation) {
+                    const badge = document.getElementById('profileMappingBadge');
+                    if (badge) {
+                        badge.innerHTML = `<span style="color:#e0b200; font-weight:700;">👤 Guest Profile (Not linked to member)</span>`;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Worker auth call failed:", e);
+        }
+
     } catch (e) {
         console.error("Token decode error:", e);
         onIdentityVerified({ success: false, message: "Could not read your Google account info." });
+    }
+}
+
+async function confirmLink(memberName) {
+    if (!currentCredentialToken) return;
+    try {
+        const res = await fetch('/api/auth', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: currentCredentialToken, memberName })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            alert(`✅ Account linked successfully to: ${memberName}`);
+            const suggestBox = document.getElementById('linkSuggestionBox');
+            if (suggestBox) suggestBox.style.display = 'none';
+            const badge = document.getElementById('profileMappingBadge');
+            if (badge) {
+                badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${memberName}</span>`;
+            }
+        } else {
+            alert(`❌ Linking failed: ${data.error}`);
+        }
+    } catch(err) {
+        alert(`❌ Network error: ${err}`);
     }
 }
 
@@ -386,6 +547,13 @@ function onIdentityVerified(result) {
     const userInfo = document.getElementById('userInfo');
     const adminLink = document.getElementById('adminLink');
     const authContainer = document.getElementById('authContainer');
+
+    // Portal Card Elements
+    const cardBtn = document.getElementById('googleCardBtnContainer');
+    const profileCard = document.getElementById('loggedInProfileCard');
+    const avatar = document.getElementById('profileAvatarImg');
+    const profName = document.getElementById('profileNameText');
+    const profEmail = document.getElementById('profileEmailText');
 
     if (result && result.success) {
         if (userInfo) {
@@ -396,10 +564,31 @@ function onIdentityVerified(result) {
             adminLink.style.display = "inline";
         }
         if (authContainer) authContainer.style.display = "none";
+
+        // Update Member Portal Card
+        if (cardBtn) cardBtn.style.display = 'none';
+        if (profileCard) {
+            profileCard.style.display = 'flex';
+            if (avatar) avatar.src = result.picture || 'https://www.gstatic.com/images/branding/product/2x/avatar_square_blue_120dp.png';
+            if (profName) profName.textContent = result.name;
+            if (profEmail) profEmail.textContent = result.email;
+        }
+
+        // Setup Logout click
+        const logoutBtn = document.getElementById('logoutProfileBtn');
+        if (logoutBtn) {
+            logoutBtn.onclick = () => {
+                LJMAdmin.deleteSession();
+                window.location.reload();
+            };
+        }
+
     } else {
         alert("Authentication failed: " + (result ? result.message : "Unknown error"));
         if (authContainer) authContainer.style.display = "inline-flex";
         if (userInfo) userInfo.style.display = "none";
+        if (cardBtn) cardBtn.style.display = 'block';
+        if (profileCard) profileCard.style.display = 'none';
     }
 }
 </script>

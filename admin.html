@@ -672,6 +672,127 @@
             </div>
         </div>
 
+        <!-- ─── WISHLIST MANAGER ─── -->
+        <div class="card" style="margin-top: 24px;">
+            <div class="card-title">
+                <span>📋 Church Contribution Wishlist Manager</span>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">
+                Add or edit items the church plans to buy in the future. Normal users see this as a read-only list on the home page.
+            </p>
+
+            <!-- Add / Edit form -->
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Item Name *</label>
+                    <input type="text" id="w_name" placeholder="e.g. Stage LED Screen Panel" class="purchase-input">
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Estimated Cost (₹) *</label>
+                    <input type="number" id="w_cost" placeholder="e.g. 50000" class="purchase-input">
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Priority *</label>
+                    <select id="w_priority" class="purchase-input">
+                        <option value="High">🔴 High</option>
+                        <option value="Medium" selected>🟡 Medium</option>
+                        <option value="Low">🟢 Low</option>
+                    </select>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Notes / Description</label>
+                    <textarea id="w_desc" rows="2" placeholder="Describe what this is and why it's needed..." class="purchase-input"></textarea>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:14px; flex-wrap: wrap;">
+                <button id="w_saveBtn" class="btn" style="background: var(--accent-purple); color:#fff; border:none;">💾 Save Wishlist Item</button>
+                <button id="w_clearBtn" class="btn btn-outline">Clear Form</button>
+                <button id="w_refreshBtn" class="btn btn-outline">🔄 Refresh List</button>
+                <span id="w_msg" style="align-self:center; font-size:12px; color: var(--text-secondary);"></span>
+            </div>
+
+            <!-- Existing wishlist items -->
+            <div style="margin-top: 22px;">
+                <h4 style="font-size:14px; font-weight:700; color: var(--text-primary); margin-bottom:10px;">
+                    Planned Items (<span id="w_count">–</span>)
+                </h4>
+                <div id="w_list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+                    <div style="color: var(--text-secondary); font-size:12px;">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── SUPER ADMIN ROLES CONFIGURATION ─── -->
+        <div class="card" style="margin-top: 24px;">
+            <div class="card-title">
+                <span>🛡️ Super Admin Role Configuration</span>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">
+                Create custom administrative roles, configure their specific permission scopes, and link user emails directly to roles.
+            </p>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
+                <!-- Section 1: Link Email to Role -->
+                <div style="border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+                    <h4 style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: var(--text-primary);">🔗 Link Email to Role</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div>
+                            <label style="display:block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">User Email Address</label>
+                            <input type="email" id="role_email" placeholder="user@gmail.com" class="purchase-input">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Select Role</label>
+                            <select id="role_select" class="purchase-input">
+                                <!-- Roles populated dynamically -->
+                            </select>
+                        </div>
+                        <button id="btn_linkEmail" class="btn" style="background: var(--accent-purple); color: white; border: none; margin-top: 5px; width: 100%;">Link User Email</button>
+                    </div>
+                </div>
+
+                <!-- Section 2: Create Custom Role -->
+                <div style="border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+                    <h4 style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: var(--text-primary);">🛠️ Create / Save Custom Role</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div>
+                            <label style="display:block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Role Name</label>
+                            <input type="text" id="custom_role_name" placeholder="e.g. stage_manager" class="purchase-input">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Assign Permissions</label>
+                            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-primary);">
+                                <label><input type="checkbox" value="edit_purchases" class="role-perm-check"> 🛍️ edit_purchases</label>
+                                <label><input type="checkbox" value="edit_wishlist" class="role-perm-check"> 📋 edit_wishlist</label>
+                                <label><input type="checkbox" value="manage_roles" class="role-perm-check"> 🛡️ manage_roles</label>
+                                <label><input type="checkbox" value="view_members" class="role-perm-check"> 👥 view_members</label>
+                            </div>
+                        </div>
+                        <button id="btn_saveRole" class="btn btn-outline" style="margin-top: 5px; width: 100%;">Save Custom Role</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List Mappings & Custom Roles -->
+            <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <div>
+                    <h5 style="margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text-primary);">Active Email Mappings</h5>
+                    <div id="emailMappingsList" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; background: var(--bg-dark);">
+                        Loading mappings...
+                    </div>
+                </div>
+                <div>
+                    <h5 style="margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text-primary);">Configured Permission Roles</h5>
+                    <div id="rolesList" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; background: var(--bg-dark);">
+                        Loading roles...
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 10px; text-align: right;">
+                <span id="role_msg" style="font-size: 12px; color: var(--text-secondary);"></span>
+            </div>
+        </div>
+
         <style>
             .purchase-input {
                 width: 100%;
@@ -803,7 +924,7 @@
 
     <script>
         // ─── CONFIG ───
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec";
+        const WEB_APP_URL = "/api/purchases";
         let allMembersData = [];
 
         // ─── LOAD DATA ───
@@ -1330,6 +1451,413 @@
             }
 
             loadList();
+        })();
+
+        // ─── WISHLIST MANAGER JS ───
+        (function () {
+            "use strict";
+
+            const WISHLIST_API_URL = "/api/wishlist";
+            let cachedWishlist = [];
+            let editingWishlistId = null;
+
+            const $ = id => document.getElementById(id);
+
+            async function loadWishlist() {
+                $("w_msg").textContent = "Loading wishlist...";
+                $("w_msg").style.color = "var(--text-secondary)";
+
+                try {
+                    const res = await fetch(WISHLIST_API_URL + "?_t=" + Date.now(), { cache: "no-store" });
+                    const data = await res.json();
+                    
+                    cachedWishlist = Array.isArray(data.wishlist) ? data.wishlist : [];
+                    $("w_count").textContent = cachedWishlist.length;
+
+                    const container = $("w_list");
+                    container.innerHTML = "";
+
+                    if (cachedWishlist.length === 0) {
+                        container.innerHTML = '<div style="color: var(--text-secondary); font-size:12px;">No items in wishlist yet.</div>';
+                        $("w_msg").textContent = "";
+                        return;
+                    }
+
+                    cachedWishlist.forEach(item => {
+                        const itemCard = document.createElement("div");
+                        itemCard.className = "purchase-item-card"; // Re-use same premium cards
+                        itemCard.style.borderLeft = item.priority === "High" ? "4px solid var(--danger)" : (item.priority === "Medium" ? "4px solid var(--warning)" : "4px solid var(--success)");
+                        itemCard.innerHTML = `
+                            <div class="p-card-header">
+                                <span class="p-card-id">#${item.id}</span>
+                                <span class="p-card-date" style="font-weight:700; color:${item.priority === 'High' ? 'var(--danger)' : 'var(--text-primary)'}">
+                                    ${item.priority} Priority
+                                </span>
+                            </div>
+                            <div class="p-card-name">${escapeHtml(item.name)}</div>
+                            <div class="p-card-cost">Est. Cost: ₹${Number(item.cost).toLocaleString('en-IN')}</div>
+                            <div class="p-card-notes">${escapeHtml(item.notes || "No description")}</div>
+                            <div class="p-card-actions">
+                                <button class="btn btn-sm btn-outline edit-btn">✏️ Edit</button>
+                                <button class="btn btn-sm btn-danger delete-btn">🗑️ Delete</button>
+                            </div>
+                        `;
+
+                        itemCard.querySelector(".edit-btn").onclick = () => editItem(item);
+                        itemCard.querySelector(".delete-btn").onclick = () => deleteItem(item.id);
+
+                        container.appendChild(itemCard);
+                    });
+
+                    $("w_msg").textContent = "";
+                } catch (err) {
+                    $("w_msg").textContent = "❌ Failed to load: " + err;
+                    $("w_msg").style.color = "var(--danger)";
+                }
+            }
+
+            function editItem(item) {
+                editingWishlistId = item.id;
+                $("w_name").value = item.name;
+                $("w_cost").value = item.cost;
+                $("w_priority").value = item.priority;
+                $("w_desc").value = item.notes || "";
+                $("w_saveBtn").textContent = "💾 Update Wishlist Item";
+                $("w_name").focus();
+            }
+
+            function clearForm() {
+                editingWishlistId = null;
+                $("w_name").value = "";
+                $("w_cost").value = "";
+                $("w_priority").value = "Medium";
+                $("w_desc").value = "";
+                $("w_saveBtn").textContent = "💾 Save Wishlist Item";
+            }
+
+            async function deleteItem(id) {
+                const token = ($("purchaseAdminToken").value || "").trim();
+                if (!token) {
+                    $("w_msg").textContent = "Admin Token required to delete.";
+                    $("w_msg").style.color = "var(--danger)";
+                    return;
+                }
+
+                if (!confirm(`Are you sure you want to delete wishlist item #${id}?`)) return;
+
+                $("w_msg").textContent = "Deleting...";
+                try {
+                    const res = await fetch(`${WISHLIST_API_URL}?id=${id}&token=${encodeURIComponent(token)}`, {
+                        method: "DELETE"
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        $("w_msg").textContent = "✅ Deleted successfully";
+                        $("w_msg").style.color = "var(--success)";
+                        clearForm();
+                        await loadWishlist();
+                    } else {
+                        $("w_msg").textContent = "❌ " + (data.error || "Delete failed");
+                        $("w_msg").style.color = "var(--danger)";
+                    }
+                } catch (err) {
+                    $("w_msg").textContent = "❌ Network error: " + err;
+                    $("w_msg").style.color = "var(--danger)";
+                }
+            }
+
+            async function saveItem() {
+                const token = ($("purchaseAdminToken").value || "").trim();
+                if (!token) {
+                    $("w_msg").textContent = "Admin Token required to save.";
+                    $("w_msg").style.color = "var(--danger)";
+                    return;
+                }
+
+                const name = $("w_name").value.trim();
+                const cost = $("w_cost").value.trim();
+                if (!name || !cost) {
+                    alert("Please fill out Name and Estimated Cost.");
+                    return;
+                }
+
+                const payload = {
+                    name,
+                    cost: Number(cost),
+                    priority: $("w_priority").value,
+                    notes: $("w_desc").value.trim()
+                };
+
+                if (editingWishlistId) {
+                    payload.id = editingWishlistId;
+                }
+
+                $("w_msg").textContent = "Saving...";
+                try {
+                    const method = editingWishlistId ? "PUT" : "POST";
+                    const res = await fetch(`${WISHLIST_API_URL}?token=${encodeURIComponent(token)}`, {
+                        method: method,
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        $("w_msg").textContent = "✅ Saved successfully";
+                        $("w_msg").style.color = "var(--success)";
+                        clearForm();
+                        await loadWishlist();
+                    } else {
+                        $("w_msg").textContent = "❌ " + (data.error || "Save failed");
+                        $("w_msg").style.color = "var(--danger)";
+                    }
+                } catch (err) {
+                    $("w_msg").textContent = "❌ Network error: " + err;
+                    $("w_msg").style.color = "var(--danger)";
+                }
+            }
+
+            $("w_saveBtn").onclick = saveItem;
+            $("w_clearBtn").onclick = clearForm;
+            $("w_refreshBtn").onclick = loadWishlist;
+
+            function escapeHtml(s) {
+                return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+            }
+
+            // Stagger loading slightly after purchases list
+            setTimeout(loadWishlist, 200);
+        })();
+
+        // ─── ROLES CONFIGURATION JS ───
+        (function () {
+            "use strict";
+
+            const ROLES_API_URL = "/api/roles";
+            const $ = id => document.getElementById(id);
+
+            async function loadRolesData() {
+                const token = ($("purchaseAdminToken").value || "").trim();
+                if (!token) {
+                    $("emailMappingsList").innerHTML = '<div style="color: var(--text-secondary);">Provide Admin Token above to load roles.</div>';
+                    $("rolesList").innerHTML = '<div style="color: var(--text-secondary);">Provide Admin Token above to load roles.</div>';
+                    return;
+                }
+
+                $("role_msg").textContent = "Loading roles...";
+                $("role_msg").style.color = "var(--text-secondary)";
+
+                try {
+                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}`);
+                    const data = await res.json();
+
+                    if (!data.success) {
+                        $("emailMappingsList").innerHTML = `<div style="color: var(--danger);">${escapeHtml(data.message)}</div>`;
+                        $("rolesList").innerHTML = `<div style="color: var(--danger);">${escapeHtml(data.message)}</div>`;
+                        $("role_msg").textContent = "";
+                        return;
+                    }
+
+                    // 1. Populate Dropdown role select
+                    const select = $("role_select");
+                    select.innerHTML = "";
+                    data.roles.forEach(r => {
+                        const opt = document.createElement("option");
+                        opt.value = r.role_name;
+                        opt.textContent = r.role_name;
+                        select.appendChild(opt);
+                    });
+
+                    // 2. Render Email Mappings
+                    const mappingsContainer = $("emailMappingsList");
+                    mappingsContainer.innerHTML = "";
+                    if (data.mappings.length === 0) {
+                        mappingsContainer.innerHTML = '<div style="color: var(--text-secondary);">No active email mappings.</div>';
+                    } else {
+                        data.mappings.forEach(m => {
+                            const div = document.createElement("div");
+                            div.style.display = "flex";
+                            div.style.justifyContent = "space-between";
+                            div.style.alignItems = "center";
+                            div.style.padding = "6px 0";
+                            div.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                            div.innerHTML = `
+                                <span><strong>${escapeHtml(m.email)}</strong> ➡️ <span style="color: var(--accent-purple);">${escapeHtml(m.role_name)}</span></span>
+                                <button class="btn btn-sm btn-danger unlink-btn" style="padding: 2px 6px; font-size:10px;">Unlink</button>
+                            `;
+                            div.querySelector(".unlink-btn").onclick = () => unlinkEmail(m.email);
+                            mappingsContainer.appendChild(div);
+                        });
+                    }
+
+                    // 3. Render Roles
+                    const rolesContainer = $("rolesList");
+                    rolesContainer.innerHTML = "";
+                    if (data.roles.length === 0) {
+                        rolesContainer.innerHTML = '<div style="color: var(--text-secondary);">No permission roles configured.</div>';
+                    } else {
+                        data.roles.forEach(r => {
+                            const div = document.createElement("div");
+                            div.style.display = "flex";
+                            div.style.justifyContent = "space-between";
+                            div.style.alignItems = "center";
+                            div.style.padding = "6px 0";
+                            div.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                            
+                            let perms = [];
+                            try { perms = JSON.parse(r.permissions); } catch(_) {}
+                            
+                            div.innerHTML = `
+                                <div style="display:flex; flex-direction:column;">
+                                    <strong>${escapeHtml(r.role_name)}</strong>
+                                    <span style="color: var(--text-secondary); font-size:10px;">${escapeHtml(perms.join(", "))}</span>
+                                </div>
+                                <button class="btn btn-sm btn-danger delete-role-btn" style="padding: 2px 6px; font-size:10px;">Delete</button>
+                            `;
+                            div.querySelector(".delete-role-btn").onclick = () => deleteRole(r.role_name);
+                            rolesContainer.appendChild(div);
+                        });
+                    }
+
+                    $("role_msg").textContent = "";
+                } catch (err) {
+                    $("role_msg").textContent = "❌ Error: " + err;
+                    $("role_msg").style.color = "var(--danger)";
+                }
+            }
+
+            async function saveCustomRole() {
+                const token = ($("purchaseAdminToken").value || "").trim();
+                const roleName = $("custom_role_name").value.trim().toLowerCase();
+                
+                if (!token || !roleName) {
+                    alert("Admin token and custom role name are required.");
+                    return;
+                }
+
+                const checkedPerms = Array.from(document.querySelectorAll(".role-perm-check:checked")).map(el => el.value);
+
+                $("role_msg").textContent = "Saving role...";
+                try {
+                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            action: "save_role",
+                            roleName,
+                            permissions: checkedPerms
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        $("role_msg").textContent = "✅ Saved successfully";
+                        $("role_msg").style.color = "var(--success)";
+                        $("custom_role_name").value = "";
+                        document.querySelectorAll(".role-perm-check").forEach(el => el.checked = false);
+                        await loadRolesData();
+                    } else {
+                        $("role_msg").textContent = "❌ " + data.message;
+                        $("role_msg").style.color = "var(--danger)";
+                    }
+                } catch (err) {
+                    $("role_msg").textContent = "❌ Network error";
+                }
+            }
+
+            async function linkEmailToRole() {
+                const token = ($("purchaseAdminToken").value || "").trim();
+                const email = $("role_email").value.trim();
+                const roleName = $("role_select").value;
+
+                if (!token || !email || !roleName) {
+                    alert("All fields are required to link email.");
+                    return;
+                }
+
+                $("role_msg").textContent = "Linking email...";
+                try {
+                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            action: "link_email",
+                            email,
+                            roleName
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        $("role_msg").textContent = "✅ Linked successfully";
+                        $("role_msg").style.color = "var(--success)";
+                        $("role_email").value = "";
+                        await loadRolesData();
+                    } else {
+                        $("role_msg").textContent = "❌ " + data.message;
+                        $("role_msg").style.color = "var(--danger)";
+                    }
+                } catch (err) {
+                    $("role_msg").textContent = "❌ Network error";
+                }
+            }
+
+            async function unlinkEmail(email) {
+                const token = ($("purchaseAdminToken").value || "").trim();
+                if (!confirm(`Are you sure you want to unlink email: ${email}?`)) return;
+
+                $("role_msg").textContent = "Unlinking...";
+                try {
+                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}&action=unlink_email&email=${encodeURIComponent(email)}`, {
+                        method: "DELETE"
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        $("role_msg").textContent = "✅ Unlinked successfully";
+                        $("role_msg").style.color = "var(--success)";
+                        await loadRolesData();
+                    } else {
+                        $("role_msg").textContent = "❌ " + data.message;
+                        $("role_msg").style.color = "var(--danger)";
+                    }
+                } catch (err) {
+                    $("role_msg").textContent = "❌ Network error";
+                }
+            }
+
+            async function deleteRole(roleName) {
+                const token = ($("purchaseAdminToken").value || "").trim();
+                if (!confirm(`Are you sure you want to delete role '${roleName}'?`)) return;
+
+                $("role_msg").textContent = "Deleting role...";
+                try {
+                    const res = await fetch(`${ROLES_API_URL}?token=${encodeURIComponent(token)}&action=delete_role&roleName=${encodeURIComponent(roleName)}`, {
+                        method: "DELETE"
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        $("role_msg").textContent = "✅ Role deleted";
+                        $("role_msg").style.color = "var(--success)";
+                        await loadRolesData();
+                    } else {
+                        $("role_msg").textContent = "❌ " + data.message;
+                        $("role_msg").style.color = "var(--danger)";
+                    }
+                } catch (err) {
+                    $("role_msg").textContent = "❌ Network error";
+                }
+            }
+
+            $("btn_saveRole").onclick = saveCustomRole;
+            $("btn_linkEmail").onclick = linkEmailToRole;
+
+            // Load data when token changes or page loads
+            $("purchaseAdminToken").addEventListener("change", loadRolesData);
+            setTimeout(loadRolesData, 400);
+
+            function escapeHtml(s) {
+                return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+            }
         })();
     </script>
 </body>

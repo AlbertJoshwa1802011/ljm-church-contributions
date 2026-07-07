@@ -7,10 +7,16 @@
     - [x] Create `/functions/api/contributions.js` endpoint
     - [x] Create `/functions/api/webhook.js` Razorpay receiver with sync to Google Sheets
     - [x] Create `/functions/api/auth.js` Google Token verification API
-- [ ] Frontend Mobile UI/UX & Google Sign-In
-    - [ ] Redesign page navigation with bottom tabs for mobile-first feel
-    - [ ] Integrate Google Sign-in button SDK
-    - [ ] Connect `script.js` to `/functions` API endpoints
+- [ ] Super Admin Role Configuration
+    - [x] Add `roles` and `member_roles` tables to `schema.sql`
+    - [x] Create `/functions/api/roles.js` CRUD endpoint for role mapping
+    - [x] Update backend APIs to verify permissions dynamically from SQL tables
+    - [x] Add Roles configuration dashboard in `admin.html`
+- [x] Google-Level UI/UX Redesign
+    - [x] Apply premium Material Design stylesheet additions to `style.css`
+    - [x] Build responsive bottom navigation bar and float action tabs
+    - [x] Implement wishlist card grid on home page
+    - [x] Design slide-up modal sheets for contributor detail popups
 - [ ] Verification and Deployment
     - [ ] Verify D1 migrations locally with Wrangler pages dev
     - [ ] Update CI/CD configurations
