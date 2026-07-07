@@ -2,28 +2,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --google-blue: #1a73e8;
-    --google-blue-hover: #1557b0;
-    --google-blue-light: #e8f0fe;
-    --google-surface: #ffffff;
-    --google-bg: #f8f9fa;
-    --google-text: #202124;
-    --google-text-secondary: #5f6368;
-    --google-border: #dadce0;
+    --google-blue: #a78bfa; /* Vibrant Purple */
+    --google-blue-hover: #c4b5fd;
+    --google-blue-light: rgba(167, 139, 250, 0.15);
+    --google-surface: #1e1e24; /* Sleek dark card */
+    --google-bg: #121217; /* Very dark background */
+    --google-text: #f8fafc;
+    --google-text-secondary: #94a3b8;
+    --google-border: #2d2d3a;
     
     --font-heading: 'Outfit', sans-serif;
     --font-body: 'Inter', sans-serif;
     
-    --shadow-sm: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
-    --shadow-md: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
-    --shadow-lg: 0 4px 20px 0 rgba(0,0,0,0.08);
+    --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+    --accent-cyan: #38bdf8;
+    --accent-purple: #c084fc;
 }
 
 body {
     margin: 0;
     font-family: var(--font-body);
     background-color: var(--google-bg);
-    background: var(--google-bg);
+    background: radial-gradient(circle at 15% 50%, rgba(167, 139, 250, 0.08), transparent 25%), radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08), transparent 25%), var(--google-bg);
     color: var(--google-text);
     position: relative;
     min-height: 100vh;
