@@ -1,0 +1,5 @@
+- [x] Stash current local modifications and untracked files
+- [x] Create and switch to the new `stable-production` branch
+- [x] Overwrite files in `stable-production` with downloaded live assets
+- [x] Commit live assets to `stable-production`
+- [x] Switch back to `feat/admin-dashboard` and restore the stashed files

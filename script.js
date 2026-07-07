@@ -17,10 +17,10 @@ function escapeHtml(unsafe) {
 // --------------------
 // Cache configuration (shared across pages via localStorage)
 const CACHE_VERSION = 1;
-const CACHE_TTL_MS = 30 * 1000; // 30 seconds (reduced for faster debugging)
+const CACHE_TTL_MS = 180 * 1000; // 3 minutes
 
 // Helper: get cached fund (with TTL enforcement - works on all devices including Android)
-function getCachedFund(fundKey) {
+function getCachedFund(fundKey, ignoreExpiry = false) {
     try {
         const raw = localStorage.getItem(fundKey);
         if (!raw) return null;
@@ -32,13 +32,16 @@ function getCachedFund(fundKey) {
         }
 
         const age = Date.now() - (parsed.lastFetched || 0);
-        // Expire if too old OR if age is negative (device clock skew / invalid timestamp)
-        if (age < 0 || age > CACHE_TTL_MS) {
-            if (age > CACHE_TTL_MS) {
-                console.log(`[CACHE] Expired: ${fundKey} (age: ${Math.round(age / 1000)}s)`);
+        
+        if (!ignoreExpiry) {
+            // Expire if too old OR if age is negative (device clock skew / invalid timestamp)
+            if (age < 0 || age > CACHE_TTL_MS) {
+                if (age > CACHE_TTL_MS) {
+                    console.log(`[CACHE] Expired: ${fundKey} (age: ${Math.round(age / 1000)}s)`);
+                }
+                localStorage.removeItem(fundKey);
+                return null;
             }
-            localStorage.removeItem(fundKey);
-            return null;
         }
 
         if (parsed.data) {
@@ -112,8 +115,8 @@ function getCachedMembersList() {
 
 // Preload members list in background (so Members page opens fast)
 async function preloadMembersList() {
-    const techUrl = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=tech-contributions";
-    const christmasUrl = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=christmas-fund";
+    const techUrl = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=tech-contributions";
+    const christmasUrl = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=christmas-fund";
     try {
         const [techRes, christmasRes] = await Promise.all([
             fetch(techUrl + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' }),
@@ -243,6 +246,9 @@ function initInsightModal() {
         const total = ctx.totalAmount != null ? ctx.totalAmount : 0;
         const remaining = Math.max(goal - total, 0);
         const count = ctx.entryCount != null ? ctx.entryCount : 0;
+        const spent = Number(window._spentOnProducts) || 0;
+        const productsCount = Number(window._productsBoughtCount) || 0;
+        const availableBalance = Math.max(total - spent, 0);
         const summaryLine = `<p class="insight-modal-summary">Current: Goal ₹${Number(goal).toLocaleString('en-IN')} · Collected ₹${Number(total).toLocaleString('en-IN')} · Remaining ₹${Number(remaining).toLocaleString('en-IN')} · <strong>${count}</strong> contribution${count !== 1 ? 's' : ''}</p>`;
         switch (type) {
             case 'goal':
@@ -253,6 +259,18 @@ function initInsightModal() {
                 return summaryLine + `<p><strong>Remaining</strong> = Goal − Total collected.</p><p>Formula: <code>Remaining = ${Number(goal).toLocaleString('en-IN')} − ${Number(total).toLocaleString('en-IN')}</code></p><p>Current remaining: <strong>₹${Number(remaining).toLocaleString('en-IN')}</strong></p>`;
             case 'count':
                 return summaryLine + `<p><strong>Number of Contributions</strong> = count of all contribution entries (each row in our records).</p><p>Current count: <strong>${count}</strong> contribution${count !== 1 ? 's' : ''}</p>`;
+            case 'spent':
+                return summaryLine +
+                    `<p><strong>Spent on Products</strong> = money used from this fund to purchase items for the church.</p>` +
+                    `<p>Total spent from fund: <strong>₹${spent.toLocaleString('en-IN')}</strong> on <strong>${productsCount}</strong> item${productsCount !== 1 ? 's' : ''}.</p>` +
+                    `<p>Only the <em>fund contribution</em> portion is counted here — external donations (from family, personal top-ups) do NOT reduce the fund balance.</p>` +
+                    `<p><a href="impact.html" style="color:#667eea; font-weight:700;">View all purchases →</a></p>`;
+            case 'balance':
+                return summaryLine +
+                    `<p><strong>Available Balance</strong> = Total Collected − Spent on Products.</p>` +
+                    `<p>Formula: <code>₹${Number(total).toLocaleString('en-IN')} − ₹${spent.toLocaleString('en-IN')} = ₹${availableBalance.toLocaleString('en-IN')}</code></p>` +
+                    `<p>This is the money currently in hand that can be used for future purchases or church needs.</p>` +
+                    `<p><a href="impact.html" style="color:#667eea; font-weight:700;">See what we bought →</a></p>`;
             default: return '<p>No details available.</p>';
         }
     }
@@ -987,10 +1005,10 @@ async function silentBackgroundRefresh(selectedFund) {
     try {
         let apiUrl, fundKey;
         if (selectedFund === 'christmasfund') {
-            apiUrl = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=christmas-fund";
+            apiUrl = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=christmas-fund";
             fundKey = "christmasFundData";
         } else {
-            apiUrl = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=tech-contributions";
+            apiUrl = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=tech-contributions";
             fundKey = "techFundData";
         }
 
@@ -1184,7 +1202,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // TECH FUND DASHBOARD
 // ==================================================
 async function initDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=tech-contributions";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=tech-contributions";
     const FUND_KEY = "techFundData";
 
     let contributionsData = [];
@@ -1207,22 +1225,76 @@ async function initDashboard() {
             const data = await res.json();
             contributionsData = data.contributions || [];
             window._currentContributions = contributionsData;
-            window._memberEmails = data.memberEmails || {}; 
+            window._memberEmails = data.memberEmails || {};
+            window._memberPhones = data.memberPhones || {};
+            window._memberStatus = data.memberStatus || {};
             goalAmount = data.goalAmount || 0;
-            setCachedFund(FUND_KEY, { contributions: contributionsData, goalAmount, memberEmails: window._memberEmails });
+            // NEW: "What We Bought" aggregates for this fund
+            window._spentOnProducts = Number(data.spentOnProducts) || 0;
+            window._productsBoughtCount = Number(data.productsBoughtCount) || 0;
+            // LOCAL PREVIEW: override from mock if running on file:// or ?mock=1
+            if (window.__LJM_USE_MOCK_PURCHASES__ && window.__LJM_PURCHASES_MOCK__) {
+                const mock = window.__LJM_PURCHASES_MOCK__;
+                const techKey = "Tech Fund";
+                const fundSpent = (mock.fundContribByFund && mock.fundContribByFund[techKey]) || 0;
+                const fundCount = (mock.purchases || []).filter(p => p.fund === techKey).length;
+                window._spentOnProducts = fundSpent;
+                window._productsBoughtCount = fundCount;
+            }
+            setCachedFund(FUND_KEY, {
+                contributions: contributionsData,
+                goalAmount,
+                memberEmails: window._memberEmails,
+                memberPhones: window._memberPhones,
+                memberStatus: window._memberStatus,
+                spentOnProducts: window._spentOnProducts,
+                productsBoughtCount: window._productsBoughtCount
+            });
             currentDisplayCount = 0;
             renderDashboard();
             renderTopContributors(contributionsData);
+            document.dispatchEvent(new CustomEvent('LJM_DATA_READY', { 
+                detail: { fund: 'tech', members: Array.from(new Set(contributionsData.map(c => c.member))) } 
+            }));
         } catch (err) {
             console.error("Error fetching Tech Fund:", err);
-            const cached = getCachedFund(FUND_KEY);
+            const cached = getCachedFund(FUND_KEY, true);
             if (cached) {
                 contributionsData = cached.contributions || [];
                 window._currentContributions = contributionsData;
+                window._memberEmails = cached.memberEmails || {};
+                window._memberPhones = cached.memberPhones || {};
+                window._memberStatus = cached.memberStatus || {};
                 goalAmount = cached.goalAmount || 0;
+                window._spentOnProducts = Number(cached.spentOnProducts) || 0;
+                window._productsBoughtCount = Number(cached.productsBoughtCount) || 0;
+                // LOCAL PREVIEW: apply mock override when running from file:// or ?mock=1
+                if (window.__LJM_USE_MOCK_PURCHASES__ && window.__LJM_USE_MOCK_PURCHASES__) {
+                    const mock = window.__LJM_PURCHASES_MOCK__;
+                    const techKey = "Tech Fund";
+                    window._spentOnProducts = (mock.fundContribByFund && mock.fundContribByFund[techKey]) || 0;
+                    window._productsBoughtCount = (mock.purchases || []).filter(p => p.fund === techKey).length;
+                }
                 currentDisplayCount = 0;
                 renderDashboard();
                 renderTopContributors(contributionsData);
+            } else {
+                // Render error state if API fails and no cached data is available at all
+                contributionsData = [];
+                goalAmount = 0;
+                window._spentOnProducts = 0;
+                window._productsBoughtCount = 0;
+                renderDashboard([]);
+                const timeline = document.getElementById("timelineContainer");
+                if (timeline) {
+                    timeline.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">⚠️</div>
+                            <h3>Connection Timeout</h3>
+                            <p>Unable to retrieve contributions data from the server. Please check your internet or try refreshing.</p>
+                        </div>
+                    `;
+                }
             }
         }
     };
@@ -1342,6 +1414,29 @@ async function initDashboard() {
             }
             animateValue("entryCount", data.length, "📝 ");
 
+            // NEW: "What We Bought" math — Spent & Available Balance
+            const spent = Number(window._spentOnProducts) || 0;
+            const productsCount = Number(window._productsBoughtCount) || 0;
+            const availableBalance = Math.max(totalCollected - spent, 0);
+
+            const spentEl = document.getElementById("spentAmount");
+            if (spentEl) animateValue("spentAmount", spent, "🛍️ ₹");
+            const spentSub = document.getElementById("spentSubdetail");
+            if (spentSub) {
+                spentSub.innerHTML = productsCount > 0
+                    ? `${productsCount} ${productsCount === 1 ? "item" : "items"} bought · <a href="impact.html" style="color:#667eea; font-weight:700;">See details →</a>`
+                    : `<a href="impact.html" style="color:#667eea; font-weight:700;">Nothing bought yet — see all →</a>`;
+            }
+
+            const balanceEl = document.getElementById("balanceAmount");
+            if (balanceEl) animateValue("balanceAmount", availableBalance, "💼 ₹");
+            const balanceSub = document.getElementById("balanceSubdetail");
+            if (balanceSub) {
+                balanceSub.textContent = spent > 0
+                    ? `Collected ₹${Number(totalCollected).toLocaleString("en-IN")} − Spent ₹${spent.toLocaleString("en-IN")}`
+                    : "Money in hand right now";
+            }
+
             // Render Trend Badges
             updateTrendIndicator("totalSubdetail", trend);
             updateTrendIndicator("countSubdetail", {
@@ -1446,7 +1541,7 @@ async function initDashboard() {
 // CHRISTMAS FUND DASHBOARD
 // ==================================================
 async function initChristmasFundDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec?fund=christmas-fund";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=christmas-fund";
     const FUND_KEY = "christmasFundData";
 
     let contributionsData = [];
@@ -1466,22 +1561,73 @@ async function initChristmasFundDashboard() {
             const data = await res.json();
             contributionsData = data.contributions || [];
             window._currentContributions = contributionsData;
-            window._memberEmails = data.memberEmails || {}; 
+            window._memberEmails = data.memberEmails || {};
+            window._memberPhones = data.memberPhones || {};
             goalAmount = data.goalAmount || 0;
-            setCachedFund(FUND_KEY, { contributions: contributionsData, goalAmount, memberEmails: window._memberEmails });
+            // NEW: "What We Bought" aggregates
+            window._spentOnProducts = Number(data.spentOnProducts) || 0;
+            window._productsBoughtCount = Number(data.productsBoughtCount) || 0;
+            // LOCAL PREVIEW: override from mock if running on file:// or ?mock=1
+            if (window.__LJM_USE_MOCK_PURCHASES__ && window.__LJM_PURCHASES_MOCK__) {
+                const mock = window.__LJM_PURCHASES_MOCK__;
+                const christmasKey = "Christmas Fund";
+                const fundSpent = (mock.fundContribByFund && mock.fundContribByFund[christmasKey]) || 0;
+                const fundCount = (mock.purchases || []).filter(p => p.fund === christmasKey).length;
+                window._spentOnProducts = fundSpent;
+                window._productsBoughtCount = fundCount;
+            }
+            setCachedFund(FUND_KEY, {
+                contributions: contributionsData,
+                goalAmount,
+                memberEmails: window._memberEmails,
+                memberPhones: window._memberPhones,
+                spentOnProducts: window._spentOnProducts,
+                productsBoughtCount: window._productsBoughtCount
+            });
             currentDisplayCount = 0;
             renderDashboard();
             renderTopContributors(contributionsData);
+            document.dispatchEvent(new CustomEvent('LJM_DATA_READY', {
+                detail: { fund: 'christmas', members: Array.from(new Set(contributionsData.map(c => c.Member))) }
+            }));
         } catch (err) {
             console.error("Error fetching Christmas Fund:", err);
-            const cached = getCachedFund(FUND_KEY);
+            const cached = getCachedFund(FUND_KEY, true);
             if (cached) {
                 contributionsData = cached.contributions || [];
                 window._currentContributions = contributionsData;
+                window._memberEmails = cached.memberEmails || {};
+                window._memberPhones = cached.memberPhones || {};
                 goalAmount = cached.goalAmount || 0;
+                window._spentOnProducts = Number(cached.spentOnProducts) || 0;
+                window._productsBoughtCount = Number(cached.productsBoughtCount) || 0;
+                // LOCAL PREVIEW: apply mock override when running from file:// or ?mock=1
+                if (window.__LJM_USE_MOCK_PURCHASES__ && window.__LJM_PURCHASES_MOCK__) {
+                    const mock = window.__LJM_PURCHASES_MOCK__;
+                    const christmasKey = "Christmas Fund";
+                    window._spentOnProducts = (mock.fundContribByFund && mock.fundContribByFund[christmasKey]) || 0;
+                    window._productsBoughtCount = (mock.purchases || []).filter(p => p.fund === christmasKey).length;
+                }
                 currentDisplayCount = 0;
                 renderDashboard();
                 renderTopContributors(contributionsData);
+            } else {
+                // Render error state if API fails and no cached data is available at all
+                contributionsData = [];
+                goalAmount = 0;
+                window._spentOnProducts = 0;
+                window._productsBoughtCount = 0;
+                renderDashboard([]);
+                const timeline = document.getElementById("timelineContainer");
+                if (timeline) {
+                    timeline.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">⚠️</div>
+                            <h3>Connection Timeout</h3>
+                            <p>Unable to retrieve contributions data from the server. Please check your internet or try refreshing.</p>
+                        </div>
+                    `;
+                }
             }
         }
     };
@@ -1599,6 +1745,29 @@ async function initChristmasFundDashboard() {
                 document.getElementById("remainingAmount").innerHTML = "🎉 Goal Achieved!";
             }
             animateValue("entryCount", data.length, "📝 ");
+
+            // NEW: "What We Bought" math — Spent & Available Balance
+            const spent = Number(window._spentOnProducts) || 0;
+            const productsCount = Number(window._productsBoughtCount) || 0;
+            const availableBalance = Math.max(totalCollected - spent, 0);
+
+            const spentEl = document.getElementById("spentAmount");
+            if (spentEl) animateValue("spentAmount", spent, "🛍️ ₹");
+            const spentSub = document.getElementById("spentSubdetail");
+            if (spentSub) {
+                spentSub.innerHTML = productsCount > 0
+                    ? `${productsCount} ${productsCount === 1 ? "item" : "items"} bought · <a href="impact.html" style="color:#667eea; font-weight:700;">See details →</a>`
+                    : `<a href="impact.html" style="color:#667eea; font-weight:700;">Nothing bought yet — see all →</a>`;
+            }
+
+            const balanceEl = document.getElementById("balanceAmount");
+            if (balanceEl) animateValue("balanceAmount", availableBalance, "💼 ₹");
+            const balanceSub = document.getElementById("balanceSubdetail");
+            if (balanceSub) {
+                balanceSub.textContent = spent > 0
+                    ? `Collected ₹${Number(totalCollected).toLocaleString("en-IN")} − Spent ₹${spent.toLocaleString("en-IN")}`
+                    : "Money in hand right now";
+            }
 
             // Render Trend Badges
             updateTrendIndicator("totalSubdetail", trend);
@@ -1952,10 +2121,19 @@ function renderTopContributors(contributions) {
     top.forEach((item, index) => {
         const card = document.createElement("div");
         card.className = "top-card";
+        card.style.cursor = "pointer"; // Visual cue
+        card.onclick = () => showMemberDeepDive(item.Member);
+        
+        const hasEmail = window._memberEmails && window._memberEmails[item.Member];
+        const hasPhone = window._memberPhones && window._memberPhones[item.Member];
+        const isVerified = (window._memberStatus && window._memberStatus[item.Member]) || (hasEmail && hasPhone);
+        const verifiedBadge = isVerified ? '<span class="verified-badge-small" title="Verified Profile">✅</span>' : '';
+        
         card.innerHTML = `
             <div class="rank-line">
                 <span class="medal">${medals[index]}</span>
                 <span class="rank-text">Rank #${index + 1}</span>
+                ${verifiedBadge}
             </div>
             <div class="amount">₹${item.Total.toLocaleString('en-IN')}</div>
             <div class="amount-label">Total Contribution</div>
@@ -1966,4 +2144,96 @@ function renderTopContributors(contributions) {
         `;
         grid.appendChild(card);
     });
+}
+
+/**
+ * MEMBER DEEP DIVE: Shows detailed stats for a specific member
+ */
+function showMemberDeepDive(name) {
+    const contributions = window._currentContributions || [];
+    const memberData = contributions.filter(c => (c.Member || "").toLowerCase() === name.toLowerCase());
+    
+    if (memberData.length === 0) return;
+
+    const total = memberData.reduce((sum, c) => sum + (Number(c.Amount) || 0), 0);
+    const monthsPaid = new Set();
+    const currentYear = new Date().getFullYear();
+    
+    memberData.forEach(c => {
+        const d = parseContributionDate(c.Date);
+        if (d && d.getFullYear() === currentYear) {
+            monthsPaid.add(d.getMonth());
+        }
+        // Also check if 'Month' was explicitly stored in Notes
+        const notes = (c.Notes || "").toLowerCase();
+        const monthNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+        monthNames.forEach((m, idx) => {
+            if (notes.includes(m)) monthsPaid.add(idx);
+        });
+    });
+
+    const consistency = Math.round((monthsPaid.size / 12) * 100);
+    const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    let gridHtml = '<div class="member-month-grid">';
+    monthNamesShort.forEach((m, i) => {
+        const isPaid = monthsPaid.has(i);
+        gridHtml += `
+            <div class="month-box ${isPaid ? 'paid' : 'pending'}">
+                <div class="month-name">${m}</div>
+                <div class="month-status">${isPaid ? '✓' : '—'}</div>
+            </div>
+        `;
+    });
+    gridHtml += '</div>';
+
+    let timelineHtml = '<div class="member-deep-timeline">';
+    memberData.sort((a,b) => parseContributionDate(b.Date) - parseContributionDate(a.Date)).forEach(c => {
+        timelineHtml += `
+            <div class="deep-timeline-item">
+                <span class="date">${new Date(c.Date).toLocaleDateString()}</span>
+                <span class="amt">₹${c.Amount}</span>
+                <span class="cat">${c.Category}</span>
+            </div>
+        `;
+    });
+    timelineHtml += '</div>';
+
+    const hasEmail = window._memberEmails && window._memberEmails[name];
+    const hasPhone = window._memberPhones && window._memberPhones[name];
+    const isVerified = (window._memberStatus && window._memberStatus[name]) || (hasEmail && hasPhone);
+    const verifiedBadge = isVerified ? '<span class="verified-badge-large">✅ Verified</span>' : '';
+
+    const bodyHtml = `
+        <div class="member-profile-header">
+            <h3>${name} ${verifiedBadge}</h3>
+            <div class="profile-stats">
+                <div class="stat">
+                    <span class="label">Total Given</span>
+                    <span class="valueHighlight">₹${total.toLocaleString('en-IN')}</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Consistency (${currentYear})</span>
+                    <span class="valueHighlight">${consistency}%</span>
+                </div>
+            </div>
+        </div>
+        <h4 style="margin: 20px 0 10px; font-size: 15px; color: #1e293b;">Yearly Payment Progress</h4>
+        ${gridHtml}
+        <h4 style="margin: 25px 0 10px; font-size: 15px; color: #1e293b;">Transaction History</h4>
+        ${timelineHtml}
+        <div style="margin-top: 20px; text-align: center;">
+            <button class="cta-button" onclick="document.querySelector('.insight-modal-close').click()" style="padding: 8px 20px; font-size: 14px;">Close Insights</button>
+        </div>
+    `;
+
+    const modal = document.getElementById('insightModal');
+    const titleEl = document.getElementById('insightModalTitle');
+    const bodyEl = document.getElementById('insightModalBody');
+
+    if (titleEl) titleEl.textContent = `🙏 ${name}'s Journey`;
+    if (bodyEl) bodyEl.innerHTML = bodyHtml;
+    
+    modal.classList.add('insight-modal-visible');
+    document.body.style.overflow = 'hidden';
 }
