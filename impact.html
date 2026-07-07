@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>What We Bought · LJM Church Contributions</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<style>
+    /* ===== Page-specific tweaks (kept here so style.css stays untouched) ===== */
+    .impact-hero {
+        text-align: center;
+        padding: 40px 20px 20px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+        border-radius: 20px;
+        margin-bottom: 30px;
+    }
+    .impact-hero .hero-icon { font-size: 48px; }
+    .impact-hero h1 {
+        font-size: 32px;
+        font-weight: 800;
+        color: #2c3e50;
+        margin: 10px 0 6px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .impact-hero p.hero-sub {
+        color: #555;
+        font-size: 16px;
+        max-width: 680px;
+        margin: 6px auto 20px;
+        line-height: 1.5;
+    }
+    .impact-totals {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+    .impact-total-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px 22px;
+        min-width: 160px;
+        text-align: center;
+        box-shadow: 0 4px 14px rgba(102, 126, 234, 0.14);
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+    .impact-total-card .label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #888;
+    }
+    .impact-total-card .value {
+        font-size: 22px;
+        font-weight: 800;
+        margin-top: 4px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Filter tabs */
+    .impact-filter {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 20px 0 30px;
+    }
+    .filter-chip {
+        padding: 10px 20px;
+        border-radius: 999px;
+        border: 2px solid #e0e4f2;
+        background: #fff;
+        color: #555;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .filter-chip:hover { border-color: #667eea; color: #667eea; }
+    .filter-chip.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 6px 14px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Product grid */
+    .impact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .product-card {
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(102, 126, 234, 0.08);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.25s, box-shadow 0.25s;
+        cursor: pointer;
+    }
+    .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 32px rgba(102, 126, 234, 0.18);
+    }
+    .product-photo {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #f5f7ff, #ecefff);
+        display: block;
+    }
+    .product-photo.placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 56px;
+        color: #aab4d8;
+    }
+    .product-body { padding: 16px 18px 18px; }
+    .product-body h3 {
+        font-size: 17px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0 0 6px;
+        line-height: 1.3;
+    }
+    .product-fund-tag {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: rgba(102, 126, 234, 0.1);
+        color: #5a67d8;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        margin-bottom: 8px;
+    }
+    .product-cost {
+        font-size: 22px;
+        font-weight: 800;
+        color: #2c3e50;
+        margin: 6px 0 4px;
+    }
+    .product-meta {
+        font-size: 12px;
+        color: #888;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+    }
+    .product-desc {
+        font-size: 13px;
+        color: #666;
+        margin-top: 10px;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .product-vendor-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 12px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 12px;
+        transition: transform 0.2s;
+    }
+    .product-vendor-btn:hover { transform: translateY(-1px); }
+
+    /* Empty state */
+    .impact-empty {
+        text-align: center;
+        padding: 60px 20px;
+        color: #777;
+    }
+    .impact-empty .empty-icon { font-size: 54px; }
+    .impact-empty h3 { margin: 12px 0 6px; color: #2c3e50; }
+
+    /* Detail modal */
+    .impact-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 20px;
+    }
+    .impact-modal.open { display: flex; }
+    .impact-modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 20, 40, 0.68);
+        backdrop-filter: blur(4px);
+    }
+    .impact-modal-card {
+        position: relative;
+        max-width: 560px;
+        width: 100%;
+        background: #fff;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .impact-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 5;
+    }
+    .impact-modal-card img.hero {
+        width: 100%;
+        height: 260px;
+        object-fit: cover;
+    }
+    .impact-modal-body { padding: 20px 24px 24px; }
+    .impact-modal-body h2 { margin: 0 0 4px; color: #2c3e50; font-size: 22px; font-weight: 800; }
+    .impact-modal-body .cost-big {
+        font-size: 30px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 8px 0;
+    }
+    .impact-modal-body .meta-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 14px;
+    }
+    .impact-modal-body p.desc {
+        color: #444;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    /* Funding breakdown on cards */
+    .funding-breakdown {
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: linear-gradient(135deg, rgba(102,126,234,0.06), rgba(236,154,62,0.06));
+        border-radius: 10px;
+        border: 1px solid rgba(102,126,234,0.08);
+    }
+    .fb-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #444;
+        padding: 3px 0;
+    }
+    .fb-row .fb-label { flex: 1; }
+    .fb-row .fb-amount { font-weight: 700; color: #2c3e50; }
+    .fb-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    /* Funding breakdown in modal */
+    .modal-fb {
+        margin: 16px 0;
+        padding: 14px 16px;
+        border: 1px solid rgba(102,126,234,0.15);
+        background: linear-gradient(135deg, rgba(102,126,234,0.04), rgba(236,154,62,0.04));
+        border-radius: 12px;
+    }
+    .modal-fb-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    .modal-fb-bar {
+        display: flex;
+        height: 26px;
+        border-radius: 999px;
+        overflow: hidden;
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 10px;
+    }
+    .modal-fb-seg {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+    }
+    .modal-fb-seg.fund { background: linear-gradient(135deg, #667eea, #5a67d8); }
+    .modal-fb-seg.ext  { background: linear-gradient(135deg, #f6ad55, #ec9a3e); }
+    .modal-fb-rows { display: flex; flex-direction: column; gap: 6px; }
+    .modal-fb-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        color: #444;
+    }
+    .modal-fb-row .fb-dot { margin-right: 6px; }
+    .modal-fb-note {
+        font-size: 12px;
+        color: #777;
+        margin-top: 6px;
+        padding: 8px 10px;
+        background: rgba(0,0,0,0.02);
+        border-radius: 6px;
+        font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+        .impact-hero h1 { font-size: 24px; }
+        .impact-total-card { min-width: 130px; padding: 10px 14px; }
+        .impact-total-card .value { font-size: 18px; }
+    }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+    <div class="logo">LJM Church Contributions</div>
+    <nav>
+        <a href="funds.html">Funds</a>
+        <a href="members.html">Members</a>
+        <a href="impact.html" class="active">What We Bought</a>
+        <a href="about.html">About</a>
+    </nav>
+</header>
+
+<main class="container">
+
+    <!-- Hero -->
+    <section class="impact-hero">
+        <div class="hero-icon">🛍️</div>
+        <h1>What We Bought</h1>
+        <p class="hero-sub">
+            Every item below was purchased from the faithful giving of our members.
+            See exactly where your contributions go — with full transparency, as good stewards of God's provision.
+        </p>
+
+        <div class="impact-totals">
+            <div class="impact-total-card">
+                <div class="label">Items Bought</div>
+                <div class="value" id="totalItems">–</div>
+            </div>
+            <div class="impact-total-card">
+                <div class="label">Total Spent</div>
+                <div class="value" id="totalSpent">–</div>
+            </div>
+            <div class="impact-total-card">
+                <div class="label">Funds Active</div>
+                <div class="value" id="fundsActive">–</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filter tabs -->
+    <section class="impact-filter" id="impactFilter">
+        <button class="filter-chip active" data-fund="all">All</button>
+        <button class="filter-chip" data-fund="Tech Fund">💻 Tech Fund</button>
+        <button class="filter-chip" data-fund="Christmas Fund">🎄 Christmas Fund</button>
+    </section>
+
+    <!-- Product grid -->
+    <section class="impact-grid" id="impactGrid">
+        <!-- cards injected by impact.js -->
+    </section>
+
+    <!-- Empty / loading state -->
+    <div id="impactEmpty" class="impact-empty" style="display: none;">
+        <div class="empty-icon">📦</div>
+        <h3>No purchases yet</h3>
+        <p>Every contribution is being carefully stewarded. Stay tuned — we'll post here as the church invests your giving.</p>
+    </div>
+
+</main>
+
+<!-- Detail Modal -->
+<div id="impactModal" class="impact-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="impact-modal-backdrop" id="impactModalBackdrop"></div>
+    <div class="impact-modal-card" id="impactModalCard">
+        <button class="impact-modal-close" id="impactModalClose" aria-label="Close">×</button>
+        <img class="hero" id="impactModalImage" alt="">
+        <div class="impact-modal-body">
+            <span class="product-fund-tag" id="impactModalFund"></span>
+            <h2 id="impactModalTitle"></h2>
+            <div class="cost-big" id="impactModalCost"></div>
+            <div class="meta-row">
+                <span id="impactModalDate"></span>
+                <span id="impactModalId" style="color: #aaa;"></span>
+            </div>
+            <div class="modal-fb" id="impactModalBreakdown" style="display: none;"></div>
+            <p class="desc" id="impactModalDesc"></p>
+            <a id="impactModalVendor" class="product-vendor-btn" target="_blank" rel="noopener" style="display: none;">
+                🛒 View on Vendor Site
+            </a>
+        </div>
+    </div>
+</div>
+
+<footer class="premium-footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <div class="footer-logo">🙏 LJM Church Contributions</div>
+            <div class="footer-tagline">Giving with faith, transparency & purpose</div>
+        </div>
+        <div class="footer-right">
+            <a href="https://www.instagram.com/lightofjesusministry/" target="_blank" class="footer-icon">
+                📸 <span>Instagram</span>
+            </a>
+            <a href="https://www.youtube.com/@lightofjesusministrycbe" target="_blank" class="footer-icon">
+                ▶️ <span>YouTube</span>
+            </a>
+            <a href="https://maps.app.goo.gl/weEebFuJnuj34d7h6" target="_blank" class="footer-icon">
+                📍 <span>Location</span>
+            </a>
+        </div>
+    </div>
+    <div class="footer-bottom">© 2026 · LJM Church Contributions · Built with ❤️</div>
+</footer>
+
+<!-- Local preview mock data (inert on production URLs) -->
+<script src="purchases-mock.js"></script>
+<script src="impact.js"></script>
+<script src="admin-session.js"></script>
+</body>
+</html>

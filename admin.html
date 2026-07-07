@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Dashboard | LJM Church</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root {
+            --bg-dark: #0b0f1a;
+            --bg-card: #151b2e;
+            --bg-card-hover: #1a2238;
+            --text-primary: #f0f2f8;
+            --text-secondary: #7b8ab8;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #6366f1;
+            --accent-cyan: #22d3ee;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: rgba(139, 92, 246, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+
+        html, body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ─────── MOBILE-FIRST TOP NAV ─────── */
+        .top-nav {
+            background: linear-gradient(180deg, #111827, var(--bg-dark));
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .logo {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--accent-purple);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+
+        .nav-links::-webkit-scrollbar { display: none; }
+
+        .nav-item {
+            padding: 8px 14px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .nav-item:hover {
+            background: rgba(139, 92, 246, 0.08);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(99, 102, 241, 0.1));
+            color: var(--accent-purple);
+            font-weight: 600;
+        }
+
+        /* ─────── MAIN CONTENT ─────── */
+        .main-content {
+            padding: 20px 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .page-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .last-updated-tag {
+            font-size: 10px;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        /* ─────── ERROR BANNER ─────── */
+        .error-banner {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        /* ─────── STAT CARDS (Fixed height — no jumping) ─────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            min-height: 100px; /* ← FIXED HEIGHT prevents jumping */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .stat-icon { font-size: 22px; flex-shrink: 0; }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            min-height: 32px; /* ← FIXED MIN-HEIGHT prevents reflow */
+            line-height: 32px;
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-value .skeleton-bar {
+            width: 80px;
+            height: 24px;
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ─────── CHARTS ─────── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+
+        /* ─────── TABLE → MOBILE CARDS ─────── */
+        .members-section .card-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .search-input {
+            background: rgba(139, 92, 246, 0.06);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            width: 100%;
+            max-width: 300px;
+            transition: border-color 0.2s;
+        }
+
+        .search-input::placeholder { color: var(--text-secondary); opacity: 0.5; }
+        .search-input:focus { outline: none; border-color: var(--accent-purple); }
+
+        .controls-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        /* Mobile member cards (used on small screens) */
+        .member-cards-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .member-card-item {
+            background: var(--bg-card-hover);
+            border-radius: 10px;
+            padding: 14px;
+            border: 1px solid var(--border);
+        }
+
+        .member-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .member-card-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .member-card-email {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            word-break: break-all;
+        }
+
+        .member-card-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .member-card-stats strong {
+            color: var(--text-primary);
+        }
+
+        /* Desktop table (hidden on mobile) */
+        .table-wrapper { display: none; overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th {
+            text-align: left;
+            color: var(--text-secondary);
+            padding: 10px 12px;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            font-size: 13px;
+        }
+
+        tr:hover td { background: rgba(139, 92, 246, 0.03); }
+
+        .badge {
+            padding: 3px 7px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+
+        /* ─────── BUTTONS ─────── */
+        .btn {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .btn-outline:hover {
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+        }
+
+        /* ─────── LOADING ─────── */
+        .loading-overlay {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─────── DESKTOP (>768px) ─────── */
+        @media (min-width: 769px) {
+            .main-content { padding: 28px 36px; }
+            .page-header h1 { font-size: 24px; }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+
+            .stat-card { min-height: 110px; padding: 20px; }
+            .stat-value { font-size: 28px; min-height: 36px; line-height: 36px; }
+
+            .charts-row {
+                grid-template-columns: 5fr 3fr;
+                gap: 16px;
+            }
+
+            .chart-container { height: 240px; }
+
+            /* Show table, hide cards */
+            .table-wrapper { display: block; }
+            .member-cards-list { display: none !important; }
+            .search-input { max-width: 240px; }
+
+            .card { padding: 22px; }
+        }
+
+        /* ─────── LARGE DESKTOP (>1100px) ─────── */
+        @media (min-width: 1100px) {
+            .nav-links { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── AUTH GATE OVERLAY ─── -->
+    <div id="adminAuthGate" style="
+        position: fixed; inset: 0; z-index: 9999;
+        background: var(--bg-dark);
+        display: flex; align-items: center; justify-content: center;
+        flex-direction: column; gap: 24px;
+    ">
+        <div style="text-align:center; max-width: 380px; padding: 0 20px;">
+            <div style="font-size: 48px; margin-bottom: 16px;">⛪</div>
+            <h1 style="font-size: 22px; font-weight: 700;
+                background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+                -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+                margin-bottom: 8px;">
+                LJM Admin Dashboard
+            </h1>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 28px;">
+                Sign in with your authorized Google account to continue.
+            </p>
+            <div id="adminGoogleSignInBtn" style="display: flex; justify-content: center; opacity: 0; transition: opacity 0.5s;"></div>
+            <div id="adminDevLoginBtn" style="display: none; margin-top: 12px;"></div>
+            <p id="adminAuthMsg" style="color: var(--danger); font-size: 13px; margin-top: 16px; display: none;"></p>
+        </div>
+    </div>
+
+    <!-- ─── TOP NAVIGATION (mobile-friendly) ─── -->
+    <div class="top-nav">
+        <div class="nav-brand">
+            <div class="logo">⛪ LJM ADMIN</div>
+            <a href="index.html" class="btn btn-sm btn-outline">← Portal</a>
+        </div>
+        <div class="nav-links">
+            <a href="admin.html" class="nav-item active">📊 Dashboard</a>
+            <a href="members.html" class="nav-item">👥 Members</a>
+            <a href="funds.html" class="nav-item">💰 Funds</a>
+            <a href="impact.html" class="nav-item">🛍️ What We Bought</a>
+            <a href="index.html" class="nav-item">🏠 Home</a>
+        </div>
+    </div>
+
+    <!-- ─── MAIN CONTENT ─── -->
+    <div class="main-content">
+
+        <!-- Error -->
+        <div class="error-banner" id="errorBanner">
+            ⚠️ <span id="errorMessage">Failed to load data.</span>
+        </div>
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1>Dashboard Overview</h1>
+            <div class="header-right">
+                <span class="last-updated-tag" id="lastUpdatedTag"></span>
+                <button class="btn" id="refreshBtn">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <!-- Stats (fixed-height cards — no jumping) -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-row">
+                    <span class="stat-icon">💰</span>
+                    <span class="stat-label">Total (YTD)</span>
+                </div>
+                <div class="stat-value" id="totalYTD"><span class="skeleton-bar"></span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-row">
+                    <span class="stat-icon">👥</span>
+                    <span class="stat-label">Members</span>
+                </div>
+                <div class="stat-value" id="activeMembers"><span class="skeleton-bar"></span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-row">
+                    <span class="stat-icon">📈</span>
+                    <span class="stat-label">Growth</span>
+                </div>
+                <div class="stat-value" id="monthlyGrowth"><span class="skeleton-bar"></span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-row">
+                    <span class="stat-icon">🔁</span>
+                    <span class="stat-label">Recurring</span>
+                </div>
+                <div class="stat-value" id="recurringCount"><span class="skeleton-bar"></span></div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+            <div class="card">
+                <div class="card-title">📊 Giving Trend (Monthly)</div>
+                <div class="chart-container">
+                    <canvas id="givingTrendChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">🔔 Reminder Status</div>
+                <div class="chart-container">
+                    <canvas id="fundDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members -->
+        <div class="card members-section">
+            <div class="card-title">
+                <span>👥 Members & Subscriptions</span>
+            </div>
+            <div class="controls-row">
+                <input type="text" class="search-input" id="memberSearchInput" placeholder="🔍 Search member...">
+                <a href="members.html" class="btn btn-sm btn-outline">View All →</a>
+            </div>
+
+            <!-- Mobile: Card layout -->
+            <div class="member-cards-list" id="memberCardsList">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <div>Loading members...</div>
+                </div>
+            </div>
+
+            <!-- Desktop: Table layout -->
+            <div class="table-wrapper">
+                <table id="membersTable">
+                    <thead>
+                        <tr>
+                            <th>Member Name</th>
+                            <th>Contact</th>
+                            <th>Last Gift</th>
+                            <th>Total Gifts</th>
+                            <th>Reminder</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="membersTableBody">
+                        <tr>
+                            <td colspan="6">
+                                <div class="loading-overlay">
+                                    <div class="loading-spinner"></div>
+                                    <div>Loading members...</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ─── PURCHASES MANAGER ("What We Bought") ─── -->
+        <div class="card" style="margin-top: 24px;">
+            <div class="card-title">
+                <span>🛍️ What We Bought — Purchases</span>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">
+                Add a new purchase below. It appears instantly on the public
+                <a href="impact.html" target="_blank" style="color: var(--accent-purple);">What We Bought</a>
+                page, and its cost is subtracted from the fund's Available Balance.
+            </p>
+
+            <!-- Admin token -->
+            <div style="background: rgba(139, 92, 246, 0.06); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 16px;">
+                <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:6px;">
+                    Admin Token (your admin email, or ADMIN_API_TOKEN)
+                </label>
+                <input type="text" id="purchaseAdminToken" placeholder="e.g. albertjoshrock101@gmail.com"
+                    style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background: var(--bg-dark); color: var(--text-primary); font-size:13px;">
+                <small style="color: var(--text-secondary); font-size:11px;">
+                    Stored only in this browser (localStorage). Needed to add/edit/delete.
+                </small>
+            </div>
+
+            <!-- Add / Edit form -->
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Product Name *</label>
+                    <input type="text" id="p_name" placeholder="e.g. Zoom G2 FOUR Guitar Processor" class="purchase-input">
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Total Cost (₹) *</label>
+                    <input type="number" step="0.01" id="p_cost" placeholder="17001.81" class="purchase-input">
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Purchase Date *</label>
+                    <input type="date" id="p_date" class="purchase-input">
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Fund Source *</label>
+                    <select id="p_fund" class="purchase-input">
+                        <option value="Tech Fund">Tech Fund</option>
+                        <option value="Christmas Fund">Christmas Fund</option>
+                    </select>
+                </div>
+
+                <!-- NEW: Funding breakdown -->
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--accent-purple); margin-bottom:4px;">💰 From Fund (₹) *</label>
+                    <input type="number" step="0.01" id="p_fundContribution" placeholder="15000" class="purchase-input">
+                    <small style="color: var(--text-secondary); font-size:10px;">Amount taken from the fund above. Reduces the fund's Available Balance.</small>
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--warning); margin-bottom:4px;">🤝 From External (₹)</label>
+                    <input type="number" step="0.01" id="p_externalContribution" placeholder="2001.81" class="purchase-input">
+                    <small style="color: var(--text-secondary); font-size:10px;">Money from other donors (e.g. family top-up). 0 if not applicable.</small>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">External Sources Note</label>
+                    <input type="text" id="p_externalSources" placeholder="e.g. Albert's dad (₹2,000) + personal top-up (₹1.81)" class="purchase-input">
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Photo URL (Google Drive direct link or any public image)</label>
+                    <input type="url" id="p_photo" placeholder="https://..." class="purchase-input">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Vendor Link (Amazon, Flipkart, etc.)</label>
+                    <input type="url" id="p_vendor" placeholder="https://www.amazon.in/..." class="purchase-input">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label style="display:block; font-size:12px; font-weight:600; color: var(--text-secondary); margin-bottom:4px;">Description</label>
+                    <textarea id="p_desc" rows="2" placeholder="Short story about the purchase..." class="purchase-input"></textarea>
+                </div>
+            </div>
+
+            <div id="p_balanceCheck" style="margin-top:10px; font-size:12px; color: var(--text-secondary);"></div>
+
+            <div style="display:flex; gap:10px; margin-top:14px; flex-wrap: wrap;">
+                <button id="p_saveBtn" class="btn" style="background: var(--accent-purple); color:#fff; border:none;">💾 Save Purchase</button>
+                <button id="p_clearBtn" class="btn btn-outline">Clear Form</button>
+                <button id="p_refreshBtn" class="btn btn-outline">🔄 Refresh List</button>
+                <span id="p_msg" style="align-self:center; font-size:12px; color: var(--text-secondary);"></span>
+            </div>
+
+            <!-- Existing purchases -->
+            <div style="margin-top: 22px;">
+                <h4 style="font-size:14px; font-weight:700; color: var(--text-primary); margin-bottom:10px;">
+                    Existing Purchases (<span id="p_count">–</span>)
+                </h4>
+                <div id="p_list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+                    <div style="color: var(--text-secondary); font-size:12px;">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .purchase-input {
+                width: 100%;
+                padding: 10px 12px;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: var(--bg-dark);
+                color: var(--text-primary);
+                font-size: 13px;
+                font-family: inherit;
+            }
+            .purchase-input:focus {
+                outline: none;
+                border-color: var(--accent-purple);
+                box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+            }
+            .purchase-row {
+                background: var(--bg-card-hover);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 12px;
+            }
+            .purchase-row .pr-name { font-weight:700; color: var(--text-primary); }
+            .purchase-row .pr-meta { color: var(--text-secondary); font-size:11px; margin-top:4px; }
+            .purchase-row .pr-actions { display:flex; gap:6px; margin-top:10px; }
+            .purchase-row .pr-actions button {
+                padding: 6px 10px;
+                font-size: 11px;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                background: transparent;
+                color: var(--text-secondary);
+                cursor: pointer;
+            }
+            .purchase-row .pr-actions button:hover { color: var(--accent-purple); border-color: var(--accent-purple); }
+            .purchase-row .pr-actions button.danger { color: var(--danger); }
+        </style>
+    </div>
+
+    <script src="admin-session.js"></script>
+    <script>
+    (function () {
+        const CLIENT_ID = "915064946962-eohgis92a3jmfk3fi7hkh8uc21971clo.apps.googleusercontent.com";
+
+        function unlockDashboard(email) {
+            document.getElementById("adminAuthGate").style.display = "none";
+            const tokenField = document.getElementById("purchaseAdminToken");
+            if (tokenField && !tokenField.value) {
+                tokenField.value = email;
+                localStorage.setItem("ljmAdminPurchaseToken", email);
+            }
+        }
+
+        function showAuthError(msg) {
+            const el = document.getElementById("adminAuthMsg");
+            el.textContent = msg;
+            el.style.display = "block";
+        }
+
+        function handleAdminCredential(response) {
+            try {
+                const payload = JSON.parse(atob(response.credential.split(".")[1]));
+                if (LJMAdmin.isAdmin(payload.email)) {
+                    LJMAdmin.createSession(payload.email, payload.name).then(() => {
+                        LJMAdmin.showAdminBar();
+                        unlockDashboard(payload.email);
+                    });
+                } else {
+                    showAuthError("Access denied. " + payload.email + " is not an authorized admin.");
+                }
+            } catch (e) {
+                showAuthError("Could not verify your Google account.");
+            }
+        }
+
+        window.addEventListener("load", function () {
+            LJMAdmin.readSession().then(function (session) {
+                if (session) {
+                    unlockDashboard(session.email);
+                    return;
+                }
+
+                var isFile = window.location.protocol === "file:";
+                var isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
+                if (isFile || isLocalhost) {
+                    var devBtn = document.getElementById("adminDevLoginBtn");
+                    devBtn.style.display = "block";
+                    devBtn.innerHTML =
+                        '<button onclick="window.__adminDevLogin()" style="' +
+                        "padding: 12px 28px; border-radius: 10px; border: 1px solid var(--accent-purple);" +
+                        "background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.1));" +
+                        'color: var(--accent-purple); font-weight: 600; font-size: 14px; cursor: pointer; font-family: Outfit, sans-serif;">' +
+                        "Admin Login (Dev)" +
+                        "</button>";
+                    document.getElementById("adminGoogleSignInBtn").style.display = "none";
+                    return;
+                }
+
+                if (typeof google !== "undefined" && google.accounts && google.accounts.id) {
+                    google.accounts.id.initialize({
+                        client_id: CLIENT_ID,
+                        callback: handleAdminCredential,
+                        use_fedcm_for_prompt: false
+                    });
+                    var btn = document.getElementById("adminGoogleSignInBtn");
+                    google.accounts.id.renderButton(btn, {
+                        theme: "filled_black", size: "large", shape: "pill", text: "signin_with", width: 260
+                    });
+                    setTimeout(function () { btn.style.opacity = "1"; }, 300);
+                } else {
+                    showAuthError("Google Sign-In is loading. Please refresh the page.");
+                }
+            });
+        });
+
+        window.__adminDevLogin = function () {
+            LJMAdmin.createSession("admin@ljmchurch.com", "Dev Admin").then(() => {
+                LJMAdmin.showAdminBar();
+                unlockDashboard("admin@ljmchurch.com");
+            });
+        };
+
+        window.addEventListener("ljmAdminLogout", function () {
+            document.getElementById("adminAuthGate").style.display = "flex";
+        });
+    })();
+    </script>
+
+    <script>
+        // ─── CONFIG ───
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec";
+        let allMembersData = [];
+
+        // ─── LOAD DATA ───
+        function loadAdminData() {
+            showSkeletons();
+            hideError();
+
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                console.log("[Admin] Apps Script mode");
+                google.script.run
+                    .withSuccessHandler(d => updateUI(d))
+                    .withFailureHandler(e => showError("Apps Script error: " + e))
+                    .getAdminMemberData();
+            } else {
+                console.log("[Admin] Dev mode — fetching via public URL");
+                fetch(WEB_APP_URL + "?fund=tech-contributions", { credentials: "omit" })
+                    .then(r => r.json())
+                    .then(d => updateUIFromPublicAPI(d))
+                    .catch(e => showError("Network error: " + e));
+            }
+        }
+
+        // ─── SKELETON LOADERS (lightweight — no reflow) ───
+        function showSkeletons() {
+            ['totalYTD', 'activeMembers', 'monthlyGrowth', 'recurringCount'].forEach(id => {
+                document.getElementById(id).innerHTML = '<span class="skeleton-bar"></span>';
+            });
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorBanner');
+            document.getElementById('errorMessage').textContent = msg;
+            el.style.display = 'flex';
+        }
+
+        function hideError() {
+            document.getElementById('errorBanner').style.display = 'none';
+        }
+
+        // ─── UPDATE UI (Apps Script) ───
+        function updateUI(data) {
+            if (data.error) { showError("Unauthorized or session expired."); return; }
+
+            allMembersData = data.members || [];
+            const s = data.totalStats || {};
+
+            setStatText('totalYTD', '₹' + (s.totalCollected || 0).toLocaleString('en-IN'));
+            setStatText('activeMembers', s.activeMembers || 0);
+            setStatText('recurringCount', s.recurringCount || 0);
+
+            const g = s.monthlyGrowth;
+            const gEl = document.getElementById('monthlyGrowth');
+            if (typeof g === 'number') {
+                gEl.textContent = (g >= 0 ? '+' : '') + g + '%';
+                gEl.style.color = g >= 0 ? 'var(--success)' : 'var(--danger)';
+            } else {
+                gEl.textContent = '—';
+                gEl.style.color = 'var(--text-secondary)';
+            }
+
+            renderMembers(allMembersData);
+            renderCharts(allMembersData);
+            updateTimestamp();
+        }
+
+        // ─── UPDATE UI (Public API fallback) ───
+        function updateUIFromPublicAPI(data) {
+            const contributions = data.contributions || [];
+            const memberMap = {};
+
+            contributions.forEach(c => {
+                const n = c.Member;
+                if (!n) return;
+                if (!memberMap[n]) {
+                    memberMap[n] = {
+                        MemberName: n,
+                        Email: (data.memberEmails && data.memberEmails[n]) || '',
+                        TotalContributions: 0, TotalAmount: 0,
+                        LastContributionDate: null, RecurringReminders: 'N/A'
+                    };
+                }
+                memberMap[n].TotalContributions++;
+                memberMap[n].TotalAmount += (c.Amount || 0);
+                const d = new Date(c.Date);
+                if (!memberMap[n].LastContributionDate || d > new Date(memberMap[n].LastContributionDate)) {
+                    memberMap[n].LastContributionDate = c.Date;
+                }
+            });
+
+            const members = Object.values(memberMap);
+            allMembersData = members;
+            const total = members.reduce((s, m) => s + (m.TotalAmount || 0), 0);
+
+            // Monthly growth
+            const now = new Date();
+            const cm = now.getMonth(), cy = now.getFullYear();
+            let thisM = 0, lastM = 0;
+            contributions.forEach(c => {
+                const d = new Date(c.Date);
+                if (d.getFullYear() === cy && d.getMonth() === cm) thisM += (c.Amount || 0);
+                if (cm > 0 && d.getFullYear() === cy && d.getMonth() === cm - 1) lastM += (c.Amount || 0);
+                if (cm === 0 && d.getFullYear() === cy - 1 && d.getMonth() === 11) lastM += (c.Amount || 0);
+            });
+
+            setStatText('totalYTD', '₹' + total.toLocaleString('en-IN'));
+            setStatText('activeMembers', members.length);
+            setStatText('recurringCount', members.filter(m => m.RecurringReminders === 'Yes').length || '—');
+
+            const gEl = document.getElementById('monthlyGrowth');
+            if (lastM > 0) {
+                const pct = Math.round(((thisM - lastM) / lastM) * 100);
+                gEl.textContent = (pct >= 0 ? '+' : '') + pct + '%';
+                gEl.style.color = pct >= 0 ? 'var(--success)' : 'var(--danger)';
+            } else if (thisM > 0) {
+                gEl.textContent = '🚀 New';
+                gEl.style.color = 'var(--accent-cyan)';
+            } else {
+                gEl.textContent = '—';
+                gEl.style.color = 'var(--text-secondary)';
+            }
+
+            renderMembers(members);
+            renderChartsFromContributions(contributions, members);
+            updateTimestamp();
+        }
+
+        function setStatText(id, val) {
+            document.getElementById(id).textContent = val;
+        }
+
+        // ─── RENDER MEMBERS (Both table + mobile cards) ───
+        function renderMembers(members) {
+            // Desktop table
+            const tbody = document.getElementById('membersTableBody');
+            tbody.innerHTML = '';
+
+            // Mobile cards
+            const cardsList = document.getElementById('memberCardsList');
+            cardsList.innerHTML = '';
+
+            if (!members || members.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:24px;">No members found.</td></tr>';
+                cardsList.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:24px;">No members found.</div>';
+                return;
+            }
+
+            members.forEach(m => {
+                const name = m.MemberName || m.Member || '—';
+                const email = m.Email || '—';
+                const lastDate = m.LastContributionDate
+                    ? new Date(m.LastContributionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : 'N/A';
+                const gifts = m.TotalContributions || 0;
+                const recurring = m.RecurringReminders || 'N/A';
+                const badgeClass = recurring === 'Yes' ? 'badge-success' : 'badge-warning';
+
+                // Desktop row
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight:500;">${name}</td>
+                    <td style="color:var(--text-secondary);font-size:12px;">${email}</td>
+                    <td>${lastDate}</td>
+                    <td><strong>${gifts}</strong> gifts</td>
+                    <td><span class="badge ${badgeClass}">${recurring}</span></td>
+                    <td><button class="btn btn-sm" onclick="nudgeMember('${email}','${name}')">Nudge 💬</button></td>
+                `;
+                tbody.appendChild(row);
+
+                // Mobile card
+                const card = document.createElement('div');
+                card.className = 'member-card-item';
+                card.innerHTML = `
+                    <div class="member-card-top">
+                        <div>
+                            <div class="member-card-name">${name}</div>
+                            <div class="member-card-email">${email}</div>
+                        </div>
+                        <span class="badge ${badgeClass}">${recurring}</span>
+                    </div>
+                    <div class="member-card-stats">
+                        <span>🎁 <strong>${gifts}</strong> gifts</span>
+                        <span>📅 ${lastDate}</span>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <button class="btn btn-sm" onclick="nudgeMember('${email}','${name}')">Nudge 💬</button>
+                    </div>
+                `;
+                cardsList.appendChild(card);
+            });
+        }
+
+        // ─── SEARCH ───
+        document.getElementById('memberSearchInput').addEventListener('input', e => {
+            const t = e.target.value.toLowerCase();
+            renderMembers(allMembersData.filter(m => {
+                const n = (m.MemberName || m.Member || '').toLowerCase();
+                const em = (m.Email || '').toLowerCase();
+                return n.includes(t) || em.includes(t);
+            }));
+        });
+
+        // ─── NUDGE ───
+        function nudgeMember(email, name) {
+            if (!email || email === '—') { alert('No email for this member.'); return; }
+            if (!confirm(`Send reminder to ${name} (${email})?`)) return;
+
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(r => alert(r.message || 'Sent!'))
+                    .withFailureHandler(e => alert('Error: ' + e))
+                    .triggerManualNudge(email);
+            } else {
+                alert(`[Dev Mode] Would send nudge to ${name} (${email}).`);
+            }
+        }
+
+        // ─── CHARTS (Apps Script) ───
+        function renderCharts(members) {
+            const sorted = [...members].sort((a, b) => (b.TotalContributions || 0) - (a.TotalContributions || 0)).slice(0, 8);
+            renderBarChart(
+                sorted.map(m => (m.MemberName || '').split(' ')[0]),
+                sorted.map(m => m.TotalContributions || 0),
+                'Top Contributors'
+            );
+            const yes = members.filter(m => m.RecurringReminders === 'Yes').length;
+            renderDoughnut(yes, members.length - yes);
+        }
+
+        // ─── CHARTS (Public API) ───
+        function renderChartsFromContributions(contributions, members) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const cy = new Date().getFullYear();
+            const mt = {};
+            contributions.forEach(c => {
+                const d = new Date(c.Date);
+                if (d.getFullYear() === cy) {
+                    const k = months[d.getMonth()];
+                    mt[k] = (mt[k] || 0) + (c.Amount || 0);
+                }
+            });
+            const labels = months.filter(m => mt[m]);
+            renderBarChart(labels, labels.map(m => mt[m]), 'Monthly Giving (₹)');
+
+            const yes = members.filter(m => m.RecurringReminders === 'Yes').length;
+            renderDoughnut(yes, members.length - yes);
+        }
+
+        // ─── CHART HELPERS ───
+        let barChart = null, doughChart = null;
+
+        function renderBarChart(labels, data, label) {
+            if (barChart) barChart.destroy();
+            const ctx = document.getElementById('givingTrendChart').getContext('2d');
+            barChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label,
+                        data,
+                        backgroundColor: 'rgba(139,92,246,0.35)',
+                        borderColor: '#8b5cf6',
+                        borderWidth: 1.5,
+                        borderRadius: 5,
+                        hoverBackgroundColor: 'rgba(139,92,246,0.6)'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#7b8ab8', font: { family: 'Outfit', size: 10 } } },
+                        y: { grid: { color: 'rgba(139,92,246,0.06)' }, ticks: { color: '#7b8ab8', font: { family: 'Outfit', size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function renderDoughnut(yes, no) {
+            if (doughChart) doughChart.destroy();
+            const ctx = document.getElementById('fundDistributionChart').getContext('2d');
+            doughChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Recurring', 'One-time'],
+                    datasets: [{
+                        data: [yes, no],
+                        backgroundColor: ['#10b981', '#6366f1'],
+                        borderColor: '#151b2e',
+                        borderWidth: 3,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#7b8ab8', font: { family: 'Outfit', size: 11 }, padding: 12, usePointStyle: true }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ─── TIMESTAMP ───
+        function updateTimestamp() {
+            document.getElementById('lastUpdatedTag').textContent =
+                'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // ─── INIT ───
+        document.getElementById('refreshBtn').onclick = loadAdminData;
+        window.onload = loadAdminData;
+
+        // ════════════════════════════════════════════════════════════════
+        //  PURCHASES MANAGER — "What We Bought"
+        // ════════════════════════════════════════════════════════════════
+        (function () {
+            const $ = (id) => document.getElementById(id);
+            const TOKEN_KEY = "ljmAdminPurchaseToken";
+            const LIST_URL  = WEB_APP_URL + "?fund=purchases&_t=";
+
+            let editingId = null;
+            let cached = [];
+
+            // Restore token from previous session
+            const savedToken = localStorage.getItem(TOKEN_KEY);
+            if (savedToken) $("purchaseAdminToken").value = savedToken;
+            $("purchaseAdminToken").addEventListener("change", e => {
+                localStorage.setItem(TOKEN_KEY, e.target.value.trim());
+            });
+
+            // Default today's date
+            $("p_date").valueAsDate = new Date();
+
+            async function loadList() {
+                $("p_list").innerHTML = '<div style="color:var(--text-secondary); font-size:12px;">Loading...</div>';
+                try {
+                    const res = await fetch(LIST_URL + Date.now(), { cache: "no-store" });
+                    const data = await res.json();
+                    cached = Array.isArray(data.purchases) ? data.purchases : [];
+                    $("p_count").textContent = cached.length;
+                    renderList();
+                } catch (err) {
+                    $("p_list").innerHTML = `<div style="color: var(--danger); font-size:12px;">Failed: ${err}</div>`;
+                }
+            }
+
+            function renderList() {
+                if (!cached.length) {
+                    $("p_list").innerHTML = '<div style="color: var(--text-secondary); font-size:12px;">No purchases yet. Add the first one above.</div>';
+                    return;
+                }
+                $("p_list").innerHTML = cached.map(p => `
+                    <div class="purchase-row" data-id="${p.id}">
+                        <div class="pr-name">${escapeHtml(p.name)}</div>
+                        <div class="pr-meta">
+                            ₹${Number(p.cost).toLocaleString("en-IN")} · ${escapeHtml(p.fund || "")} · ${escapeHtml(p.date || "")}
+                        </div>
+                        <div class="pr-meta" style="color: var(--text-secondary);">ID: ${escapeHtml(p.id || "")}</div>
+                        <div class="pr-actions">
+                            <button data-act="edit" data-id="${p.id}">✏️ Edit</button>
+                            <button data-act="del"  data-id="${p.id}" class="danger">🗑 Delete</button>
+                        </div>
+                    </div>
+                `).join("");
+
+                $("p_list").querySelectorAll("button[data-act]").forEach(btn => {
+                    btn.onclick = () => {
+                        const act = btn.getAttribute("data-act");
+                        const id  = btn.getAttribute("data-id");
+                        const row = cached.find(x => x.id === id);
+                        if (!row) return;
+                        if (act === "edit") {
+                            editingId = id;
+                            $("p_name").value   = row.name || "";
+                            $("p_cost").value   = row.cost || 0;
+                            $("p_date").value   = row.date || "";
+                            $("p_fund").value   = row.fund || "Tech Fund";
+                            $("p_photo").value  = row.photo || "";
+                            $("p_vendor").value = row.vendor || "";
+                            $("p_desc").value   = row.description || "";
+                            // NEW funding breakdown fields
+                            $("p_fundContribution").value     = row.fundContribution != null ? row.fundContribution : (row.cost || 0);
+                            $("p_externalContribution").value = row.externalContribution != null ? row.externalContribution : 0;
+                            $("p_externalSources").value      = row.externalSources || "";
+                            updateBalanceCheck();
+                            $("p_saveBtn").textContent = "💾 Update Purchase";
+                            $("p_msg").textContent = `Editing ${id}`;
+                            window.scrollTo({ top: $("p_name").offsetTop - 100, behavior: "smooth" });
+                        }
+                        if (act === "del") {
+                            if (!confirm(`Delete "${row.name}" (${id})? This cannot be undone.`)) return;
+                            mutate("delete_purchase", { id });
+                        }
+                    };
+                });
+            }
+
+            function clearForm() {
+                editingId = null;
+                ["p_name","p_cost","p_photo","p_vendor","p_desc",
+                 "p_fundContribution","p_externalContribution","p_externalSources"]
+                    .forEach(id => $(id).value = "");
+                $("p_date").valueAsDate = new Date();
+                $("p_fund").value = "Tech Fund";
+                $("p_saveBtn").textContent = "💾 Save Purchase";
+                $("p_msg").textContent = "";
+                updateBalanceCheck();
+            }
+
+            // Live-update the balance-check hint below the form
+            function updateBalanceCheck() {
+                const el = $("p_balanceCheck");
+                if (!el) return;
+                const cost  = Number($("p_cost").value || 0);
+                const fund  = Number($("p_fundContribution").value || 0);
+                const ext   = Number($("p_externalContribution").value || 0);
+                const sum   = fund + ext;
+                if (!cost && !fund && !ext) { el.innerHTML = ""; return; }
+                const diff  = Math.abs(sum - cost);
+                if (cost && diff < 0.01) {
+                    el.innerHTML = `✅ Split adds up: <strong>₹${fund.toLocaleString("en-IN")}</strong> from fund + <strong>₹${ext.toLocaleString("en-IN")}</strong> external = <strong>₹${cost.toLocaleString("en-IN")}</strong>. Only the fund portion will reduce the balance.`;
+                    el.style.color = "var(--success)";
+                } else if (cost && sum > 0) {
+                    el.innerHTML = `⚠️ Split mismatch: Fund ₹${fund.toLocaleString("en-IN")} + External ₹${ext.toLocaleString("en-IN")} = ₹${sum.toLocaleString("en-IN")}, but Total Cost = ₹${cost.toLocaleString("en-IN")}.`;
+                    el.style.color = "var(--warning)";
+                } else {
+                    el.innerHTML = "";
+                }
+            }
+
+            ["p_cost","p_fundContribution","p_externalContribution"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener("input", updateBalanceCheck);
+            });
+
+            async function mutate(action, body) {
+                const token = ($("purchaseAdminToken").value || "").trim();
+                if (!token) {
+                    $("p_msg").textContent = "Please enter your admin token/email first.";
+                    $("p_msg").style.color = "var(--danger)";
+                    return;
+                }
+                $("p_msg").textContent = "Saving...";
+                $("p_msg").style.color = "var(--text-secondary)";
+
+                const params = new URLSearchParams();
+                params.set("action", action);
+                params.set("token", token);
+                Object.keys(body || {}).forEach(k => params.set(k, body[k]));
+
+                try {
+                    const res = await fetch(WEB_APP_URL + "?" + params.toString(), { cache: "no-store" });
+                    const data = await res.json();
+                    if (data.success) {
+                        $("p_msg").textContent = "✅ " + (data.message || "Done");
+                        $("p_msg").style.color = "var(--success)";
+                        clearForm();
+                        await loadList();
+                    } else {
+                        $("p_msg").textContent = "❌ " + (data.message || "Failed");
+                        $("p_msg").style.color = "var(--danger)";
+                    }
+                } catch (err) {
+                    $("p_msg").textContent = "❌ Network error: " + err;
+                    $("p_msg").style.color = "var(--danger)";
+                }
+            }
+
+            $("p_saveBtn").onclick = () => {
+                const name = $("p_name").value.trim();
+                const cost = Number($("p_cost").value || 0);
+                const fundContribution     = Number($("p_fundContribution").value || 0);
+                const externalContribution = Number($("p_externalContribution").value || 0);
+                const externalSources      = $("p_externalSources").value.trim();
+
+                if (!name || !cost) {
+                    $("p_msg").textContent = "Name and Total Cost are required.";
+                    $("p_msg").style.color = "var(--danger)";
+                    return;
+                }
+                if (!fundContribution) {
+                    $("p_msg").textContent = "Please enter how much came From Fund (required).";
+                    $("p_msg").style.color = "var(--danger)";
+                    return;
+                }
+                // Non-blocking sanity check: amounts should add up
+                const sum = fundContribution + externalContribution;
+                if (Math.abs(sum - cost) > 0.01) {
+                    if (!confirm(
+                        `The split doesn't add up:\n` +
+                        `  Fund (₹${fundContribution}) + External (₹${externalContribution}) = ₹${sum}\n` +
+                        `  Total Cost = ₹${cost}\n\n` +
+                        `Save anyway?`
+                    )) return;
+                }
+
+                const body = {
+                    productName:          name,
+                    cost:                 cost,
+                    purchaseDate:         $("p_date").value,
+                    fundSource:           $("p_fund").value,
+                    photoURL:             $("p_photo").value.trim(),
+                    vendorLink:           $("p_vendor").value.trim(),
+                    description:          $("p_desc").value.trim(),
+                    fundContribution:     fundContribution,
+                    externalContribution: externalContribution,
+                    externalSources:      externalSources,
+                    status:               "Active"
+                };
+                if (editingId) body.id = editingId;
+                mutate(editingId ? "update_purchase" : "add_purchase", body);
+            };
+
+            $("p_clearBtn").onclick    = clearForm;
+            $("p_refreshBtn").onclick  = loadList;
+
+            function escapeHtml(s) {
+                return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+            }
+
+            loadList();
+        })();
+    </script>
+</body>
+</html>
