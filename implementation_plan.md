@@ -1,73 +1,64 @@
-# Next-Gen Upgrade: Cloudflare D1 Database, Mobile-First UI/UX & Google Sign-In
+# Next-Gen Upgrade: Google-Level Material UI/UX & Super Admin Role Config
 
-This plan outlines a major architectural migration to upgrade the tech stack from Google Apps Script to a native Cloudflare infrastructure (Cloudflare D1 SQL Database & Workers Functions) for maximum speed and scalability, alongside a premium Mobile-First UI/UX redesign and seamless Google Sign-In integration.
+This plan details the visual redesign of the portal to a premium Google-Level Material Theme alongside a database-driven Super Admin Role Configuration system.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Cloudflare D1 SQL Setup**: You will need to create a Cloudflare D1 Database in your Cloudflare dashboard (it takes 1 click) and bind it to your Pages project. We will provide the exact `schema.sql` file and CLI commands to run.
+> **Role Database Tables**: We will add `roles` and `member_roles` tables to the D1 schema, allowing you to dynamically assign custom permission scopes (e.g. `edit_purchases`, `view_members`, `manage_roles`) to any email directly from the admin panel.
 > 
-> **Google Developer Console Credentials**: To enable Google Sign-In, you will need to create a Client ID in the Google Cloud Console and add your Cloudflare domain as an authorized JavaScript origin.
-
-## Open Questions
-
-> [!NOTE]
-> **1. Real-Time Google Sheet Sync (Recommended)**: Should we configure the new Cloudflare Worker to automatically stream new contributions back to your existing Google Sheet? 
-> * **Pros**: You retain your Google Sheet as a live human-readable backup, but your website loads instantly from the Cloudflare SQL database.
-> 
-> **2. Authentication Policy**: Google Sign-In will be completely optional (non-intrusive). If logged in, users can view their personalized contribution history and profile instantly. Do we want to auto-link contributions based on their Google account email address?
+> **Premium Google-Level UI/UX**: The UI will transition from blocky cards to a modern, fluid material layout featuring:
+> * **Google Fonts**: Outfit (headings) and Inter (body).
+> * **Material Elevations**: Clean shadows, organic borders, and glassmorphic navigation bars.
+> * **Bottom Tabs & Sheet Drawers**: Fluid sheets sliding up on mobile, providing an app-like feeling.
 
 ## Proposed Changes
 
-We will restructure the application by creating a `/functions` backend directory (running natively on Cloudflare Pages Workers) and refactoring the frontend to use the new endpoints.
-
 ---
 
-### Database Layer (Cloudflare D1 SQL)
+### Database Layer (Cloudflare D1 SQL Schema additions)
 
-#### [NEW] [schema.sql](file:///Users/albert-18677/Documents/church-contributions/schema.sql)
-Creates the relational tables for robust transactional capabilities:
-* `members`: Stores member records, emails (for Google Sign-In mapping), and verification statuses.
-* `contributions`: Stores transaction details, payment methods, timestamps, and Razorpay IDs.
-* `purchases`: Stores item descriptions, funds utilized, amounts, and dates (replacing the "What We Bought" spreadsheet logic).
-* `config`: Stores target goals dynamically.
+#### [MODIFY] [schema.sql](file:///Users/albert-18677/Documents/church-contributions/schema.sql)
+We will add tables to support dynamic role configuration:
+* `roles`: Defines role names and their corresponding JSON permissions string (e.g., `admin`, `{"permissions": ["edit_purchases", "view_members"]}`).
+* `member_roles`: Maps user emails to specific roles (e.g., `thinkmuthu@gmail.com` ➡️ `super_admin`).
 
 ---
 
 ### Backend API (Cloudflare Pages Functions)
 
-#### [NEW] [/functions/api/contributions.js](file:///Users/albert-18677/Documents/church-contributions/functions/api/contributions.js)
-Serves fast JSON payloads for the dashboard (contributions, goals, spent aggregates).
-
-#### [NEW] [/functions/api/webhook.js](file:///Users/albert-18677/Documents/church-contributions/functions/api/webhook.js)
-Listens to Razorpay payment captured events, performs verification, and commits them to D1 database.
-
-#### [NEW] [/functions/api/auth.js](file:///Users/albert-18677/Documents/church-contributions/functions/api/auth.js)
-Validates Google Identity Services JWT tokens on the server side to verify logged-in users.
+#### [NEW] [/functions/api/roles.js](file:///Users/albert-18677/Documents/church-contributions/functions/api/roles.js)
+Provides CRUD endpoints for managing custom roles, permissions, and email mappings:
+* `GET /api/roles`: Returns all defined roles and email mappings.
+* `POST /api/roles`: Configures a new custom role or links an email to a role.
+* `DELETE /api/roles`: Deletes a role mapping.
 
 ---
 
-### Frontend Layer (Stunning Mobile-First UI/UX)
+### Frontend Layer (Google-Level Redesign)
+
+#### [MODIFY] [style.css](file:///Users/albert-18677/Documents/church-contributions/style.css)
+* Replace deep purple gradient with a sleek, clean Google-style Material Palette (adaptive Slate, Soft Blues, Premium Card Elevations).
+* Transition all card shapes to smooth organic borders (`border-radius: 24px` / `28px`).
+* Add fluid Micro-animations for hover states, tab switching, and modal slide-ups.
+
+#### [MODIFY] [admin.html](file:///Users/albert-18677/Documents/church-contributions/admin.html)
+* Add a **Super Admin Roles Panel** tab/section.
+* Provide forms to:
+  1. Add a customized role (e.g. `Wishlist Editor`) and select checkbox permissions.
+  2. Map any member's email address to a role.
 
 #### [MODIFY] [index.html](file:///Users/albert-18677/Documents/church-contributions/index.html)
-* Upgrade typography to Inter/Outfit fonts.
-* Add native bottom navigation bar for mobile app feel.
-* Add Google Sign-in one-tap container.
-* Revamp card layouts with modern glassmorphism styles.
-
-#### [MODIFY] [script.js](file:///Users/albert-18677/Documents/church-contributions/script.js)
-* Refactor fetch methods to connect to `/api/contributions` rather than Google Apps Script.
-* Implement Google Sign-In button render and credentials handler.
-* Add smooth swipe animations and improved touch targets.
+* Restructure UI elements with material design guidelines.
+* Render the dynamic Wishlist using Google Material cards.
 
 ## Verification Plan
 
 ### Automated Tests
-* We will use `wrangler dev` to spin up a local emulation of the Cloudflare Pages backend with D1 SQL locally:
+* Verify local SQL execution:
   ```bash
-  npx wrangler pages dev . --d1=DATABASE_BINDING_NAME
+  npx wrangler d1 execute ljm-contributions-db --local --command="SELECT * FROM roles;"
   ```
 
 ### Manual Verification
-* Test checkout flows using Razorpay sandbox.
-* Test Google Sign-in popup on mobile and desktop browsers.
+* Access the admin roles configuration panel, add a test email, log in with Google Sign-In, and verify that the corresponding administrative permissions are dynamically unlocked.
