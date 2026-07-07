@@ -18,6 +18,36 @@ export async function onRequestGet(context) {
     
     // Normalize fund name
     fund = fund.toLowerCase().replace(/\s+/g, '');
+    
+    if (fund === "purchases") {
+      const purchasesQuery = await db.prepare(
+        "SELECT id, name, amount AS cost, date, fund, photo, vendor, description, status, fund_contribution AS fundContribution, external_contribution AS externalContribution, external_sources AS externalSources FROM purchases ORDER BY date DESC"
+      ).all();
+      
+      const purchases = purchasesQuery.results || [];
+      const totalSpent = purchases.reduce((sum, p) => sum + (p.fundContribution || 0), 0);
+      const totalCost = purchases.reduce((sum, p) => sum + (p.cost || 0), 0);
+      
+      // Match the Apps Script fund capitalization for frontend compatibility
+      purchases.forEach(p => {
+        if (p.fund === "tech-contributions") p.fund = "Tech Fund";
+        else if (p.fund === "christmas-fund") p.fund = "Christmas Fund";
+      });
+
+      return new Response(JSON.stringify({
+        purchases,
+        totalSpent,
+        totalCost,
+        count: purchases.length
+      }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=15"
+        }
+      });
+    }
+
     if (fund === "tech" || fund === "techfund" || fund === "tech-contributions") {
       fund = "tech-contributions";
     } else if (fund === "christmas" || fund === "christmasfund" || fund === "christmas-fund") {

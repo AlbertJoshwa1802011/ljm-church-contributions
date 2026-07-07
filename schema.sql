@@ -21,17 +21,24 @@ CREATE TABLE IF NOT EXISTS contributions (
     proof_id TEXT UNIQUE, -- Stores Razorpay Payment ID or reference ID
     email TEXT,
     phone TEXT,
+    fund TEXT NOT NULL DEFAULT 'tech-contributions', -- 'tech-contributions' or 'christmas-fund'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 3. Purchases Table ("What We Bought" tracker)
 CREATE TABLE IF NOT EXISTS purchases (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_name TEXT NOT NULL,
-    amount REAL NOT NULL,
-    date DATETIME NOT NULL,
+    id TEXT PRIMARY KEY, -- e.g. 'P004'
+    name TEXT NOT NULL,
+    amount REAL NOT NULL, -- Total cost
+    date TEXT NOT NULL,
     fund TEXT NOT NULL, -- e.g., 'tech-contributions' or 'christmas-fund'
-    notes TEXT,
+    photo TEXT,
+    vendor TEXT,
+    description TEXT,
+    status TEXT DEFAULT 'Active',
+    fund_contribution REAL DEFAULT 0,
+    external_contribution REAL DEFAULT 0,
+    external_sources TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

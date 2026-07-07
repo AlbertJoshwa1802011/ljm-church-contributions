@@ -115,8 +115,8 @@ function getCachedMembersList() {
 
 // Preload members list in background (so Members page opens fast)
 async function preloadMembersList() {
-    const techUrl = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=tech-contributions";
-    const christmasUrl = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=christmas-fund";
+    const techUrl = "/api/contributions?fund=tech-contributions";
+    const christmasUrl = "/api/contributions?fund=christmas-fund";
     try {
         const [techRes, christmasRes] = await Promise.all([
             fetch(techUrl + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' }),
@@ -1005,10 +1005,10 @@ async function silentBackgroundRefresh(selectedFund) {
     try {
         let apiUrl, fundKey;
         if (selectedFund === 'christmasfund') {
-            apiUrl = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=christmas-fund";
+            apiUrl = "/api/contributions?fund=christmas-fund";
             fundKey = "christmasFundData";
         } else {
-            apiUrl = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=tech-contributions";
+            apiUrl = "/api/contributions?fund=tech-contributions";
             fundKey = "techFundData";
         }
 
@@ -1202,7 +1202,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // TECH FUND DASHBOARD
 // ==================================================
 async function initDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=tech-contributions";
+    const API_URL = "/api/contributions?fund=tech-contributions";
     const FUND_KEY = "techFundData";
 
     let contributionsData = [];
@@ -1541,7 +1541,7 @@ async function initDashboard() {
 // CHRISTMAS FUND DASHBOARD
 // ==================================================
 async function initChristmasFundDashboard() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbwEnjzm9FHSSONNXWLecmmz_Gipfe0070bSRYxOE1YjljMJOeC9lLuaGAzJN7cF_I3I/exec?fund=christmas-fund";
+    const API_URL = "/api/contributions?fund=christmas-fund";
     const FUND_KEY = "christmasFundData";
 
     let contributionsData = [];
