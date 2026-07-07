@@ -20,3 +20,4 @@ PURCHASES_SHEET_SETUP.md
 
 # Wrangler local dev state
 .wrangler/
+backup-pre-*.sql
