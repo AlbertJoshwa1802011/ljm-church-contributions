@@ -100,7 +100,7 @@ export async function onRequestGet(context) {
     // Spent = fund_contribution only (the portion actually taken from the fund),
     // not total sticker cost — external donor top-ups must not reduce the balance.
     const purchasesQuery = await db.prepare(
-      "SELECT SUM(COALESCE(fund_contribution, amount)) as total, COUNT(id) as count FROM purchases WHERE fund = ? AND status = 'Active'"
+      "SELECT SUM(fund_contribution) as total, COUNT(id) as count FROM purchases WHERE fund = ? AND status = 'Active'"
     )
     .bind(fund)
     .first();
