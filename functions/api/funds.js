@@ -29,7 +29,9 @@ async function resolveViewer(context) {
     const identity = await verifyGoogleToken(raw, env);
     return identity ? { email: identity.email, verified: true } : { email: null, verified: false };
   }
-  if (raw.includes("@")) return { email: raw.toLowerCase(), verified: false };
+  if (raw.includes("@") && env.ALLOW_LEGACY_EMAIL_TOKEN === "true") {
+    return { email: raw.toLowerCase(), verified: false };
+  }
   return { email: null, verified: false };
 }
 
@@ -93,10 +95,12 @@ export async function onRequestGet(context) {
            WHERE fm.fund_id = ? AND LOWER(m.email) = ?`
         ).bind(fund.id, viewer.email).first();
         allowed = !!assigned;
-        if (!allowed) {
-          const auth = await requireAuth(context, "manage_funds");
-          allowed = auth.ok;
-        }
+      }
+      if (!allowed) {
+        // manage_funds holders (including the email-less machine ADMIN_API_TOKEN)
+        // may view members-only funds even without an assignment.
+        const auth = await requireAuth(context, "manage_funds");
+        allowed = auth.ok;
       }
       if (!allowed) return json({ error: "This fund is restricted to assigned members. Please sign in." }, 403);
     }

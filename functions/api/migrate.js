@@ -11,8 +11,16 @@ export async function onRequestGet(context) {
   const url = new URL(request.url);
   const secret = url.searchParams.get("secret");
   
-  // Protect with a migration secret if defined in environment, or default to a simple check
-  if (env.MIGRATION_SECRET && secret !== env.MIGRATION_SECRET) {
+  // Fail closed: bulk import only runs when MIGRATION_SECRET is configured AND
+  // the caller presents it. With the secret unset the endpoint stays disabled
+  // instead of becoming an unauthenticated mass-insert into production tables.
+  if (!env.MIGRATION_SECRET) {
+    return new Response(JSON.stringify({ error: "Migration endpoint disabled: MIGRATION_SECRET is not configured" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  if (secret !== env.MIGRATION_SECRET) {
     return new Response("Unauthorized", { status: 401 });
   }
 

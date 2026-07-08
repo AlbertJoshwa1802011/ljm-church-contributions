@@ -45,6 +45,15 @@
     - [x] `funds.html` — dynamic fund cards from /api/funds
     - [x] `script.js` — any fund slug renders through the standard dashboard via /api/funds?slug=
 - [ ] After deploy
-    - [ ] Run admin → Self-Test in production (expect 17/17)
+    - [ ] Run admin → Self-Test in production (expect 27/27)
     - [ ] Verify /admin KPIs, members, charts populate
     - [ ] Create a real fund, assign members, verify audit log entries
+
+# Post-Migration Safety Check (see POST_MIGRATION_SAFETY_REPORT.md)
+
+- [x] `functions/api/verify.js` — read-only data-integrity audit + live reconciliation against Google Sheets (`GET /api/verify`)
+- [x] Self-test expanded 17 → 27 cases (fail-closed auth, webhook, migrate, roles validation, integrity verify)
+- [x] Fail-closed fixes: migrate secret required, webhook duplicate-race 200, roles permission whitelist, super_admin lock, legacy email token disabled (re-enable via ALLOW_LEGACY_EMAIL_TOKEN=true), members-only funds visible to machine admin token
+- [ ] After deploy: run `GET /api/verify` in production and resolve any fail/warn items
+- [ ] Set `MIGRATION_SECRET` in Cloudflare Pages env (or leave unset — endpoint now stays disabled without it)
+- [ ] Dedupe NULL-proof_id duplicate contributions surfaced by /api/verify; backfill first_join_date

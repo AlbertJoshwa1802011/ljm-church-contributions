@@ -117,6 +117,12 @@ export async function onRequestPost(context) {
       }
 
     } catch (dbErr) {
+      // Concurrent duplicate delivery: both requests pass the SELECT check, the
+      // second INSERT then hits the proof_id UNIQUE constraint. Acknowledge with
+      // 200 so Razorpay stops retrying a payment that is already recorded.
+      if (/UNIQUE|constraint/i.test(dbErr.message || "")) {
+        return new Response(JSON.stringify({ status: "success", message: "Duplicate payment ignored" }), { status: 200 });
+      }
       console.error("D1 database insertion failed:", dbErr);
       return new Response(JSON.stringify({ error: "Database transaction failed", details: dbErr.message }), { status: 500 });
     }

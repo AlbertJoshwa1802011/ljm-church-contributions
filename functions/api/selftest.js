@@ -173,7 +173,80 @@ export async function onRequestGet(context) {
       record("webhook invalid signature rejected", res.status === 400, `status=${res.status}`);
     } catch (e) { record("webhook invalid signature rejected", false, e.message); }
 
-    // ── 11. Audit trail wrote rows for this run ──
+    // ── 11. Webhook rejects unsigned request ──
+    try {
+      const res = await fetch(`${origin}/api/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: "payment.captured" })
+      });
+      record("webhook unsigned request rejected", res.status === 400, `status=${res.status}`);
+    } catch (e) { record("webhook unsigned request rejected", false, e.message); }
+
+    // ── 12. Migrate endpoint is fail-closed ──
+    // Without the secret it must be denied (401 secret mismatch / 403 disabled),
+    // never 200 — a 200 here would mean an open bulk-insert endpoint.
+    try {
+      const res = await fetch(`${origin}/api/migrate?_t=${ts}`);
+      record("migrate endpoint fail-closed", res.status === 401 || res.status === 403, `status=${res.status}`);
+    } catch (e) { record("migrate endpoint fail-closed", false, e.message); }
+
+    // ── 13. Unauthenticated reads of protected data are blocked ──
+    try {
+      const membersRes = await fetch(`${origin}/api/members?_t=${ts}`);
+      const logsRes = await fetch(`${origin}/api/logs?limit=1&_t=${ts}`);
+      record("unauthenticated members list blocked", membersRes.status === 401, `status=${membersRes.status}`);
+      record("unauthenticated audit log read blocked", logsRes.status === 401, `status=${logsRes.status}`);
+    } catch (e) { record("unauthenticated protected reads blocked", false, e.message); }
+
+    // ── 14. Unauthenticated writes are blocked (settings, purchases) ──
+    try {
+      const settingsRes = await fetch(`${origin}/api/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "zz_selftest_probe", value: "x" })
+      });
+      const purchaseRes = await fetch(`${origin}/api/purchases?action=add_purchase&id=TEST-noauth-${ts}&productName=${encodeURIComponent("ZZ Selftest Noauth")}&cost=1`);
+      const purchaseData = await purchaseRes.json();
+      record("unauthenticated settings write blocked", settingsRes.status === 401, `status=${settingsRes.status}`);
+      record("unauthenticated purchase mutation blocked", purchaseData.success === false, purchaseData.message);
+    } catch (e) { record("unauthenticated writes blocked", false, e.message); }
+
+    // ── 15. Legacy plain-email token is rejected ──
+    try {
+      if (env.ALLOW_LEGACY_EMAIL_TOKEN === "true") {
+        record("legacy email token rejected", true, "skipped: explicitly enabled via ALLOW_LEGACY_EMAIL_TOKEN");
+      } else {
+        const res = await fetch(`${origin}/api/members?_t=${ts}e`, {
+          headers: { "Authorization": "Bearer albertjoshrock101@gmail.com" }
+        });
+        record("legacy email token rejected", res.status === 401, `status=${res.status}`);
+      }
+    } catch (e) { record("legacy email token rejected", false, e.message); }
+
+    // ── 16. Role save validates permission names ──
+    try {
+      const badPerm = await (await api(`/api/roles`, {
+        method: "POST",
+        body: JSON.stringify({ action: "save_role", roleName: `zz-selftest-role-${ts}`, permissions: ["own_everything"] })
+      })).json();
+      const superEdit = await (await api(`/api/roles`, {
+        method: "POST",
+        body: JSON.stringify({ action: "save_role", roleName: "super_admin", permissions: ["view_audit"] })
+      })).json();
+      record("role save rejects unknown permission", badPerm.success === false, badPerm.message);
+      record("super_admin role locked against API edit", superEdit.success === false, superEdit.message);
+    } catch (e) { record("role save validation", false, e.message); }
+
+    // ── 17. Data integrity verify (D1-only checks) passes ──
+    try {
+      const res = await api(`/api/verify?skipRemote=1&_t=${ts}`);
+      const data = await res.json();
+      record("data integrity verify (D1-only)", res.status === 200 && data.summary && data.summary.fail === 0,
+        data.summary ? `pass=${data.summary.pass}, warn=${data.summary.warn}, fail=${data.summary.fail}` : `status=${res.status}`);
+    } catch (e) { record("data integrity verify (D1-only)", false, e.message); }
+
+    // ── 18. Audit trail wrote rows for this run ──
     try {
       const row = await db.prepare(
         "SELECT COUNT(*) AS n FROM activity_logs WHERE entity_id LIKE ? AND created_at > datetime('now','-5 minutes')"
@@ -188,6 +261,15 @@ export async function onRequestGet(context) {
     try { await db.prepare("DELETE FROM purchases WHERE id LIKE 'TEST-%' AND name LIKE 'ZZ Selftest%'").run(); } catch (_) {}
     try { await db.prepare("DELETE FROM members WHERE name LIKE 'ZZ Selftest Member %'").run(); } catch (_) {}
     try { await db.prepare("DELETE FROM wishlist WHERE item_name LIKE 'ZZ Selftest Item %'").run(); } catch (_) {}
+    try { await db.prepare("DELETE FROM roles WHERE role_name LIKE 'zz-selftest-role-%'").run(); } catch (_) {}
+    try { await db.prepare("DELETE FROM config WHERE key LIKE 'zz_selftest%'").run(); } catch (_) {}
+    // Defense-in-depth: if the super_admin lock test ever regresses, restore the
+    // canonical permission set (same value schema.sql keeps in sync).
+    try {
+      await db.prepare(
+        `UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit"]' WHERE role_name = 'super_admin'`
+      ).run();
+    } catch (_) {}
   }
 
   const passed = cases.filter(c => c.passed).length;

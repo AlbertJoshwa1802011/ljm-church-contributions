@@ -109,7 +109,11 @@ export async function requireAuth(context, permission) {
     email = identity.email;
     verified = true;
   } else if (raw.includes("@")) {
-    // Legacy plain-email token (transition period)
+    // Legacy plain-email token: an email string is not proof of identity, so this
+    // path is disabled unless ALLOW_LEGACY_EMAIL_TOKEN="true" is set in the environment.
+    if (env.ALLOW_LEGACY_EMAIL_TOKEN !== "true") {
+      return denied("Legacy email tokens are disabled. Sign in with Google.");
+    }
     email = raw.toLowerCase();
   } else {
     return denied("Unrecognized credential format");
