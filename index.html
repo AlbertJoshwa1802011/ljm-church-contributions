@@ -10,6 +10,8 @@
 
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="payment-modal.css">
+<link rel="stylesheet" href="theme.css">
+<script src="theme.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -134,6 +136,14 @@
         </div>
     </section>
 
+    <!-- Recent Activity: chronological feed of individual contributions -->
+    <section class="recent-activity-section" id="recentActivitySection">
+        <h3 class="section-title">🕘 Recent Activity</h3>
+        <div class="activity-feed" id="recentActivityFeed">
+            <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">Loading recent activity...</div>
+        </div>
+    </section>
+
     <!-- Giving Insights -->
     <section class="giving-insights-section" id="givingInsightsSection">
         <h3 class="insights-title">💡 Giving Insights</h3>
@@ -199,6 +209,7 @@
         <div class="chart-card">
             <canvas id="sourcePieChart"></canvas>
         </div>
+        <div class="chart-card" id="enhancedStatsContainer"></div>
     </section>
 
     <!-- Wishlist / Planned Upgrades Section -->
@@ -228,23 +239,23 @@
 
 <!-- Mobile Sticky Bottom Navigation -->
 <nav class="bottom-nav">
-    <a href="index.html" class="bottom-nav-item active">
+    <a href="index.html" class="bottom-nav-item active" data-icon="home">
         <span class="nav-icon">🏠</span>
         <span>Dashboard</span>
     </a>
-    <a href="members.html" class="bottom-nav-item">
+    <a href="members.html" class="bottom-nav-item" data-icon="members">
         <span class="nav-icon">👥</span>
         <span>Members</span>
     </a>
     <!-- Quick Give Central Action Button -->
-    <a href="#" id="mobileQuickGiveBtn" class="bottom-nav-item action-btn" aria-label="Contribute Now">
+    <a href="#" id="mobileQuickGiveBtn" class="bottom-nav-item action-btn" aria-label="Contribute Now" data-icon="give">
         <span class="nav-icon">✨</span>
     </a>
-    <a href="impact.html" class="bottom-nav-item">
+    <a href="impact.html" class="bottom-nav-item" data-icon="bought">
         <span class="nav-icon">🛍️</span>
         <span>Bought</span>
     </a>
-    <a href="about.html" class="bottom-nav-item">
+    <a href="about.html" class="bottom-nav-item" data-icon="about">
         <span class="nav-icon">ℹ️</span>
         <span>About</span>
     </a>

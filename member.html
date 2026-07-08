@@ -9,6 +9,8 @@
 <title>My Contributions · LJM Church</title>
 
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="theme.css">
+<script src="theme.js"></script>
 <script src="member-dashboard.js" defer></script>
 </head>
 
@@ -58,9 +60,32 @@
     </section>
 
     <!-- Timeline -->
-    
+
 
 </main>
+
+<!-- Mobile Sticky Bottom Navigation -->
+<nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item" data-icon="home">
+        <span class="nav-icon">🏠</span>
+        <span>Dashboard</span>
+    </a>
+    <a href="members.html" class="bottom-nav-item active" data-icon="members">
+        <span class="nav-icon">👥</span>
+        <span>Members</span>
+    </a>
+    <a href="index.html?action=contribute" class="bottom-nav-item action-btn" aria-label="Contribute Now" data-icon="give">
+        <span class="nav-icon">✨</span>
+    </a>
+    <a href="impact.html" class="bottom-nav-item" data-icon="bought">
+        <span class="nav-icon">🛍️</span>
+        <span>Bought</span>
+    </a>
+    <a href="about.html" class="bottom-nav-item" data-icon="about">
+        <span class="nav-icon">ℹ️</span>
+        <span>About</span>
+    </a>
+</nav>
 
 <footer class="premium-footer">
     <div class="footer-bottom">

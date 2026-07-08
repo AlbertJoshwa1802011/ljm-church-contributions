@@ -1324,7 +1324,7 @@ async function initDashboard(dynamicFund) {
             if (!timeline) return;
             timeline.innerHTML = "";
 
-            const contributors = getTopContributors(data, 1000);
+            const contributors = getContributorsAlpha(data);
 
             if (contributors.length === 0) {
                 timeline.innerHTML = `
@@ -1345,8 +1345,8 @@ async function initDashboard(dynamicFund) {
                 const sectionTitle = document.createElement("h3");
                 sectionTitle.className = "section-title contributors-title";
                 sectionTitle.textContent = contributors.length >= 16
-                    ? `👥 All Contributors (${contributors.length} total)`
-                    : "👥 All Contributors";
+                    ? `👥 All Contributors · A–Z (${contributors.length} total)`
+                    : "👥 All Contributors · A–Z";
                 timeline.appendChild(sectionTitle);
 
                 const grid = document.createElement("div");
@@ -1357,10 +1357,6 @@ async function initDashboard(dynamicFund) {
                     card.className = "contributor-card";
                     const rank = startIdx + index + 1;
                     let medal = "";
-                    if (rank === 1) medal = "🥇";
-                    else if (rank === 2) medal = "🥈";
-                    else if (rank === 3) medal = "🥉";
-                    else if (rank <= 10) medal = "⭐";
 
                     const safeMember = escapeHtml(contributor.Member);
                     card.style.cursor = 'pointer';
@@ -1521,11 +1517,14 @@ async function initDashboard(dynamicFund) {
             // Top contributors
             try { renderTopContributors(data); } catch (e) { console.error("Top contributors error:", e); }
 
+            // Recent activity (chronological, per-transaction feed)
+            try { renderRecentActivityFeed(data, "recentActivityFeed"); } catch (e) { console.error("Recent activity error:", e); }
+
             // Enhanced Stats (time series + growth charts)
             const renderCharts = () => {
                 if (typeof Chart !== 'undefined') {
                     try { renderEnhancedStats(data); } catch (e) {
-                        const cc = document.querySelector('.chart-card');
+                        const cc = document.getElementById('enhancedStatsContainer');
                         if (cc) cc.innerHTML = '<p style="text-align:center;color:#6c757d;padding:40px;">Unable to load statistics</p>';
                     }
                 } else {
@@ -1657,7 +1656,7 @@ async function initChristmasFundDashboard() {
             if (!timeline) return;
             timeline.innerHTML = "";
 
-            const allContributors = getTopContributors(data, 1000);
+            const allContributors = getContributorsAlpha(data);
 
             if (allContributors.length === 0) {
                 timeline.innerHTML = `
@@ -1678,8 +1677,8 @@ async function initChristmasFundDashboard() {
                 const sectionTitle = document.createElement("h3");
                 sectionTitle.className = "section-title contributors-title";
                 sectionTitle.textContent = allContributors.length > 15
-                    ? `👥 All Contributors (${allContributors.length} total)`
-                    : "👥 All Contributors";
+                    ? `👥 All Contributors · A–Z (${allContributors.length} total)`
+                    : "👥 All Contributors · A–Z";
                 timeline.appendChild(sectionTitle);
 
                 const grid = document.createElement("div");
@@ -1690,10 +1689,6 @@ async function initChristmasFundDashboard() {
                     card.className = "contributor-card";
                     const rank = startIdx + index + 1;
                     let medal = "";
-                    if (rank === 1) medal = "🥇";
-                    else if (rank === 2) medal = "🥈";
-                    else if (rank === 3) medal = "🥉";
-                    else if (rank <= 10) medal = "⭐";
 
                     const safeMember = escapeHtml(item.Member);
                     card.style.cursor = 'pointer';
@@ -1828,12 +1823,13 @@ async function initChristmasFundDashboard() {
             try { renderDistributionPie(data); } catch (e) { console.error("Distribution pie error:", e); }
             try { renderTopContributors(data); } catch (e) { console.error("Top contributors error:", e); }
             try { renderSourceChart(data); } catch (e) { console.error("Source chart error:", e); }
+            try { renderRecentActivityFeed(data, "recentActivityFeed"); } catch (e) { console.error("Recent activity error:", e); }
 
             // Enhanced Stats
             const renderCharts = () => {
                 if (typeof Chart !== 'undefined') {
                     try { renderEnhancedStats(data); } catch (e) {
-                        const cc = document.querySelector('.chart-card');
+                        const cc = document.getElementById('enhancedStatsContainer');
                         if (cc) cc.innerHTML = '<p style="text-align:center;color:#6c757d;padding:40px;">Unable to load statistics</p>';
                     }
                 } else {
@@ -1884,6 +1880,71 @@ function getTopContributors(data, limit = 6) {
         memberMap[member].Entries += 1;
     });
     return Object.values(memberMap).sort((a, b) => b.Total - a.Total).slice(0, limit);
+}
+
+// --------------------
+// Alphabetical contributor directory — deliberately distinct ordering from the
+// Top Contributors leaderboard (which ranks by amount), so the "All Contributors"
+// section reads as a lookup directory rather than a duplicate ranking.
+function getContributorsAlpha(data) {
+    return getTopContributors(data, 1000).sort((a, b) =>
+        String(a.Member).localeCompare(String(b.Member), undefined, { sensitivity: "base" })
+    );
+}
+
+// --------------------
+// Recent Activity: chronological feed of individual contributions (not aggregated
+// by member), most recent first. The dashboard previously had no per-transaction
+// "what just happened" view outside of a member's own detail modal.
+function renderRecentActivityFeed(data, containerId, limit = 8) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const sorted = [...data].sort((a, b) => {
+        const dA = parseContributionDate(a.Date);
+        const dB = parseContributionDate(b.Date);
+        if (!dA) return 1; if (!dB) return -1;
+        return dB - dA;
+    }).slice(0, limit);
+
+    container.innerHTML = "";
+
+    if (sorted.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">🕊️</div>
+                <h3>No recent activity</h3>
+                <p>New contributions will appear here as they come in.</p>
+            </div>
+        `;
+        return;
+    }
+
+    sorted.forEach(c => {
+        const dateObj = parseContributionDate(c.Date);
+        const dateStr = dateObj
+            ? dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+            : '';
+        const memberName = c.Member || "Anonymous";
+        const safeMember = escapeHtml(memberName);
+        const isOnline = /verified|online/i.test(c.Category || "");
+        const methodIcon = isOnline ? "💳" : "💵";
+
+        const row = document.createElement("div");
+        row.className = "activity-row";
+        row.tabIndex = 0;
+        row.setAttribute("role", "button");
+        row.innerHTML = `
+            <div class="activity-avatar">${safeMember.charAt(0).toUpperCase()}</div>
+            <div class="activity-main">
+                <div class="activity-name">${safeMember}</div>
+                <div class="activity-meta">${methodIcon} ${escapeHtml(c.Category || 'Contribution')} · ${dateStr}</div>
+            </div>
+            <div class="activity-amount">₹${(Number(c.Amount) || 0).toLocaleString('en-IN')}</div>
+        `;
+        row.onclick = () => openContributorDetailModal(memberName, data);
+        container.appendChild(row);
+    });
 }
 
 // --------------------
@@ -1961,8 +2022,8 @@ function openContributorDetailModal(memberName, allData) {
 
 // Enhanced Stats Visualization (time series + growth charts)
 function renderEnhancedStats(contributions) {
-    const chartCard = document.querySelector('.chart-card');
-    if (!chartCard || typeof Chart === 'undefined') return;
+    const enhancedStatsCard = document.getElementById('enhancedStatsContainer');
+    if (!enhancedStatsCard || typeof Chart === 'undefined') return;
 
     const sortedContributions = [...contributions]
         .map(c => ({ ...c, _parsedDate: parseContributionDate(c.Date) }))
@@ -1970,7 +2031,7 @@ function renderEnhancedStats(contributions) {
         .sort((a, b) => a._parsedDate - b._parsedDate);
 
     if (sortedContributions.length === 0) {
-        chartCard.innerHTML = '<p style="text-align:center;color:#6c757d;padding:40px;">No data available yet</p>';
+        enhancedStatsCard.innerHTML = '<p style="text-align:center;color:#6c757d;padding:40px;">No data available yet</p>';
         return;
     }
 
@@ -2015,7 +2076,7 @@ function renderEnhancedStats(contributions) {
         ? `${totalContributors} people have contributed so far${newInLastMonth > 0 ? `; ${newInLastMonth} first gave in ${lastMonthLabel}.` : '.'}`
         : (totalContributors > 0 ? `${totalContributors} people have contributed so far.` : 'No contributors yet.');
 
-    chartCard.innerHTML = `
+    enhancedStatsCard.innerHTML = `
         <div class="stats-container">
             <h3 class="stats-title">📊 Contribution Trends</h3>
             <div class="stats-grid">
