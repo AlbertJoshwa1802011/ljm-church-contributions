@@ -202,10 +202,17 @@
             #mobileNav {
                 display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
                 background: rgba(250,249,245,0.95); backdrop-filter: blur(12px);
-                border-top: 1px solid var(--border); overflow-x: auto; padding: 6px 8px; gap: 4px;
+                border-top: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x proximity; padding: 6px 10px; gap: 6px;
             }
-            #mobileNav .nav-item { flex-direction: column; gap: 2px; font-size: 10px; padding: 6px 10px; flex-shrink: 0; }
-            #mobileNav .ni-icon { font-size: 17px; }
+            #mobileNav::-webkit-scrollbar { display: none; }
+            #mobileNav .nav-item {
+                flex-direction: column; gap: 3px; font-size: 10.5px; font-weight: 600;
+                padding: 7px 14px; width: auto; min-width: 60px; flex-shrink: 0;
+                border-radius: 12px; scroll-snap-align: start; white-space: nowrap;
+            }
+            #mobileNav .nav-item.active { background: var(--accent-soft); }
+            #mobileNav .ni-icon { font-size: 18px; }
         }
     </style>
 </head>

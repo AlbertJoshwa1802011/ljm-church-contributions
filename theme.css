@@ -345,3 +345,143 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
     display: block;
 }
 .bottom-nav-item.action-btn .nav-icon svg { width: 24px; height: 24px; stroke-width: 2; }
+
+/* ==================================================================
+   Dark-mode pass 2: every remaining hardcoded near-black/grey text
+   color found by reading style.css and the inline <style> blocks in
+   full (members/impact/about), grouped by page. Vivid accent colors
+   (purple #667eea, greens, reds, gold) are left alone — they already
+   have enough contrast on a dark surface; only illegible dark-on-dark
+   text and stray white-only card backgrounds are overridden here.
+   ================================================================== */
+
+/* index.html: Top Contributors leaderboard cards */
+[data-theme="dark"] .top-card .amount { color: var(--text) !important; }
+[data-theme="dark"] .top-card .amount-label { color: var(--text-soft) !important; }
+[data-theme="dark"] .top-card .meta span:first-child { color: var(--text-soft) !important; }
+[data-theme="dark"] .top-card .rank-text { color: var(--amber) !important; }
+
+/* index.html: "how we calculate" insight modal metric grid */
+[data-theme="dark"] .human-insight { background: var(--bg-soft) !important; }
+[data-theme="dark"] .metric-item {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .metric-item .label { color: var(--text-soft) !important; }
+[data-theme="dark"] .metric-item .value,
+[data-theme="dark"] .insight-primary,
+[data-theme="dark"] .insight-modal-summary {
+    color: var(--text) !important;
+}
+
+/* index.html: Giving Insights cards */
+[data-theme="dark"] .insight-label { color: var(--text) !important; }
+[data-theme="dark"] .insight-detail { color: var(--text-soft) !important; }
+
+/* index.html: member deep-dive modal (click a Top Contributor card) */
+[data-theme="dark"] .member-profile-header {
+    background: var(--bg-soft) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .profile-stats .label { color: var(--text-soft) !important; }
+[data-theme="dark"] .month-box {
+    background: var(--bg-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text-soft);
+}
+[data-theme="dark"] .month-box.paid {
+    background: var(--green-soft) !important;
+    border-color: var(--green) !important;
+    color: var(--green) !important;
+}
+[data-theme="dark"] .month-box.pending { color: var(--text-faint) !important; }
+[data-theme="dark"] .member-deep-timeline { border-color: var(--border) !important; }
+[data-theme="dark"] .deep-timeline-item { border-color: var(--border) !important; }
+[data-theme="dark"] .deep-timeline-item .date { color: var(--text-soft) !important; }
+[data-theme="dark"] .deep-timeline-item .amt { color: var(--text) !important; }
+[data-theme="dark"] .deep-timeline-item .cat {
+    background: var(--bg-soft) !important;
+    color: var(--text-soft) !important;
+}
+
+/* index.html: contribution modal month-status pills box */
+[data-theme="dark"] .payment-status-preview {
+    background: var(--bg-soft) !important;
+    border-color: var(--border) !important;
+}
+
+/* funds.html */
+[data-theme="dark"] .page-subtitle { color: var(--text-soft) !important; }
+[data-theme="dark"] .fund-card p { color: var(--text-soft) !important; }
+
+/* about.html: motivation banner + connect section */
+[data-theme="dark"] .about-subtitle { color: var(--text-soft) !important; }
+[data-theme="dark"] .motivation-card h2,
+[data-theme="dark"] .about-connect h2 {
+    color: var(--text) !important;
+}
+[data-theme="dark"] .motivation-card p { color: var(--text-soft) !important; }
+[data-theme="dark"] .connect-card { color: var(--text) !important; }
+
+/* impact.html ("What We Bought" gallery) */
+[data-theme="dark"] .impact-hero p.hero-sub { color: var(--text-soft) !important; }
+[data-theme="dark"] .impact-total-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .impact-total-card .label { color: var(--text-faint) !important; }
+[data-theme="dark"] .filter-chip {
+    background: var(--surface) !important;
+    border-color: var(--border-strong) !important;
+    color: var(--text-soft) !important;
+}
+[data-theme="dark"] .product-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .product-body h3,
+[data-theme="dark"] .product-cost {
+    color: var(--text) !important;
+}
+[data-theme="dark"] .product-meta { color: var(--text-faint) !important; }
+[data-theme="dark"] .product-desc { color: var(--text-soft) !important; }
+[data-theme="dark"] .impact-empty { color: var(--text-soft) !important; }
+[data-theme="dark"] .impact-empty h3 { color: var(--text) !important; }
+[data-theme="dark"] .impact-modal-card {
+    background: var(--surface) !important;
+    color: var(--text);
+}
+[data-theme="dark"] .impact-modal-close {
+    background: var(--bg-soft) !important;
+    color: var(--text) !important;
+}
+[data-theme="dark"] .impact-modal-body h2,
+[data-theme="dark"] .fb-row .fb-amount,
+[data-theme="dark"] .modal-fb-title {
+    color: var(--text) !important;
+}
+[data-theme="dark"] .impact-modal-body .meta-row,
+[data-theme="dark"] .impact-modal-body p.desc,
+[data-theme="dark"] .fb-row,
+[data-theme="dark"] .modal-fb-row {
+    color: var(--text-soft) !important;
+}
+[data-theme="dark"] .modal-fb-note { color: var(--text-faint) !important; }
+[data-theme="dark"] .funding-breakdown,
+[data-theme="dark"] .modal-fb {
+    border-color: var(--border) !important;
+}
+
+/* script.js renders several bits of text with hardcoded inline `style="color:#..."`
+   (trend labels, modal headers, error/empty states) rather than a class — a plain
+   CSS class rule can't win against an inline style, so match by substring on the
+   inline style attribute itself instead of editing every innerHTML template. */
+[data-theme="dark"] [style*="64748b"],
+[data-theme="dark"] [style*="6c757d"] {
+    color: var(--text-soft) !important;
+}
+[data-theme="dark"] [style*="1e293b"],
+[data-theme="dark"] [style*="2c3e50"],
+[data-theme="dark"] [style*="0f172a"] {
+    color: var(--text) !important;
+}
