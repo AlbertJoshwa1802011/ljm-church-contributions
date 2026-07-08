@@ -69,48 +69,10 @@
         });
     }
 
-    function makeToggleBtn(extraClass) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "theme-toggle-btn" + (extraClass ? " " + extraClass : "");
-        btn.setAttribute("aria-label", "Toggle dark mode");
-        return btn;
-    }
-
-    function injectThemeToggle() {
-        var navbar = document.querySelector("header.navbar");
-        var nav = navbar && navbar.querySelector("nav");
-        if (!navbar || navbar.querySelector(".theme-toggle-btn")) return;
-
-        var buttons = [];
-        // Desktop copy: lives inside <nav> alongside the page links.
-        if (nav) {
-            var deskBtn = makeToggleBtn("theme-toggle-desktop");
-            nav.appendChild(deskBtn);
-            buttons.push(deskBtn);
-        }
-        // Mobile copy: `.navbar nav` is hidden entirely under the 768px
-        // breakpoint (replaced by the bottom tab bar), so a second copy lives
-        // directly on the navbar and is shown only at that breakpoint.
-        var mobileBtn = makeToggleBtn("theme-toggle-mobile");
-        navbar.appendChild(mobileBtn);
-        buttons.push(mobileBtn);
-
-        var paint = function () {
-            var icon = effectiveTheme() === "dark" ? ICONS.sun : ICONS.moon;
-            buttons.forEach(function (b) { b.innerHTML = icon; });
-        };
-        paint();
-        buttons.forEach(function (b) {
-            b.addEventListener("click", function () {
-                window.LJMTheme.toggle();
-                paint();
-            });
-        });
-    }
-
+    // The theme toggle now lives inside the shared header (header.js owns it).
+    // theme.js keeps only: theme detection/apply, the window.LJMTheme API, and
+    // the bottom-nav emoji→SVG icon upgrade.
     document.addEventListener("DOMContentLoaded", function () {
         upgradeBottomNavIcons(document);
-        injectThemeToggle();
     });
 })();

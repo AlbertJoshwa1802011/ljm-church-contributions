@@ -88,41 +88,211 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
 }
 
 /* ==================================================================
-   Theme toggle button (injected into navbars by theme.js)
+   Shared top header (built by header.js) — "Light of Jesus Ministry".
+   Warm, minimal, editorial look matching the admin console. Overrides the
+   old purple .navbar entirely (header.js swaps the class to .ljm-header).
    ================================================================== */
+.ljm-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    -webkit-backdrop-filter: saturate(1.4) blur(14px);
+    backdrop-filter: saturate(1.4) blur(14px);
+    border-bottom: 1px solid var(--border);
+    /* reset stray properties from the old .navbar / inline page styles */
+    color: var(--text);
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+    display: block;
+}
+.ljmh-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    height: 62px;
+    padding: 0 22px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.ljmh-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text);
+    flex-shrink: 0;
+}
+.ljmh-mark {
+    display: inline-flex;
+    width: 34px; height: 34px;
+    align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    flex-shrink: 0;
+}
+.ljmh-mark svg { width: 20px; height: 20px; }
+.ljmh-word {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+.ljmh-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+}
+.ljmh-nav a {
+    text-decoration: none;
+    color: var(--text-soft);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 13px;
+    border-radius: 9px;
+    transition: background .15s, color .15s;
+}
+.ljmh-nav a:hover { background: var(--bg-soft); color: var(--text); }
+.ljmh-nav a.active { color: var(--accent-deep); font-weight: 600; background: var(--accent-soft); }
+.ljmh-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Fund switcher */
+.ljmh-fundswitch { position: relative; }
+.ljmh-fundbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font: 600 13px var(--sans);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+.ljmh-fundbtn:hover { border-color: var(--accent); }
+.ljmh-fundswitch.open .ljmh-fundbtn { border-color: var(--accent); background: var(--bg-soft); }
+.ljmh-fund-ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.ljmh-fund-ic { display: inline-flex; color: var(--accent-deep); }
+.ljmh-fundlabel { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ljmh-fundchev svg { width: 15px; height: 15px; transition: transform .18s; }
+.ljmh-fundswitch.open .ljmh-fundchev svg { transform: rotate(180deg); }
+.ljmh-fundmenu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 230px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lift);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: ljmhPop .16s ease;
+    z-index: 20;
+}
+@keyframes ljmhPop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.ljmh-fundopt {
+    display: block;
+    padding: 9px 12px;
+    border-radius: 9px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 13.5px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.ljmh-fundopt:hover { background: var(--bg-soft); }
+.ljmh-fundopt.ljmh-fund-active { background: var(--accent-soft); color: var(--accent-deep); font-weight: 600; }
+.ljmh-fundempty { padding: 12px; font-size: 13px; color: var(--text-faint); text-align: center; }
+
+/* Theme toggle (now on a light surface, not the purple bar) */
 .theme-toggle-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 36px; height: 36px;
     border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.35);
-    background: rgba(255,255,255,0.12);
-    color: #fff;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-soft);
     cursor: pointer;
-    margin-left: 12px;
     flex-shrink: 0;
-    transition: background .15s, transform .15s;
+    transition: border-color .15s, color .15s, transform .12s;
 }
-.theme-toggle-btn:hover { background: rgba(255,255,255,0.25); }
+.theme-toggle-btn:hover { border-color: var(--accent); color: var(--accent-deep); }
 .theme-toggle-btn:active { transform: scale(0.92); }
 .theme-toggle-btn svg {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    width: 18px; height: 18px;
+    fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
 }
 
-/* Desktop copy lives inside .navbar nav; mobile copy is a direct .navbar
-   child (nav itself is display:none under 768px, see style.css). */
-.theme-toggle-mobile { display: none; }
-@media (max-width: 768px) {
-    .theme-toggle-desktop { display: none !important; }
-    .theme-toggle-mobile { display: inline-flex !important; }
+/* Auth cluster */
+.ljmh-auth { display: inline-flex; align-items: center; gap: 10px; }
+.ljmh-userinfo { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.ljmh-admin {
+    font-size: 12.5px; font-weight: 700; text-decoration: none;
+    color: var(--accent-deep); border: 1px dashed var(--accent);
+    padding: 4px 9px; border-radius: 8px; white-space: nowrap;
+}
+.ljmh-signin {
+    display: inline-flex; align-items: center;
+    height: 36px; padding: 0 16px;
+    border-radius: 999px;
+    background: var(--accent); color: #fff;
+    font: 600 13px var(--sans); text-decoration: none;
+    white-space: nowrap; transition: background .15s;
+}
+.ljmh-signin:hover { background: var(--accent-deep); }
+.ljmh-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color: #fff; font-weight: 700; font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+}
+.ljmh-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---- Mobile header: nav lives in the bottom tab bar, so top bar is compact ---- */
+@media (max-width: 820px) {
+    .ljmh-inner { height: 56px; padding: 0 12px; gap: 9px; }
+    .ljmh-nav { display: none; }
+    /* Let the brand shrink and truncate so the action cluster never clips. */
+    .ljmh-brand { flex: 0 1 auto; min-width: 0; gap: 8px; }
+    .ljmh-word { font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ljmh-actions { flex-shrink: 0; gap: 8px; }
+    .ljmh-fundlabel { display: none; }
+    .ljmh-fundbtn { padding: 0 10px; height: 34px; }
+    .theme-toggle-btn { width: 34px; height: 34px; }
+    .ljmh-userinfo, .ljmh-admin { display: none !important; }
+    /* The full Google button is too wide for the compact mobile bar; on the
+       home page sign-in happens via the in-page member card instead. */
+    .ljmh-auth-gis { display: none !important; }
+    .ljmh-signin { height: 34px; padding: 0 13px; font-size: 12.5px; }
+    .ljmh-avatar { width: 34px; height: 34px; font-size: 14px; }
+    /* Keep the menu absolute (drops below the button). A fixed bottom-sheet
+       breaks here because the header's backdrop-filter becomes the containing
+       block for fixed descendants, throwing the sheet off-screen. */
+    .ljmh-fundmenu { right: 0; left: auto; min-width: 210px; max-width: 78vw; }
+}
+@media (max-width: 380px) {
+    /* Very narrow phones: keep only the mark + short wordmark. */
+    .ljmh-word { font-size: 13.5px; }
 }
 
 /* ==================================================================
