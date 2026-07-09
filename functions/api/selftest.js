@@ -246,6 +246,37 @@ export async function onRequestGet(context) {
         data.summary ? `pass=${data.summary.pass}, warn=${data.summary.warn}, fail=${data.summary.fail}` : `status=${res.status}`);
     } catch (e) { record("data integrity verify (D1-only)", false, e.message); }
 
+    // ── 18b. Expenses CRUD + privacy round-trip ──
+    try {
+      const title = `ZZ Selftest Expense ${ts}`;
+      const add = await (await api(`/api/expenses`, {
+        method: "POST",
+        body: JSON.stringify({ title, category: "Maintenance", amount: 1, status: "paid", isPrivate: true })
+      })).json();
+      const newId = add.id;
+
+      const pub = await (await fetch(`${origin}/api/expenses?_t=${ts}exp`)).json();
+      const inPublic = (pub.expenses || []).some(e => e.title === title);
+
+      const all = await (await api(`/api/expenses?all=1&_t=${ts}exp2`)).json();
+      const inAll = (all.expenses || []).some(e => e.id === newId);
+
+      const del = newId ? await (await api(`/api/expenses?id=${newId}`, { method: "DELETE" })).json() : { success: false };
+
+      record("expense add/private-hidden/delete",
+        add.success === true && inPublic === false && inAll === true && del.success === true,
+        `added=${add.success}, hiddenFromPublic=${!inPublic}, inAdminList=${inAll}, deleted=${del.success}`);
+    } catch (e) { record("expense add/private-hidden/delete", false, e.message); }
+
+    // ── 18c. Unauthenticated expense write blocked ──
+    try {
+      const res = await fetch(`${origin}/api/expenses`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "noauth", amount: 1 })
+      });
+      record("unauthenticated expense write blocked", res.status === 401, `status=${res.status}`);
+    } catch (e) { record("unauthenticated expense write blocked", false, e.message); }
+
     // ── 18. Audit trail wrote rows for this run ──
     try {
       const row = await db.prepare(
@@ -263,11 +294,12 @@ export async function onRequestGet(context) {
     try { await db.prepare("DELETE FROM wishlist WHERE item_name LIKE 'ZZ Selftest Item %'").run(); } catch (_) {}
     try { await db.prepare("DELETE FROM roles WHERE role_name LIKE 'zz-selftest-role-%'").run(); } catch (_) {}
     try { await db.prepare("DELETE FROM config WHERE key LIKE 'zz_selftest%'").run(); } catch (_) {}
+    try { await db.prepare("DELETE FROM expenses WHERE title LIKE 'ZZ Selftest Expense %'").run(); } catch (_) {}
     // Defense-in-depth: if the super_admin lock test ever regresses, restore the
     // canonical permission set (same value schema.sql keeps in sync).
     try {
       await db.prepare(
-        `UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit"]' WHERE role_name = 'super_admin'`
+        `UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses"]' WHERE role_name = 'super_admin'`
       ).run();
     } catch (_) {}
   }

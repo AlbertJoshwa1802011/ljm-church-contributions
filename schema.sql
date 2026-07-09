@@ -83,10 +83,10 @@ CREATE TABLE IF NOT EXISTS member_roles (
 );
 
 -- Seed Default Roles
-INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit"]');
+INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses"]');
 INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('editor', '["edit_purchases","edit_wishlist"]');
 -- Keep existing super_admin rows in sync with the scope list above (idempotent)
-UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit"]' WHERE role_name = 'super_admin';
+UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses"]' WHERE role_name = 'super_admin';
 
 -- Seed Default Super Admins
 INSERT OR IGNORE INTO member_roles (email, role_name) VALUES ('albertjoshrock101@gmail.com', 'super_admin');
@@ -140,6 +140,27 @@ CREATE INDEX IF NOT EXISTS idx_logs_action ON activity_logs(action);
 CREATE INDEX IF NOT EXISTS idx_contrib_fund_date ON contributions(fund, date DESC);
 CREATE INDEX IF NOT EXISTS idx_contrib_member ON contributions(member_name);
 CREATE INDEX IF NOT EXISTS idx_members_email ON members(email);
+
+-- 12. Church expenses ledger (see migrations/0003_expenses.sql)
+CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    category TEXT DEFAULT 'General',
+    amount REAL NOT NULL,
+    expense_date TEXT,
+    status TEXT DEFAULT 'paid',        -- 'planned' | 'paid' | 'cancelled'
+    recurring TEXT DEFAULT 'none',     -- 'none' | 'monthly' | 'yearly'
+    fund TEXT,
+    vendor TEXT,
+    notes TEXT,
+    is_private INTEGER DEFAULT 0,      -- 1 = hide from the public portal
+    created_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date DESC);
+CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);
+CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
 
 -- Seed legacy funds (goal pulled from config so live values are preserved)
 INSERT OR IGNORE INTO funds (slug, name, goal_amount, is_system, status, visibility)
