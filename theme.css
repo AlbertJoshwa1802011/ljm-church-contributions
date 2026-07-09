@@ -457,6 +457,80 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
 }
 
 /* ==================================================================
+   Verse cards — pastor-curated Verse of the Month / Year, prominent
+   on the dashboard (mirrors the physical cards handed out at church).
+   ================================================================== */
+.verse-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 22px 0 28px;
+}
+.verse-card-lg {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+.verse-card-lg.vc-year { border-left-color: var(--amber); }
+.verse-card-lg::after {
+    content: "\201C";
+    position: absolute;
+    top: -18px; right: 10px;
+    font-family: var(--serif);
+    font-size: 120px;
+    line-height: 1;
+    color: var(--accent);
+    opacity: 0.07;
+    pointer-events: none;
+}
+.vc-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.vc-badge {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    padding: 4px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.vc-year .vc-badge { color: var(--amber); background: var(--amber-soft); }
+.vc-label { font-size: 12.5px; font-weight: 600; color: var(--text-faint); white-space: nowrap; }
+.vc-text {
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.5;
+    color: var(--text);
+    margin: 0 0 10px;
+    font-style: italic;
+    position: relative;
+    z-index: 1;
+}
+.vc-ref {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--accent-deep);
+    font-style: normal;
+}
+.vc-year .vc-ref { color: var(--amber); }
+@media (max-width: 760px) {
+    .verse-cards { grid-template-columns: 1fr; gap: 12px; margin: 16px 0 22px; }
+    .vc-text { font-size: 17px; }
+}
+
+/* ==================================================================
    Recent Activity feed (new "advanced dashboard" section)
    ================================================================== */
 .recent-activity-section { margin: 28px 0 32px; }

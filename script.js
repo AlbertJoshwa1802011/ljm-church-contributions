@@ -164,6 +164,40 @@ function initBibleVerse() {
     verseRef.textContent = `— ${verse.ref}`;
 }
 
+// Pastor-curated Verse of the Month / Year (set in admin → Verses, stored in config).
+// These are the "verse cards" the church hands out physically, mirrored in the app.
+async function loadChurchVerses() {
+    const section = document.getElementById("verseCards");
+    if (!section) return;
+    try {
+        const res = await fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" });
+        const data = await res.json();
+        const s = (data && data.settings) || {};
+
+        const fill = (cardId, labelId, textId, refId, label, text, ref) => {
+            const card = document.getElementById(cardId);
+            const hasText = text && text.trim();
+            if (!card) return false;
+            if (!hasText) { card.style.display = "none"; return false; }
+            card.style.display = "";
+            document.getElementById(labelId).textContent = label || "";
+            document.getElementById(textId).textContent = `"${text.trim()}"`;
+            const refEl = document.getElementById(refId);
+            refEl.textContent = ref && ref.trim() ? `— ${ref.trim()}` : "";
+            return true;
+        };
+
+        const monthShown = fill("verseMonthCard", "verseMonthLabel", "verseMonthText", "verseMonthRef",
+            s.verse_month_label, s.verse_month_text, s.verse_month_ref);
+        const yearShown = fill("verseYearCard", "verseYearLabel", "verseYearText", "verseYearRef",
+            s.verse_year_label, s.verse_year_text, s.verse_year_ref);
+
+        section.style.display = (monthShown || yearShown) ? "" : "none";
+    } catch (_) {
+        section.style.display = "none";
+    }
+}
+
 // --------------------
 // Animated value counter
 function animateValue(elementId, targetValue, prefix = '', duration = 1200) {
@@ -1125,6 +1159,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --------------------
     // Initialize Bible verse immediately (doesn't need data)
     initBibleVerse();
+
+    // Load pastor-curated Verse of the Month / Year cards
+    loadChurchVerses();
 
     // --------------------
     // Modal for "how we calculate" (stat and insight cards)

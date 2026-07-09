@@ -473,6 +473,31 @@
                 </div>
             </div>
 
+            <!-- VERSES -->
+            <div class="section" id="section-verses">
+                <div class="page-head"><h2>Verse cards</h2><p>Set the Verse of the Month and Verse of the Year — shown prominently on the member dashboard, mirroring the printed cards.</p></div>
+                <div class="card">
+                    <h3>✝ Verse of the Month</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Label (e.g. July 2026)</label><input class="input" id="v_monthLabel" placeholder="July 2026"></div>
+                        <div><label class="f-label">Reference (e.g. Philippians 4:13)</label><input class="input" id="v_monthRef" placeholder="Philippians 4:13"></div>
+                        <div class="span-all"><label class="f-label">Verse text</label><textarea class="input" id="v_monthText" rows="3" placeholder="I can do all things through Christ who strengthens me."></textarea></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>🌟 Verse of the Year</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Label (e.g. 2026)</label><input class="input" id="v_yearLabel" placeholder="2026"></div>
+                        <div><label class="f-label">Reference (e.g. Jeremiah 29:11)</label><input class="input" id="v_yearRef" placeholder="Jeremiah 29:11"></div>
+                        <div class="span-all"><label class="f-label">Verse text</label><textarea class="input" id="v_yearText" rows="3" placeholder="For I know the plans I have for you, declares the Lord..."></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="v_saveBtn">Save verses</button>
+                        <span class="msg" id="v_msg"></span>
+                    </div>
+                </div>
+            </div>
+
             <!-- SELF-TEST -->
             <div class="section" id="section-selftest">
                 <div class="page-head"><h2>Production self-test</h2><p>Runs the full end-to-end suite against this deployment. Test records are auto-cleaned; real data is never touched.</p></div>
@@ -521,6 +546,7 @@
             ["contributions", "📒", "Contributions"],
             ["purchases", "🛍️", "Purchases"],
             ["wishlist", "📋", "Wishlist"],
+            ["verses", "📖", "Verses"],
             ["roles", "🛡️", "Roles"],
             ["audit", "🧾", "Audit log"],
             ["settings", "⚙️", "Settings"],
@@ -1156,6 +1182,38 @@
             }).catch(function (e) { setMsg("s_goalMsg", e.message, "err"); });
         }
 
+        // ═══════════════ Verses ═══════════════
+        function loadVerses() {
+            fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    var s = (d && d.settings) || {};
+                    $("v_monthLabel").value = s.verse_month_label || "";
+                    $("v_monthRef").value = s.verse_month_ref || "";
+                    $("v_monthText").value = s.verse_month_text || "";
+                    $("v_yearLabel").value = s.verse_year_label || "";
+                    $("v_yearRef").value = s.verse_year_ref || "";
+                    $("v_yearText").value = s.verse_year_text || "";
+                });
+        }
+        function saveVerses() {
+            var updates = {
+                verse_month_label: $("v_monthLabel").value.trim(),
+                verse_month_ref: $("v_monthRef").value.trim(),
+                verse_month_text: $("v_monthText").value.trim(),
+                verse_year_label: $("v_yearLabel").value.trim(),
+                verse_year_ref: $("v_yearRef").value.trim(),
+                verse_year_text: $("v_yearText").value.trim()
+            };
+            $("v_saveBtn").disabled = true;
+            api("/api/settings", { method: "PUT", body: JSON.stringify({ updates: updates }) })
+                .then(function (d) {
+                    $("v_saveBtn").disabled = false;
+                    setMsg("v_msg", d.success ? "Verses saved — live on the dashboard" : (d.message || "Save failed"), d.success ? "ok" : "err");
+                })
+                .catch(function (e) { $("v_saveBtn").disabled = false; setMsg("v_msg", e.message, "err"); });
+        }
+
         // ═══════════════ Self-test ═══════════════
         function runSelfTest() {
             $("st_runBtn").disabled = true;
@@ -1180,7 +1238,7 @@
             overview: loadOverview, funds: loadFunds, members: loadMembers,
             contributions: loadContributions, purchases: loadPurchases,
             wishlist: loadWishlist, roles: loadRoles, audit: loadAudit,
-            settings: loadSettings, selftest: function () {}
+            verses: loadVerses, settings: loadSettings, selftest: function () {}
         };
 
         document.addEventListener("DOMContentLoaded", function () {
@@ -1198,6 +1256,7 @@
             $("a_nextBtn").onclick = function () { state.auditOffset += 50; fetchAudit(); };
             $("s_forceLogin").onchange = toggleForceLogin;
             $("s_saveGoals").onclick = saveGoals;
+            $("v_saveBtn").onclick = saveVerses;
             $("st_runBtn").onclick = runSelfTest;
             $("logoutLink").onclick = function () {
                 sessionStorage.removeItem(TOKEN_KEY);
