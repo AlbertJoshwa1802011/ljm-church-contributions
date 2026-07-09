@@ -57,3 +57,24 @@
 - [ ] After deploy: run `GET /api/verify` in production and resolve any fail/warn items
 - [ ] Set `MIGRATION_SECRET` in Cloudflare Pages env (or leave unset — endpoint now stays disabled without it)
 - [ ] Dedupe NULL-proof_id duplicate contributions surfaced by /api/verify; backfill first_join_date
+
+# Portal Redesign & New Features (branch: claude/post-migration-safety-check)
+
+## Done & verified
+- [x] Dark/light theme (`theme.css`/`theme.js`) auto-following system, toggle in header, all public pages
+- [x] Dark-mode legibility pass across every page + modals; admin mobile nav fixed; about-page bottom nav restored
+- [x] Rebrand → "Light of Jesus Ministry" (titles, header, footers)
+- [x] New shared header (`header.js`) — logo mark, serif wordmark, nav, fund switcher (scales to any funds, mobile dropdown), theme toggle; preserves Google sign-in hooks
+- [x] Dashboard reorg: Recent Activity feed, A–Z contributors directory, dedicated enhanced-stats container
+- [x] Verse of the Month / Year cards (dashboard + admin editor; `/api/settings` batch)
+- [x] Church expenses + planning: `expenses` table (0003), `/api/expenses` CRUD, `manage_expenses` perm, admin ledger, public impact-page section; self-test 29/29
+
+## Remaining roadmap (in order)
+- [ ] Phase 2 — Welcome/login page: "Welcome to Light of Jesus Ministry", Google sign-in + "Continue as guest"; unify auth across pages; user→believer mapping on first sign-in; editable email in user settings
+- [ ] Phase 3 — Sandha (monthly membership dues): pastor sets single amount; add believers + contacts; mark paid; "who paid / who's pending this month"; member's personal Sandha status + greeting on dashboard
+- [ ] Phase 4 — Email reminders: template editor + reminder composer in admin; send via existing Apps Script (receipt mailer already exists there)
+- [ ] Richer stats + landscape dashboard layout (desktop), reframed mobile
+
+## Deploy notes
+- [ ] Apply migrations on remote D1: `0002_dynamic_funds_audit.sql`, `0003_expenses.sql`
+- [ ] Production admins sign in with Google (verified) — no env flag needed. `ALLOW_LEGACY_EMAIL_TOKEN` is only for the local dev-login button.
