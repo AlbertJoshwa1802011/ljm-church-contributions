@@ -1,25 +1,43 @@
-// Shared top header for all public pages — "Light of Jesus Ministry".
-// One component so the header stays identical everywhere and is easy to evolve.
-// Rebuilds the existing <header class="navbar"> mount in place on DOMContentLoaded.
+// LJM Church — shared app shell for all public pages.
+// Injects: (1) top header (brand, desktop nav, fund switcher, theme toggle,
+// auth cluster with avatar menu + sign out), (2) mobile bottom nav
+// (Home · Funds · Give · Sandha · More) and (3) the "More" slide-up sheet.
+// One component so every page stays consistent and easy to evolve.
 //
-// Preserves the auth hooks index.html's inline script wires up by id
-// (#authContainer, #googleSignInBtn, #userInfo, #adminLink) so Google Sign-In
-// keeps working untouched. Owns the theme toggle (theme.js defers to it) and a
-// fund switcher that scales to any number of funds via /api/funds.
+// Auth contract: index.html's inline Google Sign-In script drives the ids
+// #authContainer / #googleSignInBtn / #userInfo / #adminLink — this shell
+// preserves them on the home page. Identity is read from
+// sessionStorage.ljmUserIdToken (GIS JWT) and enriched by
+// sessionStorage.ljmAuthProfile ({ isAdmin, member, ... } written by the
+// /api/auth handshake).
 (function () {
-    var BRAND = "Light of Jesus Ministry";
+    var BRAND = "LJM Church";
+    var BRAND_SUB = "Light of Jesus Ministry";
 
     var ICONS = {
         mark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1.6 3.4 1.6 6.2 0 8.4 2.2-.6 3.8-2 4.8-4.2.9 3.2.3 6-1.8 8.4 2.4-.3 4.3-1.4 5.7-3.4.2 4.6-2.7 8.8-7 10.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22c-4.4-1.4-7.3-5.6-7-10.2 1.4 2 3.3 3.1 5.7 3.4-2.1-2.4-2.7-5.2-1.8-8.4 1 2.2 2.6 3.6 4.8 4.2" fill="currentColor" opacity="0.28"/></svg>',
         chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></svg>',
         moon: '<svg viewBox="0 0 24 24"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.3 7 7 0 0 0 20.5 14.5Z"/></svg>',
-        wallet: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="16.5" cy="13.5" r="1.1" fill="currentColor" stroke="none"/></svg>'
+        wallet: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="16.5" cy="13.5" r="1.1" fill="currentColor" stroke="none"/></svg>',
+        home: '<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9"/><path d="M9.5 20v-6h5v6"/></svg>',
+        funds: '<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-7h6v7"/></svg>',
+        give: '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2 4.5 5.4 4a4.7 4.7 0 0 1 6.6 1.8A4.7 4.7 0 0 1 18.6 4c3.4.5 5 4.1 3.4 7.7C19.5 16.4 12 21 12 21Z"/></svg>',
+        sandha: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
+        more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
+        members: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.7 20c.7-3.4 3.2-5.5 6.3-5.5s5.6 2.1 6.3 5.5"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.8 14.8c2.2.3 3.9 2 4.5 4.7"/></svg>',
+        bought: '<svg viewBox="0 0 24 24"><path d="M6 8h12l1 12.5a1 1 0 0 1-1 1.5H6a1 1 0 0 1-1-1.5L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+        about: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".25" fill="currentColor" stroke-width="1.6"/></svg>',
+        person: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.2c.9-3.9 3.8-6.2 7.2-6.2s6.3 2.3 7.2 6.2"/></svg>',
+        admin: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.3-7 10-4.1-1.7-7-5.6-7-10V6l7-3Z"/><path d="M9.2 12.2l2 2 3.8-4"/></svg>',
+        signout: '<svg viewBox="0 0 24 24"><path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="M15 16l4-4-4-4"/><path d="M19 12H9"/></svg>'
     };
 
+    // Desktop top-nav order (mobile uses bottom nav + More sheet instead).
     var NAV = [
         ["home", "index.html", "Home"],
         ["funds", "funds.html", "Funds"],
+        ["sandha", "sandha.html", "Sandha"],
         ["members", "members.html", "Members"],
         ["impact", "impact.html", "Impact"],
         ["about", "about.html", "About"]
@@ -29,6 +47,7 @@
         var p = (location.pathname.split("/").pop() || "index.html").toLowerCase();
         if (p === "" || p === "index.html") return "home";
         if (p === "funds.html") return "funds";
+        if (p === "sandha.html") return "sandha";
         if (p === "members.html") return "members";
         if (p === "impact.html") return "impact";
         if (p === "about.html") return "about";
@@ -40,15 +59,36 @@
         try { return new URLSearchParams(location.search).get("fund") || ""; } catch (_) { return ""; }
     }
 
-    // ---- session helpers (read-only; index.html owns the real GIS flow) ----
+    // ---- identity ----
     function readStoredIdentity() {
         try {
             var t = sessionStorage.getItem("ljmUserIdToken");
             if (!t || t.split(".").length !== 3) return null;
             var p = JSON.parse(atob(t.split(".")[1]));
-            return { name: p.name || (p.email || "").split("@")[0], email: p.email || "", picture: p.picture || "" };
+            return { name: p.name || (p.email || "").split("@")[0], email: (p.email || "").toLowerCase(), picture: p.picture || "" };
         } catch (_) { return null; }
     }
+    function readAuthProfile() {
+        try { return JSON.parse(sessionStorage.getItem("ljmAuthProfile") || "null"); } catch (_) { return null; }
+    }
+    function isAdminUser(identity) {
+        var profile = readAuthProfile();
+        if (profile && profile.isAdmin) return true;
+        if (identity && window.LJMAdmin && LJMAdmin.isAdmin(identity.email)) return true;
+        return false;
+    }
+
+    function signOut() {
+        try {
+            sessionStorage.removeItem("ljmUserIdToken");
+            sessionStorage.removeItem("ljmAuthProfile");
+            sessionStorage.removeItem("ljmGuest");
+        } catch (_) {}
+        try { if (window.LJMAdmin) LJMAdmin.destroySession(); } catch (_) {}
+        try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); } catch (_) {}
+        location.href = "index.html";
+    }
+    window.LJMShell = { signOut: signOut };
 
     function esc(s) {
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -67,18 +107,17 @@
             try { sessionStorage.setItem("ljmFundsCache", JSON.stringify({ t: Date.now(), funds: funds })); } catch (_) {}
             return funds;
         }).catch(function () {
-            // Fallback so the switcher is never empty even if the API is unreachable.
             return [
                 { slug: "tech-contributions", name: "Tech Fund" },
                 { slug: "christmas-fund", name: "Christmas Fund" }
             ];
         });
     }
-
     var FUND_EMOJI = { "tech-contributions": "💻", "christmas-fund": "🎄" };
     function fundLabel(f) { return (FUND_EMOJI[f.slug] || "⛪") + " " + f.name; }
 
-    function build() {
+    // ================= top header =================
+    function buildHeader() {
         var mount = document.querySelector("header.navbar") || document.querySelector("header.ljm-header");
         if (!mount) return;
 
@@ -90,23 +129,19 @@
                 (n[0] === page ? ' class="active"' : "") + '>' + n[2] + "</a>";
         }).join("");
 
-        // Auth cluster: keep the exact ids index.html's script drives.
-        var authHtml =
-            '<div id="authContainer" class="ljmh-auth-gis">' +
-                '<div id="googleSignInBtn"></div>' +
-            "</div>" +
-            '<span id="userInfo" class="ljmh-userinfo" style="display:none;"></span>' +
-            '<a href="admin.html" id="adminLink" class="ljmh-admin" style="display:none;">Admin ⚡</a>';
+        // Home page keeps the ids the inline GIS script drives.
+        var gisHtml = page === "home"
+            ? '<div id="authContainer" class="ljmh-auth-gis"><div id="googleSignInBtn"></div></div>' +
+              '<span id="userInfo" class="ljmh-userinfo" style="display:none;"></span>' +
+              '<a href="admin.html" id="adminLink" class="ljmh-admin" style="display:none;">Admin ⚡</a>'
+            : "";
 
-        // On pages without the GIS flow, show a lightweight sign-in / avatar.
-        var guestHtml =
-            (identity
-                ? '<div class="ljmh-avatar" title="' + esc(identity.email) + '">' +
-                      (identity.picture
-                          ? '<img src="' + esc(identity.picture) + '" alt="">'
-                          : esc((identity.name || "?").charAt(0).toUpperCase())) +
-                  "</div>"
-                : '<a class="ljmh-signin" href="index.html#signin">Sign in</a>');
+        var accountHtml = identity
+            ? '<button type="button" class="ljmh-avatar" id="ljmhAvatarBtn" title="' + esc(identity.email) + '" aria-haspopup="menu" aria-expanded="false">' +
+                  (identity.picture ? '<img src="' + esc(identity.picture) + '" alt="" referrerpolicy="no-referrer">' : esc((identity.name || "?").charAt(0).toUpperCase())) +
+              "</button>" +
+              '<div class="ljmh-menu" id="ljmhAvatarMenu" hidden></div>'
+            : (page === "home" ? "" : '<a class="ljmh-signin" href="index.html#signin">Sign in</a>');
 
         mount.className = "ljm-header";
         mount.innerHTML =
@@ -126,18 +161,16 @@
                         '<div class="ljmh-fundmenu" role="listbox" hidden></div>' +
                     "</div>" +
                     '<button type="button" class="theme-toggle-btn" aria-label="Toggle dark mode"></button>' +
-                    '<div class="ljmh-auth" data-page="' + page + '">' +
-                        (page === "home" ? authHtml : guestHtml) +
-                    "</div>" +
+                    '<div class="ljmh-auth" data-page="' + page + '">' + gisHtml + accountHtml + "</div>" +
                 "</div>" +
             "</div>";
 
-        wireTheme(mount);
+        wireTheme(mount.querySelector(".theme-toggle-btn"));
         wireFundSwitch(mount);
+        wireAvatarMenu(identity);
     }
 
-    function wireTheme(root) {
-        var btn = root.querySelector(".theme-toggle-btn");
+    function wireTheme(btn) {
         if (!btn || !window.LJMTheme) return;
         var paint = function () { btn.innerHTML = window.LJMTheme.get() === "dark" ? ICONS.sun : ICONS.moon; };
         paint();
@@ -146,6 +179,7 @@
 
     function wireFundSwitch(root) {
         var wrap = root.querySelector(".ljmh-fundswitch");
+        if (!wrap) return;
         var btn = wrap.querySelector(".ljmh-fundbtn");
         var menu = wrap.querySelector(".ljmh-fundmenu");
         var labelEl = wrap.querySelector(".ljmh-fundlabel");
@@ -166,13 +200,158 @@
         });
 
         var close = function () { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); wrap.classList.remove("open"); };
-        var open = function () { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); wrap.classList.add("open"); };
         btn.addEventListener("click", function (e) {
             e.stopPropagation();
-            if (menu.hidden) open(); else close();
+            if (menu.hidden) { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); wrap.classList.add("open"); }
+            else close();
         });
         document.addEventListener("click", function (e) { if (!wrap.contains(e.target)) close(); });
         document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+    }
+
+    function wireAvatarMenu(identity) {
+        var btn = document.getElementById("ljmhAvatarBtn");
+        var menu = document.getElementById("ljmhAvatarMenu");
+        if (!btn || !menu || !identity) return;
+
+        var admin = isAdminUser(identity);
+        menu.innerHTML =
+            '<div class="ljmh-menu-head">' +
+                '<div class="ljmh-menu-name">' + esc(identity.name) + "</div>" +
+                '<div class="ljmh-menu-email">' + esc(identity.email) + "</div>" +
+            "</div>" +
+            '<a class="ljmh-menu-item" href="member.html">' + ICONS.person + "<span>My contributions</span></a>" +
+            (admin ? '<a class="ljmh-menu-item" href="admin.html">' + ICONS.admin + "<span>Admin console</span></a>" : "") +
+            '<button type="button" class="ljmh-menu-item ljmh-menu-signout" id="ljmhSignOutBtn">' + ICONS.signout + "<span>Sign out</span></button>";
+
+        var close = function () { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); };
+        btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            if (menu.hidden) { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); }
+            else close();
+        });
+        document.addEventListener("click", function (e) { if (!menu.contains(e.target) && e.target !== btn) close(); });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+        var so = document.getElementById("ljmhSignOutBtn");
+        if (so) so.addEventListener("click", signOut);
+    }
+
+    // ================= bottom nav + More sheet =================
+    function buildBottomNav() {
+        // Replace any legacy per-page bottom nav with the shell-owned one.
+        var old = document.querySelector("nav.bottom-nav");
+        if (old) old.remove();
+
+        var page = currentPage();
+        var nav = document.createElement("nav");
+        nav.className = "bottom-nav";
+        nav.setAttribute("aria-label", "Primary");
+        var item = function (key, href, label, icon, extra) {
+            return '<a href="' + href + '" class="bottom-nav-item' + (extra || "") + (page === key ? " active" : "") + '" data-tab="' + key + '">' +
+                '<span class="nav-icon">' + icon + "</span>" + (label ? "<span>" + label + "</span>" : "") + "</a>";
+        };
+        nav.innerHTML =
+            item("home", "index.html", "Home", ICONS.home) +
+            item("funds", "funds.html", "Funds", ICONS.funds) +
+            item("give", "index.html#give", "", ICONS.give, " action-btn") +
+            item("sandha", "sandha.html", "Sandha", ICONS.sandha) +
+            '<button type="button" class="bottom-nav-item" id="ljmhMoreBtn" data-tab="more">' +
+                '<span class="nav-icon">' + ICONS.more + "</span><span>More</span></button>";
+        document.body.appendChild(nav);
+
+        // Give: on the home page open the contribution modal instead of navigating.
+        var giveBtn = nav.querySelector('[data-tab="give"]');
+        if (giveBtn && page === "home") {
+            giveBtn.addEventListener("click", function (e) { e.preventDefault(); triggerGive(); });
+        }
+
+        buildMoreSheet();
+        var moreBtn = document.getElementById("ljmhMoreBtn");
+        if (moreBtn) moreBtn.addEventListener("click", openMoreSheet);
+    }
+
+    function triggerGive() {
+        var pay = document.getElementById("rzp-button1");
+        if (pay) { pay.click(); return; }
+        var target = document.querySelector(".fund-heading") || document.body;
+        target.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function buildMoreSheet() {
+        if (document.getElementById("ljmhMoreSheet")) return;
+        var identity = readStoredIdentity();
+        var admin = isAdminUser(identity);
+        var page = currentPage();
+
+        var wrap = document.createElement("div");
+        wrap.id = "ljmhMoreSheet";
+        wrap.hidden = true;
+        wrap.innerHTML =
+            '<div class="ljmh-sheet-backdrop"></div>' +
+            '<div class="ljmh-sheet" role="dialog" aria-label="More">' +
+                '<div class="ljmh-sheet-grip"></div>' +
+                (identity
+                    ? '<div class="ljmh-sheet-user">' +
+                        '<span class="ljmh-avatar ljmh-avatar-static">' + (identity.picture ? '<img src="' + esc(identity.picture) + '" alt="" referrerpolicy="no-referrer">' : esc((identity.name || "?").charAt(0).toUpperCase())) + "</span>" +
+                        '<div><div class="ljmh-menu-name">' + esc(identity.name) + '</div><div class="ljmh-menu-email">' + esc(identity.email) + "</div></div>" +
+                      "</div>"
+                    : '<div class="ljmh-sheet-user"><span class="ljmh-avatar ljmh-avatar-static">🙏</span><div><div class="ljmh-menu-name">Welcome</div><div class="ljmh-menu-email">' + BRAND_SUB + "</div></div></div>") +
+                '<div class="ljmh-sheet-grid">' +
+                    '<a class="ljmh-sheet-item' + (page === "members" ? " active" : "") + '" href="members.html">' + ICONS.members + "<span>Members</span></a>" +
+                    '<a class="ljmh-sheet-item' + (page === "impact" ? " active" : "") + '" href="impact.html">' + ICONS.bought + "<span>Impact</span></a>" +
+                    '<a class="ljmh-sheet-item' + (page === "about" ? " active" : "") + '" href="about.html">' + ICONS.about + "<span>About</span></a>" +
+                    '<a class="ljmh-sheet-item" href="member.html">' + ICONS.person + "<span>My giving</span></a>" +
+                    (admin ? '<a class="ljmh-sheet-item" href="admin.html">' + ICONS.admin + "<span>Admin</span></a>" : "") +
+                    '<button type="button" class="ljmh-sheet-item" id="ljmhSheetTheme">' + ICONS.moon + "<span>Theme</span></button>" +
+                "</div>" +
+                (identity
+                    ? '<button type="button" class="ljmh-sheet-signout" id="ljmhSheetSignOut">' + ICONS.signout + "<span>Sign out</span></button>"
+                    : '<a class="ljmh-sheet-signout ljmh-sheet-signin" href="index.html#signin">' + ICONS.person + "<span>Sign in with Google</span></a>") +
+            "</div>";
+        document.body.appendChild(wrap);
+
+        wrap.querySelector(".ljmh-sheet-backdrop").addEventListener("click", closeMoreSheet);
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMoreSheet(); });
+
+        var themeBtn = document.getElementById("ljmhSheetTheme");
+        if (themeBtn && window.LJMTheme) {
+            var paint = function () {
+                themeBtn.innerHTML = (window.LJMTheme.get() === "dark" ? ICONS.sun : ICONS.moon) +
+                    "<span>" + (window.LJMTheme.get() === "dark" ? "Light mode" : "Dark mode") + "</span>";
+            };
+            paint();
+            themeBtn.addEventListener("click", function () { window.LJMTheme.toggle(); paint(); });
+        }
+        var so = document.getElementById("ljmhSheetSignOut");
+        if (so) so.addEventListener("click", signOut);
+    }
+
+    function openMoreSheet() {
+        var s = document.getElementById("ljmhMoreSheet");
+        if (!s) return;
+        s.hidden = false;
+        requestAnimationFrame(function () { s.classList.add("open"); });
+        document.documentElement.style.overflow = "hidden";
+    }
+    function closeMoreSheet() {
+        var s = document.getElementById("ljmhMoreSheet");
+        if (!s || s.hidden) return;
+        s.classList.remove("open");
+        document.documentElement.style.overflow = "";
+        setTimeout(function () { s.hidden = true; }, 220);
+    }
+
+    // #give deep link (from other pages' Give button)
+    function handleGiveHash() {
+        if (location.hash === "#give" && currentPage() === "home") {
+            setTimeout(triggerGive, 900); // let razorpay-checkout wire up first
+        }
+    }
+
+    function build() {
+        buildHeader();
+        buildBottomNav();
+        handleGiveHash();
     }
 
     if (document.readyState === "loading") {
