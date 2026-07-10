@@ -189,6 +189,9 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
 .ljmh-fundlabel { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ljmh-fundchev svg { width: 15px; height: 15px; transition: transform .18s; }
 .ljmh-fundswitch.open .ljmh-fundchev svg { transform: rotate(180deg); }
+/* The explicit display below would defeat the markup's `hidden` attribute,
+   leaving the menu permanently open — force-respect it. */
+.ljmh-fundmenu[hidden] { display: none !important; }
 .ljmh-fundmenu {
     position: absolute;
     top: calc(100% + 8px);
