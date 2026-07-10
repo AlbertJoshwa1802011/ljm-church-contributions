@@ -43,6 +43,9 @@
 
 <main class="container">
 
+    <!-- Admin welcome banner (shown when a signed-in email holds an admin role) -->
+    <section id="adminBanner" class="admin-banner" style="display:none;"></section>
+
 <!-- Fund Heading -->
     <section class="fund-heading">
         <h2 id="fundHeading">Loading Fund...</h2>
@@ -130,6 +133,22 @@
             <div class="stat-subdetail" id="countSubdetail"></div>
         </div>
     </section>
+
+    <!-- Modal: Member mapping picker ("Which member are you?") -->
+    <div id="mappingModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="mappingModalTitle" aria-hidden="true">
+        <div class="insight-modal-backdrop" id="mappingModalBackdrop"></div>
+        <div class="insight-modal-content">
+            <button type="button" class="insight-modal-close" id="mappingModalClose" aria-label="Close">×</button>
+            <h2 id="mappingModalTitle" class="insight-modal-title">🤝 Link your member profile</h2>
+            <div class="insight-modal-body">
+                <p style="margin:0 0 12px;">Welcome! To show <strong>your</strong> giving history and Sandha status, pick your name from the church member list. This links it to <span id="mappingEmailNote" style="font-weight:600;"></span>.</p>
+                <div id="mappingSuggestion" style="display:none;"></div>
+                <input type="text" id="mappingSearch" class="contrib-input" placeholder="Search your name…" style="width:100%; margin-bottom:10px;">
+                <div id="mappingList" style="max-height:38vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
+                <button type="button" id="mappingSkipBtn" class="link-btn-dismiss" style="margin-top:14px; width:100%;">Skip for now</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal: How we calculate -->
     <div id="insightModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="insightModalTitle" aria-hidden="true">
@@ -439,18 +458,28 @@ window.addEventListener('load', () => {
         if (s) onIdentityVerified({ success: true, email: s.email, name: s.name, isAdmin: true });
     });
 
-    const mobileBtn = document.getElementById('mobileQuickGiveBtn');
-    if (mobileBtn) {
-        mobileBtn.onclick = (e) => {
-            e.preventDefault();
-            const payCard = document.querySelector('.card.payment-card') || document.querySelector('.search-section');
-            if (payCard) {
-                payCard.scrollIntoView({ behavior: 'smooth' });
-                const search = document.getElementById('searchInput');
-                if (search) search.focus();
+    // ── Resume a signed-in session across reloads (token survives in sessionStorage):
+    //    restore the signed-in UI + admin banner without requiring a fresh sign-in click.
+    try {
+        const existing = sessionStorage.getItem('ljmUserIdToken');
+        if (existing && existing.split('.').length === 3) {
+            currentCredentialToken = existing;
+            const payload = JSON.parse(atob(existing.split('.')[1]));
+            onIdentityVerified({
+                success: true,
+                email: payload.email,
+                name: payload.name,
+                picture: payload.picture,
+                isAdmin: LJMAdmin.isAdmin(payload.email)
+            });
+            const cached = JSON.parse(sessionStorage.getItem('ljmAuthProfile') || 'null');
+            if (cached) {
+                renderAdminBanner({ isAdmin: cached.isAdmin, user: { name: cached.name } });
+            } else {
+                runAuthHandshake(existing, { openPickerIfUnmapped: false });
             }
-        };
-    }
+        }
+    } catch (_) {}
 });
 
 function mockLogin() {
@@ -483,45 +512,7 @@ async function handleCredentialResponse(response) {
             isAdmin: isAdmin
         });
 
-        // ─── Contact Cloudflare Worker /api/auth ───
-        try {
-            const authRes = await fetch('/api/auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: response.credential })
-            });
-            if (authRes.ok) {
-                const authData = await authRes.json();
-                console.log("[AUTH] Worker Auth Response:", authData);
-                
-                // Show link suggestion if recommended
-                if (authData.mappingRecommendation) {
-                    const suggestBox = document.getElementById('linkSuggestionBox');
-                    const suggestName = document.getElementById('suggestedMemberName');
-                    if (suggestBox && suggestName) {
-                        suggestName.textContent = authData.mappingRecommendation;
-                        suggestBox.style.display = 'block';
-                        
-                        document.getElementById('confirmLinkBtn').onclick = () => confirmLink(authData.mappingRecommendation);
-                        document.getElementById('dismissLinkBtn').onclick = () => { suggestBox.style.display = 'none'; };
-                    }
-                }
-
-                if (authData.member) {
-                    const badge = document.getElementById('profileMappingBadge');
-                    if (badge) {
-                        badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${authData.member.name}</span>`;
-                    }
-                } else if (!authData.mappingRecommendation) {
-                    const badge = document.getElementById('profileMappingBadge');
-                    if (badge) {
-                        badge.innerHTML = `<span style="color:#e0b200; font-weight:700;">👤 Guest Profile (Not linked to member)</span>`;
-                    }
-                }
-            }
-        } catch (e) {
-            console.error("Worker auth call failed:", e);
-        }
+        await runAuthHandshake(response.credential, { openPickerIfUnmapped: true });
 
     } catch (e) {
         console.error("Token decode error:", e);
@@ -529,25 +520,143 @@ async function handleCredentialResponse(response) {
     }
 }
 
+// ─── /api/auth handshake: verify server-side, learn member link + admin role ───
+async function runAuthHandshake(token, opts) {
+    opts = opts || {};
+    try {
+        const authRes = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+        });
+        if (!authRes.ok) return null;
+        const authData = await authRes.json();
+
+        // Persist for the app shell (header avatar menu, More sheet, greeting)
+        try {
+            sessionStorage.setItem('ljmAuthProfile', JSON.stringify({
+                email: authData.user && authData.user.email,
+                name: authData.user && authData.user.name,
+                isAdmin: !!authData.isAdmin,
+                permissions: authData.permissions || [],
+                member: authData.member ? authData.member.name : null
+            }));
+        } catch (_) {}
+
+        renderAdminBanner(authData);
+
+        const badge = document.getElementById('profileMappingBadge');
+        if (authData.member) {
+            if (badge) badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${escapeHtml(authData.member.name)}</span>`;
+        } else {
+            if (badge) badge.innerHTML = `<span style="color:#e0b200; font-weight:700;">👤 Not linked to a member yet</span>`;
+            if (opts.openPickerIfUnmapped && !sessionStorage.getItem('ljmMappingSkipped')) {
+                openMappingPicker(authData);
+            }
+        }
+        return authData;
+    } catch (e) {
+        console.error("Worker auth call failed:", e);
+        return null;
+    }
+}
+
+// ─── Admin welcome banner ───
+function renderAdminBanner(authData) {
+    const banner = document.getElementById('adminBanner');
+    if (!banner) return;
+    if (!authData || !authData.isAdmin) { banner.style.display = 'none'; return; }
+    const firstName = ((authData.user && authData.user.name) || 'Admin').split(' ')[0];
+    banner.innerHTML = `
+        <div class="admin-banner-inner">
+            <div class="admin-banner-text">
+                <strong>Welcome, ${escapeHtml(firstName)} 🙏</strong>
+                <span>You have admin access to LJM Church.</span>
+            </div>
+            <a class="admin-banner-cta" href="admin.html">Open Admin Console →</a>
+        </div>`;
+    banner.style.display = '';
+}
+
+// ─── Mapping picker: "Which member are you?" ───
+function openMappingPicker(authData) {
+    const modal = document.getElementById('mappingModal');
+    if (!modal) return;
+    const list = document.getElementById('mappingList');
+    const search = document.getElementById('mappingSearch');
+    const note = document.getElementById('mappingEmailNote');
+    const suggestion = document.getElementById('mappingSuggestion');
+    const names = (authData.unclaimedMembers || []).slice();
+
+    if (note) note.textContent = (authData.user && authData.user.email) || 'your Google account';
+
+    if (suggestion) {
+        if (authData.mappingRecommendation) {
+            suggestion.style.display = '';
+            suggestion.innerHTML = `<button type="button" class="mapping-option mapping-suggested" data-name="${escapeHtml(authData.mappingRecommendation)}">⭐ ${escapeHtml(authData.mappingRecommendation)} <span>(name match — is this you?)</span></button>`;
+        } else {
+            suggestion.style.display = 'none';
+            suggestion.innerHTML = '';
+        }
+    }
+
+    const renderList = (q) => {
+        const query = (q || '').toLowerCase().trim();
+        const rows = names.filter(n => !query || n.toLowerCase().includes(query)).slice(0, 60);
+        list.innerHTML = rows.length
+            ? rows.map(n => `<button type="button" class="mapping-option" data-name="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join('')
+            : `<div style="text-align:center; color:var(--text-secondary); padding:14px; font-size:13px;">No unclaimed member matches "${escapeHtml(q || '')}". Ask the pastor to add you, then try again.</div>`;
+    };
+    renderList('');
+    if (search) { search.value = ''; search.oninput = () => renderList(search.value); }
+
+    modal.onclick = (e) => {
+        const opt = e.target.closest('.mapping-option');
+        if (opt) confirmLink(opt.dataset.name);
+    };
+    document.getElementById('mappingSkipBtn').onclick = () => {
+        try { sessionStorage.setItem('ljmMappingSkipped', '1'); } catch (_) {}
+        closeMappingPicker();
+    };
+    document.getElementById('mappingModalClose').onclick = closeMappingPicker;
+    document.getElementById('mappingModalBackdrop').onclick = closeMappingPicker;
+
+    modal.classList.add('insight-modal-visible');
+    modal.setAttribute('aria-hidden', 'false');
+}
+function closeMappingPicker() {
+    const modal = document.getElementById('mappingModal');
+    if (!modal) return;
+    modal.classList.remove('insight-modal-visible');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
 async function confirmLink(memberName) {
-    if (!currentCredentialToken) return;
+    const token = currentCredentialToken || sessionStorage.getItem('ljmUserIdToken');
+    if (!token) return;
     try {
         const res = await fetch('/api/auth', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: currentCredentialToken, memberName })
+            body: JSON.stringify({ token, memberName })
         });
         const data = await res.json();
         if (data.status === 'success') {
-            alert(`✅ Account linked successfully to: ${memberName}`);
+            closeMappingPicker();
             const suggestBox = document.getElementById('linkSuggestionBox');
             if (suggestBox) suggestBox.style.display = 'none';
             const badge = document.getElementById('profileMappingBadge');
             if (badge) {
-                badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${memberName}</span>`;
+                badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${escapeHtml(memberName)}</span>`;
             }
+            try {
+                const profile = JSON.parse(sessionStorage.getItem('ljmAuthProfile') || '{}');
+                profile.member = memberName;
+                sessionStorage.setItem('ljmAuthProfile', JSON.stringify(profile));
+            } catch (_) {}
+            alert(`✅ Welcome, ${memberName}! Your account is now linked — your giving history is yours.`);
         } else {
-            alert(`❌ Linking failed: ${data.error}`);
+            alert(`❌ Linking failed: ${data.error || 'Unknown error'}`);
         }
     } catch(err) {
         alert(`❌ Network error: ${err}`);
@@ -585,12 +694,14 @@ function onIdentityVerified(result) {
             if (profEmail) profEmail.textContent = result.email;
         }
 
-        // Setup Logout click
+        // Setup Logout click — full sign-out via the app shell (clears the Google
+        // token + auth profile too; the old code called a nonexistent
+        // LJMAdmin.deleteSession and left the token behind).
         const logoutBtn = document.getElementById('logoutProfileBtn');
         if (logoutBtn) {
             logoutBtn.onclick = () => {
-                LJMAdmin.deleteSession();
-                window.location.reload();
+                if (window.LJMShell) LJMShell.signOut();
+                else { try { sessionStorage.clear(); } catch (_) {} window.location.reload(); }
             };
         }
 

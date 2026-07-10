@@ -571,6 +571,79 @@ button.bottom-nav-item {
 }
 
 /* ==================================================================
+   Welcome gate (portal-telemetry.js) — branded sign-in / guest card
+   ================================================================== */
+.ljm-gate-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: var(--shadow-lift);
+    max-width: 400px;
+    width: 100%;
+    padding: 34px 28px 26px;
+    text-align: center;
+    font-family: var(--sans);
+    animation: ljmhPop .22s ease;
+}
+.ljm-gate-mark { font-size: 42px; margin-bottom: 10px; }
+.ljm-gate-title { font-family: var(--serif); font-size: 24px; font-weight: 700; color: var(--text); }
+.ljm-gate-sub { font-size: 12.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-deep); margin: 4px 0 12px; }
+.ljm-gate-body { font-size: 14px; line-height: 1.55; color: var(--text-soft); margin-bottom: 20px; }
+.ljm-gate-guest {
+    display: block; width: 100%; margin-top: 14px; padding: 11px;
+    background: transparent; border: 1px solid var(--border-strong);
+    border-radius: 999px; cursor: pointer;
+    color: var(--text-soft); font: 600 13.5px var(--sans);
+}
+.ljm-gate-guest:hover { border-color: var(--accent); color: var(--accent-deep); }
+
+/* ==================================================================
+   Member mapping picker options
+   ================================================================== */
+.mapping-option {
+    display: block; width: 100%; text-align: left;
+    padding: 11px 14px; border-radius: 11px;
+    background: var(--bg-soft, #f4f2ec);
+    border: 1px solid var(--border, #e8e5dc);
+    color: var(--text, #1f1e1a);
+    font: 600 14px var(--sans, sans-serif);
+    cursor: pointer;
+    transition: border-color .12s, background .12s;
+}
+.mapping-option:hover { border-color: var(--accent); background: var(--accent-soft); }
+.mapping-option span { font-weight: 500; font-size: 12px; color: var(--text-soft); }
+.mapping-suggested {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    margin-bottom: 10px;
+}
+
+/* ==================================================================
+   Admin welcome banner on the dashboard
+   ================================================================== */
+.admin-banner { margin: 14px 0 6px; }
+.admin-banner-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap;
+    background: linear-gradient(120deg, var(--accent-soft), transparent);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+}
+.admin-banner-text { display: flex; flex-direction: column; gap: 2px; }
+.admin-banner-text strong { font-family: var(--serif); font-size: 16.5px; color: var(--text); }
+.admin-banner-text span { font-size: 13px; color: var(--text-soft); }
+.admin-banner-cta {
+    display: inline-flex; align-items: center;
+    padding: 9px 18px; border-radius: 999px;
+    background: var(--accent); color: #fff;
+    font: 600 13px var(--sans); text-decoration: none;
+    white-space: nowrap;
+}
+.admin-banner-cta:hover { background: var(--accent-deep); }
+
+/* ==================================================================
    Verse cards — pastor-curated Verse of the Month / Year, prominent
    on the dashboard (mirrors the physical cards handed out at church).
    ================================================================== */
