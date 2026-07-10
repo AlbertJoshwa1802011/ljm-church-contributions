@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>What We Bought · LJM Church Contributions</title>
+<title>Impact · Light of Jesus Ministry</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -355,6 +355,9 @@
         .impact-total-card .value { font-size: 18px; }
     }
 </style>
+<link rel="stylesheet" href="theme.css">
+<script src="theme.js"></script>
+<script src="header.js"></script>
 </head>
 <body>
 
@@ -425,27 +428,74 @@
         <p>Every contribution is being carefully stewarded. Stay tuned — we'll post here as the church invests your giving.</p>
     </div>
 
+    <!-- Operating expenses (public, from /api/expenses) -->
+    <section class="pub-expenses" id="pubExpenses" style="display:none;">
+        <h2 class="pe-title">💸 Operating Expenses & Planning</h2>
+        <p class="pe-sub">Beyond one-time purchases, here's how the church stewards day-to-day giving — with the same transparency.</p>
+        <div class="pe-summary" id="peSummary"></div>
+        <div class="pe-list" id="peList"></div>
+    </section>
+
 </main>
+
+<script>
+// Public "where the money goes" — operating expenses from /api/expenses.
+(function () {
+    var inr = function (n) { return "₹" + Number(n || 0).toLocaleString("en-IN"); };
+    var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+    var CAT_ICON = { Utilities: "💡", Rent: "🏠", Events: "🎉", Maintenance: "🔧", Outreach: "🤝", Salary: "👤", Charity: "❤️", Equipment: "🎛️", General: "📌" };
+
+    fetch("/api/expenses?_t=" + Date.now(), { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            var expenses = (d && d.expenses) || [];
+            if (!expenses.length) return;
+            var s = d.summary || { totalPaid: 0, totalPlanned: 0, byCategory: {} };
+            document.getElementById("pubExpenses").style.display = "";
+
+            var cats = Object.keys(s.byCategory || {}).sort(function (a, b) { return s.byCategory[b] - s.byCategory[a]; });
+            document.getElementById("peSummary").innerHTML =
+                '<div class="pe-kpi"><div class="pe-k-label">Total spent</div><div class="pe-k-value">' + inr(s.totalPaid) + '</div></div>' +
+                (s.totalPlanned ? '<div class="pe-kpi"><div class="pe-k-label">Planned ahead</div><div class="pe-k-value">' + inr(s.totalPlanned) + '</div></div>' : '') +
+                '<div class="pe-chips">' + cats.map(function (c) {
+                    return '<span class="pe-chip">' + (CAT_ICON[c] || "📌") + " " + esc(c) + " · " + inr(s.byCategory[c]) + "</span>";
+                }).join("") + '</div>';
+
+            document.getElementById("peList").innerHTML = expenses.map(function (x) {
+                var planned = x.status === "planned";
+                return '<div class="pe-row' + (planned ? " pe-planned" : "") + '">' +
+                    '<div class="pe-ic">' + (CAT_ICON[x.category] || "📌") + '</div>' +
+                    '<div class="pe-main"><div class="pe-name">' + esc(x.title) +
+                        (planned ? ' <span class="pe-badge">Planned</span>' : '') +
+                        (x.recurring && x.recurring !== "none" ? ' <span class="pe-badge pe-rec">' + esc(x.recurring) + '</span>' : '') +
+                        '</div>' +
+                        '<div class="pe-meta">' + esc(x.category) + (x.expenseDate ? " · " + esc(x.expenseDate) : "") + (x.vendor ? " · " + esc(x.vendor) : "") + '</div></div>' +
+                    '<div class="pe-amt">' + inr(x.amount) + '</div></div>';
+            }).join("");
+        })
+        .catch(function () { /* expenses are optional; page still shows purchases */ });
+})();
+</script>
 
 <!-- Mobile Sticky Bottom Navigation -->
 <nav class="bottom-nav">
-    <a href="index.html" class="bottom-nav-item">
+    <a href="index.html" class="bottom-nav-item" data-icon="home">
         <span class="nav-icon">🏠</span>
         <span>Dashboard</span>
     </a>
-    <a href="members.html" class="bottom-nav-item">
+    <a href="members.html" class="bottom-nav-item" data-icon="members">
         <span class="nav-icon">👥</span>
         <span>Members</span>
     </a>
     <!-- Quick Give Central Action Button -->
-    <a href="index.html?action=contribute" class="bottom-nav-item action-btn" aria-label="Contribute Now">
+    <a href="index.html?action=contribute" class="bottom-nav-item action-btn" aria-label="Contribute Now" data-icon="give">
         <span class="nav-icon">✨</span>
     </a>
-    <a href="impact.html" class="bottom-nav-item active">
+    <a href="impact.html" class="bottom-nav-item active" data-icon="bought">
         <span class="nav-icon">🛍️</span>
         <span>Bought</span>
     </a>
-    <a href="about.html" class="bottom-nav-item">
+    <a href="about.html" class="bottom-nav-item" data-icon="about">
         <span class="nav-icon">ℹ️</span>
         <span>About</span>
     </a>
@@ -477,7 +527,7 @@
 <footer class="premium-footer">
     <div class="footer-inner">
         <div class="footer-left">
-            <div class="footer-logo">🙏 LJM Church Contributions</div>
+            <div class="footer-logo">🙏 Light of Jesus Ministry</div>
             <div class="footer-tagline">Giving with faith, transparency & purpose</div>
         </div>
         <div class="footer-right">
@@ -492,7 +542,7 @@
             </a>
         </div>
     </div>
-    <div class="footer-bottom">© 2026 · LJM Church Contributions · Built with ❤️</div>
+    <div class="footer-bottom">© 2026 · Light of Jesus Ministry · Built with ❤️</div>
 </footer>
 
 <!-- Local preview mock data (inert on production URLs) -->

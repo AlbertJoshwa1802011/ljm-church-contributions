@@ -202,10 +202,17 @@
             #mobileNav {
                 display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
                 background: rgba(250,249,245,0.95); backdrop-filter: blur(12px);
-                border-top: 1px solid var(--border); overflow-x: auto; padding: 6px 8px; gap: 4px;
+                border-top: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x proximity; padding: 6px 10px; gap: 6px;
             }
-            #mobileNav .nav-item { flex-direction: column; gap: 2px; font-size: 10px; padding: 6px 10px; flex-shrink: 0; }
-            #mobileNav .ni-icon { font-size: 17px; }
+            #mobileNav::-webkit-scrollbar { display: none; }
+            #mobileNav .nav-item {
+                flex-direction: column; gap: 3px; font-size: 10.5px; font-weight: 600;
+                padding: 7px 14px; width: auto; min-width: 60px; flex-shrink: 0;
+                border-radius: 12px; scroll-snap-align: start; white-space: nowrap;
+            }
+            #mobileNav .nav-item.active { background: var(--accent-soft); }
+            #mobileNav .ni-icon { font-size: 18px; }
         }
     </style>
 </head>
@@ -347,6 +354,41 @@
                 </div>
             </div>
 
+            <!-- EXPENSES -->
+            <div class="section" id="section-expenses">
+                <div class="page-head"><h2>Expenses &amp; planning</h2><p>Track every outgoing — utilities, rent, events, maintenance, outreach — plus planned/budgeted items. Public entries appear on the impact page; mark sensitive ones private.</p></div>
+                <div class="kpi-grid" id="x_kpis"></div>
+                <div class="card">
+                    <h3 id="x_formTitle">Add an expense</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Title *</label><input class="input" id="x_title" placeholder="Electricity bill – July"></div>
+                        <div><label class="f-label">Amount (₹) *</label><input class="input" id="x_amount" type="number"></div>
+                        <div><label class="f-label">Category</label><select class="input" id="x_category">
+                            <option>General</option><option>Utilities</option><option>Rent</option><option>Events</option>
+                            <option>Maintenance</option><option>Outreach</option><option>Salary</option><option>Charity</option><option>Equipment</option>
+                        </select></div>
+                        <div><label class="f-label">Date</label><input class="input" id="x_date" type="date"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="x_status"><option value="paid">Paid</option><option value="planned">Planned</option><option value="cancelled">Cancelled</option></select></div>
+                        <div><label class="f-label">Recurring</label><select class="input" id="x_recurring"><option value="none">One-off</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
+                        <div><label class="f-label">Source fund (optional)</label><select class="input" id="x_fund"><option value="">General funds</option></select></div>
+                        <div><label class="f-label">Vendor / payee</label><input class="input" id="x_vendor"></div>
+                        <div class="span-all"><label class="f-label">Notes</label><textarea class="input" id="x_notes" rows="2"></textarea></div>
+                        <div class="span-all"><label style="display:flex; gap:8px; align-items:center; font-size:12.5px; color:var(--text-soft); cursor:pointer;"><input type="checkbox" id="x_private"> Private — hide from the public portal (e.g. salaries)</label></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="x_saveBtn">Save expense</button>
+                        <button class="btn btn-outline" id="x_clearBtn">Clear</button>
+                        <span class="msg" id="x_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Expense ledger (<span id="x_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="x_table"><thead><tr>
+                        <th>Title</th><th>Category</th><th>Amount</th><th>Date</th><th>Status</th><th>Vis.</th><th></th>
+                    </tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
             <!-- WISHLIST -->
             <div class="section" id="section-wishlist">
                 <div class="page-head"><h2>Wishlist</h2><p>Planned purchases shown on the public home page.</p></div>
@@ -466,6 +508,31 @@
                 </div>
             </div>
 
+            <!-- VERSES -->
+            <div class="section" id="section-verses">
+                <div class="page-head"><h2>Verse cards</h2><p>Set the Verse of the Month and Verse of the Year — shown prominently on the member dashboard, mirroring the printed cards.</p></div>
+                <div class="card">
+                    <h3>✝ Verse of the Month</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Label (e.g. July 2026)</label><input class="input" id="v_monthLabel" placeholder="July 2026"></div>
+                        <div><label class="f-label">Reference (e.g. Philippians 4:13)</label><input class="input" id="v_monthRef" placeholder="Philippians 4:13"></div>
+                        <div class="span-all"><label class="f-label">Verse text</label><textarea class="input" id="v_monthText" rows="3" placeholder="I can do all things through Christ who strengthens me."></textarea></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>🌟 Verse of the Year</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Label (e.g. 2026)</label><input class="input" id="v_yearLabel" placeholder="2026"></div>
+                        <div><label class="f-label">Reference (e.g. Jeremiah 29:11)</label><input class="input" id="v_yearRef" placeholder="Jeremiah 29:11"></div>
+                        <div class="span-all"><label class="f-label">Verse text</label><textarea class="input" id="v_yearText" rows="3" placeholder="For I know the plans I have for you, declares the Lord..."></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="v_saveBtn">Save verses</button>
+                        <span class="msg" id="v_msg"></span>
+                    </div>
+                </div>
+            </div>
+
             <!-- SELF-TEST -->
             <div class="section" id="section-selftest">
                 <div class="page-head"><h2>Production self-test</h2><p>Runs the full end-to-end suite against this deployment. Test records are auto-cleaned; real data is never touched.</p></div>
@@ -513,7 +580,9 @@
             ["members", "👥", "Members"],
             ["contributions", "📒", "Contributions"],
             ["purchases", "🛍️", "Purchases"],
+            ["expenses", "💸", "Expenses"],
             ["wishlist", "📋", "Wishlist"],
+            ["verses", "📖", "Verses"],
             ["roles", "🛡️", "Roles"],
             ["audit", "🧾", "Audit log"],
             ["settings", "⚙️", "Settings"],
@@ -979,6 +1048,90 @@
                 .catch(function (e) { setMsg("p_msg", e.message, "err"); });
         }
 
+        // ═══════════════ Expenses ═══════════════
+        function loadExpenses() {
+            var sel = $("x_fund");
+            var opts = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund", name: "Christmas Fund" }];
+            sel.innerHTML = '<option value="">General funds</option>' +
+                opts.map(function (f) { return '<option value="' + esc(f.slug) + '">' + esc(f.name) + "</option>"; }).join("");
+            if (!$("x_date").value) $("x_date").valueAsDate = new Date();
+            fetchExpenses();
+        }
+        function fetchExpenses() {
+            api("/api/expenses?all=1&_t=" + Date.now()).then(function (d) {
+                state.expensesCache = d.expenses || [];
+                var s = d.summary || { totalPaid: 0, totalPlanned: 0, count: 0, byCategory: {} };
+                var topCat = Object.keys(s.byCategory || {}).sort(function (a, b) { return s.byCategory[b] - s.byCategory[a]; })[0];
+                $("x_kpis").innerHTML =
+                    kpi("Total spent", inr(s.totalPaid), "paid to date") +
+                    kpi("Planned / budgeted", inr(s.totalPlanned), "not yet paid") +
+                    kpi("Entries", String(s.count), "in the ledger") +
+                    kpi("Top category", topCat || "–", topCat ? inr(s.byCategory[topCat]) + " spent" : "");
+                $("x_count").textContent = state.expensesCache.length;
+                var tb = $("x_table").querySelector("tbody");
+                var statusPill = { paid: "pill-green", planned: "pill-amber", cancelled: "pill-grey" };
+                tb.innerHTML = state.expensesCache.map(function (x) {
+                    return "<tr><td><strong>" + esc(x.title) + "</strong>" + (x.vendor ? "<div style='color:var(--text-faint);font-size:11px;'>" + esc(x.vendor) + "</div>" : "") + "</td>" +
+                        "<td><span class='pill pill-accent'>" + esc(x.category) + "</span>" + (x.recurring && x.recurring !== "none" ? " <span class='pill pill-grey'>" + esc(x.recurring) + "</span>" : "") + "</td>" +
+                        "<td>" + inr(x.amount) + "</td><td>" + esc(x.expenseDate || "–") + "</td>" +
+                        "<td><span class='pill " + (statusPill[x.status] || "pill-grey") + "'>" + esc(x.status) + "</span></td>" +
+                        "<td>" + (x.isPrivate ? "🔒" : "🌐") + "</td>" +
+                        '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + x.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + x.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="7" class="empty">No expenses recorded yet.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () { b.dataset.act === "edit" ? editExpense(Number(b.dataset.id)) : deleteExpense(Number(b.dataset.id)); };
+                });
+            }).catch(function (e) { setMsg("x_msg", e.message, "err"); });
+        }
+        function editExpense(id) {
+            var x = (state.expensesCache || []).find(function (e) { return e.id === id; });
+            if (!x) return;
+            state.editingExpenseId = id;
+            $("x_formTitle").textContent = "Edit expense — " + x.title;
+            $("x_title").value = x.title; $("x_amount").value = x.amount;
+            $("x_category").value = x.category || "General"; $("x_date").value = (x.expenseDate || "").substring(0, 10);
+            $("x_status").value = x.status || "paid"; $("x_recurring").value = x.recurring || "none";
+            $("x_fund").value = x.fund || ""; $("x_vendor").value = x.vendor || "";
+            $("x_notes").value = x.notes || ""; $("x_private").checked = !!x.isPrivate;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function deleteExpense(id) {
+            if (!confirm("Delete this expense? This cannot be undone.")) return;
+            api("/api/expenses?id=" + id, { method: "DELETE" })
+                .then(function (d) { setMsg("x_msg", d.message, d.success ? "ok" : "err"); if (d.success) fetchExpenses(); })
+                .catch(function (e) { setMsg("x_msg", e.message, "err"); });
+        }
+        function clearExpenseForm() {
+            state.editingExpenseId = null;
+            $("x_formTitle").textContent = "Add an expense";
+            ["x_title", "x_amount", "x_vendor", "x_notes"].forEach(function (id) { $(id).value = ""; });
+            $("x_category").value = "General"; $("x_status").value = "paid";
+            $("x_recurring").value = "none"; $("x_fund").value = ""; $("x_private").checked = false;
+            $("x_date").valueAsDate = new Date();
+        }
+        function saveExpense() {
+            var title = $("x_title").value.trim();
+            var amount = Number($("x_amount").value);
+            if (!title || !isFinite(amount) || amount < 0) { setMsg("x_msg", "Title and a valid amount are required", "err"); return; }
+            var payload = {
+                title: title, amount: amount, category: $("x_category").value,
+                expenseDate: $("x_date").value, status: $("x_status").value,
+                recurring: $("x_recurring").value, fund: $("x_fund").value,
+                vendor: $("x_vendor").value.trim(), notes: $("x_notes").value.trim(),
+                isPrivate: $("x_private").checked
+            };
+            $("x_saveBtn").disabled = true;
+            var req = state.editingExpenseId
+                ? api("/api/expenses", { method: "PUT", body: JSON.stringify(Object.assign(payload, { id: state.editingExpenseId })) })
+                : api("/api/expenses", { method: "POST", body: JSON.stringify(payload) });
+            req.then(function (d) {
+                $("x_saveBtn").disabled = false;
+                setMsg("x_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearExpenseForm(); fetchExpenses(); }
+            }).catch(function (e) { $("x_saveBtn").disabled = false; setMsg("x_msg", e.message, "err"); });
+        }
+
         // ═══════════════ Wishlist ═══════════════
         function loadWishlist() {
             api("/api/wishlist?_t=" + Date.now()).then(function (d) {
@@ -1149,6 +1302,38 @@
             }).catch(function (e) { setMsg("s_goalMsg", e.message, "err"); });
         }
 
+        // ═══════════════ Verses ═══════════════
+        function loadVerses() {
+            fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    var s = (d && d.settings) || {};
+                    $("v_monthLabel").value = s.verse_month_label || "";
+                    $("v_monthRef").value = s.verse_month_ref || "";
+                    $("v_monthText").value = s.verse_month_text || "";
+                    $("v_yearLabel").value = s.verse_year_label || "";
+                    $("v_yearRef").value = s.verse_year_ref || "";
+                    $("v_yearText").value = s.verse_year_text || "";
+                });
+        }
+        function saveVerses() {
+            var updates = {
+                verse_month_label: $("v_monthLabel").value.trim(),
+                verse_month_ref: $("v_monthRef").value.trim(),
+                verse_month_text: $("v_monthText").value.trim(),
+                verse_year_label: $("v_yearLabel").value.trim(),
+                verse_year_ref: $("v_yearRef").value.trim(),
+                verse_year_text: $("v_yearText").value.trim()
+            };
+            $("v_saveBtn").disabled = true;
+            api("/api/settings", { method: "PUT", body: JSON.stringify({ updates: updates }) })
+                .then(function (d) {
+                    $("v_saveBtn").disabled = false;
+                    setMsg("v_msg", d.success ? "Verses saved — live on the dashboard" : (d.message || "Save failed"), d.success ? "ok" : "err");
+                })
+                .catch(function (e) { $("v_saveBtn").disabled = false; setMsg("v_msg", e.message, "err"); });
+        }
+
         // ═══════════════ Self-test ═══════════════
         function runSelfTest() {
             $("st_runBtn").disabled = true;
@@ -1172,8 +1357,8 @@
         var LOADERS = {
             overview: loadOverview, funds: loadFunds, members: loadMembers,
             contributions: loadContributions, purchases: loadPurchases,
-            wishlist: loadWishlist, roles: loadRoles, audit: loadAudit,
-            settings: loadSettings, selftest: function () {}
+            expenses: loadExpenses, wishlist: loadWishlist, roles: loadRoles, audit: loadAudit,
+            verses: loadVerses, settings: loadSettings, selftest: function () {}
         };
 
         document.addEventListener("DOMContentLoaded", function () {
@@ -1184,6 +1369,7 @@
             $("memberRefresh").onclick = loadMembers;
             $("memberSearch").oninput = renderMembers;
             $("p_saveBtn").onclick = savePurchase; $("p_clearBtn").onclick = clearPurchaseForm;
+            $("x_saveBtn").onclick = saveExpense; $("x_clearBtn").onclick = clearExpenseForm;
             $("w_saveBtn").onclick = saveWishlist; $("w_clearBtn").onclick = clearWishlistForm;
             $("r_saveBtn").onclick = saveRole; $("r_linkBtn").onclick = linkEmail;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
@@ -1191,6 +1377,7 @@
             $("a_nextBtn").onclick = function () { state.auditOffset += 50; fetchAudit(); };
             $("s_forceLogin").onchange = toggleForceLogin;
             $("s_saveGoals").onclick = saveGoals;
+            $("v_saveBtn").onclick = saveVerses;
             $("st_runBtn").onclick = runSelfTest;
             $("logoutLink").onclick = function () {
                 sessionStorage.removeItem(TOKEN_KEY);

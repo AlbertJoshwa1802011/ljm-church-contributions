@@ -1,0 +1,809 @@
+/* ==================================================================
+   LJM Shared Theme — light/dark design system + mobile app-style nav
+   Load this AFTER style.css (and after any page inline <style>) on
+   every public page: its :root block wins the cascade and re-themes
+   existing components that already read the --google-* tokens.
+   ================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --bg: #faf9f5;
+    --bg-soft: #f4f2ec;
+    --surface: #ffffff;
+    --border: #e8e5dc;
+    --border-strong: #d9d5c9;
+    --text: #1f1e1a;
+    --text-soft: #6e6a5e;
+    --text-faint: #a09a8a;
+    --accent: #d97757;
+    --accent-deep: #c05f3f;
+    --accent-soft: #fbeee8;
+    --green: #5f8d4e;
+    --green-soft: #eef4ea;
+    --red: #b3452f;
+    --red-soft: #fbeae5;
+    --amber: #b98a2e;
+    --amber-soft: #f9f1df;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow: 0 1px 2px rgba(60,50,30,0.05), 0 4px 16px rgba(60,50,30,0.06);
+    --shadow-lift: 0 2px 6px rgba(60,50,30,0.08), 0 10px 32px rgba(60,50,30,0.10);
+    --serif: "Lora", Georgia, serif;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* Back-compat: style.css and inline page styles already read these names.
+       Re-pointing them at the tokens above re-themes existing components
+       without having to touch every rule in style.css. */
+    --google-blue: var(--accent);
+    --google-blue-hover: var(--accent-deep);
+    --google-blue-light: var(--accent-soft);
+    --google-surface: var(--surface);
+    --google-bg: var(--bg);
+    --google-text: var(--text);
+    --google-text-secondary: var(--text-soft);
+    --google-border: var(--border);
+    --font-heading: var(--serif);
+    --font-body: var(--sans);
+    --shadow-sm: var(--shadow);
+    --shadow-md: var(--shadow);
+    --shadow-lg: var(--shadow-lift);
+    /* index.html references --text-secondary directly; it was never defined. */
+    --text-secondary: var(--text-soft);
+}
+
+[data-theme="dark"] {
+    --bg: #1c1a14;
+    --bg-soft: #24211a;
+    --surface: #2a2721;
+    --border: #3b372c;
+    --border-strong: #4c4736;
+    --text: #f2efe4;
+    --text-soft: #c3bda8;
+    --text-faint: #8b8570;
+    --accent: #e2916a;
+    --accent-deep: #f0a97d;
+    --accent-soft: rgba(226,145,106,0.16);
+    --green: #8bc27a;
+    --green-soft: rgba(139,194,122,0.14);
+    --red: #e08571;
+    --red-soft: rgba(224,133,113,0.14);
+    --amber: #d9b563;
+    --amber-soft: rgba(217,181,99,0.14);
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lift: 0 2px 6px rgba(0,0,0,0.45), 0 10px 32px rgba(0,0,0,0.55);
+    color-scheme: dark;
+}
+
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+
+body {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+}
+
+h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-title, .insights-title {
+    font-family: var(--serif) !important;
+}
+
+/* ==================================================================
+   Shared top header (built by header.js) — "Light of Jesus Ministry".
+   Warm, minimal, editorial look matching the admin console. Overrides the
+   old purple .navbar entirely (header.js swaps the class to .ljm-header).
+   ================================================================== */
+.ljm-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    -webkit-backdrop-filter: saturate(1.4) blur(14px);
+    backdrop-filter: saturate(1.4) blur(14px);
+    border-bottom: 1px solid var(--border);
+    /* reset stray properties from the old .navbar / inline page styles */
+    color: var(--text);
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+    display: block;
+}
+.ljmh-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    height: 62px;
+    padding: 0 22px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.ljmh-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text);
+    flex-shrink: 0;
+}
+.ljmh-mark {
+    display: inline-flex;
+    width: 34px; height: 34px;
+    align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    flex-shrink: 0;
+}
+.ljmh-mark svg { width: 20px; height: 20px; }
+.ljmh-word {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+.ljmh-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+}
+.ljmh-nav a {
+    text-decoration: none;
+    color: var(--text-soft);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 13px;
+    border-radius: 9px;
+    transition: background .15s, color .15s;
+}
+.ljmh-nav a:hover { background: var(--bg-soft); color: var(--text); }
+.ljmh-nav a.active { color: var(--accent-deep); font-weight: 600; background: var(--accent-soft); }
+.ljmh-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Fund switcher */
+.ljmh-fundswitch { position: relative; }
+.ljmh-fundbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font: 600 13px var(--sans);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+.ljmh-fundbtn:hover { border-color: var(--accent); }
+.ljmh-fundswitch.open .ljmh-fundbtn { border-color: var(--accent); background: var(--bg-soft); }
+.ljmh-fund-ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.ljmh-fund-ic { display: inline-flex; color: var(--accent-deep); }
+.ljmh-fundlabel { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ljmh-fundchev svg { width: 15px; height: 15px; transition: transform .18s; }
+.ljmh-fundswitch.open .ljmh-fundchev svg { transform: rotate(180deg); }
+/* The explicit display below would defeat the markup's `hidden` attribute,
+   leaving the menu permanently open — force-respect it. */
+.ljmh-fundmenu[hidden] { display: none !important; }
+.ljmh-fundmenu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 230px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lift);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: ljmhPop .16s ease;
+    z-index: 20;
+}
+@keyframes ljmhPop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.ljmh-fundopt {
+    display: block;
+    padding: 9px 12px;
+    border-radius: 9px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 13.5px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.ljmh-fundopt:hover { background: var(--bg-soft); }
+.ljmh-fundopt.ljmh-fund-active { background: var(--accent-soft); color: var(--accent-deep); font-weight: 600; }
+.ljmh-fundempty { padding: 12px; font-size: 13px; color: var(--text-faint); text-align: center; }
+
+/* Theme toggle (now on a light surface, not the purple bar) */
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-soft);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color .15s, color .15s, transform .12s;
+}
+.theme-toggle-btn:hover { border-color: var(--accent); color: var(--accent-deep); }
+.theme-toggle-btn:active { transform: scale(0.92); }
+.theme-toggle-btn svg {
+    width: 18px; height: 18px;
+    fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Auth cluster */
+.ljmh-auth { display: inline-flex; align-items: center; gap: 10px; }
+.ljmh-userinfo { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.ljmh-admin {
+    font-size: 12.5px; font-weight: 700; text-decoration: none;
+    color: var(--accent-deep); border: 1px dashed var(--accent);
+    padding: 4px 9px; border-radius: 8px; white-space: nowrap;
+}
+.ljmh-signin {
+    display: inline-flex; align-items: center;
+    height: 36px; padding: 0 16px;
+    border-radius: 999px;
+    background: var(--accent); color: #fff;
+    font: 600 13px var(--sans); text-decoration: none;
+    white-space: nowrap; transition: background .15s;
+}
+.ljmh-signin:hover { background: var(--accent-deep); }
+.ljmh-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color: #fff; font-weight: 700; font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+}
+.ljmh-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---- Mobile header: nav lives in the bottom tab bar, so top bar is compact ---- */
+@media (max-width: 820px) {
+    .ljmh-inner { height: 56px; padding: 0 12px; gap: 9px; }
+    .ljmh-nav { display: none; }
+    /* Let the brand shrink and truncate so the action cluster never clips. */
+    .ljmh-brand { flex: 0 1 auto; min-width: 0; gap: 8px; }
+    .ljmh-word { font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ljmh-actions { flex-shrink: 0; gap: 8px; }
+    .ljmh-fundlabel { display: none; }
+    .ljmh-fundbtn { padding: 0 10px; height: 34px; }
+    .theme-toggle-btn { width: 34px; height: 34px; }
+    .ljmh-userinfo, .ljmh-admin { display: none !important; }
+    /* The full Google button is too wide for the compact mobile bar; on the
+       home page sign-in happens via the in-page member card instead. */
+    .ljmh-auth-gis { display: none !important; }
+    .ljmh-signin { height: 34px; padding: 0 13px; font-size: 12.5px; }
+    .ljmh-avatar { width: 34px; height: 34px; font-size: 14px; }
+    /* Keep the menu absolute (drops below the button). A fixed bottom-sheet
+       breaks here because the header's backdrop-filter becomes the containing
+       block for fixed descendants, throwing the sheet off-screen. */
+    .ljmh-fundmenu { right: 0; left: auto; min-width: 210px; max-width: 78vw; }
+}
+@media (max-width: 380px) {
+    /* Very narrow phones: keep only the mark + short wordmark. */
+    .ljmh-word { font-size: 13.5px; }
+}
+
+/* ==================================================================
+   Dark-mode overrides for hardcoded light surfaces across style.css
+   and the page-specific inline <style> blocks (members/impact/about).
+   Everything below only applies when [data-theme="dark"] is set.
+   ================================================================== */
+[data-theme="dark"] body::before { opacity: 0.4; }
+
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .chart-card,
+[data-theme="dark"] .contributor-card,
+[data-theme="dark"] .top-card,
+[data-theme="dark"] .member-card,
+[data-theme="dark"] .insight-card,
+[data-theme="dark"] .insight-modal-content,
+[data-theme="dark"] .empty-state,
+[data-theme="dark"] .card,
+[data-theme="dark"] .fund-card,
+[data-theme="dark"] .wishlist-item,
+[data-theme="dark"] .activity-row {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text);
+    box-shadow: var(--shadow) !important;
+}
+
+[data-theme="dark"] .stat-card h3,
+[data-theme="dark"] .insight-modal-title,
+[data-theme="dark"] .top-title,
+[data-theme="dark"] .page-heading,
+[data-theme="dark"] .contributor-name,
+[data-theme="dark"] .member-name,
+[data-theme="dark"] .activity-name {
+    color: var(--text) !important;
+}
+
+[data-theme="dark"] .stat-card .stat-value,
+[data-theme="dark"] .stat-card .stat-value.goal {
+    color: var(--text) !important;
+}
+
+[data-theme="dark"] .stat-card .stat-subdetail,
+[data-theme="dark"] .insight-modal-body,
+[data-theme="dark"] .contributor-count,
+[data-theme="dark"] .empty-state p,
+[data-theme="dark"] .activity-meta {
+    color: var(--text-soft) !important;
+}
+
+[data-theme="dark"] .empty-state { border-color: var(--border-strong) !important; }
+[data-theme="dark"] .empty-state h3 { color: var(--accent) !important; }
+
+[data-theme="dark"] .insight-modal-backdrop,
+[data-theme="dark"] #contribModalBackdrop {
+    background: rgba(0,0,0,0.7) !important;
+}
+
+[data-theme="dark"] .insight-modal-close {
+    background: var(--bg-soft) !important;
+    color: var(--text) !important;
+}
+[data-theme="dark"] .insight-modal-close:hover {
+    background: var(--accent-soft) !important;
+    color: var(--accent-deep) !important;
+}
+
+[data-theme="dark"] .verse-card {
+    background: linear-gradient(135deg, rgba(226,145,106,0.10), rgba(226,145,106,0.04)) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .verse-text { color: var(--text) !important; }
+[data-theme="dark"] .verse-ref { color: var(--accent) !important; }
+
+[data-theme="dark"] .progress-container { background: var(--bg-soft) !important; }
+
+[data-theme="dark"] .progress-visual-wrapper {
+    background: var(--surface) !important;
+    border: 1px solid var(--border);
+}
+[data-theme="dark"] .giving-pace {
+    background: var(--accent-soft) !important;
+    color: var(--text-soft) !important;
+}
+[data-theme="dark"] .giving-pace-breakdown { color: var(--text-faint) !important; }
+
+[data-theme="dark"] .google-card-header h3 { color: var(--text) !important; }
+[data-theme="dark"] .google-card-header p { color: var(--text-soft) !important; }
+
+[data-theme="dark"] .stat-mini-card,
+[data-theme="dark"] .chart-container {
+    background: var(--bg-soft) !important;
+    border: 1px solid var(--border);
+}
+[data-theme="dark"] .stat-mini-label,
+[data-theme="dark"] .contributor-growth-summary {
+    color: var(--text-soft) !important;
+}
+
+/* about.html */
+[data-theme="dark"] .about-card,
+[data-theme="dark"] .verse-item,
+[data-theme="dark"] .connect-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .about-card h3,
+[data-theme="dark"] .verses-title,
+[data-theme="dark"] .connect-card span {
+    color: var(--text) !important;
+}
+[data-theme="dark"] .about-card p { color: var(--text-soft) !important; }
+[data-theme="dark"] .motivation-card {
+    background: linear-gradient(135deg, var(--accent-soft), transparent) !important;
+    border-color: var(--border) !important;
+}
+
+[data-theme="dark"] #searchInput,
+[data-theme="dark"] #memberSearch,
+[data-theme="dark"] .contrib-input {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border-color: var(--border-strong) !important;
+}
+[data-theme="dark"] #searchInput::placeholder,
+[data-theme="dark"] #memberSearch::placeholder { color: var(--text-faint) !important; }
+[data-theme="dark"] #searchInput:focus { background: var(--surface) !important; }
+
+[data-theme="dark"] .contributor-detail-list th,
+[data-theme="dark"] table th {
+    color: var(--text-soft) !important;
+    border-color: var(--border-strong) !important;
+}
+[data-theme="dark"] .contributor-detail-list td,
+[data-theme="dark"] table td {
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+[data-theme="dark"] .google-card-wrapper,
+[data-theme="dark"] .logged-in-profile,
+[data-theme="dark"] .link-suggestion-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text);
+}
+
+[data-theme="dark"] .bottom-nav {
+    background: rgba(28, 26, 20, 0.88) !important;
+    border-top-color: var(--border) !important;
+}
+[data-theme="dark"] .bottom-nav-item { color: var(--text-faint) !important; }
+[data-theme="dark"] .bottom-nav-item.active { color: var(--accent) !important; }
+[data-theme="dark"] .bottom-nav-item.action-btn { border-color: var(--bg) !important; }
+
+[data-theme="dark"] #debugConsole { background: #000 !important; }
+
+[data-theme="dark"] .payment-modal-content,
+[data-theme="dark"] .modal-content {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+
+/* ==================================================================
+   Verse cards — pastor-curated Verse of the Month / Year, prominent
+   on the dashboard (mirrors the physical cards handed out at church).
+   ================================================================== */
+.verse-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 22px 0 28px;
+}
+.verse-card-lg {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+.verse-card-lg.vc-year { border-left-color: var(--amber); }
+.verse-card-lg::after {
+    content: "\201C";
+    position: absolute;
+    top: -18px; right: 10px;
+    font-family: var(--serif);
+    font-size: 120px;
+    line-height: 1;
+    color: var(--accent);
+    opacity: 0.07;
+    pointer-events: none;
+}
+.vc-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.vc-badge {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    padding: 4px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.vc-year .vc-badge { color: var(--amber); background: var(--amber-soft); }
+.vc-label { font-size: 12.5px; font-weight: 600; color: var(--text-faint); white-space: nowrap; }
+.vc-text {
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.5;
+    color: var(--text);
+    margin: 0 0 10px;
+    font-style: italic;
+    position: relative;
+    z-index: 1;
+}
+.vc-ref {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--accent-deep);
+    font-style: normal;
+}
+.vc-year .vc-ref { color: var(--amber); }
+@media (max-width: 760px) {
+    .verse-cards { grid-template-columns: 1fr; gap: 12px; margin: 16px 0 22px; }
+    .vc-text { font-size: 17px; }
+}
+
+/* ==================================================================
+   Public "Operating Expenses" section on the impact page.
+   ================================================================== */
+.pub-expenses { margin: 40px 0 20px; }
+.pe-title {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text);
+    margin: 0 0 6px;
+}
+.pe-sub { text-align: center; color: var(--text-soft); font-size: 14.5px; max-width: 640px; margin: 0 auto 22px; line-height: 1.5; }
+.pe-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+.pe-kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 12px 20px;
+    text-align: center;
+}
+.pe-k-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); }
+.pe-k-value { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--text); margin-top: 3px; }
+.pe-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.pe-chip {
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    border-radius: 999px;
+    padding: 6px 13px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+.pe-list { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.pe-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 18px;
+    box-shadow: var(--shadow);
+}
+.pe-row.pe-planned { border-style: dashed; opacity: 0.92; }
+.pe-ic {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--bg-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+}
+.pe-main { flex: 1; min-width: 0; }
+.pe-name { font-weight: 600; font-size: 14.5px; color: var(--text); }
+.pe-meta { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
+.pe-amt { font-family: var(--serif); font-weight: 700; font-size: 16px; color: var(--text); flex-shrink: 0; }
+.pe-badge {
+    display: inline-block;
+    font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--amber); background: var(--amber-soft);
+    padding: 1px 7px; border-radius: 999px; vertical-align: middle;
+}
+.pe-badge.pe-rec { color: var(--accent-deep); background: var(--accent-soft); }
+@media (max-width: 600px) {
+    .pe-title { font-size: 21px; }
+    .pe-amt { font-size: 15px; }
+}
+
+/* ==================================================================
+   Recent Activity feed (new "advanced dashboard" section)
+   ================================================================== */
+.recent-activity-section { margin: 28px 0 32px; }
+.recent-activity-section .section-title { text-align: center; margin-bottom: 16px; }
+.activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+.activity-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #e8e5dc);
+    border-radius: var(--radius, 14px);
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+}
+.activity-row:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift, 0 8px 24px rgba(0,0,0,0.08)); }
+.activity-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent, #d97757), var(--accent-deep, #c05f3f));
+    color: #fff; font-weight: 700; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.activity-main { flex: 1; min-width: 0; }
+.activity-name { font-weight: 600; font-size: 14px; color: var(--text, #1f1e1a); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-meta { font-size: 12px; color: var(--text-soft, #6e6a5e); margin-top: 2px; }
+.activity-amount { font-weight: 700; font-size: 15px; color: var(--green, #5f8d4e); flex-shrink: 0; }
+
+/* ==================================================================
+   Enhanced-stats dedicated container (previously hijacked the first
+   .chart-card via querySelector — now has its own slot in the DOM)
+   ================================================================== */
+#enhancedStatsContainer {
+    grid-column: 1 / -1;
+}
+
+/* ==================================================================
+   Bottom nav SVG icon upgrade (Instagram/WhatsApp-style outline icons,
+   injected by theme.js in place of the emoji spans)
+   ================================================================== */
+.bottom-nav-item .nav-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: block;
+}
+.bottom-nav-item.action-btn .nav-icon svg { width: 24px; height: 24px; stroke-width: 2; }
+
+/* ==================================================================
+   Dark-mode pass 2: every remaining hardcoded near-black/grey text
+   color found by reading style.css and the inline <style> blocks in
+   full (members/impact/about), grouped by page. Vivid accent colors
+   (purple #667eea, greens, reds, gold) are left alone — they already
+   have enough contrast on a dark surface; only illegible dark-on-dark
+   text and stray white-only card backgrounds are overridden here.
+   ================================================================== */
+
+/* index.html: Top Contributors leaderboard cards */
+[data-theme="dark"] .top-card .amount { color: var(--text) !important; }
+[data-theme="dark"] .top-card .amount-label { color: var(--text-soft) !important; }
+[data-theme="dark"] .top-card .meta span:first-child { color: var(--text-soft) !important; }
+[data-theme="dark"] .top-card .rank-text { color: var(--amber) !important; }
+
+/* index.html: "how we calculate" insight modal metric grid */
+[data-theme="dark"] .human-insight { background: var(--bg-soft) !important; }
+[data-theme="dark"] .metric-item {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .metric-item .label { color: var(--text-soft) !important; }
+[data-theme="dark"] .metric-item .value,
+[data-theme="dark"] .insight-primary,
+[data-theme="dark"] .insight-modal-summary {
+    color: var(--text) !important;
+}
+
+/* index.html: Giving Insights cards */
+[data-theme="dark"] .insight-label { color: var(--text) !important; }
+[data-theme="dark"] .insight-detail { color: var(--text-soft) !important; }
+
+/* index.html: member deep-dive modal (click a Top Contributor card) */
+[data-theme="dark"] .member-profile-header {
+    background: var(--bg-soft) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .profile-stats .label { color: var(--text-soft) !important; }
+[data-theme="dark"] .month-box {
+    background: var(--bg-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text-soft);
+}
+[data-theme="dark"] .month-box.paid {
+    background: var(--green-soft) !important;
+    border-color: var(--green) !important;
+    color: var(--green) !important;
+}
+[data-theme="dark"] .month-box.pending { color: var(--text-faint) !important; }
+[data-theme="dark"] .member-deep-timeline { border-color: var(--border) !important; }
+[data-theme="dark"] .deep-timeline-item { border-color: var(--border) !important; }
+[data-theme="dark"] .deep-timeline-item .date { color: var(--text-soft) !important; }
+[data-theme="dark"] .deep-timeline-item .amt { color: var(--text) !important; }
+[data-theme="dark"] .deep-timeline-item .cat {
+    background: var(--bg-soft) !important;
+    color: var(--text-soft) !important;
+}
+
+/* index.html: contribution modal month-status pills box */
+[data-theme="dark"] .payment-status-preview {
+    background: var(--bg-soft) !important;
+    border-color: var(--border) !important;
+}
+
+/* funds.html */
+[data-theme="dark"] .page-subtitle { color: var(--text-soft) !important; }
+[data-theme="dark"] .fund-card p { color: var(--text-soft) !important; }
+
+/* about.html: motivation banner + connect section */
+[data-theme="dark"] .about-subtitle { color: var(--text-soft) !important; }
+[data-theme="dark"] .motivation-card h2,
+[data-theme="dark"] .about-connect h2 {
+    color: var(--text) !important;
+}
+[data-theme="dark"] .motivation-card p { color: var(--text-soft) !important; }
+[data-theme="dark"] .connect-card { color: var(--text) !important; }
+
+/* impact.html ("What We Bought" gallery) */
+[data-theme="dark"] .impact-hero p.hero-sub { color: var(--text-soft) !important; }
+[data-theme="dark"] .impact-total-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .impact-total-card .label { color: var(--text-faint) !important; }
+[data-theme="dark"] .filter-chip {
+    background: var(--surface) !important;
+    border-color: var(--border-strong) !important;
+    color: var(--text-soft) !important;
+}
+[data-theme="dark"] .product-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .product-body h3,
+[data-theme="dark"] .product-cost {
+    color: var(--text) !important;
+}
+[data-theme="dark"] .product-meta { color: var(--text-faint) !important; }
+[data-theme="dark"] .product-desc { color: var(--text-soft) !important; }
+[data-theme="dark"] .impact-empty { color: var(--text-soft) !important; }
+[data-theme="dark"] .impact-empty h3 { color: var(--text) !important; }
+[data-theme="dark"] .impact-modal-card {
+    background: var(--surface) !important;
+    color: var(--text);
+}
+[data-theme="dark"] .impact-modal-close {
+    background: var(--bg-soft) !important;
+    color: var(--text) !important;
+}
+[data-theme="dark"] .impact-modal-body h2,
+[data-theme="dark"] .fb-row .fb-amount,
+[data-theme="dark"] .modal-fb-title {
+    color: var(--text) !important;
+}
+[data-theme="dark"] .impact-modal-body .meta-row,
+[data-theme="dark"] .impact-modal-body p.desc,
+[data-theme="dark"] .fb-row,
+[data-theme="dark"] .modal-fb-row {
+    color: var(--text-soft) !important;
+}
+[data-theme="dark"] .modal-fb-note { color: var(--text-faint) !important; }
+[data-theme="dark"] .funding-breakdown,
+[data-theme="dark"] .modal-fb {
+    border-color: var(--border) !important;
+}
+
+/* script.js renders several bits of text with hardcoded inline `style="color:#..."`
+   (trend labels, modal headers, error/empty states) rather than a class — a plain
+   CSS class rule can't win against an inline style, so match by substring on the
+   inline style attribute itself instead of editing every innerHTML template. */
+[data-theme="dark"] [style*="64748b"],
+[data-theme="dark"] [style*="6c757d"] {
+    color: var(--text-soft) !important;
+}
+[data-theme="dark"] [style*="1e293b"],
+[data-theme="dark"] [style*="2c3e50"],
+[data-theme="dark"] [style*="0f172a"] {
+    color: var(--text) !important;
+}

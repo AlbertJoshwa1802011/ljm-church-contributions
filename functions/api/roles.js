@@ -3,6 +3,13 @@
 
 import { requireAuth, audit, HARDCODED_SUPER_ADMINS } from "./_lib.js";
 
+// Every permission scope the API understands. save_role rejects anything else
+// (including "*") so a manage_roles holder cannot invent or widen scopes.
+const VALID_PERMISSIONS = [
+  "edit_purchases", "edit_wishlist", "manage_roles",
+  "view_members", "manage_funds", "delete_funds", "view_audit", "manage_expenses"
+];
+
 // 1. GET: Fetch roles list and email mappings (Admin-only)
 export async function onRequestGet(context) {
   const { env } = context;
@@ -48,6 +55,18 @@ export async function onRequestPost(context) {
     if (action === "save_role") {
       if (!roleName || !permissions) {
         return new Response(JSON.stringify({ success: false, message: "Missing roleName or permissions" }));
+      }
+      if (roleName === "super_admin") {
+        return new Response(JSON.stringify({ success: false, message: "Built-in super_admin role cannot be modified via API" }));
+      }
+      const invalid = !Array.isArray(permissions)
+        ? null
+        : permissions.filter(p => !VALID_PERMISSIONS.includes(p));
+      if (!Array.isArray(permissions) || invalid.length > 0) {
+        return new Response(JSON.stringify({
+          success: false,
+          message: `Invalid permissions${invalid ? `: ${invalid.join(", ")}` : ""}. Allowed: ${VALID_PERMISSIONS.join(", ")}`
+        }));
       }
 
       const permissionsJson = JSON.stringify(permissions);
