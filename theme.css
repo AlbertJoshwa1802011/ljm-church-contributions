@@ -1101,12 +1101,6 @@ button.bottom-nav-item {
     color: var(--text-soft) !important;
 }
 
-/* index.html: contribution modal month-status pills box */
-[data-theme="dark"] .payment-status-preview {
-    background: var(--bg-soft) !important;
-    border-color: var(--border) !important;
-}
-
 /* funds.html */
 [data-theme="dark"] .page-subtitle { color: var(--text-soft) !important; }
 [data-theme="dark"] .fund-card p { color: var(--text-soft) !important; }

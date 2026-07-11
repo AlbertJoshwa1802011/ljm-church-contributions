@@ -1,19 +1,23 @@
-/* Premium Contribution Modal Styles */
+/* Premium Contribution Modal Styles — themed with the shared design tokens
+   (theme.css) so this modal follows light/dark mode instead of being a
+   permanently-light, Material-purple/pink surface floating inside a dark
+   page. Fallback values after each var() keep this file safe even if
+   theme.css hasn't loaded yet. */
 .premium-contrib-modal {
     max-width: 420px;
     border-radius: 20px;
     padding: 0;
     overflow-y: auto; /* Enable internal scrolling */
     max-height: 90vh; /* Ensure it fits on mobile */
-    background: #ffffff;
+    background: var(--surface, #ffffff);
     box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 1px solid var(--border, rgba(0,0,0,0.05));
 }
 .contrib-header {
-    background: linear-gradient(135deg, #f3e5f5, #ede7f6);
+    background: linear-gradient(135deg, var(--accent-soft, #fbeee8), var(--bg-soft, #f4f2ec));
     padding: 30px 20px 20px;
     text-align: center;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid var(--border, rgba(0,0,0,0.05));
 }
 .contrib-icon {
     font-size: 40px;
@@ -23,19 +27,19 @@
 .contrib-header h2 {
     margin: 0 0 5px;
     font-size: 22px;
-    color: #333;
+    color: var(--text, #1f1e1a);
 }
 .contrib-header p {
     margin: 0;
     font-size: 14px;
-    color: #666;
+    color: var(--text-soft, #6e6a5e);
 }
 .contrib-body {
     padding: 25px 25px 30px;
 }
 .contrib-toggle-group {
     display: flex;
-    background: #f5f5f5;
+    background: var(--bg-soft, #f4f2ec);
     border-radius: 12px;
     padding: 4px;
     margin-bottom: 20px;
@@ -47,15 +51,15 @@
     padding: 10px;
     border-radius: 8px;
     font-weight: 600;
-    color: #666;
+    color: var(--text-soft, #6e6a5e);
     cursor: pointer;
     transition: all 0.2s;
     font-size: 14px;
 }
 .contrib-toggle.active {
-    background: #fff;
-    color: #673ab7;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background: var(--surface, #fff);
+    color: var(--accent-deep, #c05f3f);
+    box-shadow: var(--shadow, 0 2px 8px rgba(0,0,0,0.1));
 }
 .contrib-field {
     margin-bottom: 20px;
@@ -65,28 +69,29 @@
     display: block;
     font-size: 13px;
     font-weight: 600;
-    color: #555;
+    color: var(--text-soft, #6e6a5e);
     margin-bottom: 8px;
 }
 .contrib-input {
     width: 100%;
     box-sizing: border-box;
     padding: 12px 15px;
-    border: 2px solid #eee;
+    border: 2px solid var(--border, #eee);
     border-radius: 12px;
     font-size: 16px;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background 0.2s;
     font-family: inherit;
-    background: #fafafa;
+    background: var(--bg-soft, #fafafa);
+    color: var(--text, #1f1e1a);
 }
 .contrib-input:focus {
-    border-color: #673ab7;
+    border-color: var(--accent, #d97757);
     outline: none;
-    background: #fff;
+    background: var(--surface, #fff);
 }
 .new-member-greeting {
-    background: #e3f2fd;
-    color: #1565c0;
+    background: var(--info-soft, #e7f0f4);
+    color: var(--info, #3f7a94);
     padding: 12px;
     border-radius: 10px;
     font-size: 13px;
@@ -105,14 +110,14 @@
     position: absolute;
     left: 15px;
     font-size: 18px;
-    color: #333;
+    color: var(--text, #1f1e1a);
     font-weight: 600;
 }
 .amount-input {
     padding-left: 35px;
     font-size: 20px;
     font-weight: bold;
-    color: #333;
+    color: var(--text, #1f1e1a);
 }
 .contrib-chips {
     display: flex;
@@ -121,20 +126,20 @@
 }
 .amount-chip {
     flex: 1;
-    background: #f0f0f0;
-    border: 1px solid #e0e0e0;
+    background: var(--bg-soft, #f0f0f0);
+    border: 1px solid var(--border, #e0e0e0);
     padding: 8px 0;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 600;
-    color: #555;
+    color: var(--text-soft, #555);
     cursor: pointer;
     transition: all 0.2s;
 }
 .amount-chip:hover, .amount-chip.selected {
-    background: #ede7f6;
-    border-color: #673ab7;
-    color: #673ab7;
+    background: var(--accent-soft, #fbeee8);
+    border-color: var(--accent, #d97757);
+    color: var(--accent-deep, #c05f3f);
 }
 .proceed-btn {
     width: 100%;
@@ -142,8 +147,8 @@
     padding: 15px;
     font-size: 18px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #673ab7, #9c27b0);
-    box-shadow: 0 4px 15px rgba(103,58,183,0.3);
+    background: linear-gradient(135deg, var(--accent, #d97757), var(--accent-deep, #c05f3f));
+    box-shadow: 0 4px 15px color-mix(in srgb, var(--accent, #d97757) 30%, transparent);
     color: #fff;
     border: none;
     font-weight: bold;
@@ -152,7 +157,7 @@
 }
 .proceed-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(103,58,183,0.4);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--accent, #d97757) 40%, transparent);
 }
 .proceed-btn:disabled {
     opacity: 0.6;

@@ -240,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             pills.innerHTML = monthNamesShort.map((m, i) => `
-                <span class="month-pill" style="opacity: ${monthsPaid.has(i) ? '1' : '0.4'}; background: ${monthsPaid.has(i) ? '#10b981' : '#fce7f3'}; color: ${monthsPaid.has(i) ? '#fff' : '#9d174d'}">
+                <span class="month-pill" style="opacity: ${monthsPaid.has(i) ? '1' : '0.4'}; background: ${monthsPaid.has(i) ? 'var(--green, #5f8d4e)' : 'var(--bg-soft, #f4f2ec)'}; color: ${monthsPaid.has(i) ? '#fff' : 'var(--text-faint, #a09a8a)'}">
                     ${m} ${monthsPaid.has(i) ? '✓' : ''}
                 </span>
             `).join('');

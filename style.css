@@ -2477,8 +2477,8 @@ footer {
 
 /* Payment Modal Status UI */
 .payment-status-preview {
-    background: #fdf2f8;
-    border: 1px solid #fbcfe8;
+    background: var(--accent-soft, #fbeee8);
+    border: 1px solid var(--accent, #d97757);
     padding: 12px;
     border-radius: 8px;
     margin: 15px 0;
@@ -2493,7 +2493,7 @@ footer {
 .status-title {
     font-size: 12px;
     font-weight: 700;
-    color: #be185d;
+    color: var(--accent-deep, #c05f3f);
     margin-bottom: 8px;
     display: flex;
     align-items: center;
