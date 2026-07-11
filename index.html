@@ -100,39 +100,127 @@
         </div>
     </section>
 
-    <!-- Summary Cards (click for explanation) -->
-    <section class="summary">
-        <div class="stat-card" data-stat-type="goal" tabindex="0" role="button" aria-label="Goal Amount - click for calculation details">
-            <h3>Goal Amount <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
-            <div class="stat-value" id="goalAmount">Loading...</div>
-            <div class="stat-subdetail" id="goalSubdetail"></div>
+    <!-- KPI Chip Strip (4 compact cards replacing the old 6-card layout) -->
+    <section class="kpi-strip">
+        <div class="stat-card kpi-chip" data-stat-type="collected" id="totalCollectedCard" tabindex="0" role="button" aria-label="Total Collected">
+            <div class="kpi-label">Collected</div>
+            <div class="kpi-value" id="totalAmount">₹0</div>
+            <div class="kpi-sub" id="totalSubdetail"></div>
         </div>
-        <div class="stat-card" data-stat-type="collected" id="totalCollectedCard" tabindex="0" role="button" aria-label="Total Collected - click to see growth trend">
-            <h3>Total Collected <span class="trend-chart-icon">📈</span></h3>
-            <div class="stat-value" id="totalAmount">Loading...</div>
-            <div class="stat-subdetail" id="totalSubdetail"></div>
+        <div class="stat-card kpi-chip kpi-progress" tabindex="0" role="button" aria-label="Goal Progress">
+            <div class="kpi-label">Progress</div>
+            <div class="kpi-ring-wrapper">
+                <canvas id="kpiProgressRing" width="60" height="60"></canvas>
+            </div>
+            <div class="kpi-sub" id="goalSubdetail"></div>
         </div>
-        <div class="stat-card" data-stat-type="spent" tabindex="0" role="button" aria-label="Spent on Products - click for details">
-            <h3>Spent on Products <span class="card-info-icon" aria-hidden="true">🛍️</span></h3>
-            <div class="stat-value" id="spentAmount">Loading...</div>
-            <div class="stat-subdetail" id="spentSubdetail"></div>
+        <div class="stat-card kpi-chip" data-stat-type="balance" tabindex="0" role="button" aria-label="Available Balance">
+            <div class="kpi-label">Available</div>
+            <div class="kpi-value" id="balanceAmount">₹0</div>
+            <div class="kpi-sub" id="balanceSubdetail"></div>
         </div>
-        <div class="stat-card" data-stat-type="balance" tabindex="0" role="button" aria-label="Available Balance - money in hand right now">
-            <h3>Available Balance <span class="card-info-icon" aria-hidden="true">💼</span></h3>
-            <div class="stat-value" id="balanceAmount">Loading...</div>
-            <div class="stat-subdetail" id="balanceSubdetail"></div>
-        </div>
-        <div class="stat-card" data-stat-type="remaining" tabindex="0" role="button" aria-label="Remaining - click for calculation details">
-            <h3>Remaining to Goal <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
-            <div class="stat-value" id="remainingAmount">Loading...</div>
-            <div class="stat-subdetail" id="remainingSubdetail"></div>
-        </div>
-        <div class="stat-card" data-stat-type="count" id="entryCountCard" tabindex="0" role="button" aria-label="Number of Contributions - click to see entry trend">
-            <h3>Contributions <span class="trend-chart-icon">📊</span></h3>
-            <div class="stat-value" id="entryCount">Loading...</div>
-            <div class="stat-subdetail" id="countSubdetail"></div>
+        <div class="stat-card kpi-chip" data-stat-type="count" id="entryCountCard" tabindex="0" role="button" aria-label="Contributors">
+            <div class="kpi-label">Contributors</div>
+            <div class="kpi-value" id="entryCount">0</div>
+            <div class="kpi-sub" id="countSubdetail"></div>
         </div>
     </section>
+
+    <!-- Tabbed Content Navigation -->
+    <div class="dashboard-tabs">
+        <button class="tab-btn active" data-tab="overview">📊 Overview</button>
+        <button class="tab-btn" data-tab="contributors">👥 Contributors</button>
+        <button class="tab-btn" data-tab="analytics">📈 Analytics</button>
+    </div>
+
+    <!-- Tab Panels -->
+    <div class="tab-panels">
+        <!-- OVERVIEW Tab -->
+        <div id="tab-overview" class="tab-panel active">
+            <!-- Goal Progress (moved here from old section) -->
+            <section class="goal-progress-section">
+                <div class="progress-visual-wrapper">
+                    <div class="donut-wrapper">
+                        <canvas id="goalDonutChart"></canvas>
+                    </div>
+                    <div class="progress-details">
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progressBar">0%</div>
+                        </div>
+                        <div class="progress-milestones" id="progressMilestones"></div>
+                        <div class="giving-pace" id="givingPace"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Activity -->
+            <section class="recent-activity-section" id="recentActivitySection">
+                <h3 class="section-title">🕘 Recent Activity</h3>
+                <div class="activity-feed" id="recentActivityFeed">
+                    <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">Loading recent activity...</div>
+                </div>
+            </section>
+
+            <!-- Top Contributors -->
+            <section class="top-contributors">
+                <h3 class="top-title">🌟 Top Contributors</h3>
+                <div class="top-grid" id="topContributorsGrid">
+                    <!-- Top 6 contributor cards will be injected here -->
+                </div>
+            </section>
+
+            <!-- Wishlist / Planned Upgrades Section -->
+            <section class="wishlist-section">
+                <div class="card">
+                    <h3 class="section-title">📋 Stage Planned Upgrades & Wishlist</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                        Below are the items our ministry is planning to procure next to advance our technology and stage setup.
+                    </p>
+                    <div id="homeWishlistList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                        <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">
+                            Loading wishlist...
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- CONTRIBUTORS Tab -->
+        <div id="tab-contributors" class="tab-panel">
+            <!-- Search -->
+            <section class="search-section">
+                <input type="text" id="searchInput" placeholder="Search by member name...">
+            </section>
+
+            <!-- Contributors List / Grid -->
+            <section class="timeline" id="timelineContainer">
+                <!-- Title and grid injected by script.js -->
+            </section>
+        </div>
+
+        <!-- ANALYTICS Tab -->
+        <div id="tab-analytics" class="tab-panel">
+            <!-- Giving Insights -->
+            <section class="giving-insights-section" id="givingInsightsSection">
+                <h3 class="insights-title">💡 Giving Insights</h3>
+                <div class="insights-grid" id="insightsGrid"></div>
+            </section>
+
+            <!-- Charts -->
+            <section class="charts">
+                <div class="chart-card">
+                    <canvas id="categoryPieChart"></canvas>
+                </div>
+                <div class="chart-card" id="distributionChartCard">
+                    <canvas id="distributionPieChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <canvas id="sourcePieChart"></canvas>
+                </div>
+                <div class="chart-card" id="enhancedStatsContainer"></div>
+            </section>
+        </div>
+    </div>
 
     <!-- Modal: Member mapping picker ("Which member are you?") -->
     <div id="mappingModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="mappingModalTitle" aria-hidden="true">
@@ -159,36 +247,6 @@
             <div id="insightModalBody" class="insight-modal-body"></div>
         </div>
     </div>
-
-    <!-- Goal Progress Visual -->
-    <section class="goal-progress-section">
-        <div class="progress-visual-wrapper">
-            <div class="donut-wrapper">
-                <canvas id="goalDonutChart"></canvas>
-            </div>
-            <div class="progress-details">
-                <div class="progress-container">
-                    <div class="progress-bar" id="progressBar">0%</div>
-                </div>
-                <div class="progress-milestones" id="progressMilestones"></div>
-                <div class="giving-pace" id="givingPace"></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Recent Activity: chronological feed of individual contributions -->
-    <section class="recent-activity-section" id="recentActivitySection">
-        <h3 class="section-title">🕘 Recent Activity</h3>
-        <div class="activity-feed" id="recentActivityFeed">
-            <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">Loading recent activity...</div>
-        </div>
-    </section>
-
-    <!-- Giving Insights -->
-    <section class="giving-insights-section" id="givingInsightsSection">
-        <h3 class="insights-title">💡 Giving Insights</h3>
-        <div class="insights-grid" id="insightsGrid"></div>
-    </section>
 	
     <!-- Google Account Hub & Sign-In Card -->
     <section class="google-card-wrapper" id="homeGoogleCard" style="margin-top: 20px; margin-bottom: 20px;">
@@ -221,51 +279,6 @@
         </div>
     </section>
 
-	<section class="top-contributors">
-	    <h3 class="top-title">🌟 Top Contributors</h3>
-	    <div class="top-grid" id="topContributorsGrid">
-	        <!-- Top 6 contributor cards will be injected here -->
-	    </div>
-	</section>
-
-    <!-- Search -->
-    <section class="search-section">
-        <input type="text" id="searchInput" placeholder="Search by member name...">
-    </section>
-
-    <!-- Contributors List -->
-    <section class="timeline" id="timelineContainer">
-        <!-- Title and grid injected by script.js -->
-    </section>
-
-    <!-- Charts -->
-    <section class="charts">
-        <div class="chart-card">
-            <canvas id="categoryPieChart"></canvas>
-        </div>
-        <div class="chart-card" id="distributionChartCard">
-            <canvas id="distributionPieChart"></canvas>
-        </div>
-        <div class="chart-card">
-            <canvas id="sourcePieChart"></canvas>
-        </div>
-        <div class="chart-card" id="enhancedStatsContainer"></div>
-    </section>
-
-    <!-- Wishlist / Planned Upgrades Section -->
-    <section class="wishlist-section" style="margin-top: 30px; margin-bottom: 20px;">
-        <div class="card">
-            <h3 class="section-title">📋 Stage Planned Upgrades & Wishlist</h3>
-            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
-                Below are the items our ministry is planning to procure next to advance our technology and stage setup.
-            </p>
-            <div id="homeWishlistList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
-                <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">
-                    Loading wishlist...
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Last Updated -->
     <div class="last-updated" id="lastUpdated"></div>

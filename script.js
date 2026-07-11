@@ -1086,6 +1086,43 @@ async function silentBackgroundRefresh(selectedFund) {
 }
 
 // ==================================================
+// TAB SYSTEM (Part 2: Dashboard Redesign)
+// ==================================================
+let chartsRendered = false;
+
+function initTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.getAttribute('data-tab');
+
+            // Update button states
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update panel visibility
+            tabPanels.forEach(panel => panel.classList.remove('active'));
+            const activePanel = document.getElementById(`tab-${tabName}`);
+            if (activePanel) activePanel.classList.add('active');
+
+            // Lazy-render charts on Analytics tab activation
+            if (tabName === 'analytics' && !chartsRendered && window._currentContributions) {
+                chartsRendered = true;
+                setTimeout(() => {
+                    const contributions = window._currentContributions || [];
+                    renderCategoryPie(contributions);
+                    renderDistributionPie(contributions);
+                    renderSourceChart(contributions);
+                    renderEnhancedStats(contributions);
+                }, 50);
+            }
+        });
+    });
+}
+
+// ==================================================
 // MAIN INITIALIZATION
 // ==================================================
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1306,10 +1343,11 @@ async function initDashboard(dynamicFund) {
                 productsBoughtCount: window._productsBoughtCount
             });
             currentDisplayCount = 0;
+            initTabs();
             renderDashboard();
             renderTopContributors(contributionsData);
-            document.dispatchEvent(new CustomEvent('LJM_DATA_READY', { 
-                detail: { fund: 'tech', members: Array.from(new Set(contributionsData.map(c => c.member))) } 
+            document.dispatchEvent(new CustomEvent('LJM_DATA_READY', {
+                detail: { fund: 'tech', members: Array.from(new Set(contributionsData.map(c => c.member))) }
             }));
         } catch (err) {
             console.error("Error fetching Tech Fund:", err);
@@ -1331,6 +1369,7 @@ async function initDashboard(dynamicFund) {
                     window._productsBoughtCount = (mock.purchases || []).filter(p => p.fund === techKey).length;
                 }
                 currentDisplayCount = 0;
+                initTabs();
                 renderDashboard();
                 renderTopContributors(contributionsData);
             } else {
@@ -1339,6 +1378,7 @@ async function initDashboard(dynamicFund) {
                 goalAmount = 0;
                 window._spentOnProducts = 0;
                 window._productsBoughtCount = 0;
+                initTabs();
                 renderDashboard([]);
                 const timeline = document.getElementById("timelineContainer");
                 if (timeline) {
@@ -1671,6 +1711,7 @@ async function initChristmasFundDashboard() {
                 goalAmount = 0;
                 window._spentOnProducts = 0;
                 window._productsBoughtCount = 0;
+                initTabs();
                 renderDashboard([]);
                 const timeline = document.getElementById("timelineContainer");
                 if (timeline) {
