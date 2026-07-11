@@ -15,7 +15,7 @@
     var BRAND_SUB = "Light of Jesus Ministry";
 
     var ICONS = {
-        mark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1.6 3.4 1.6 6.2 0 8.4 2.2-.6 3.8-2 4.8-4.2.9 3.2.3 6-1.8 8.4 2.4-.3 4.3-1.4 5.7-3.4.2 4.6-2.7 8.8-7 10.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22c-4.4-1.4-7.3-5.6-7-10.2 1.4 2 3.3 3.1 5.7 3.4-2.1-2.4-2.7-5.2-1.8-8.4 1 2.2 2.6 3.6 4.8 4.2" fill="currentColor" opacity="0.28"/></svg>',
+        mark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5 C 12 5, 9.5 1.5, 6 1.5 C 3 1.5, 1 4, 1 7.5 C 1 12.5, 10 18.5, 12 20 C 14 18.5, 23 12.5, 23 7.5 C 23 4, 21 1.5, 18 1.5 C 14.5 1.5, 12 5, 12 5 Z" fill="#dc2626"/><path d="M11 4 H13 V7 H15.5 V9 H13 V15.5 H11 V9 H8.5 V7 H11 Z" fill="#fbbf24"/><path d="M12 14.5 C 10.5 13, 6 13, 3 14.5 L 3 18.5 C 6 17, 10.5 17, 12 18.5 C 13.5 17, 18 17, 21 18.5 L 21 14.5 C 18 13, 13.5 13, 12 14.5 Z" fill="#ffffff" stroke="#7f1d1d" stroke-width="0.8"/></svg>',
         chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></svg>',
         moon: '<svg viewBox="0 0 24 24"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.3 7 7 0 0 0 20.5 14.5Z"/></svg>',
@@ -30,7 +30,8 @@
         about: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".25" fill="currentColor" stroke-width="1.6"/></svg>',
         person: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.2c.9-3.9 3.8-6.2 7.2-6.2s6.3 2.3 7.2 6.2"/></svg>',
         admin: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.3-7 10-4.1-1.7-7-5.6-7-10V6l7-3Z"/><path d="M9.2 12.2l2 2 3.8-4"/></svg>',
-        signout: '<svg viewBox="0 0 24 24"><path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="M15 16l4-4-4-4"/><path d="M19 12H9"/></svg>'
+        signout: '<svg viewBox="0 0 24 24"><path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="M15 16l4-4-4-4"/><path d="M19 12H9"/></svg>',
+        settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     };
 
     // Desktop top-nav order (mobile uses bottom nav + More sheet instead).
@@ -116,6 +117,24 @@
     var FUND_EMOJI = { "tech-contributions": "💻", "christmas-fund": "🎄" };
     function fundLabel(f) { return (FUND_EMOJI[f.slug] || "⛪") + " " + f.name; }
 
+    function getSettings() {
+        try {
+            var cached = JSON.parse(sessionStorage.getItem("ljmSettingsCache") || "null");
+            if (cached && Date.now() - cached.t < 60000) return Promise.resolve(cached.settings);
+        } catch (_) {}
+        return fetch("/api/settings?_t=" + Date.now()).then(function (r) { return r.json(); }).then(function (d) {
+            var s = (d && d.settings) || {};
+            try { sessionStorage.setItem("ljmSettingsCache", JSON.stringify({ t: Date.now(), settings: s })); } catch (_) {}
+            return s;
+        }).catch(function () {
+            return {
+                pastor_name: "Pastor MK",
+                pastor_phone: "+91 99409 40326",
+                pastor_address: "Light of Jesus Ministry, Coimbatore"
+            };
+        });
+    }
+
     // ================= top header =================
     function buildHeader() {
         var mount = document.querySelector("header.navbar") || document.querySelector("header.ljm-header");
@@ -168,6 +187,31 @@
         wireTheme(mount.querySelector(".theme-toggle-btn"));
         wireFundSwitch(mount);
         wireAvatarMenu(identity);
+
+        getSettings().then(function (settings) {
+            var phone = settings.pastor_phone || "+91 99409 40326";
+            var name = settings.pastor_name || "Pastor MK";
+            var address = settings.pastor_address || "Light of Jesus Ministry, Coimbatore";
+
+            var topBar = document.getElementById("ljmTopBar");
+            if (!topBar) {
+                topBar = document.createElement("div");
+                topBar.id = "ljmTopBar";
+                topBar.className = "ljm-top-bar";
+                mount.parentNode.insertBefore(topBar, mount);
+            }
+            topBar.innerHTML = '<span>📞 ' + esc(phone) + '</span>' +
+                               '<span class="ljm-top-divider">|</span>' +
+                               '<span>👤 Pastor: ' + esc(name) + '</span>' +
+                               '<span class="ljm-top-divider">|</span>' +
+                               '<span>📍 ' + esc(address) + '</span>';
+
+            var sheetUserDetail = document.getElementById("ljmhMoreSheetUserDetail");
+            if (sheetUserDetail) {
+                sheetUserDetail.innerHTML = '<div class="ljmh-menu-name">Pastor ' + esc(name) + '</div>' +
+                                            '<div class="ljmh-menu-email">' + esc(phone) + ' · ' + esc(address.split(",")[0]) + '</div>';
+            }
+        });
     }
 
     function wireTheme(btn) {
@@ -221,7 +265,8 @@
                 '<div class="ljmh-menu-email">' + esc(identity.email) + "</div>" +
             "</div>" +
             '<a class="ljmh-menu-item" href="member.html">' + ICONS.person + "<span>My contributions</span></a>" +
-            (admin ? '<a class="ljmh-menu-item" href="admin.html">' + ICONS.admin + "<span>Admin console</span></a>" : "") +
+            (admin ? '<a class="ljmh-menu-item" href="admin.html">' + ICONS.admin + "<span>Admin console</span></a>" +
+                     '<a class="ljmh-menu-item" href="admin.html#settings">' + ICONS.settings + "<span>System Settings</span></a>" : "") +
             '<button type="button" class="ljmh-menu-item ljmh-menu-signout" id="ljmhSignOutBtn">' + ICONS.signout + "<span>Sign out</span></button>";
 
         var close = function () { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); };
@@ -295,13 +340,14 @@
                         '<span class="ljmh-avatar ljmh-avatar-static">' + (identity.picture ? '<img src="' + esc(identity.picture) + '" alt="" referrerpolicy="no-referrer">' : esc((identity.name || "?").charAt(0).toUpperCase())) + "</span>" +
                         '<div><div class="ljmh-menu-name">' + esc(identity.name) + '</div><div class="ljmh-menu-email">' + esc(identity.email) + "</div></div>" +
                       "</div>"
-                    : '<div class="ljmh-sheet-user"><span class="ljmh-avatar ljmh-avatar-static">🙏</span><div><div class="ljmh-menu-name">Welcome</div><div class="ljmh-menu-email">' + BRAND_SUB + "</div></div></div>") +
+                    : '<div class="ljmh-sheet-user"><span class="ljmh-avatar ljmh-avatar-static">🙏</span><div id="ljmhMoreSheetUserDetail"><div class="ljmh-menu-name">Welcome</div><div class="ljmh-menu-email">' + BRAND_SUB + "</div></div></div>") +
                 '<div class="ljmh-sheet-grid">' +
                     '<a class="ljmh-sheet-item' + (page === "members" ? " active" : "") + '" href="members.html">' + ICONS.members + "<span>Members</span></a>" +
                     '<a class="ljmh-sheet-item' + (page === "impact" ? " active" : "") + '" href="impact.html">' + ICONS.bought + "<span>Impact</span></a>" +
                     '<a class="ljmh-sheet-item' + (page === "about" ? " active" : "") + '" href="about.html">' + ICONS.about + "<span>About</span></a>" +
                     '<a class="ljmh-sheet-item" href="member.html">' + ICONS.person + "<span>My giving</span></a>" +
-                    (admin ? '<a class="ljmh-sheet-item" href="admin.html">' + ICONS.admin + "<span>Admin</span></a>" : "") +
+                    (admin ? '<a class="ljmh-sheet-item" href="admin.html">' + ICONS.admin + "<span>Admin</span></a>" +
+                             '<a class="ljmh-sheet-item" href="admin.html#settings">' + ICONS.settings + "<span>Settings</span></a>" : "") +
                     '<button type="button" class="ljmh-sheet-item" id="ljmhSheetTheme">' + ICONS.moon + "<span>Theme</span></button>" +
                 "</div>" +
                 (identity
