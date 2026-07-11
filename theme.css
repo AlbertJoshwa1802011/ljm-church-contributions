@@ -81,6 +81,19 @@ html[data-theme="dark"] { color-scheme: dark; }
 body {
     background: var(--bg) !important;
     color: var(--text) !important;
+    position: relative;
+}
+
+body::before {
+    content: '' !important;
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important;
+    background: url('motto-banner-2026.jpeg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    opacity: 0.15 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
 }
 
 h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-title, .insights-title {
@@ -129,8 +142,7 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
     width: 34px; height: 34px;
     align-items: center; justify-content: center;
     border-radius: 10px;
-    background: var(--accent-soft);
-    color: var(--accent-deep);
+    background: transparent;
     flex-shrink: 0;
 }
 .ljmh-mark svg { width: 20px; height: 20px; }
@@ -197,7 +209,9 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
     top: calc(100% + 8px);
     right: 0;
     min-width: 230px;
-    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow-lift);
@@ -280,7 +294,9 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
     top: calc(100% + 10px);
     right: 0;
     min-width: 230px;
-    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow-lift);
@@ -318,7 +334,9 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
 #ljmhMoreSheet.open .ljmh-sheet-backdrop { opacity: 1; }
 .ljmh-sheet {
     position: absolute; left: 0; right: 0; bottom: 0;
-    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 22px 22px 0 0;
     border: 1px solid var(--border);
     border-bottom: none;
@@ -340,28 +358,50 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
     margin-bottom: 14px;
 }
 .ljmh-sheet-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 .ljmh-sheet-item {
-    display: flex; flex-direction: column; align-items: center; gap: 7px;
-    padding: 14px 6px 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
     background: var(--bg-soft);
     border: 1px solid var(--border);
     border-radius: 14px;
-    color: var(--text); font: 600 12.5px var(--sans);
+    color: var(--text); font: 600 13.5px var(--sans);
     text-decoration: none; cursor: pointer;
+    transition: background-color 0.2s, transform 0.15s ease;
+}
+.ljmh-sheet-item:active {
+    transform: scale(0.98);
+}
+.ljmh-sheet-item::after {
+    content: "›";
+    margin-left: auto;
+    font-size: 20px;
+    color: var(--text-faint);
+    font-weight: 300;
+    line-height: 1;
 }
 .ljmh-sheet-item.active { background: var(--accent-soft); color: var(--accent-deep); border-color: transparent; }
-.ljmh-sheet-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ljmh-sheet-item svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 .ljmh-sheet-signout {
-    display: flex; align-items: center; justify-content: center; gap: 9px;
-    width: 100%; margin-top: 14px; padding: 12px;
-    border-radius: 12px; border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%; margin-top: 14px; padding: 14px;
+    border-radius: 14px; border: 1px solid var(--border);
     background: transparent; cursor: pointer;
     color: var(--red); font: 600 13.5px var(--sans);
     text-decoration: none;
+    transition: background-color 0.2s, transform 0.15s ease;
+}
+.ljmh-sheet-signout:active {
+    transform: scale(0.98);
 }
 .ljmh-sheet-signout svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .ljmh-sheet-signin { color: var(--accent-deep); }
@@ -414,7 +454,17 @@ button.bottom-nav-item {
    and the page-specific inline <style> blocks (members/impact/about).
    Everything below only applies when [data-theme="dark"] is set.
    ================================================================== */
-[data-theme="dark"] body::before { opacity: 0.4; }
+[data-theme="dark"] body::before {
+    content: '' !important;
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important;
+    background: url('motto-banner-2026.jpeg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    opacity: 0.12 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
 
 [data-theme="dark"] .stat-card,
 [data-theme="dark"] .chart-card,
@@ -432,6 +482,8 @@ button.bottom-nav-item {
     border-color: var(--border) !important;
     color: var(--text);
     box-shadow: var(--shadow) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 [data-theme="dark"] .stat-card h3,
@@ -515,10 +567,12 @@ button.bottom-nav-item {
 }
 [data-theme="dark"] .about-card h3,
 [data-theme="dark"] .verses-title,
+[data-theme="dark"] .verse-item blockquote,
 [data-theme="dark"] .connect-card span {
     color: var(--text) !important;
 }
 [data-theme="dark"] .about-card p { color: var(--text-soft) !important; }
+[data-theme="dark"] .verse-item cite { color: var(--accent) !important; }
 [data-theme="dark"] .motivation-card {
     background: linear-gradient(135deg, var(--accent-soft), transparent) !important;
     border-color: var(--border) !important;
@@ -641,6 +695,31 @@ button.bottom-nav-item {
 .sp-meta { font-size: 11.5px; color: var(--text-faint); flex-shrink: 0; }
 .sandha-loading { color: var(--text-faint); font-size: 13.5px; text-align: center; padding: 18px 8px; }
 .sandha-note { text-align: center; font-size: 12.5px; color: var(--text-faint); margin: 26px 0 10px; }
+
+.ljm-top-bar {
+    background: var(--bg-soft);
+    color: var(--text-soft);
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.ljm-top-divider {
+    color: var(--border-strong);
+    user-select: none;
+}
+@media (max-width: 580px) {
+    .ljm-top-bar {
+        display: none;
+    }
+}
 
 /* ==================================================================
    Welcome gate (portal-telemetry.js) — branded sign-in / guest card

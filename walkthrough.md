@@ -47,3 +47,14 @@ We have completed the next-generation upgrades to your church contribution porta
    {"status":"success","stats":{"contributionsInserted":196,"membersInserted":33,"purchasesInserted":5,"errors":[]}}
    ```
    *Result: All 196 donations, 33 members, and 5 purchases migrated with 0% data loss.*
+
+---
+
+## Recent Upgrades (July 11, 2026)
+
+### 1. Pastor & Contact Details Whitelist & UI
+* **API Config Whitelist**: Added `pastor_name`, `pastor_phone`, and `pastor_address` keys to D1 configuration whitelists inside [/functions/api/settings.js](file:///Users/albert-18677/Documents/church-contributions/functions/api/settings.js).
+* **Dynamic Header Contact Top-Bar**: Implemented `.ljm-top-bar` above the navbar in [header.js](file:///Users/albert-18677/Documents/church-contributions/header.js), dynamically loading and caching the contact details from settings.
+* **Admin Settings Console Fields**: Added Pastor Contact editing forms in [admin.html](file:///Users/albert-18677/Documents/church-contributions/admin.html) with input fields and save triggers.
+* **Admin Sidebar Footer Contact Display**: Added a dedicated Pastor info card into the left navigation sidebar footer in [admin.html](file:///Users/albert-18677/Documents/church-contributions/admin.html).
+

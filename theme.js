@@ -2,6 +2,19 @@
 // Loaded synchronously (no defer) right after theme.css so the correct theme is
 // applied before first paint — avoids a flash of the wrong theme.
 (function () {
+    // ---- Global API Redirect for Local Preview to Live Production ----
+    var isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (isLocalhost) {
+        var originalFetch = window.fetch;
+        window.fetch = function (input, init) {
+            var url = typeof input === "string" ? input : (input instanceof Request ? input.url : "");
+            if (url && url.startsWith("/api/")) {
+                url = "https://light-of-jesus-ministry-contributions.pages.dev" + url;
+            }
+            return originalFetch.call(this, url, init);
+        };
+    }
+
     var STORAGE_KEY = "ljmTheme"; // "light" | "dark" — absent = follow system
 
     function systemPrefersDark() {

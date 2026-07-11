@@ -225,6 +225,64 @@ function animateValue(elementId, targetValue, prefix = '', duration = 1200) {
     el._anim = requestAnimationFrame(update);
 }
 
+// Render circular progress ring on KPI canvas
+function drawProgressRing(progressPercent) {
+    const canvas = document.getElementById('kpiProgressRing');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 22;
+    const strokeWidth = 5;
+
+    // Draw background track
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+    ctx.strokeStyle = 'rgba(128, 128, 128, 0.15)';
+    ctx.lineWidth = strokeWidth;
+    ctx.stroke();
+
+    // Draw active progress arc
+    const startAngle = -0.5 * Math.PI;
+    const endAngle = startAngle + (progressPercent / 100) * 2 * Math.PI;
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
+    
+    // Read computed accent color from theme.css
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#d97757';
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Draw text in center (reads computed text color)
+    ctx.font = 'bold 11px Inter, sans-serif';
+    ctx.fillStyle = getComputedStyle(document.body).color || '#1f1e1a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round(progressPercent) + '%', centerX, centerY);
+}
+
+// Redraw progress ring when theme changes
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'data-theme') {
+                if (window._currentProgressPercent !== undefined) {
+                    drawProgressRing(window._currentProgressPercent);
+                }
+            }
+        });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+});
+
 /**
  * TREND INDICATOR: Renders a premium growth badge next to a value
  */
@@ -1605,6 +1663,10 @@ async function initDashboard(dynamicFund) {
                 }
             }
 
+            // Draw circular KPI progress ring
+            window._currentProgressPercent = progressPercent;
+            try { drawProgressRing(progressPercent); } catch (e) { console.error("KPI Progress Ring error:", e); }
+
             // ---- NEW FEATURES ----
             // Goal donut chart
             try { renderGoalDonut(totalCollected, goalAmount); } catch (e) { console.error("Donut error:", e); }
@@ -1925,6 +1987,10 @@ async function initChristmasFundDashboard() {
                     progressBar.style.boxShadow = '0 0 15px rgba(46,204,113,0.7)';
                 }
             }
+
+            // Draw circular KPI progress ring
+            window._currentProgressPercent = progressPercent;
+            try { drawProgressRing(progressPercent); } catch (e) { console.error("KPI Progress Ring error:", e); }
 
             // ---- NEW FEATURES ----
             try { renderGoalDonut(totalCollected, goalAmount); } catch (e) { console.error("Donut error:", e); }

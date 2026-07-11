@@ -237,6 +237,12 @@
             </div>
             <nav id="sideNav"></nav>
             <div class="nav-footer">
+                <div style="margin-bottom: 10px; border-bottom: 1px dashed var(--border-strong); padding-bottom: 8px; text-align: left; line-height: 1.45;">
+                    <div style="font-size: 9.5px; color: var(--text-faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Pastor & Contact</div>
+                    <strong style="color: var(--text-soft); font-size: 12px;" id="footerPastorName">—</strong><br>
+                    <span style="color: var(--text-soft); font-size: 11px;" id="footerPastorPhone">—</span><br>
+                    <span style="color: var(--text-faint); font-size: 10px; display: block; margin-top: 2px;" id="footerPastorAddress">—</span>
+                </div>
                 Signed in as<br><span class="who" id="whoami">—</span><br>
                 <a id="logoutLink">Sign out</a> · <a href="index.html">View site ↗</a>
             </div>
@@ -546,6 +552,18 @@
                         <span class="msg" id="s_goalMsg"></span>
                     </div>
                 </div>
+                <div class="card">
+                    <h3>Pastor & Church Contact Info</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Pastor Name</label><input class="input" id="s_pastorName" placeholder="Pastor MK"></div>
+                        <div><label class="f-label">Mobile Number</label><input class="input" id="s_pastorPhone" placeholder="+91 99409 40326"></div>
+                        <div class="span-all"><label class="f-label">Address</label><input class="input" id="s_pastorAddress" placeholder="Light of Jesus Ministry, Coimbatore"></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="s_saveContact">Save Contact Info</button>
+                        <span class="msg" id="s_contactMsg"></span>
+                    </div>
+                </div>
             </div>
 
             <!-- VERSES -->
@@ -675,7 +693,25 @@
             if (window.LJMAdmin) {
                 LJMAdmin.createSession(email, name || "").then(function () { LJMAdmin.showAdminBar(); });
             }
-            openSection("overview");
+            
+            // Dynamically load Pastor details for the sidebar footer
+            fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    var s = (d && d.settings) || {};
+                    $("footerPastorName").textContent = s.pastor_name || "Pastor MK";
+                    $("footerPastorPhone").textContent = s.pastor_phone || "+91 99409 40326";
+                    $("footerPastorAddress").textContent = s.pastor_address || "Light of Jesus Ministry, Coimbatore";
+                }).catch(function () {});
+
+            var initialSection = "overview";
+            if (location.hash && location.hash.substring(1)) {
+                var hashVal = location.hash.substring(1).toLowerCase();
+                if (NAV.some(function (n) { return n[0] === hashVal; })) {
+                    initialSection = hashVal;
+                }
+            }
+            openSection(initialSection);
         }
 
         window.handleAdminCredential = function (response) {
@@ -1392,8 +1428,16 @@
 
         // ═══════════════ Settings ═══════════════
         function loadSettings() {
-            fetch("/api/settings").then(function (r) { return r.json(); }).then(function (d) {
-                $("s_forceLogin").checked = (d.settings && d.settings.force_login) === "true";
+            fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+                var s = (d && d.settings) || {};
+                $("s_forceLogin").checked = s.force_login === "true";
+                $("s_pastorName").value = s.pastor_name || "";
+                $("s_pastorPhone").value = s.pastor_phone || "";
+                $("s_pastorAddress").value = s.pastor_address || "";
+                
+                $("footerPastorName").textContent = s.pastor_name || "Pastor MK";
+                $("footerPastorPhone").textContent = s.pastor_phone || "+91 99409 40326";
+                $("footerPastorAddress").textContent = s.pastor_address || "Light of Jesus Ministry, Coimbatore";
             });
             var tech = state.fundsCache.find(function (f) { return f.slug === "tech-contributions"; });
             var xmas = state.fundsCache.find(function (f) { return f.slug === "christmas-fund"; });
@@ -1407,6 +1451,32 @@
                     });
                 });
             }
+        }
+
+        function saveContact() {
+            var updates = {
+                pastor_name: $("s_pastorName").value.trim(),
+                pastor_phone: $("s_pastorPhone").value.trim(),
+                pastor_address: $("s_pastorAddress").value.trim()
+            };
+            $("s_saveContact").disabled = true;
+            api("/api/settings", { method: "PUT", body: JSON.stringify({ updates: updates }) })
+                .then(function (d) {
+                    $("s_saveContact").disabled = false;
+                    setMsg("s_contactMsg", d.message, d.success ? "ok" : "err");
+                    if (d.success) {
+                        $("footerPastorName").textContent = updates.pastor_name || "Pastor MK";
+                        $("footerPastorPhone").textContent = updates.pastor_phone || "+91 99409 40326";
+                        $("footerPastorAddress").textContent = updates.pastor_address || "Light of Jesus Ministry, Coimbatore";
+                        
+                        // Clear cached settings on the public side so it reloads on next page visit
+                        try { sessionStorage.removeItem("ljmSettingsCache"); } catch (_) {}
+                    }
+                })
+                .catch(function (e) {
+                    $("s_saveContact").disabled = false;
+                    setMsg("s_contactMsg", e.message, "err");
+                });
         }
         function toggleForceLogin() {
             var v = $("s_forceLogin").checked ? "true" : "false";
@@ -1500,6 +1570,7 @@
             $("a_nextBtn").onclick = function () { state.auditOffset += 50; fetchAudit(); };
             $("s_forceLogin").onchange = toggleForceLogin;
             $("s_saveGoals").onclick = saveGoals;
+            $("s_saveContact").onclick = saveContact;
             $("v_saveBtn").onclick = saveVerses;
             $("sa_saveAmount").onclick = saveSandhaAmount;
             $("sa_addBtn").onclick = addBeliever;
@@ -1514,6 +1585,14 @@
             window.addEventListener("ljmAdminLogout", function () {
                 sessionStorage.removeItem(TOKEN_KEY);
                 location.reload();
+            });
+            window.addEventListener("hashchange", function () {
+                if (location.hash && location.hash.substring(1)) {
+                    var hashVal = location.hash.substring(1).toLowerCase();
+                    if (NAV.some(function (n) { return n[0] === hashVal; })) {
+                        openSection(hashVal);
+                    }
+                }
             });
         });
     })();
