@@ -354,46 +354,6 @@
                 </div>
             </div>
 
-            <!-- SANDHA -->
-            <div class="section" id="section-sandha">
-                <div class="page-head"><h2>Sandha</h2><p>Monthly membership dues. Mark who has paid each month — the whole church sees the status on the public Sandha page.</p></div>
-                <div class="kpi-grid" id="sa_kpis"></div>
-                <div class="card">
-                    <h3>Monthly Sandha amount</h3>
-                    <div style="display:flex; gap:10px; align-items:end; flex-wrap:wrap;">
-                        <div><label class="f-label">Amount per member (₹)</label><input class="input" id="sa_amount" type="number" min="0" style="max-width:180px;"></div>
-                        <button class="btn btn-primary" id="sa_saveAmount">Save amount</button>
-                        <span class="msg" id="sa_amountMsg"></span>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3>Add a believer</h3>
-                    <div class="form-grid">
-                        <div><label class="f-label">Full name *</label><input class="input" id="sa_newName"></div>
-                        <div><label class="f-label">Email</label><input class="input" id="sa_newEmail" type="email"></div>
-                        <div><label class="f-label">Phone</label><input class="input" id="sa_newPhone"></div>
-                        <div><label class="f-label">Joined on</label><input class="input" id="sa_newJoin" type="date"></div>
-                    </div>
-                    <div class="btn-row">
-                        <button class="btn btn-primary" id="sa_addBtn">Add believer</button>
-                        <span class="msg" id="sa_addMsg"></span>
-                    </div>
-                </div>
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
-                        <h3 style="margin:0;">Who has paid — <span id="sa_monthLabel"></span></h3>
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <input class="input" id="sa_month" type="month" style="max-width:170px;">
-                            <input class="input" id="sa_search" placeholder="Search member…" style="max-width:200px;">
-                        </div>
-                    </div>
-                    <div class="table-wrap"><table id="sa_table"><thead><tr>
-                        <th>Member</th><th>Status</th><th>Paid on</th><th>Amount</th><th></th>
-                    </tr></thead><tbody></tbody></table></div>
-                    <div class="btn-row"><span class="msg" id="sa_msg"></span></div>
-                </div>
-            </div>
-
             <!-- EXPENSES -->
             <div class="section" id="section-expenses">
                 <div class="page-head"><h2>Expenses &amp; planning</h2><p>Track every outgoing — utilities, rent, events, maintenance, outreach — plus planned/budgeted items. Public entries appear on the impact page; mark sensitive ones private.</p></div>
@@ -619,7 +579,6 @@
             ["funds", "🏛️", "Funds"],
             ["members", "👥", "Members"],
             ["contributions", "📒", "Contributions"],
-            ["sandha", "🪙", "Sandha"],
             ["purchases", "🛍️", "Purchases"],
             ["expenses", "💸", "Expenses"],
             ["wishlist", "📋", "Wishlist"],
@@ -1089,87 +1048,6 @@
                 .catch(function (e) { setMsg("p_msg", e.message, "err"); });
         }
 
-        // ═══════════════ Sandha ═══════════════
-        function loadSandha() {
-            if (!$("sa_month").value) $("sa_month").value = new Date().toISOString().substring(0, 7);
-            fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
-                .then(function (r) { return r.json(); })
-                .then(function (d) { $("sa_amount").value = (d.settings && d.settings.sandha_amount) || 0; });
-            fetchSandha();
-        }
-        function fetchSandha() {
-            var month = $("sa_month").value || new Date().toISOString().substring(0, 7);
-            $("sa_monthLabel").textContent = month;
-            api("/api/sandha?month=" + month + "&_t=" + Date.now()).then(function (d) {
-                if (!d.success) { setMsg("sa_msg", d.message || "Failed to load", "err"); return; }
-                state.sandhaCache = d;
-                var t = d.totals || {};
-                var expected = (t.paidCount + t.pendingCount) * (Number(d.amount) || 0);
-                $("sa_kpis").innerHTML =
-                    kpi("Paid this month", t.paidCount + " / " + (t.paidCount + t.pendingCount), "members") +
-                    kpi("Collected", inr(t.collected), "this month") +
-                    kpi("Pending", String(t.pendingCount), "members yet to pay") +
-                    kpi("Monthly amount", inr(d.amount), expected ? "expected " + inr(expected) : "set the amount below");
-                renderSandhaTable();
-            }).catch(function (e) { setMsg("sa_msg", e.message, "err"); });
-        }
-        function renderSandhaTable() {
-            var d = state.sandhaCache;
-            if (!d) return;
-            var q = ($("sa_search").value || "").toLowerCase();
-            var month = d.month;
-            var rows = [];
-            (d.paid || []).forEach(function (p) { rows.push({ id: p.id, name: p.name, paid: true, paidOn: p.paidOn, amount: p.amount }); });
-            (d.pending || []).forEach(function (p) { rows.push({ id: p.id, name: p.name, paid: false }); });
-            rows.sort(function (a, b) { return a.name.localeCompare(b.name); });
-            rows = rows.filter(function (r) { return !q || r.name.toLowerCase().includes(q); });
-
-            var tb = $("sa_table").querySelector("tbody");
-            tb.innerHTML = rows.map(function (r) {
-                return "<tr><td><strong>" + esc(r.name) + "</strong></td>" +
-                    "<td>" + (r.paid ? '<span class="pill pill-green">Paid ✓</span>' : '<span class="pill pill-amber">Pending</span>') + "</td>" +
-                    "<td>" + esc(r.paidOn || "–") + "</td>" +
-                    "<td>" + (r.paid ? inr(r.amount) : "–") + "</td>" +
-                    '<td style="white-space:nowrap;">' +
-                        (r.paid
-                            ? '<button class="mini-btn danger" data-act="unmark" data-id="' + r.id + '">Undo</button>'
-                            : '<button class="mini-btn" data-act="mark" data-id="' + r.id + '">Mark paid</button>') +
-                    "</td></tr>";
-            }).join("") || '<tr><td colspan="5" class="empty">No members yet — add believers above.</td></tr>';
-
-            tb.querySelectorAll(".mini-btn").forEach(function (b) {
-                b.onclick = function () {
-                    var action = b.dataset.act === "mark" ? "mark_paid" : "unmark";
-                    b.disabled = true;
-                    api("/api/sandha", { method: "POST", body: JSON.stringify({ action: action, memberId: Number(b.dataset.id), month: month }) })
-                        .then(function (res) { setMsg("sa_msg", res.message, res.success ? "ok" : "err"); fetchSandha(); })
-                        .catch(function (e) { b.disabled = false; setMsg("sa_msg", e.message, "err"); });
-                };
-            });
-        }
-        function saveSandhaAmount() {
-            var v = String(Number($("sa_amount").value) || 0);
-            api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "sandha_amount", value: v }) })
-                .then(function (d) { setMsg("sa_amountMsg", d.success ? "Amount saved" : d.message, d.success ? "ok" : "err"); if (d.success) fetchSandha(); })
-                .catch(function (e) { setMsg("sa_amountMsg", e.message, "err"); });
-        }
-        function addBeliever() {
-            var name = $("sa_newName").value.trim();
-            if (!name) { setMsg("sa_addMsg", "Name is required", "err"); return; }
-            $("sa_addBtn").disabled = true;
-            api("/api/members", {
-                method: "POST",
-                body: JSON.stringify({ name: name, email: $("sa_newEmail").value.trim(), phone: $("sa_newPhone").value.trim(), firstJoinDate: $("sa_newJoin").value })
-            }).then(function (d) {
-                $("sa_addBtn").disabled = false;
-                setMsg("sa_addMsg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["sa_newName", "sa_newEmail", "sa_newPhone", "sa_newJoin"].forEach(function (id) { $(id).value = ""; });
-                    fetchSandha();
-                }
-            }).catch(function (e) { $("sa_addBtn").disabled = false; setMsg("sa_addMsg", e.message, "err"); });
-        }
-
         // ═══════════════ Expenses ═══════════════
         function loadExpenses() {
             var sel = $("x_fund");
@@ -1479,8 +1357,7 @@
         var LOADERS = {
             overview: loadOverview, funds: loadFunds, members: loadMembers,
             contributions: loadContributions, purchases: loadPurchases,
-            sandha: loadSandha, expenses: loadExpenses, wishlist: loadWishlist,
-            roles: loadRoles, audit: loadAudit,
+            expenses: loadExpenses, wishlist: loadWishlist, roles: loadRoles, audit: loadAudit,
             verses: loadVerses, settings: loadSettings, selftest: function () {}
         };
 
@@ -1501,10 +1378,6 @@
             $("s_forceLogin").onchange = toggleForceLogin;
             $("s_saveGoals").onclick = saveGoals;
             $("v_saveBtn").onclick = saveVerses;
-            $("sa_saveAmount").onclick = saveSandhaAmount;
-            $("sa_addBtn").onclick = addBeliever;
-            $("sa_month").onchange = fetchSandha;
-            $("sa_search").oninput = renderSandhaTable;
             $("st_runBtn").onclick = runSelfTest;
             $("logoutLink").onclick = function () {
                 sessionStorage.removeItem(TOKEN_KEY);

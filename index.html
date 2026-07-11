@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>LJM Church</title>
+<title>Light of Jesus Ministry</title>
 
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="payment-modal.css">
@@ -42,17 +42,6 @@
 </div>
 
 <main class="container">
-
-    <!-- Admin welcome banner (shown when a signed-in email holds an admin role) -->
-    <section id="adminBanner" class="admin-banner" style="display:none;"></section>
-
-    <!-- Hero Greeting (time-aware greeting for signed-in users) -->
-    <section class="hero-greeting" id="heroGreeting" style="display:none;">
-        <div class="greeting-content">
-            <h1 id="greetingText" class="greeting-text">Good evening, Friend 🙏</h1>
-            <p id="greetingNote" class="greeting-note">Your giving fuels God's work in our community</p>
-        </div>
-    </section>
 
 <!-- Fund Heading -->
     <section class="fund-heading">
@@ -108,143 +97,39 @@
         </div>
     </section>
 
-    <!-- KPI Chip Strip (4 compact cards replacing the old 6-card layout) -->
-    <section class="kpi-strip">
-        <div class="stat-card kpi-chip" data-stat-type="collected" id="totalCollectedCard" tabindex="0" role="button" aria-label="Total Collected">
-            <div class="kpi-label">Collected</div>
-            <div class="kpi-value" id="totalAmount">₹0</div>
-            <div class="kpi-sub" id="totalSubdetail"></div>
+    <!-- Summary Cards (click for explanation) -->
+    <section class="summary">
+        <div class="stat-card" data-stat-type="goal" tabindex="0" role="button" aria-label="Goal Amount - click for calculation details">
+            <h3>Goal Amount <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
+            <div class="stat-value" id="goalAmount">Loading...</div>
+            <div class="stat-subdetail" id="goalSubdetail"></div>
         </div>
-        <div class="stat-card kpi-chip kpi-progress" tabindex="0" role="button" aria-label="Goal Progress">
-            <div class="kpi-label">Progress</div>
-            <div class="kpi-ring-wrapper">
-                <canvas id="kpiProgressRing" width="60" height="60"></canvas>
-            </div>
-            <div class="kpi-sub" id="goalSubdetail"></div>
+        <div class="stat-card" data-stat-type="collected" id="totalCollectedCard" tabindex="0" role="button" aria-label="Total Collected - click to see growth trend">
+            <h3>Total Collected <span class="trend-chart-icon">📈</span></h3>
+            <div class="stat-value" id="totalAmount">Loading...</div>
+            <div class="stat-subdetail" id="totalSubdetail"></div>
         </div>
-        <div class="stat-card kpi-chip" data-stat-type="balance" tabindex="0" role="button" aria-label="Available Balance">
-            <div class="kpi-label">Available</div>
-            <div class="kpi-value" id="balanceAmount">₹0</div>
-            <div class="kpi-sub" id="balanceSubdetail"></div>
+        <div class="stat-card" data-stat-type="spent" tabindex="0" role="button" aria-label="Spent on Products - click for details">
+            <h3>Spent on Products <span class="card-info-icon" aria-hidden="true">🛍️</span></h3>
+            <div class="stat-value" id="spentAmount">Loading...</div>
+            <div class="stat-subdetail" id="spentSubdetail"></div>
         </div>
-        <div class="stat-card kpi-chip" data-stat-type="count" id="entryCountCard" tabindex="0" role="button" aria-label="Contributors">
-            <div class="kpi-label">Contributors</div>
-            <div class="kpi-value" id="entryCount">0</div>
-            <div class="kpi-sub" id="countSubdetail"></div>
+        <div class="stat-card" data-stat-type="balance" tabindex="0" role="button" aria-label="Available Balance - money in hand right now">
+            <h3>Available Balance <span class="card-info-icon" aria-hidden="true">💼</span></h3>
+            <div class="stat-value" id="balanceAmount">Loading...</div>
+            <div class="stat-subdetail" id="balanceSubdetail"></div>
+        </div>
+        <div class="stat-card" data-stat-type="remaining" tabindex="0" role="button" aria-label="Remaining - click for calculation details">
+            <h3>Remaining to Goal <span class="card-info-icon" aria-hidden="true">ℹ️</span></h3>
+            <div class="stat-value" id="remainingAmount">Loading...</div>
+            <div class="stat-subdetail" id="remainingSubdetail"></div>
+        </div>
+        <div class="stat-card" data-stat-type="count" id="entryCountCard" tabindex="0" role="button" aria-label="Number of Contributions - click to see entry trend">
+            <h3>Contributions <span class="trend-chart-icon">📊</span></h3>
+            <div class="stat-value" id="entryCount">Loading...</div>
+            <div class="stat-subdetail" id="countSubdetail"></div>
         </div>
     </section>
-
-    <!-- Tabbed Content Navigation -->
-    <div class="dashboard-tabs">
-        <button class="tab-btn active" data-tab="overview">📊 Overview</button>
-        <button class="tab-btn" data-tab="contributors">👥 Contributors</button>
-        <button class="tab-btn" data-tab="analytics">📈 Analytics</button>
-    </div>
-
-    <!-- Tab Panels -->
-    <div class="tab-panels">
-        <!-- OVERVIEW Tab -->
-        <div id="tab-overview" class="tab-panel active">
-            <!-- Goal Progress (moved here from old section) -->
-            <section class="goal-progress-section">
-                <div class="progress-visual-wrapper">
-                    <div class="donut-wrapper">
-                        <canvas id="goalDonutChart"></canvas>
-                    </div>
-                    <div class="progress-details">
-                        <div class="progress-container">
-                            <div class="progress-bar" id="progressBar">0%</div>
-                        </div>
-                        <div class="progress-milestones" id="progressMilestones"></div>
-                        <div class="giving-pace" id="givingPace"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Recent Activity -->
-            <section class="recent-activity-section" id="recentActivitySection">
-                <h3 class="section-title">🕘 Recent Activity</h3>
-                <div class="activity-feed" id="recentActivityFeed">
-                    <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">Loading recent activity...</div>
-                </div>
-            </section>
-
-            <!-- Top Contributors -->
-            <section class="top-contributors">
-                <h3 class="top-title">🌟 Top Contributors</h3>
-                <div class="top-grid" id="topContributorsGrid">
-                    <!-- Top 6 contributor cards will be injected here -->
-                </div>
-            </section>
-
-            <!-- Wishlist / Planned Upgrades Section -->
-            <section class="wishlist-section">
-                <div class="card">
-                    <h3 class="section-title">📋 Stage Planned Upgrades & Wishlist</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
-                        Below are the items our ministry is planning to procure next to advance our technology and stage setup.
-                    </p>
-                    <div id="homeWishlistList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
-                        <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">
-                            Loading wishlist...
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- CONTRIBUTORS Tab -->
-        <div id="tab-contributors" class="tab-panel">
-            <!-- Search -->
-            <section class="search-section">
-                <input type="text" id="searchInput" placeholder="Search by member name...">
-            </section>
-
-            <!-- Contributors List / Grid -->
-            <section class="timeline" id="timelineContainer">
-                <!-- Title and grid injected by script.js -->
-            </section>
-        </div>
-
-        <!-- ANALYTICS Tab -->
-        <div id="tab-analytics" class="tab-panel">
-            <!-- Giving Insights -->
-            <section class="giving-insights-section" id="givingInsightsSection">
-                <h3 class="insights-title">💡 Giving Insights</h3>
-                <div class="insights-grid" id="insightsGrid"></div>
-            </section>
-
-            <!-- Charts -->
-            <section class="charts">
-                <div class="chart-card">
-                    <canvas id="categoryPieChart"></canvas>
-                </div>
-                <div class="chart-card" id="distributionChartCard">
-                    <canvas id="distributionPieChart"></canvas>
-                </div>
-                <div class="chart-card">
-                    <canvas id="sourcePieChart"></canvas>
-                </div>
-                <div class="chart-card" id="enhancedStatsContainer"></div>
-            </section>
-        </div>
-    </div>
-
-    <!-- Modal: Member mapping picker ("Which member are you?") -->
-    <div id="mappingModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="mappingModalTitle" aria-hidden="true">
-        <div class="insight-modal-backdrop" id="mappingModalBackdrop"></div>
-        <div class="insight-modal-content">
-            <button type="button" class="insight-modal-close" id="mappingModalClose" aria-label="Close">×</button>
-            <h2 id="mappingModalTitle" class="insight-modal-title">🤝 Link your member profile</h2>
-            <div class="insight-modal-body">
-                <p style="margin:0 0 12px;">Welcome! To show <strong>your</strong> giving history and Sandha status, pick your name from the church member list. This links it to <span id="mappingEmailNote" style="font-weight:600;"></span>.</p>
-                <div id="mappingSuggestion" style="display:none;"></div>
-                <input type="text" id="mappingSearch" class="contrib-input" placeholder="Search your name…" style="width:100%; margin-bottom:10px;">
-                <div id="mappingList" style="max-height:38vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
-                <button type="button" id="mappingSkipBtn" class="link-btn-dismiss" style="margin-top:14px; width:100%;">Skip for now</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal: How we calculate -->
     <div id="insightModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="insightModalTitle" aria-hidden="true">
@@ -255,6 +140,36 @@
             <div id="insightModalBody" class="insight-modal-body"></div>
         </div>
     </div>
+
+    <!-- Goal Progress Visual -->
+    <section class="goal-progress-section">
+        <div class="progress-visual-wrapper">
+            <div class="donut-wrapper">
+                <canvas id="goalDonutChart"></canvas>
+            </div>
+            <div class="progress-details">
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar">0%</div>
+                </div>
+                <div class="progress-milestones" id="progressMilestones"></div>
+                <div class="giving-pace" id="givingPace"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Activity: chronological feed of individual contributions -->
+    <section class="recent-activity-section" id="recentActivitySection">
+        <h3 class="section-title">🕘 Recent Activity</h3>
+        <div class="activity-feed" id="recentActivityFeed">
+            <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">Loading recent activity...</div>
+        </div>
+    </section>
+
+    <!-- Giving Insights -->
+    <section class="giving-insights-section" id="givingInsightsSection">
+        <h3 class="insights-title">💡 Giving Insights</h3>
+        <div class="insights-grid" id="insightsGrid"></div>
+    </section>
 	
     <!-- Google Account Hub & Sign-In Card -->
     <section class="google-card-wrapper" id="homeGoogleCard" style="margin-top: 20px; margin-bottom: 20px;">
@@ -287,6 +202,51 @@
         </div>
     </section>
 
+	<section class="top-contributors">
+	    <h3 class="top-title">🌟 Top Contributors</h3>
+	    <div class="top-grid" id="topContributorsGrid">
+	        <!-- Top 6 contributor cards will be injected here -->
+	    </div>
+	</section>
+
+    <!-- Search -->
+    <section class="search-section">
+        <input type="text" id="searchInput" placeholder="Search by member name...">
+    </section>
+
+    <!-- Contributors List -->
+    <section class="timeline" id="timelineContainer">
+        <!-- Title and grid injected by script.js -->
+    </section>
+
+    <!-- Charts -->
+    <section class="charts">
+        <div class="chart-card">
+            <canvas id="categoryPieChart"></canvas>
+        </div>
+        <div class="chart-card" id="distributionChartCard">
+            <canvas id="distributionPieChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <canvas id="sourcePieChart"></canvas>
+        </div>
+        <div class="chart-card" id="enhancedStatsContainer"></div>
+    </section>
+
+    <!-- Wishlist / Planned Upgrades Section -->
+    <section class="wishlist-section" style="margin-top: 30px; margin-bottom: 20px;">
+        <div class="card">
+            <h3 class="section-title">📋 Stage Planned Upgrades & Wishlist</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                Below are the items our ministry is planning to procure next to advance our technology and stage setup.
+            </p>
+            <div id="homeWishlistList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                <div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 20px;">
+                    Loading wishlist...
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Last Updated -->
     <div class="last-updated" id="lastUpdated"></div>
@@ -298,12 +258,35 @@
     </div>
 </main>
 
+<!-- Mobile Sticky Bottom Navigation -->
+<nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item active" data-icon="home">
+        <span class="nav-icon">🏠</span>
+        <span>Dashboard</span>
+    </a>
+    <a href="members.html" class="bottom-nav-item" data-icon="members">
+        <span class="nav-icon">👥</span>
+        <span>Members</span>
+    </a>
+    <!-- Quick Give Central Action Button -->
+    <a href="#" id="mobileQuickGiveBtn" class="bottom-nav-item action-btn" aria-label="Contribute Now" data-icon="give">
+        <span class="nav-icon">✨</span>
+    </a>
+    <a href="impact.html" class="bottom-nav-item" data-icon="bought">
+        <span class="nav-icon">🛍️</span>
+        <span>Bought</span>
+    </a>
+    <a href="about.html" class="bottom-nav-item" data-icon="about">
+        <span class="nav-icon">ℹ️</span>
+        <span>About</span>
+    </a>
+</nav>
 
 <footer class="premium-footer">
     <div class="footer-inner">
 
         <div class="footer-left">
-            <div class="footer-logo">🙏 LJM Church</div>
+            <div class="footer-logo">🙏 Light of Jesus Ministry</div>
             <div class="footer-tagline">
                 Giving with faith, transparency & purpose
             </div>
@@ -327,7 +310,7 @@
     </div>
 
     <div class="footer-bottom">
-        © 2026 · LJM Church · Light of Jesus Ministry · Built with ❤️
+        © 2026 · Light of Jesus Ministry · Built with ❤️
     </div>
 </footer>
 
@@ -479,28 +462,18 @@ window.addEventListener('load', () => {
         if (s) onIdentityVerified({ success: true, email: s.email, name: s.name, isAdmin: true });
     });
 
-    // ── Resume a signed-in session across reloads (token survives in sessionStorage):
-    //    restore the signed-in UI + admin banner without requiring a fresh sign-in click.
-    try {
-        const existing = sessionStorage.getItem('ljmUserIdToken');
-        if (existing && existing.split('.').length === 3) {
-            currentCredentialToken = existing;
-            const payload = JSON.parse(atob(existing.split('.')[1]));
-            onIdentityVerified({
-                success: true,
-                email: payload.email,
-                name: payload.name,
-                picture: payload.picture,
-                isAdmin: LJMAdmin.isAdmin(payload.email)
-            });
-            const cached = JSON.parse(sessionStorage.getItem('ljmAuthProfile') || 'null');
-            if (cached) {
-                renderAdminBanner({ isAdmin: cached.isAdmin, user: { name: cached.name } });
-            } else {
-                runAuthHandshake(existing, { openPickerIfUnmapped: false });
+    const mobileBtn = document.getElementById('mobileQuickGiveBtn');
+    if (mobileBtn) {
+        mobileBtn.onclick = (e) => {
+            e.preventDefault();
+            const payCard = document.querySelector('.card.payment-card') || document.querySelector('.search-section');
+            if (payCard) {
+                payCard.scrollIntoView({ behavior: 'smooth' });
+                const search = document.getElementById('searchInput');
+                if (search) search.focus();
             }
-        }
-    } catch (_) {}
+        };
+    }
 });
 
 function mockLogin() {
@@ -533,7 +506,45 @@ async function handleCredentialResponse(response) {
             isAdmin: isAdmin
         });
 
-        await runAuthHandshake(response.credential, { openPickerIfUnmapped: true });
+        // ─── Contact Cloudflare Worker /api/auth ───
+        try {
+            const authRes = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: response.credential })
+            });
+            if (authRes.ok) {
+                const authData = await authRes.json();
+                console.log("[AUTH] Worker Auth Response:", authData);
+                
+                // Show link suggestion if recommended
+                if (authData.mappingRecommendation) {
+                    const suggestBox = document.getElementById('linkSuggestionBox');
+                    const suggestName = document.getElementById('suggestedMemberName');
+                    if (suggestBox && suggestName) {
+                        suggestName.textContent = authData.mappingRecommendation;
+                        suggestBox.style.display = 'block';
+                        
+                        document.getElementById('confirmLinkBtn').onclick = () => confirmLink(authData.mappingRecommendation);
+                        document.getElementById('dismissLinkBtn').onclick = () => { suggestBox.style.display = 'none'; };
+                    }
+                }
+
+                if (authData.member) {
+                    const badge = document.getElementById('profileMappingBadge');
+                    if (badge) {
+                        badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${authData.member.name}</span>`;
+                    }
+                } else if (!authData.mappingRecommendation) {
+                    const badge = document.getElementById('profileMappingBadge');
+                    if (badge) {
+                        badge.innerHTML = `<span style="color:#e0b200; font-weight:700;">👤 Guest Profile (Not linked to member)</span>`;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Worker auth call failed:", e);
+        }
 
     } catch (e) {
         console.error("Token decode error:", e);
@@ -541,143 +552,25 @@ async function handleCredentialResponse(response) {
     }
 }
 
-// ─── /api/auth handshake: verify server-side, learn member link + admin role ───
-async function runAuthHandshake(token, opts) {
-    opts = opts || {};
-    try {
-        const authRes = await fetch('/api/auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token })
-        });
-        if (!authRes.ok) return null;
-        const authData = await authRes.json();
-
-        // Persist for the app shell (header avatar menu, More sheet, greeting)
-        try {
-            sessionStorage.setItem('ljmAuthProfile', JSON.stringify({
-                email: authData.user && authData.user.email,
-                name: authData.user && authData.user.name,
-                isAdmin: !!authData.isAdmin,
-                permissions: authData.permissions || [],
-                member: authData.member ? authData.member.name : null
-            }));
-        } catch (_) {}
-
-        renderAdminBanner(authData);
-
-        const badge = document.getElementById('profileMappingBadge');
-        if (authData.member) {
-            if (badge) badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${escapeHtml(authData.member.name)}</span>`;
-        } else {
-            if (badge) badge.innerHTML = `<span style="color:#e0b200; font-weight:700;">👤 Not linked to a member yet</span>`;
-            if (opts.openPickerIfUnmapped && !sessionStorage.getItem('ljmMappingSkipped')) {
-                openMappingPicker(authData);
-            }
-        }
-        return authData;
-    } catch (e) {
-        console.error("Worker auth call failed:", e);
-        return null;
-    }
-}
-
-// ─── Admin welcome banner ───
-function renderAdminBanner(authData) {
-    const banner = document.getElementById('adminBanner');
-    if (!banner) return;
-    if (!authData || !authData.isAdmin) { banner.style.display = 'none'; return; }
-    const firstName = ((authData.user && authData.user.name) || 'Admin').split(' ')[0];
-    banner.innerHTML = `
-        <div class="admin-banner-inner">
-            <div class="admin-banner-text">
-                <strong>Welcome, ${escapeHtml(firstName)} 🙏</strong>
-                <span>You have admin access to LJM Church.</span>
-            </div>
-            <a class="admin-banner-cta" href="admin.html">Open Admin Console →</a>
-        </div>`;
-    banner.style.display = '';
-}
-
-// ─── Mapping picker: "Which member are you?" ───
-function openMappingPicker(authData) {
-    const modal = document.getElementById('mappingModal');
-    if (!modal) return;
-    const list = document.getElementById('mappingList');
-    const search = document.getElementById('mappingSearch');
-    const note = document.getElementById('mappingEmailNote');
-    const suggestion = document.getElementById('mappingSuggestion');
-    const names = (authData.unclaimedMembers || []).slice();
-
-    if (note) note.textContent = (authData.user && authData.user.email) || 'your Google account';
-
-    if (suggestion) {
-        if (authData.mappingRecommendation) {
-            suggestion.style.display = '';
-            suggestion.innerHTML = `<button type="button" class="mapping-option mapping-suggested" data-name="${escapeHtml(authData.mappingRecommendation)}">⭐ ${escapeHtml(authData.mappingRecommendation)} <span>(name match — is this you?)</span></button>`;
-        } else {
-            suggestion.style.display = 'none';
-            suggestion.innerHTML = '';
-        }
-    }
-
-    const renderList = (q) => {
-        const query = (q || '').toLowerCase().trim();
-        const rows = names.filter(n => !query || n.toLowerCase().includes(query)).slice(0, 60);
-        list.innerHTML = rows.length
-            ? rows.map(n => `<button type="button" class="mapping-option" data-name="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join('')
-            : `<div style="text-align:center; color:var(--text-secondary); padding:14px; font-size:13px;">No unclaimed member matches "${escapeHtml(q || '')}". Ask the pastor to add you, then try again.</div>`;
-    };
-    renderList('');
-    if (search) { search.value = ''; search.oninput = () => renderList(search.value); }
-
-    modal.onclick = (e) => {
-        const opt = e.target.closest('.mapping-option');
-        if (opt) confirmLink(opt.dataset.name);
-    };
-    document.getElementById('mappingSkipBtn').onclick = () => {
-        try { sessionStorage.setItem('ljmMappingSkipped', '1'); } catch (_) {}
-        closeMappingPicker();
-    };
-    document.getElementById('mappingModalClose').onclick = closeMappingPicker;
-    document.getElementById('mappingModalBackdrop').onclick = closeMappingPicker;
-
-    modal.classList.add('insight-modal-visible');
-    modal.setAttribute('aria-hidden', 'false');
-}
-function closeMappingPicker() {
-    const modal = document.getElementById('mappingModal');
-    if (!modal) return;
-    modal.classList.remove('insight-modal-visible');
-    modal.setAttribute('aria-hidden', 'true');
-}
-
 async function confirmLink(memberName) {
-    const token = currentCredentialToken || sessionStorage.getItem('ljmUserIdToken');
-    if (!token) return;
+    if (!currentCredentialToken) return;
     try {
         const res = await fetch('/api/auth', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, memberName })
+            body: JSON.stringify({ token: currentCredentialToken, memberName })
         });
         const data = await res.json();
         if (data.status === 'success') {
-            closeMappingPicker();
+            alert(`✅ Account linked successfully to: ${memberName}`);
             const suggestBox = document.getElementById('linkSuggestionBox');
             if (suggestBox) suggestBox.style.display = 'none';
             const badge = document.getElementById('profileMappingBadge');
             if (badge) {
-                badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${escapeHtml(memberName)}</span>`;
+                badge.innerHTML = `<span style="color:#0f9d58; font-weight:700;">✅ Linked Member Profile: ${memberName}</span>`;
             }
-            try {
-                const profile = JSON.parse(sessionStorage.getItem('ljmAuthProfile') || '{}');
-                profile.member = memberName;
-                sessionStorage.setItem('ljmAuthProfile', JSON.stringify(profile));
-            } catch (_) {}
-            alert(`✅ Welcome, ${memberName}! Your account is now linked — your giving history is yours.`);
         } else {
-            alert(`❌ Linking failed: ${data.error || 'Unknown error'}`);
+            alert(`❌ Linking failed: ${data.error}`);
         }
     } catch(err) {
         alert(`❌ Network error: ${err}`);
@@ -715,14 +608,12 @@ function onIdentityVerified(result) {
             if (profEmail) profEmail.textContent = result.email;
         }
 
-        // Setup Logout click — full sign-out via the app shell (clears the Google
-        // token + auth profile too; the old code called a nonexistent
-        // LJMAdmin.deleteSession and left the token behind).
+        // Setup Logout click
         const logoutBtn = document.getElementById('logoutProfileBtn');
         if (logoutBtn) {
             logoutBtn.onclick = () => {
-                if (window.LJMShell) LJMShell.signOut();
-                else { try { sessionStorage.clear(); } catch (_) {} window.location.reload(); }
+                LJMAdmin.deleteSession();
+                window.location.reload();
             };
         }
 

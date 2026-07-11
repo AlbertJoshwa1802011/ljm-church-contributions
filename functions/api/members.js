@@ -1,6 +1,5 @@
 // Cloudflare Pages Function: /api/members
 // GET — fast member directory with computed contribution stats (view_members permission).
-// POST — add a new believer/member (view_members permission, audited).
 // PUT — edit a member's contact/preferences (view_members permission, audited).
 
 import { requireAuth, audit, json } from "./_lib.js";
@@ -45,44 +44,6 @@ export async function onRequestGet(context) {
     }));
 
     return json({ success: true, members, count: members.length }, 200, { "Cache-Control": "no-store" });
-  } catch (err) {
-    return json({ success: false, message: err.message || String(err) }, 500);
-  }
-}
-
-// Add a new believer — used by the pastor from the admin Sandha/Members screens.
-export async function onRequestPost(context) {
-  const { env, request } = context;
-  const db = env.DB;
-  if (!db) return json({ error: "D1 database binding missing" }, 500);
-
-  const auth = await requireAuth(context, "view_members");
-  if (!auth.ok) return auth.response;
-
-  try {
-    const body = await request.json();
-    const name = String(body.name || "").trim().substring(0, 120);
-    if (!name) return json({ success: false, message: "Name is required" }, 400);
-
-    const email = String(body.email || "").trim().toLowerCase().substring(0, 200);
-    const phone = String(body.phone || "").trim().substring(0, 30);
-    const firstJoinDate = String(body.firstJoinDate || "").trim().substring(0, 10);
-
-    const existing = await db.prepare("SELECT id FROM members WHERE LOWER(name) = LOWER(?)").bind(name).first();
-    if (existing) return json({ success: false, message: `A member named '${name}' already exists` }, 409);
-
-    const res = await db.prepare(
-      "INSERT INTO members (name, email, phone, is_verified, first_join_date) VALUES (?, ?, ?, ?, ?)"
-    ).bind(name, email, phone, email && phone ? 1 : 0, firstJoinDate || null).run();
-    const id = res.meta && res.meta.last_row_id;
-
-    await audit(context, {
-      actorEmail: auth.email, actorType: "admin", verified: auth.verified,
-      action: "member.add", entityType: "member", entityId: String(id),
-      details: { name, email, phone }
-    });
-
-    return json({ success: true, message: `Member '${name}' added`, id });
   } catch (err) {
     return json({ success: false, message: err.message || String(err) }, 500);
   }
@@ -137,7 +98,7 @@ export async function onRequestOptions() {
   return new Response(null, {
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization"
     }
   });

@@ -83,10 +83,10 @@ CREATE TABLE IF NOT EXISTS member_roles (
 );
 
 -- Seed Default Roles
-INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_sandha"]');
+INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses"]');
 INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('editor', '["edit_purchases","edit_wishlist"]');
 -- Keep existing super_admin rows in sync with the scope list above (idempotent)
-UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_sandha"]' WHERE role_name = 'super_admin';
+UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses"]' WHERE role_name = 'super_admin';
 
 -- Seed Default Super Admins
 INSERT OR IGNORE INTO member_roles (email, role_name) VALUES ('albertjoshrock101@gmail.com', 'super_admin');
@@ -161,23 +161,6 @@ CREATE TABLE IF NOT EXISTS expenses (
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date DESC);
 CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);
 CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
-
--- 13. Sandha payment ledger (see migrations/0004_sandha.sql)
-CREATE TABLE IF NOT EXISTS sandha_payments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    member_id INTEGER NOT NULL,
-    month TEXT NOT NULL,               -- 'YYYY-MM'
-    amount REAL NOT NULL,
-    paid_on TEXT,
-    method TEXT DEFAULT 'cash',
-    notes TEXT,
-    recorded_by TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(member_id, month)
-);
-CREATE INDEX IF NOT EXISTS idx_sandha_month ON sandha_payments(month);
-CREATE INDEX IF NOT EXISTS idx_sandha_member ON sandha_payments(member_id);
-INSERT OR IGNORE INTO config (key, value) VALUES ('sandha_amount', '0');
 
 -- Seed legacy funds (goal pulled from config so live values are preserved)
 INSERT OR IGNORE INTO funds (slug, name, goal_amount, is_system, status, visibility)

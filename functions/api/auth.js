@@ -1,8 +1,6 @@
 // Cloudflare Pages Function: /api/auth
 // Receives a Google Identity Service JWT token, verifies it, and links/maps it to a member profile.
 
-import { getPermissions } from "./_lib.js";
-
 export async function onRequestPost(context) {
   const { env, request } = context;
   const db = env.DB;
@@ -46,7 +44,6 @@ export async function onRequestPost(context) {
 
     // 3. Fallback: If no email match, check if a member exists with the exact same name
     let mappingRecommendation = null;
-    let unclaimedMembers = [];
     if (!member) {
       const matchByName = await db.prepare("SELECT name, email, phone, is_verified FROM members WHERE LOWER(name) = LOWER(?) AND (email IS NULL OR email = '')")
         .bind(userName)
@@ -56,24 +53,9 @@ export async function onRequestPost(context) {
         // We found a name match with no email bound yet! Suggest linking
         mappingRecommendation = matchByName.name;
       }
-
-      // Offer the "who are you?" picker: members with no email bound yet.
-      // Names are already public on the contributors pages, so this leaks nothing new.
-      try {
-        const unclaimed = await db.prepare(
-          "SELECT name FROM members WHERE (email IS NULL OR email = '') ORDER BY name COLLATE NOCASE LIMIT 300"
-        ).all();
-        unclaimedMembers = (unclaimed.results || []).map(r => r.name);
-      } catch (_) { /* picker is optional */ }
     }
 
-    // 4. Admin/role awareness for the verified email, so the portal can greet
-    //    admins and surface the admin console (identity is Google-verified here).
-    let permissions = [];
-    try { permissions = await getPermissions(userEmail, db); } catch (_) {}
-    const isAdmin = permissions.includes("*") || permissions.length > 0;
-
-    // 5. Return mapping status
+    // 4. Return mapping status
     return new Response(
       JSON.stringify({
         status: "success",
@@ -83,10 +65,7 @@ export async function onRequestPost(context) {
           picture: userPicture
         },
         member: member || null,
-        mappingRecommendation, // Suggest mapping to this member name if they accept
-        unclaimedMembers,
-        isAdmin,
-        permissions
+        mappingRecommendation // Suggest mapping to this member name if they accept
       }),
       {
         status: 200,

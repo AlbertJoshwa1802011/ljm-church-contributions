@@ -268,43 +268,6 @@ export async function onRequestGet(context) {
         `added=${add.success}, hiddenFromPublic=${!inPublic}, inAdminList=${inAll}, deleted=${del.success}`);
     } catch (e) { record("expense add/private-hidden/delete", false, e.message); }
 
-    // ── 18b2. Sandha: add believer → mark paid → visible → unmark → cleanup ──
-    try {
-      const bName = `ZZ Selftest Member S${ts}`;
-      const addM = await (await api(`/api/members`, {
-        method: "POST",
-        body: JSON.stringify({ name: bName, email: "", phone: "" })
-      })).json();
-      const memberId = addM.id;
-      const month = new Date().toISOString().substring(0, 7);
-
-      const mark = memberId ? await (await api(`/api/sandha`, {
-        method: "POST",
-        body: JSON.stringify({ action: "mark_paid", memberId, month, amount: 1, method: "cash" })
-      })).json() : { success: false };
-
-      const view = await (await fetch(`${origin}/api/sandha?month=${month}&_t=${ts}s`)).json();
-      const inPaid = (view.paid || []).some(p => p.id === memberId);
-
-      const unmark = memberId ? await (await api(`/api/sandha`, {
-        method: "POST",
-        body: JSON.stringify({ action: "unmark", memberId, month })
-      })).json() : { success: false };
-
-      record("sandha add-believer/mark/visible/unmark",
-        addM.success === true && mark.success === true && inPaid === true && unmark.success === true,
-        `added=${addM.success}, marked=${mark.success}, visibleInPaid=${inPaid}, unmarked=${unmark.success}`);
-    } catch (e) { record("sandha add-believer/mark/visible/unmark", false, e.message); }
-
-    // ── 18b3. Unauthenticated sandha write blocked ──
-    try {
-      const res = await fetch(`${origin}/api/sandha`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "mark_paid", memberId: 1, month: "2026-01" })
-      });
-      record("unauthenticated sandha write blocked", res.status === 401, `status=${res.status}`);
-    } catch (e) { record("unauthenticated sandha write blocked", false, e.message); }
-
     // ── 18c. Unauthenticated expense write blocked ──
     try {
       const res = await fetch(`${origin}/api/expenses`, {
@@ -327,9 +290,6 @@ export async function onRequestGet(context) {
     try { await db.prepare("DELETE FROM fund_members WHERE fund_id IN (SELECT id FROM funds WHERE slug LIKE 'zz-selftest-%')").run(); } catch (_) {}
     try { await db.prepare("DELETE FROM funds WHERE slug LIKE 'zz-selftest-%'").run(); } catch (_) {}
     try { await db.prepare("DELETE FROM purchases WHERE id LIKE 'TEST-%' AND name LIKE 'ZZ Selftest%'").run(); } catch (_) {}
-    // Sandha rows reference members by id — remove them BEFORE the members rows,
-    // or the subselect matches nothing and test payments would orphan.
-    try { await db.prepare("DELETE FROM sandha_payments WHERE member_id IN (SELECT id FROM members WHERE name LIKE 'ZZ Selftest Member %')").run(); } catch (_) {}
     try { await db.prepare("DELETE FROM members WHERE name LIKE 'ZZ Selftest Member %'").run(); } catch (_) {}
     try { await db.prepare("DELETE FROM wishlist WHERE item_name LIKE 'ZZ Selftest Item %'").run(); } catch (_) {}
     try { await db.prepare("DELETE FROM roles WHERE role_name LIKE 'zz-selftest-role-%'").run(); } catch (_) {}
@@ -339,7 +299,7 @@ export async function onRequestGet(context) {
     // canonical permission set (same value schema.sql keeps in sync).
     try {
       await db.prepare(
-        `UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_sandha"]' WHERE role_name = 'super_admin'`
+        `UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses"]' WHERE role_name = 'super_admin'`
       ).run();
     } catch (_) {}
   }
