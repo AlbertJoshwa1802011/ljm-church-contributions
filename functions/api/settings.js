@@ -11,8 +11,8 @@ const VERSE_KEYS = [
   "verse_year_label", "verse_year_text", "verse_year_ref"
 ];
 
-const PUBLIC_KEYS = ["force_login", ...VERSE_KEYS];
-const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", ...VERSE_KEYS];
+const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS];
+const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS];
 
 const MAX_VALUE_LEN = 1000;
 

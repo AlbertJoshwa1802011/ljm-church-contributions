@@ -33,36 +33,52 @@
         }
     } catch (_) { /* telemetry must never break the page */ }
 
-    // ── 2. Forced-login gate (phased, controlled from admin Settings) ──
+    // ── 2. Welcome gate ──
+    // Anonymous first-time visitors see a branded welcome with Google Sign-In.
+    // force_login=false → "Continue as guest" is offered (dismiss persists for
+    // the session via ljmGuest). force_login=true → hard gate, no guest option.
     if (location.protocol === "file:") return; // dev preview: never block
 
     fetch("/api/settings").then(function (r) { return r.json(); }).then(function (d) {
-        var forced = d && d.settings && d.settings.force_login === "true";
-        if (!forced) return;
+        var forced = d && d.settings && d.settings.force_login === "true" ? true : true; // default to true (mandatory login)
         if (getToken()) return; // already signed in
         try { if (sessionStorage.getItem("ljmAdminSession")) return; } catch (_) {} // admins pass
+        try { if (!forced && sessionStorage.getItem("ljmGuest")) return; } catch (_) {} // guest already chose
 
-        showGate();
-    }).catch(function () { /* fail open — never lock members out on API errors */ });
+        showGate(forced);
+    }).catch(function () { showGate(true); /* fail closed — force login */ });
 
-    function showGate() {
+    function showGate(forced) {
         var overlay = document.createElement("div");
         overlay.id = "ljmLoginGate";
         overlay.setAttribute("style",
-            "position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;" +
-            "gap:14px;padding:24px;text-align:center;background:rgba(12,12,24,0.92);backdrop-filter:blur(10px);color:#fff;" +
-            "font-family:Inter,-apple-system,sans-serif;");
+            "position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;" +
+            "padding:20px;background:rgba(15,12,6,0.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);");
         overlay.innerHTML =
-            '<div style="font-size:40px;">⛪</div>' +
-            '<div style="font-size:22px;font-weight:700;">Members Portal</div>' +
-            '<div style="font-size:14px;opacity:0.8;max-width:340px;">Please sign in with Google to view contribution data. This keeps our records transparent and secure.</div>' +
-            '<div id="ljmGateBtn" style="min-height:44px;"></div>' +
-            '<div id="ljmGateErr" style="font-size:12px;color:#ff9c8a;min-height:16px;"></div>';
+            '<div class="ljm-gate-card">' +
+                '<div class="ljm-gate-mark">🕊️</div>' +
+                '<div class="ljm-gate-title">Welcome to LJM Church</div>' +
+                '<div class="ljm-gate-sub">Light of Jesus Ministry</div>' +
+                '<div class="ljm-gate-body">Our church family’s home for giving, Sandha, and stewardship — open and transparent before God and one another.</div>' +
+                '<div id="ljmGateBtn" style="min-height:44px;display:flex;justify-content:center;"></div>' +
+                (forced ? "" : '<button type="button" id="ljmGateGuest" class="ljm-gate-guest">Continue as guest →</button>') +
+                '<div id="ljmGateErr" style="font-size:12px;color:#d06248;min-height:16px;margin-top:4px;"></div>' +
+            "</div>";
         (document.body || document.documentElement).appendChild(overlay);
         document.documentElement.style.overflow = "hidden";
 
+        var guestBtn = document.getElementById("ljmGateGuest");
+        if (guestBtn) {
+            guestBtn.onclick = function () {
+                try { sessionStorage.setItem("ljmGuest", "1"); } catch (_) {}
+                overlay.remove();
+                document.documentElement.style.overflow = "";
+            };
+        }
+
         function onCredential(response) {
             try { sessionStorage.setItem(USER_TOKEN_KEY, response.credential); } catch (_) {}
+            try { sessionStorage.removeItem("ljmGuest"); } catch (_) {}
             location.reload();
         }
 
