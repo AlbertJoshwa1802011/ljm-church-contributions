@@ -230,6 +230,21 @@
         .family-member-item:last-child { border-bottom: none; }
         .family-member-item .fm-name { font-weight: 600; flex: 1 1 140px; min-width: 0; }
 
+        /* ── Wishlist ── */
+        .wishlist-card-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+        .wishlist-item-card {
+            border: 1px solid var(--border); border-left: 4px solid var(--border-strong);
+            border-radius: var(--radius); padding: 14px 16px; background: var(--surface); box-shadow: var(--shadow);
+        }
+        .wishlist-item-card.priority-high { border-left-color: var(--red); }
+        .wishlist-item-card.priority-medium { border-left-color: var(--amber); }
+        .wishlist-item-card.priority-low { border-left-color: var(--green); }
+        .wishlist-item-card .wi-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .wishlist-item-card .wi-name { font-family: var(--serif); font-weight: 700; font-size: 15px; }
+        .wishlist-item-card .wi-cost { font-family: var(--serif); font-weight: 700; font-size: 15px; color: var(--text); white-space: nowrap; flex-shrink: 0; }
+        .wishlist-item-card .wi-notes { font-size: 12.5px; color: var(--text-soft); margin-top: 6px; min-height: 16px; }
+        .wishlist-item-card .wi-actions { display: flex; gap: 8px; margin-top: 12px; }
+
         .toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
         .toggle input { opacity: 0; width: 0; height: 0; }
         .toggle .tr { position: absolute; inset: 0; border-radius: 999px; background: var(--border-strong); transition: .2s; cursor: pointer; }
@@ -559,9 +574,7 @@
                 </div>
                 <div class="card">
                     <h3>Planned items (<span id="w_count">–</span>)</h3>
-                    <div class="table-wrap"><table id="w_table"><thead><tr>
-                        <th>Item</th><th>Cost</th><th>Priority</th><th>Notes</th><th></th>
-                    </tr></thead><tbody></tbody></table></div>
+                    <div id="w_list" class="wishlist-card-row"><div class="empty">Loading…</div></div>
                 </div>
             </div>
 
@@ -1699,16 +1712,23 @@
             api("/api/wishlist?_t=" + Date.now()).then(function (d) {
                 state.wishlistCache = d.wishlist || [];
                 $("w_count").textContent = state.wishlistCache.length;
-                var tb = $("w_table").querySelector("tbody");
-                var pillFor = { High: "pill-red", Medium: "pill-amber", Low: "pill-green" };
-                tb.innerHTML = state.wishlistCache.map(function (w) {
-                    return "<tr><td><strong>" + esc(w.name) + "</strong></td><td>" + inr(w.cost) + "</td>" +
-                        '<td><span class="pill ' + (pillFor[w.priority] || "pill-grey") + '">' + esc(w.priority) + "</span></td>" +
-                        "<td style='max-width:320px'>" + esc(w.notes || "") + "</td>" +
-                        '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + w.id + '">Edit</button> ' +
-                        '<button class="mini-btn danger" data-act="del" data-id="' + w.id + '">Delete</button></td></tr>';
-                }).join("") || '<tr><td colspan="5" class="empty">Wishlist is empty.</td></tr>';
-                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                var order = { High: 0, Medium: 1, Low: 2 };
+                var iconFor = { High: "🔴", Medium: "🟡", Low: "🟢" };
+                var sorted = state.wishlistCache.slice().sort(function (a, b) {
+                    var oa = order[a.priority] != null ? order[a.priority] : 3;
+                    var ob = order[b.priority] != null ? order[b.priority] : 3;
+                    return oa - ob;
+                });
+                var host = $("w_list");
+                host.innerHTML = sorted.map(function (w) {
+                    return '<div class="wishlist-item-card priority-' + String(w.priority || "medium").toLowerCase() + '">' +
+                        '<div class="wi-top"><div class="wi-name">' + (iconFor[w.priority] || "⚪") + " " + esc(w.name) + '</div><div class="wi-cost">' + inr(w.cost) + "</div></div>" +
+                        '<div class="wi-notes">' + esc(w.notes || "No notes") + "</div>" +
+                        '<div class="wi-actions"><button class="mini-btn" data-act="edit" data-id="' + w.id + '">Edit</button>' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + w.id + '">Delete</button></div>' +
+                        "</div>";
+                }).join("") || '<div class="empty">Wishlist is empty — add the church\'s next planned purchase above.</div>';
+                host.querySelectorAll(".mini-btn").forEach(function (b) {
                     b.onclick = function () { b.dataset.act === "edit" ? editWishlist(Number(b.dataset.id)) : deleteWishlist(Number(b.dataset.id)); };
                 });
             }).catch(function (e) { setMsg("w_msg", e.message, "err"); });
