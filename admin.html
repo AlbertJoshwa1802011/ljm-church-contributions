@@ -739,9 +739,15 @@
 
             <!-- VERSES -->
             <div class="section" id="section-verses">
-                <div class="page-head"><h2>Verse cards</h2><p>Set the Verse of the Month and Verse of the Year — shown prominently on the member dashboard, mirroring the printed cards.</p></div>
+                <div class="page-head"><h2>Verse cards</h2><p>Set the Verse of the Month and Verse of the Year — shown on the dashboard and to signed-in believers, mirroring the printed cards. Pick a verse below; it fills in the reference and text for you.</p></div>
                 <div class="card">
                     <h3>✝ Verse of the Month</h3>
+                    <div class="btn-row" style="margin-bottom:4px; align-items:flex-end;">
+                        <div style="flex:1; min-width:200px;"><label class="f-label">Find a verse</label><input class="input" id="v_monthSearch" placeholder="e.g. Philippians 4:13, or a word like love"></div>
+                        <div style="min-width:170px;"><label class="f-label">Translation</label><select class="input" id="v_monthVersion"></select></div>
+                        <button type="button" class="btn btn-outline" id="v_monthSearchBtn">Search</button>
+                    </div>
+                    <div id="v_monthResults" style="margin:8px 0 6px;"></div>
                     <div class="form-grid">
                         <div><label class="f-label">Label (e.g. July 2026)</label><input class="input" id="v_monthLabel" placeholder="July 2026"></div>
                         <div><label class="f-label">Reference (e.g. Philippians 4:13)</label><input class="input" id="v_monthRef" placeholder="Philippians 4:13"></div>
@@ -750,6 +756,12 @@
                 </div>
                 <div class="card">
                     <h3>🌟 Verse of the Year</h3>
+                    <div class="btn-row" style="margin-bottom:4px; align-items:flex-end;">
+                        <div style="flex:1; min-width:200px;"><label class="f-label">Find a verse</label><input class="input" id="v_yearSearch" placeholder="e.g. Jeremiah 29:11, or a word like hope"></div>
+                        <div style="min-width:170px;"><label class="f-label">Translation</label><select class="input" id="v_yearVersion"></select></div>
+                        <button type="button" class="btn btn-outline" id="v_yearSearchBtn">Search</button>
+                    </div>
+                    <div id="v_yearResults" style="margin:8px 0 6px;"></div>
                     <div class="form-grid">
                         <div><label class="f-label">Label (e.g. 2026)</label><input class="input" id="v_yearLabel" placeholder="2026"></div>
                         <div><label class="f-label">Reference (e.g. Jeremiah 29:11)</label><input class="input" id="v_yearRef" placeholder="Jeremiah 29:11"></div>
@@ -1979,6 +1991,44 @@
                     $("v_yearRef").value = s.verse_year_ref || "";
                     $("v_yearText").value = s.verse_year_text || "";
                 });
+            fetch("/api/bible?action=versions&_t=" + Date.now()).then(function (r) { return r.json(); }).then(function (d) {
+                var options = (d.versions || []).map(function (v) {
+                    return '<option value="' + esc(v.code) + '">' + esc(v.name) + " (" + v.verseCount + (v.verseCount === 1 ? " verse)" : " verses)") + "</option>";
+                }).join("") || '<option value="KJV">King James Version</option>';
+                $("v_monthVersion").innerHTML = options;
+                $("v_yearVersion").innerHTML = options;
+            }).catch(function () {});
+        }
+        function runVerseSearch(prefix) {
+            var q = ($(prefix + "Search").value || "").trim();
+            var host = $(prefix + "Results");
+            if (!q) { host.innerHTML = ""; return; }
+            var version = $(prefix + "Version").value || "KJV";
+            host.innerHTML = '<div class="empty" style="padding:8px 0;">Searching…</div>';
+            fetch("/api/bible?action=search&version=" + encodeURIComponent(version) + "&q=" + encodeURIComponent(q) + "&_t=" + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (d) { renderVerseResults(prefix, d.results || []); })
+                .catch(function () { host.innerHTML = '<div class="empty" style="padding:8px 0;">Search failed.</div>'; });
+        }
+        function renderVerseResults(prefix, results) {
+            var host = $(prefix + "Results");
+            if (!results.length) {
+                host.innerHTML = '<div class="empty" style="padding:8px 0;">No matches in this translation yet — try another word, reference, or translation.</div>';
+                return;
+            }
+            host.innerHTML = results.slice(0, 12).map(function (r, i) {
+                var preview = r.text.length > 110 ? r.text.substring(0, 110) + "…" : r.text;
+                return '<div class="mini-btn" data-i="' + i + '" style="display:block; width:100%; text-align:left; white-space:normal; margin-bottom:6px; cursor:pointer;">' +
+                    "<strong>" + esc(r.book) + " " + r.chapter + ":" + r.verse + "</strong> — " + esc(preview) + "</div>";
+            }).join("");
+            host.querySelectorAll("[data-i]").forEach(function (el) {
+                el.onclick = function () {
+                    var r = results[Number(el.dataset.i)];
+                    $(prefix + "Ref").value = r.book + " " + r.chapter + ":" + r.verse;
+                    $(prefix + "Text").value = r.text;
+                    host.innerHTML = '<div class="msg ok">Applied ' + esc(r.book) + " " + r.chapter + ":" + r.verse + " below ↓</div>";
+                };
+            });
         }
         function saveVerses() {
             var updates = {
@@ -2186,6 +2236,10 @@
             $("s_saveGoals").onclick = saveGoals;
             $("s_saveContact").onclick = saveContact;
             $("v_saveBtn").onclick = saveVerses;
+            $("v_monthSearchBtn").onclick = function () { runVerseSearch("v_month"); };
+            $("v_yearSearchBtn").onclick = function () { runVerseSearch("v_year"); };
+            $("v_monthSearch").onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); runVerseSearch("v_month"); } };
+            $("v_yearSearch").onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); runVerseSearch("v_year"); } };
             $("ab_saveBtn").onclick = saveAbout; $("ab_resetBtn").onclick = resetAboutToDefaults;
             $("ab_addMissionBtn").onclick = function () { state.aboutContent.missionCards.push({ icon: "✨", title: "", body: "" }); renderMissionRows(); };
             $("ab_addVerseBtn").onclick = function () { state.aboutContent.verses.push({ text: "", ref: "" }); renderVerseRows(); };
