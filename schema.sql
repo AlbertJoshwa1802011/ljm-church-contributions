@@ -9,9 +9,13 @@ CREATE TABLE IF NOT EXISTS members (
     is_verified INTEGER DEFAULT 0, -- 0 = No, 1 = Yes
     first_join_date TEXT,
     recurring_reminders TEXT DEFAULT 'Yes',
+    family_id INTEGER,              -- see families table (migrations/0006_families.sql)
+    relation TEXT,                  -- 'Head' | 'Spouse' | 'Child' | 'Parent' | 'Other'
+    date_of_birth TEXT,             -- 'YYYY-MM-DD', optional
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
--- NOTE: pre-existing databases get first_join_date / recurring_reminders via migrations/0002_dynamic_funds_audit.sql
+-- NOTE: pre-existing databases get first_join_date / recurring_reminders via migrations/0002_dynamic_funds_audit.sql,
+-- and family_id / relation / date_of_birth via migrations/0006_families.sql
 
 -- 2. Contributions Table (Idempotent via unique proof_id)
 CREATE TABLE IF NOT EXISTS contributions (
@@ -42,6 +46,7 @@ CREATE TABLE IF NOT EXISTS purchases (
     fund_contribution REAL DEFAULT 0,
     external_contribution REAL DEFAULT 0,
     external_sources TEXT,
+    created_by TEXT, -- admin email who logged this purchase (see migrations/0005_purchase_attribution.sql)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -83,10 +88,10 @@ CREATE TABLE IF NOT EXISTS member_roles (
 );
 
 -- Seed Default Roles
-INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_sandha"]');
+INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_sandha","manage_members","manage_content"]');
 INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('editor', '["edit_purchases","edit_wishlist"]');
 -- Keep existing super_admin rows in sync with the scope list above (idempotent)
-UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_sandha"]' WHERE role_name = 'super_admin';
+UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_sandha","manage_members","manage_content"]' WHERE role_name = 'super_admin';
 
 -- Seed Default Super Admins
 INSERT OR IGNORE INTO member_roles (email, role_name) VALUES ('albertjoshrock101@gmail.com', 'super_admin');
@@ -179,6 +184,41 @@ CREATE INDEX IF NOT EXISTS idx_sandha_month ON sandha_payments(month);
 CREATE INDEX IF NOT EXISTS idx_sandha_member ON sandha_payments(member_id);
 INSERT OR IGNORE INTO config (key, value) VALUES ('sandha_amount', '0');
 
+-- 14. Families / believer households (see migrations/0006_families.sql)
+CREATE TABLE IF NOT EXISTS families (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    family_name TEXT NOT NULL,
+    head_member_id INTEGER,
+    address TEXT,
+    primary_phone TEXT,
+    primary_email TEXT,
+    notes TEXT,
+    status TEXT DEFAULT 'active',
+    created_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by TEXT,
+    updated_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_families_status ON families(status);
+CREATE INDEX IF NOT EXISTS idx_members_family ON members(family_id);
+
+-- 15. Per-family Sandha payments (see migrations/0007_sandha_family.sql)
+CREATE TABLE IF NOT EXISTS sandha_family_payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    family_id INTEGER NOT NULL,
+    month TEXT NOT NULL,
+    amount REAL NOT NULL,
+    paid_on TEXT,
+    method TEXT DEFAULT 'cash',
+    paid_by_member_id INTEGER,
+    notes TEXT,
+    recorded_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(family_id, month)
+);
+CREATE INDEX IF NOT EXISTS idx_sandha_family_month ON sandha_family_payments(month);
+CREATE INDEX IF NOT EXISTS idx_sandha_family_family ON sandha_family_payments(family_id);
+
 -- Seed legacy funds (goal pulled from config so live values are preserved)
 INSERT OR IGNORE INTO funds (slug, name, goal_amount, is_system, status, visibility)
 SELECT 'tech-contributions', 'Tech Fund', CAST(value AS REAL), 1, 'active', 'public'
@@ -190,3 +230,25 @@ FROM config WHERE key = 'christmas_goal_amount';
 
 -- Config flags
 INSERT OR IGNORE INTO config (key, value) VALUES ('force_login', 'false');
+
+-- 16. Bible verse data dictionary (see migrations/0008_bible_verses.sql)
+CREATE TABLE IF NOT EXISTS bible_versions (
+    code TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    language TEXT NOT NULL,
+    is_complete INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS bible_verses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    version_code TEXT NOT NULL,
+    book TEXT NOT NULL,
+    chapter INTEGER NOT NULL,
+    verse INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    UNIQUE(version_code, book, chapter, verse)
+);
+CREATE INDEX IF NOT EXISTS idx_bible_lookup ON bible_verses(version_code, book, chapter);
+CREATE INDEX IF NOT EXISTS idx_bible_version ON bible_verses(version_code);
+INSERT OR IGNORE INTO bible_versions (code, name, language, is_complete) VALUES ('KJV', 'King James Version', 'English', 0);
+INSERT OR IGNORE INTO bible_versions (code, name, language, is_complete) VALUES ('TOV', 'Tamil O.V. (Bible Society of India)', 'Tamil', 0);

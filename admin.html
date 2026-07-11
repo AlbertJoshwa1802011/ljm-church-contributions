@@ -205,6 +205,31 @@
         .check-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 6px; }
         .check-grid label { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--text-soft); cursor: pointer; }
 
+        /* ── Families ── */
+        .fam-member-row {
+            display: grid; grid-template-columns: 1.3fr 1.3fr 1fr 0.9fr 1fr auto;
+            gap: 8px; margin-bottom: 8px; align-items: center;
+        }
+        @media (max-width: 760px) { .fam-member-row { grid-template-columns: 1fr 1fr; } }
+        .family-card {
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 16px 18px; background: var(--surface); box-shadow: var(--shadow);
+            margin-bottom: 12px;
+        }
+        .family-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; cursor: pointer; }
+        .family-card-title { font-family: var(--serif); font-size: 17px; font-weight: 700; }
+        .family-card-meta { font-size: 12px; color: var(--text-soft); margin-top: 3px; }
+        .family-card-body { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-strong); }
+        .family-card.open .family-card-body { display: block; }
+        .family-card.open .fc-chevron { transform: rotate(180deg); }
+        .fc-chevron { transition: transform .18s; color: var(--text-faint); flex-shrink: 0; }
+        .family-member-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 0;
+            border-bottom: 1px solid var(--border); font-size: 13px; flex-wrap: wrap;
+        }
+        .family-member-item:last-child { border-bottom: none; }
+        .family-member-item .fm-name { font-weight: 600; flex: 1 1 140px; min-width: 0; }
+
         .toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
         .toggle input { opacity: 0; width: 0; height: 0; }
         .toggle .tr { position: absolute; inset: 0; border-radius: 999px; background: var(--border-strong); transition: .2s; cursor: pointer; }
@@ -351,7 +376,39 @@
 
             <!-- FAMILIES -->
             <div class="section" id="section-families">
-                <div class="page-head"><h2>Families</h2><p>Loading…</p></div>
+                <div class="page-head"><h2>Families</h2><p>Group believers into households. Sandha (monthly dues) is billed per family once grouped — see the Sandha tab.</p></div>
+                <div class="card">
+                    <h3>Create a family</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Family name *</label><input class="input" id="fam_name" placeholder="e.g. Thomas Family"></div>
+                        <div><label class="f-label">Primary phone</label><input class="input" id="fam_phone"></div>
+                        <div><label class="f-label">Primary email</label><input class="input" id="fam_email" type="email"></div>
+                        <div class="span-all"><label class="f-label">Address</label><input class="input" id="fam_address" placeholder="House / street / area"></div>
+                        <div class="span-all"><label class="f-label">Notes</label><textarea class="input" id="fam_notes" rows="2"></textarea></div>
+                    </div>
+                    <div style="margin-top:16px;">
+                        <label class="f-label">Family members</label>
+                        <div id="fam_memberRows"></div>
+                        <button type="button" class="btn btn-outline" id="fam_addRowBtn" style="margin-top:4px;">+ Add family member</button>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="fam_saveBtn">Save family</button>
+                        <button class="btn btn-outline" id="fam_clearBtn">Clear</button>
+                        <span class="msg" id="fam_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+                        <h3 style="margin:0;">All families (<span id="fam_count">–</span>)</h3>
+                        <input class="input" id="fam_search" placeholder="Search family or member…" style="max-width:220px;">
+                    </div>
+                    <div id="fam_list"><div class="empty">Loading…</div></div>
+                </div>
+                <div class="card">
+                    <h3>Not yet in a family (<span id="fam_unassignedCount">–</span>)</h3>
+                    <p class="msg" style="margin-bottom:10px;">Add these believers to a family above, or leave them tracked individually — nothing breaks either way.</p>
+                    <div id="fam_unassignedList"><div class="empty">Loading…</div></div>
+                </div>
             </div>
 
             <!-- CONTRIBUTIONS -->
@@ -374,6 +431,7 @@
                 <div class="page-head"><h2>Purchases</h2><p>“What We Bought” — records shown on the public impact page.</p></div>
                 <div class="card">
                     <h3 id="p_formTitle">Add a purchase</h3>
+                    <p class="msg" style="margin-bottom:10px;">Saved purchases are automatically attributed to your signed-in admin account — see "Added by" in the table below.</p>
                     <div class="form-grid">
                         <div><label class="f-label">Product name *</label><input class="input" id="p_name"></div>
                         <div><label class="f-label">Total cost (₹) *</label><input class="input" id="p_cost" type="number"></div>
@@ -396,7 +454,7 @@
                 <div class="card">
                     <h3>Recorded purchases (<span id="p_count">–</span>)</h3>
                     <div class="table-wrap"><table id="p_table"><thead><tr>
-                        <th>Product</th><th>Cost</th><th>Fund</th><th>Date</th><th>Status</th><th></th>
+                        <th>Product</th><th>Cost</th><th>Fund</th><th>Date</th><th>Status</th><th>Added by</th><th></th>
                     </tr></thead><tbody></tbody></table></div>
                 </div>
             </div>
@@ -1158,6 +1216,167 @@
                 .catch(function (e) { setMsg("memberMsg", e.message, "err"); });
         }
 
+        // ═══════════════ Families ═══════════════
+        var RELATIONS = ["Head", "Spouse", "Child", "Parent", "Other"];
+        function famMemberRowHtml() {
+            return '<div class="fam-member-row">' +
+                '<input class="input" placeholder="Full name *" data-f="name">' +
+                '<input class="input" placeholder="Email" type="email" data-f="email">' +
+                '<input class="input" placeholder="Phone" data-f="phone">' +
+                '<select class="input" data-f="relation">' + RELATIONS.map(function (r) { return '<option value="' + r + '"' + (r === "Head" ? " selected" : "") + '>' + r + '</option>'; }).join("") + '</select>' +
+                '<input class="input" type="date" data-f="dob" title="Date of birth (optional)">' +
+                '<button type="button" class="mini-btn danger" data-remove-row title="Remove row">✕</button>' +
+                '</div>';
+        }
+        function addFamMemberRow() {
+            var wrap = document.createElement("div");
+            wrap.innerHTML = famMemberRowHtml();
+            var row = wrap.firstChild;
+            row.querySelector("[data-remove-row]").onclick = function () {
+                if ($("fam_memberRows").children.length > 1) row.remove();
+            };
+            $("fam_memberRows").appendChild(row);
+        }
+        function clearFamilyForm() {
+            setMsg("fam_msg", "");
+            ["fam_name", "fam_phone", "fam_email", "fam_address", "fam_notes"].forEach(function (id) { $(id).value = ""; });
+            $("fam_memberRows").innerHTML = "";
+            addFamMemberRow();
+        }
+        function collectFamMemberRows() {
+            return Array.prototype.slice.call($("fam_memberRows").querySelectorAll(".fam-member-row")).map(function (row) {
+                return {
+                    name: row.querySelector('[data-f="name"]').value.trim(),
+                    email: row.querySelector('[data-f="email"]').value.trim(),
+                    phone: row.querySelector('[data-f="phone"]').value.trim(),
+                    relation: row.querySelector('[data-f="relation"]').value,
+                    dateOfBirth: row.querySelector('[data-f="dob"]').value
+                };
+            }).filter(function (m) { return m.name; });
+        }
+        function saveFamily() {
+            var familyName = $("fam_name").value.trim();
+            if (!familyName) { setMsg("fam_msg", "Family name is required", "err"); return; }
+            var payload = {
+                familyName: familyName,
+                primaryPhone: $("fam_phone").value.trim(),
+                primaryEmail: $("fam_email").value.trim(),
+                address: $("fam_address").value.trim(),
+                notes: $("fam_notes").value.trim(),
+                members: collectFamMemberRows()
+            };
+            $("fam_saveBtn").disabled = true;
+            api("/api/families", { method: "POST", body: JSON.stringify(payload) })
+                .then(function (d) {
+                    $("fam_saveBtn").disabled = false;
+                    setMsg("fam_msg", d.message, d.success ? "ok" : "err");
+                    if (d.success) { clearFamilyForm(); loadFamilies(); }
+                }).catch(function (e) { $("fam_saveBtn").disabled = false; setMsg("fam_msg", e.message, "err"); });
+        }
+        function loadFamilies() {
+            if (!$("fam_memberRows").children.length) addFamMemberRow();
+            api("/api/families?_t=" + Date.now()).then(function (d) {
+                if (!d.success) { $("fam_list").innerHTML = '<div class="empty">' + esc(d.message || "No access") + "</div>"; return; }
+                state.familiesCache = d.families || [];
+                state.unassignedCache = d.unassignedMembers || [];
+                renderFamilies();
+                renderUnassigned();
+            }).catch(function (e) { $("fam_list").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+        }
+        function renderFamilies() {
+            var q = ($("fam_search").value || "").toLowerCase();
+            var families = (state.familiesCache || []).filter(function (f) {
+                if (!q) return true;
+                if ((f.familyName || "").toLowerCase().indexOf(q) > -1) return true;
+                return (f.members || []).some(function (m) { return (m.name || "").toLowerCase().indexOf(q) > -1; });
+            });
+            $("fam_count").textContent = (state.familiesCache || []).length;
+            $("fam_list").innerHTML = families.map(function (f) {
+                var membersHtml = (f.members || []).map(function (m) {
+                    return '<div class="family-member-item">' +
+                        '<span class="fm-name">' + esc(m.name) + (m.id === f.headMemberId ? ' <span class="pill pill-accent">Head</span>' : "") + "</span>" +
+                        '<span class="pill pill-grey">' + esc(m.relation || "Other") + "</span>" +
+                        (m.dateOfBirth ? '<span style="font-size:11px;color:var(--text-faint);">🎂 ' + esc(m.dateOfBirth) + "</span>" : "") +
+                        '<button class="mini-btn" data-act="sethead" data-family="' + f.id + '" data-member="' + m.id + '"' + (m.id === f.headMemberId ? " disabled" : "") + '>Make head</button>' +
+                        '<button class="mini-btn danger" data-act="removemember" data-member="' + m.id + '">Remove</button>' +
+                        "</div>";
+                }).join("") || '<div class="empty" style="padding:8px 0;">No members yet.</div>';
+
+                return '<div class="family-card" data-family-id="' + f.id + '">' +
+                    '<div class="family-card-head" data-toggle>' +
+                        "<div><div class=\"family-card-title\">" + esc(f.familyName) + "</div>" +
+                        '<div class="family-card-meta">' + (f.headMemberName ? "👤 " + esc(f.headMemberName) + " · " : "") + f.memberCount + " member" + (f.memberCount === 1 ? "" : "s") + (f.address ? " · " + esc(f.address) : "") + "</div></div>" +
+                        '<span class="fc-chevron">▾</span>' +
+                    "</div>" +
+                    '<div class="family-card-body">' +
+                        membersHtml +
+                        '<div class="btn-row" style="margin-top:12px;">' +
+                            '<button class="mini-btn" data-act="addmember" data-family="' + f.id + '">+ Add member</button>' +
+                            '<button class="mini-btn danger" data-act="deletefamily" data-family="' + f.id + '">Delete family</button>' +
+                        "</div>" +
+                    "</div>" +
+                "</div>";
+            }).join("") || '<div class="empty">No families yet — create one above.</div>';
+
+            $("fam_list").querySelectorAll("[data-toggle]").forEach(function (head) {
+                head.onclick = function () { head.closest(".family-card").classList.toggle("open"); };
+            });
+            $("fam_list").querySelectorAll('[data-act="sethead"]').forEach(function (b) {
+                b.onclick = function (e) {
+                    e.stopPropagation();
+                    api("/api/families", { method: "POST", body: JSON.stringify({ action: "set_head", familyId: Number(b.dataset.family), memberId: Number(b.dataset.member) }) })
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                };
+            });
+            $("fam_list").querySelectorAll('[data-act="removemember"]').forEach(function (b) {
+                b.onclick = function (e) {
+                    e.stopPropagation();
+                    if (!confirm("Remove this member from their family? They stay in the church directory, just unassigned.")) return;
+                    api("/api/families", { method: "POST", body: JSON.stringify({ action: "remove_member", memberId: Number(b.dataset.member) }) })
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                };
+            });
+            $("fam_list").querySelectorAll('[data-act="deletefamily"]').forEach(function (b) {
+                b.onclick = function (e) {
+                    e.stopPropagation();
+                    if (!confirm("Delete this family? Members are kept and unassigned, not deleted.")) return;
+                    api("/api/families?id=" + b.dataset.family, { method: "DELETE" })
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                };
+            });
+            $("fam_list").querySelectorAll('[data-act="addmember"]').forEach(function (b) {
+                b.onclick = function (e) {
+                    e.stopPropagation();
+                    var familyId = Number(b.dataset.family);
+                    var name = prompt("Name of the new family member:");
+                    if (!name) return;
+                    var relation = prompt("Relation (Head, Spouse, Child, Parent, Other):", "Other") || "Other";
+                    api("/api/families", { method: "POST", body: JSON.stringify({ action: "add_member", familyId: familyId, name: name, relation: relation }) })
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                };
+            });
+        }
+        function renderUnassigned() {
+            var list = state.unassignedCache || [];
+            $("fam_unassignedCount").textContent = list.length;
+            if (!list.length) { $("fam_unassignedList").innerHTML = '<div class="empty">Everyone is grouped into a family.</div>'; return; }
+            var familyOptions = (state.familiesCache || []).map(function (f) { return '<option value="' + f.id + '">' + esc(f.familyName) + "</option>"; }).join("");
+            $("fam_unassignedList").innerHTML = list.map(function (m) {
+                return '<div class="family-member-item">' +
+                    '<span class="fm-name">' + esc(m.name) + "</span>" +
+                    '<span style="font-size:12px;color:var(--text-faint);">' + esc(m.email || m.phone || "") + "</span>" +
+                    '<select class="input" style="max-width:180px;" data-assign="' + m.id + '"><option value="">Add to family…</option>' + familyOptions + "</select>" +
+                    "</div>";
+            }).join("");
+            $("fam_unassignedList").querySelectorAll("[data-assign]").forEach(function (sel) {
+                sel.onchange = function () {
+                    if (!sel.value) return;
+                    api("/api/families", { method: "POST", body: JSON.stringify({ action: "add_member", familyId: Number(sel.value), existingMemberId: Number(sel.dataset.assign), relation: "Other" }) })
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                };
+            });
+        }
+
         // ═══════════════ Contributions ═══════════════
         function loadContributions() {
             var sel = $("contribFund");
@@ -1209,9 +1428,10 @@
                         "<td>" + inr(p.cost) + (p.externalContribution ? "<div style='font-size:11px;color:var(--text-faint)'>fund " + inr(p.fundContribution) + "</div>" : "") + "</td>" +
                         "<td>" + esc(p.fund || "") + "</td><td>" + esc(p.date || "") + "</td>" +
                         "<td>" + (p.status === "Active" ? '<span class="pill pill-green">Active</span>' : '<span class="pill pill-grey">Hidden</span>') + "</td>" +
+                        "<td style='color:var(--text-faint);font-size:12px;'>" + (p.createdBy ? esc(p.createdBy) : "—") + "</td>" +
                         '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + esc(p.id) + '">Edit</button> ' +
                         '<button class="mini-btn danger" data-act="del" data-id="' + esc(p.id) + '">Delete</button></td></tr>';
-                }).join("") || '<tr><td colspan="6" class="empty">No purchases recorded yet.</td></tr>';
+                }).join("") || '<tr><td colspan="7" class="empty">No purchases recorded yet.</td></tr>';
                 tb.querySelectorAll(".mini-btn").forEach(function (b) {
                     b.onclick = function () { b.dataset.act === "edit" ? editPurchase(b.dataset.id) : deletePurchase(b.dataset.id); };
                 });
@@ -1690,6 +1910,7 @@
         // ═══════════════ Wire-up ═══════════════
         var LOADERS = {
             overview: loadOverview, funds: loadFunds, members: loadMembers,
+            families: loadFamilies,
             contributions: loadContributions, purchases: loadPurchases,
             sandha: loadSandha, expenses: loadExpenses, wishlist: loadWishlist,
             roles: loadRoles, audit: loadAudit,
@@ -1714,6 +1935,9 @@
             $("f_name").oninput = function () { if (!state.editingFundSlug) $("f_slug").placeholder = $("f_name").value.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-"); };
             $("memberRefresh").onclick = loadMembers;
             $("memberSearch").oninput = renderMembers;
+            $("fam_saveBtn").onclick = saveFamily; $("fam_clearBtn").onclick = clearFamilyForm;
+            $("fam_addRowBtn").onclick = addFamMemberRow;
+            $("fam_search").oninput = renderFamilies;
             $("p_saveBtn").onclick = savePurchase; $("p_clearBtn").onclick = clearPurchaseForm;
             $("x_saveBtn").onclick = saveExpense; $("x_clearBtn").onclick = clearExpenseForm;
             $("w_saveBtn").onclick = saveWishlist; $("w_clearBtn").onclick = clearWishlistForm;
