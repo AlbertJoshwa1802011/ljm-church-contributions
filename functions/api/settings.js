@@ -12,10 +12,17 @@ const VERSE_KEYS = [
 ];
 
 const PASTOR_KEYS = ["pastor_name", "pastor_address", "pastor_phone", "pastor_email"];
-const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS];
-const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS];
+// The whole About page, editable by the pastor from the admin console — a
+// single JSON blob (see ABOUT_PAGE.md) so new fields don't need a migration.
+const CONTENT_KEYS = ["about_content"];
+const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS];
+const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS];
 
 const MAX_VALUE_LEN = 1000;
+// about_content is a whole page's worth of JSON (hero, mission cards, verses,
+// connect links) — bounded generously above the plain-field default so a
+// pastor can write freely without hitting a cryptic length error.
+const MAX_VALUE_LEN_BY_KEY = { about_content: 20000 };
 
 export async function onRequestGet(context) {
   const { env } = context;
@@ -70,8 +77,14 @@ export async function onRequestPut(context) {
       if (key === "pastor_email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         return json({ success: false, message: "pastor_email must be a valid email address" }, 400);
       }
-      if (value.length > MAX_VALUE_LEN) {
-        return json({ success: false, message: `Value for '${key}' exceeds ${MAX_VALUE_LEN} characters` }, 400);
+      if (key === "about_content" && value) {
+        try { JSON.parse(value); } catch (_) {
+          return json({ success: false, message: "about_content must be valid JSON" }, 400);
+        }
+      }
+      const maxLen = MAX_VALUE_LEN_BY_KEY[key] || MAX_VALUE_LEN;
+      if (value.length > maxLen) {
+        return json({ success: false, message: `Value for '${key}' exceeds ${maxLen} characters` }, 400);
       }
     }
 

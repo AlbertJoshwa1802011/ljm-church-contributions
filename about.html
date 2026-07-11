@@ -27,105 +27,32 @@
     <!-- Hero Section -->
     <section class="about-hero">
         <div class="about-hero-icon">🙏</div>
-        <h1 class="about-title">About Light of Jesus Ministry</h1>
-        <p class="about-subtitle">Faithful stewardship, transparent giving, and glorifying God together</p>
+        <h1 class="about-title" id="aboutHeroTitle">About Light of Jesus Ministry</h1>
+        <p class="about-subtitle" id="aboutHeroSubtitle">Faithful stewardship, transparent giving, and glorifying God together</p>
     </section>
 
-    <!-- Mission Cards -->
-    <section class="about-content">
-        <div class="about-card">
-            <div class="about-card-icon">⛪</div>
-            <h3>Our Mission</h3>
-            <p>Light of Jesus Ministry (LJM) is a community of believers committed to spreading the Gospel and serving God's people. Our contribution portal enables transparent and joyful giving, allowing every member to participate in building God's kingdom.</p>
-        </div>
-
-        <div class="about-card">
-            <div class="about-card-icon">💝</div>
-            <h3>Why We Give</h3>
-            <p>We give because God first gave to us. Every contribution — big or small — is an act of worship, an expression of faith, and a seed sown for God's glory. Through our giving, we support the church's mission, help those in need, and advance the work of the Lord.</p>
-        </div>
-
-        <div class="about-card">
-            <div class="about-card-icon">🔍</div>
-            <h3>Full Transparency</h3>
-            <p>This portal provides complete visibility into all contributions. Every member can see how funds are being collected and track progress toward our goals. We believe in accountability and openness in all financial matters of the church.</p>
-        </div>
-
-        <div class="about-card">
-            <div class="about-card-icon">📊</div>
-            <h3>How It Works</h3>
-            <p>Contributions are recorded and tracked through our secure system. You can view fund-wise breakdowns, individual contribution history, and overall progress. Data is updated in real-time so you always see the latest information.</p>
-        </div>
-    </section>
+    <!-- Mission Cards (rendered from the pastor-editable About page settings) -->
+    <section class="about-content" id="aboutMissionCards"></section>
 
     <!-- Bible Verses -->
-    <section class="about-verses">
+    <section class="about-verses" id="aboutVersesSection">
         <h2 class="verses-title">📖 What the Bible Says About Giving</h2>
-        <div class="verses-grid">
-            <div class="verse-item">
-                <blockquote>"Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver."</blockquote>
-                <cite>— 2 Corinthians 9:7</cite>
-            </div>
-            <div class="verse-item">
-                <blockquote>"Give, and it will be given to you. A good measure, pressed down, shaken together and running over, will be poured into your lap."</blockquote>
-                <cite>— Luke 6:38</cite>
-            </div>
-            <div class="verse-item">
-                <blockquote>"Honor the LORD with your wealth, with the firstfruits of all your crops; then your barns will be filled to overflowing."</blockquote>
-                <cite>— Proverbs 3:9-10</cite>
-            </div>
-            <div class="verse-item">
-                <blockquote>"Bring the whole tithe into the storehouse, that there may be food in my house. Test me in this, says the LORD Almighty, and see if I will not throw open the floodgates of heaven and pour out so much blessing that there will not be room enough to store it."</blockquote>
-                <cite>— Malachi 3:10</cite>
-            </div>
-            <div class="verse-item">
-                <blockquote>"It is more blessed to give than to receive."</blockquote>
-                <cite>— Acts 20:35</cite>
-            </div>
-            <div class="verse-item">
-                <blockquote>"For where your treasure is, there your heart will be also."</blockquote>
-                <cite>— Matthew 6:21</cite>
-            </div>
-            <div class="verse-item">
-                <blockquote>"A generous person will prosper; whoever refreshes others will be refreshed."</blockquote>
-                <cite>— Proverbs 11:25</cite>
-            </div>
-            <div class="verse-item">
-                <blockquote>"Remember this: Whoever sows sparingly will also reap sparingly, and whoever sows generously will also reap generously."</blockquote>
-                <cite>— 2 Corinthians 9:6</cite>
-            </div>
-        </div>
+        <div class="verses-grid" id="aboutVersesGrid"></div>
     </section>
 
     <!-- Motivation Section -->
     <section class="about-motivation">
         <div class="motivation-card">
-            <h2>🌟 Your Giving Makes a Difference</h2>
-            <p>Every rupee you contribute helps build God's house and spreads His love. Whether it's for technology that helps us worship better, or celebrations that bring the community together — your faithfulness in giving is seen by God.</p>
-            <div class="motivation-cta">
-                <a href="funds.html" class="cta-button">View Active Funds</a>
-                <a href="members.html" class="cta-button cta-secondary">Check Your Contributions</a>
-            </div>
+            <h2 id="aboutMotivationTitle">🌟 Your Giving Makes a Difference</h2>
+            <p id="aboutMotivationBody">Every rupee you contribute helps build God's house and spreads His love.</p>
+            <div class="motivation-cta" id="aboutMotivationCta"></div>
         </div>
     </section>
 
     <!-- Connect -->
     <section class="about-connect">
         <h2>Connect With Us</h2>
-        <div class="connect-grid">
-            <a href="https://www.instagram.com/lightofjesusministry/" target="_blank" class="connect-card">
-                <span class="connect-icon">📸</span>
-                <span>Instagram</span>
-            </a>
-            <a href="https://www.youtube.com/@lightofjesusministrycbe" target="_blank" class="connect-card">
-                <span class="connect-icon">▶️</span>
-                <span>YouTube</span>
-            </a>
-            <a href="https://maps.app.goo.gl/weEebFuJnuj34d7h6" target="_blank" class="connect-card">
-                <span class="connect-icon">📍</span>
-                <span>Visit Us</span>
-            </a>
-        </div>
+        <div class="connect-grid" id="aboutConnectGrid"></div>
     </section>
 
 </main>
@@ -155,5 +82,86 @@
     <div class="footer-bottom">© 2026 · LJM Church · Light of Jesus Ministry · Built with ❤️</div>
 </footer>
 
+<script>
+(function () {
+    // Same shape/defaults as the admin "About page" editor (admin.html) — if
+    // the pastor hasn't customized anything yet, this page looks identical
+    // to the original hardcoded version.
+    var DEFAULTS = {
+        heroTitle: "About Light of Jesus Ministry",
+        heroSubtitle: "Faithful stewardship, transparent giving, and glorifying God together",
+        missionCards: [
+            { icon: "⛪", title: "Our Mission", body: "Light of Jesus Ministry (LJM) is a community of believers committed to spreading the Gospel and serving God's people. Our contribution portal enables transparent and joyful giving, allowing every member to participate in building God's kingdom." },
+            { icon: "💝", title: "Why We Give", body: "We give because God first gave to us. Every contribution — big or small — is an act of worship, an expression of faith, and a seed sown for God's glory. Through our giving, we support the church's mission, help those in need, and advance the work of the Lord." },
+            { icon: "🔍", title: "Full Transparency", body: "This portal provides complete visibility into all contributions. Every member can see how funds are being collected and track progress toward our goals. We believe in accountability and openness in all financial matters of the church." },
+            { icon: "📊", title: "How It Works", body: "Contributions are recorded and tracked through our secure system. You can view fund-wise breakdowns, individual contribution history, and overall progress. Data is updated in real-time so you always see the latest information." }
+        ],
+        verses: [
+            { text: "Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver.", ref: "2 Corinthians 9:7" },
+            { text: "Give, and it will be given to you. A good measure, pressed down, shaken together and running over, will be poured into your lap.", ref: "Luke 6:38" },
+            { text: "Honor the LORD with your wealth, with the firstfruits of all your crops; then your barns will be filled to overflowing.", ref: "Proverbs 3:9-10" },
+            { text: "Bring the whole tithe into the storehouse, that there may be food in my house. Test me in this, says the LORD Almighty, and see if I will not throw open the floodgates of heaven and pour out so much blessing that there will not be room enough to store it.", ref: "Malachi 3:10" },
+            { text: "It is more blessed to give than to receive.", ref: "Acts 20:35" },
+            { text: "For where your treasure is, there your heart will be also.", ref: "Matthew 6:21" },
+            { text: "A generous person will prosper; whoever refreshes others will be refreshed.", ref: "Proverbs 11:25" },
+            { text: "Remember this: Whoever sows sparingly will also reap sparingly, and whoever sows generously will also reap generously.", ref: "2 Corinthians 9:6" }
+        ],
+        motivationTitle: "🌟 Your Giving Makes a Difference",
+        motivationBody: "Every rupee you contribute helps build God's house and spreads His love. Whether it's for technology that helps us worship better, or celebrations that bring the community together — your faithfulness in giving is seen by God.",
+        ctaPrimaryLabel: "View Active Funds", ctaPrimaryLink: "funds.html",
+        ctaSecondaryLabel: "Check Your Contributions", ctaSecondaryLink: "members.html",
+        connectLinks: [
+            { icon: "📸", label: "Instagram", url: "https://www.instagram.com/lightofjesusministry/" },
+            { icon: "▶️", label: "YouTube", url: "https://www.youtube.com/@lightofjesusministrycbe" },
+            { icon: "📍", label: "Visit Us", url: "https://maps.app.goo.gl/weEebFuJnuj34d7h6" }
+        ]
+    };
+
+    function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+        });
+    }
+
+    function render(c) {
+        document.getElementById("aboutHeroTitle").textContent = c.heroTitle;
+        document.getElementById("aboutHeroSubtitle").textContent = c.heroSubtitle;
+
+        document.getElementById("aboutMissionCards").innerHTML = (c.missionCards || []).map(function (m) {
+            return '<div class="about-card"><div class="about-card-icon">' + esc(m.icon) + "</div><h3>" + esc(m.title) + "</h3><p>" + esc(m.body) + "</p></div>";
+        }).join("");
+
+        var versesSection = document.getElementById("aboutVersesSection");
+        if (!c.verses || !c.verses.length) {
+            versesSection.style.display = "none";
+        } else {
+            document.getElementById("aboutVersesGrid").innerHTML = c.verses.map(function (v) {
+                return '<div class="verse-item"><blockquote>&ldquo;' + esc(v.text) + '&rdquo;</blockquote><cite>— ' + esc(v.ref) + "</cite></div>";
+            }).join("");
+        }
+
+        document.getElementById("aboutMotivationTitle").textContent = c.motivationTitle;
+        document.getElementById("aboutMotivationBody").textContent = c.motivationBody;
+        var ctaHtml = "";
+        if (c.ctaPrimaryLabel && c.ctaPrimaryLink) ctaHtml += '<a href="' + esc(c.ctaPrimaryLink) + '" class="cta-button">' + esc(c.ctaPrimaryLabel) + "</a>";
+        if (c.ctaSecondaryLabel && c.ctaSecondaryLink) ctaHtml += '<a href="' + esc(c.ctaSecondaryLink) + '" class="cta-button cta-secondary">' + esc(c.ctaSecondaryLabel) + "</a>";
+        document.getElementById("aboutMotivationCta").innerHTML = ctaHtml;
+
+        document.getElementById("aboutConnectGrid").innerHTML = (c.connectLinks || []).map(function (l) {
+            return '<a href="' + esc(l.url) + '" target="_blank" rel="noopener" class="connect-card"><span class="connect-icon">' + esc(l.icon) + "</span><span>" + esc(l.label) + "</span></a>";
+        }).join("");
+    }
+
+    fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            var raw = (d && d.settings && d.settings.about_content) || "";
+            var parsed = null;
+            if (raw) { try { parsed = JSON.parse(raw); } catch (_) {} }
+            render(Object.assign({}, DEFAULTS, parsed || {}));
+        })
+        .catch(function () { render(DEFAULTS); });
+})();
+</script>
 </body>
 </html>

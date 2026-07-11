@@ -245,6 +245,12 @@
         .wishlist-item-card .wi-notes { font-size: 12.5px; color: var(--text-soft); margin-top: 6px; min-height: 16px; }
         .wishlist-item-card .wi-actions { display: flex; gap: 8px; margin-top: 12px; }
 
+        /* ── About page editor ── */
+        .ab-mission-row, .ab-connect-row { display: grid; grid-template-columns: 60px 1fr 2fr auto; gap: 8px; margin-bottom: 10px; align-items: start; }
+        .ab-verse-row { display: grid; grid-template-columns: 2.5fr 1fr auto; gap: 8px; margin-bottom: 10px; align-items: start; }
+        @media (max-width: 700px) { .ab-mission-row, .ab-connect-row, .ab-verse-row { grid-template-columns: 1fr; } }
+        .ab-mission-row textarea, .ab-verse-row textarea { min-height: 56px; }
+
         .toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
         .toggle input { opacity: 0; width: 0; height: 0; }
         .toggle .tr { position: absolute; inset: 0; border-radius: 999px; background: var(--border-strong); transition: .2s; cursor: pointer; }
@@ -580,7 +586,47 @@
 
             <!-- ABOUT PAGE -->
             <div class="section" id="section-about">
-                <div class="page-head"><h2>About page</h2><p>Loading…</p></div>
+                <div class="page-head"><h2>About page</h2><p>Fully editable — everything below is exactly what believers see on the public About page. Changes go live as soon as you save.</p></div>
+                <div class="card">
+                    <h3>Hero</h3>
+                    <div class="form-grid">
+                        <div class="span-all"><label class="f-label">Title</label><input class="input" id="ab_heroTitle"></div>
+                        <div class="span-all"><label class="f-label">Subtitle</label><input class="input" id="ab_heroSubtitle"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Mission cards</h3>
+                    <div id="ab_missionRows"></div>
+                    <button type="button" class="btn btn-outline" id="ab_addMissionBtn" style="margin-top:4px;">+ Add card</button>
+                </div>
+                <div class="card">
+                    <h3>Bible verses about giving</h3>
+                    <div id="ab_verseRows"></div>
+                    <button type="button" class="btn btn-outline" id="ab_addVerseBtn" style="margin-top:4px;">+ Add verse</button>
+                </div>
+                <div class="card">
+                    <h3>Motivation banner</h3>
+                    <div class="form-grid">
+                        <div class="span-all"><label class="f-label">Title</label><input class="input" id="ab_motivationTitle"></div>
+                        <div class="span-all"><label class="f-label">Body</label><textarea class="input" id="ab_motivationBody" rows="2"></textarea></div>
+                        <div><label class="f-label">Primary button label</label><input class="input" id="ab_ctaPrimaryLabel"></div>
+                        <div><label class="f-label">Primary button link</label><input class="input" id="ab_ctaPrimaryLink" placeholder="funds.html"></div>
+                        <div><label class="f-label">Secondary button label</label><input class="input" id="ab_ctaSecondaryLabel"></div>
+                        <div><label class="f-label">Secondary button link</label><input class="input" id="ab_ctaSecondaryLink" placeholder="members.html"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Connect with us links</h3>
+                    <div id="ab_connectRows"></div>
+                    <button type="button" class="btn btn-outline" id="ab_addConnectBtn" style="margin-top:4px;">+ Add link</button>
+                </div>
+                <div class="card">
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="ab_saveBtn">Save About page</button>
+                        <button class="btn btn-outline" id="ab_resetBtn">Reset editor to current live content</button>
+                        <span class="msg" id="ab_msg"></span>
+                    </div>
+                </div>
             </div>
 
             <!-- ROLES -->
@@ -1952,6 +1998,133 @@
                 .catch(function (e) { $("v_saveBtn").disabled = false; setMsg("v_msg", e.message, "err"); });
         }
 
+        // ═══════════════ About page ═══════════════
+        // Mirrors about.html's current hardcoded content — used both as the
+        // pre-fill when no about_content setting exists yet, and as the
+        // "reset editor" baseline.
+        var DEFAULT_ABOUT = {
+            heroTitle: "About Light of Jesus Ministry",
+            heroSubtitle: "Faithful stewardship, transparent giving, and glorifying God together",
+            missionCards: [
+                { icon: "⛪", title: "Our Mission", body: "Light of Jesus Ministry (LJM) is a community of believers committed to spreading the Gospel and serving God's people. Our contribution portal enables transparent and joyful giving, allowing every member to participate in building God's kingdom." },
+                { icon: "💝", title: "Why We Give", body: "We give because God first gave to us. Every contribution — big or small — is an act of worship, an expression of faith, and a seed sown for God's glory. Through our giving, we support the church's mission, help those in need, and advance the work of the Lord." },
+                { icon: "🔍", title: "Full Transparency", body: "This portal provides complete visibility into all contributions. Every member can see how funds are being collected and track progress toward our goals. We believe in accountability and openness in all financial matters of the church." },
+                { icon: "📊", title: "How It Works", body: "Contributions are recorded and tracked through our secure system. You can view fund-wise breakdowns, individual contribution history, and overall progress. Data is updated in real-time so you always see the latest information." }
+            ],
+            verses: [
+                { text: "Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver.", ref: "2 Corinthians 9:7" },
+                { text: "Give, and it will be given to you. A good measure, pressed down, shaken together and running over, will be poured into your lap.", ref: "Luke 6:38" },
+                { text: "Honor the LORD with your wealth, with the firstfruits of all your crops; then your barns will be filled to overflowing.", ref: "Proverbs 3:9-10" },
+                { text: "Bring the whole tithe into the storehouse, that there may be food in my house. Test me in this, says the LORD Almighty, and see if I will not throw open the floodgates of heaven.", ref: "Malachi 3:10" },
+                { text: "It is more blessed to give than to receive.", ref: "Acts 20:35" },
+                { text: "For where your treasure is, there your heart will be also.", ref: "Matthew 6:21" },
+                { text: "A generous person will prosper; whoever refreshes others will be refreshed.", ref: "Proverbs 11:25" },
+                { text: "Remember this: Whoever sows sparingly will also reap sparingly, and whoever sows generously will also reap generously.", ref: "2 Corinthians 9:6" }
+            ],
+            motivationTitle: "🌟 Your Giving Makes a Difference",
+            motivationBody: "Every rupee you contribute helps build God's house and spreads His love. Whether it's for technology that helps us worship better, or celebrations that bring the community together — your faithfulness in giving is seen by God.",
+            ctaPrimaryLabel: "View Active Funds", ctaPrimaryLink: "funds.html",
+            ctaSecondaryLabel: "Check Your Contributions", ctaSecondaryLink: "members.html",
+            connectLinks: [
+                { icon: "📸", label: "Instagram", url: "https://www.instagram.com/lightofjesusministry/" },
+                { icon: "▶️", label: "YouTube", url: "https://www.youtube.com/@lightofjesusministrycbe" },
+                { icon: "📍", label: "Visit Us", url: "https://maps.app.goo.gl/weEebFuJnuj34d7h6" }
+            ]
+        };
+        function loadAbout() {
+            fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+                var raw = (d.settings || {}).about_content;
+                var parsed = null;
+                if (raw) { try { parsed = JSON.parse(raw); } catch (_) {} }
+                state.aboutContent = Object.assign({}, DEFAULT_ABOUT, parsed || {});
+                renderAboutForm();
+            }).catch(function (e) { setMsg("ab_msg", e.message, "err"); });
+        }
+        function renderAboutForm() {
+            var c = state.aboutContent;
+            $("ab_heroTitle").value = c.heroTitle || "";
+            $("ab_heroSubtitle").value = c.heroSubtitle || "";
+            $("ab_motivationTitle").value = c.motivationTitle || "";
+            $("ab_motivationBody").value = c.motivationBody || "";
+            $("ab_ctaPrimaryLabel").value = c.ctaPrimaryLabel || "";
+            $("ab_ctaPrimaryLink").value = c.ctaPrimaryLink || "";
+            $("ab_ctaSecondaryLabel").value = c.ctaSecondaryLabel || "";
+            $("ab_ctaSecondaryLink").value = c.ctaSecondaryLink || "";
+            renderMissionRows();
+            renderVerseRows();
+            renderConnectRows();
+        }
+        function wireDynamicRows(host, arrayKey, rerenderFn) {
+            host.querySelectorAll("[data-i]").forEach(function (row) {
+                var i = Number(row.dataset.i);
+                row.querySelectorAll("[data-f]").forEach(function (field) {
+                    field.oninput = function () { state.aboutContent[arrayKey][i][field.dataset.f] = field.value; };
+                });
+                var removeBtn = row.querySelector("[data-remove]");
+                if (removeBtn) removeBtn.onclick = function () { state.aboutContent[arrayKey].splice(i, 1); rerenderFn(); };
+            });
+        }
+        function renderMissionRows() {
+            var host = $("ab_missionRows");
+            host.innerHTML = (state.aboutContent.missionCards || []).map(function (m, i) {
+                return '<div class="ab-mission-row" data-i="' + i + '">' +
+                    '<input class="input" placeholder="Icon" value="' + esc(m.icon || "") + '" data-f="icon">' +
+                    '<input class="input" placeholder="Title" value="' + esc(m.title || "") + '" data-f="title">' +
+                    '<textarea class="input" placeholder="Body text" rows="2" data-f="body">' + esc(m.body || "") + "</textarea>" +
+                    '<button type="button" class="mini-btn danger" data-remove title="Remove">✕</button>' +
+                    "</div>";
+            }).join("") || '<div class="empty">No mission cards — add one below.</div>';
+            wireDynamicRows(host, "missionCards", renderMissionRows);
+        }
+        function renderVerseRows() {
+            var host = $("ab_verseRows");
+            host.innerHTML = (state.aboutContent.verses || []).map(function (v, i) {
+                return '<div class="ab-verse-row" data-i="' + i + '">' +
+                    '<textarea class="input" placeholder="Verse text" rows="2" data-f="text">' + esc(v.text || "") + "</textarea>" +
+                    '<input class="input" placeholder="Reference (e.g. John 3:16)" value="' + esc(v.ref || "") + '" data-f="ref">' +
+                    '<button type="button" class="mini-btn danger" data-remove title="Remove">✕</button>' +
+                    "</div>";
+            }).join("") || '<div class="empty">No verses — add one below.</div>';
+            wireDynamicRows(host, "verses", renderVerseRows);
+        }
+        function renderConnectRows() {
+            var host = $("ab_connectRows");
+            host.innerHTML = (state.aboutContent.connectLinks || []).map(function (l, i) {
+                return '<div class="ab-connect-row" data-i="' + i + '">' +
+                    '<input class="input" placeholder="Icon" value="' + esc(l.icon || "") + '" data-f="icon">' +
+                    '<input class="input" placeholder="Label" value="' + esc(l.label || "") + '" data-f="label">' +
+                    '<input class="input" placeholder="https://…" value="' + esc(l.url || "") + '" data-f="url">' +
+                    '<button type="button" class="mini-btn danger" data-remove title="Remove">✕</button>' +
+                    "</div>";
+            }).join("") || '<div class="empty">No links — add one below.</div>';
+            wireDynamicRows(host, "connectLinks", renderConnectRows);
+        }
+        function saveAbout() {
+            var c = state.aboutContent;
+            c.heroTitle = $("ab_heroTitle").value.trim();
+            c.heroSubtitle = $("ab_heroSubtitle").value.trim();
+            c.motivationTitle = $("ab_motivationTitle").value.trim();
+            c.motivationBody = $("ab_motivationBody").value.trim();
+            c.ctaPrimaryLabel = $("ab_ctaPrimaryLabel").value.trim();
+            c.ctaPrimaryLink = $("ab_ctaPrimaryLink").value.trim();
+            c.ctaSecondaryLabel = $("ab_ctaSecondaryLabel").value.trim();
+            c.ctaSecondaryLink = $("ab_ctaSecondaryLink").value.trim();
+            c.missionCards = (c.missionCards || []).filter(function (m) { return (m.title || "").trim() || (m.body || "").trim(); });
+            c.verses = (c.verses || []).filter(function (v) { return (v.text || "").trim(); });
+            c.connectLinks = (c.connectLinks || []).filter(function (l) { return (l.label || "").trim() && (l.url || "").trim(); });
+
+            $("ab_saveBtn").disabled = true;
+            api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "about_content", value: JSON.stringify(c) }) })
+                .then(function (d) {
+                    $("ab_saveBtn").disabled = false;
+                    setMsg("ab_msg", d.success ? "About page saved — live now" : (d.message || "Save failed"), d.success ? "ok" : "err");
+                }).catch(function (e) { $("ab_saveBtn").disabled = false; setMsg("ab_msg", e.message, "err"); });
+        }
+        function resetAboutToDefaults() {
+            if (!confirm("Reset the editor to the current live About page content? Unsaved edits here will be lost — this does not save until you click Save.")) return;
+            loadAbout();
+        }
+
         // ═══════════════ Self-test ═══════════════
         function runSelfTest() {
             $("st_runBtn").disabled = true;
@@ -1978,7 +2151,7 @@
             contributions: loadContributions, purchases: loadPurchases,
             sandha: loadSandha, expenses: loadExpenses, wishlist: loadWishlist,
             roles: loadRoles, audit: loadAudit,
-            verses: loadVerses, settings: loadSettings, selftest: function () {}
+            verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {}
         };
 
         function wireThemeToggle() {
@@ -2013,6 +2186,10 @@
             $("s_saveGoals").onclick = saveGoals;
             $("s_saveContact").onclick = saveContact;
             $("v_saveBtn").onclick = saveVerses;
+            $("ab_saveBtn").onclick = saveAbout; $("ab_resetBtn").onclick = resetAboutToDefaults;
+            $("ab_addMissionBtn").onclick = function () { state.aboutContent.missionCards.push({ icon: "✨", title: "", body: "" }); renderMissionRows(); };
+            $("ab_addVerseBtn").onclick = function () { state.aboutContent.verses.push({ text: "", ref: "" }); renderVerseRows(); };
+            $("ab_addConnectBtn").onclick = function () { state.aboutContent.connectLinks.push({ icon: "🔗", label: "", url: "" }); renderConnectRows(); };
             $("sa_saveAmount").onclick = saveSandhaAmount;
             $("sa_addBtn").onclick = addBeliever;
             $("sa_month").onchange = fetchSandha;
