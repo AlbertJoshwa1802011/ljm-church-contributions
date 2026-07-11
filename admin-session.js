@@ -110,8 +110,8 @@
                 left: 0;
                 right: 0;
                 z-index: 99999;
-                background: linear-gradient(135deg, #1e1b4b, #312e81);
-                color: #e0e7ff;
+                background: linear-gradient(135deg, #1a1712, #332c1e);
+                color: #f0e9dc;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -119,11 +119,11 @@
                 height: 42px;
                 font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
                 font-size: 13px;
-                box-shadow: 0 2px 12px rgba(30, 27, 75, 0.5);
-                border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+                box-shadow: 0 2px 12px rgba(20, 15, 8, 0.5);
+                border-bottom: 1px solid rgba(217, 119, 87, 0.3);
             }
             #ljmAdminBar a {
-                color: #c4b5fd;
+                color: #e8c4b0;
                 text-decoration: none;
                 padding: 6px 12px;
                 border-radius: 6px;
@@ -133,12 +133,12 @@
                 white-space: nowrap;
             }
             #ljmAdminBar a:hover {
-                background: rgba(139, 92, 246, 0.2);
+                background: rgba(217, 119, 87, 0.2);
                 color: #fff;
             }
             #ljmAdminBar a.ab-active {
-                background: rgba(139, 92, 246, 0.25);
-                color: #a78bfa;
+                background: rgba(217, 119, 87, 0.25);
+                color: #f0a37e;
                 font-weight: 600;
             }
             .ab-left {
@@ -152,7 +152,7 @@
             .ab-left::-webkit-scrollbar { display: none; }
             .ab-brand {
                 font-weight: 700;
-                color: #a78bfa;
+                color: #f0a37e;
                 font-size: 13px;
                 margin-right: 8px;
                 white-space: nowrap;
@@ -175,7 +175,7 @@
             .ab-timer.danger { color: #ef4444; font-weight: 600; }
             .ab-user {
                 font-size: 11px;
-                color: #a5b4fc;
+                color: #d4c4a8;
                 max-width: 140px;
                 overflow: hidden;
                 text-overflow: ellipsis;

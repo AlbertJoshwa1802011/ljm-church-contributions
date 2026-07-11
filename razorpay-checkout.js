@@ -395,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "month": selectedMonth || (new Date().toLocaleString('default', { month: 'long' }))
                 },
                 "theme": {
-                    "color": "#673ab7"
+                    "color": "#d97757"
                 }
             };
 

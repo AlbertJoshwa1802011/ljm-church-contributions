@@ -11,7 +11,7 @@ const VERSE_KEYS = [
   "verse_year_label", "verse_year_text", "verse_year_ref"
 ];
 
-const PASTOR_KEYS = ["pastor_name", "pastor_address", "pastor_phone"];
+const PASTOR_KEYS = ["pastor_name", "pastor_address", "pastor_phone", "pastor_email"];
 const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS];
 const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS];
 
@@ -66,6 +66,9 @@ export async function onRequestPut(context) {
       }
       if (key === "force_login" && !["true", "false"].includes(value)) {
         return json({ success: false, message: "force_login must be 'true' or 'false'" }, 400);
+      }
+      if (key === "pastor_email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return json({ success: false, message: "pastor_email must be a valid email address" }, 400);
       }
       if (value.length > MAX_VALUE_LEN) {
         return json({ success: false, message: `Value for '${key}' exceeds ${MAX_VALUE_LEN} characters` }, 400);
