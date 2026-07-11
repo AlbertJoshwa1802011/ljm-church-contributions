@@ -1165,10 +1165,10 @@ button.bottom-nav-item {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* KPI Chip Strip — 4 compact cards replacing the old 6-card layout */
+/* KPI Chip Strip — 5 compact cards showing all key metrics */
 .kpi-strip {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 12px;
     margin: 16px 0 24px;
 }

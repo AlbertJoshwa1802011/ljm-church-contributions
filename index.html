@@ -108,24 +108,27 @@
         </div>
     </section>
 
-    <!-- KPI Chip Strip (4 compact cards replacing the old 6-card layout) -->
+    <!-- KPI Chip Strip (5 compact cards showing key metrics) -->
     <section class="kpi-strip">
         <div class="stat-card kpi-chip" data-stat-type="collected" id="totalCollectedCard" tabindex="0" role="button" aria-label="Total Collected">
             <div class="kpi-label">Collected</div>
             <div class="kpi-value" id="totalAmount">₹0</div>
             <div class="kpi-sub" id="totalSubdetail"></div>
         </div>
-        <div class="stat-card kpi-chip kpi-progress" tabindex="0" role="button" aria-label="Goal Progress">
-            <div class="kpi-label">Progress</div>
-            <div class="kpi-ring-wrapper">
-                <canvas id="kpiProgressRing" width="60" height="60"></canvas>
-            </div>
-            <div class="kpi-sub" id="goalSubdetail"></div>
+        <div class="stat-card kpi-chip" data-stat-type="spent" tabindex="0" role="button" aria-label="Spent on Products">
+            <div class="kpi-label">Spent</div>
+            <div class="kpi-value" id="spentAmount">₹0</div>
+            <div class="kpi-sub" id="spentSubdetail"></div>
         </div>
         <div class="stat-card kpi-chip" data-stat-type="balance" tabindex="0" role="button" aria-label="Available Balance">
             <div class="kpi-label">Available</div>
             <div class="kpi-value" id="balanceAmount">₹0</div>
             <div class="kpi-sub" id="balanceSubdetail"></div>
+        </div>
+        <div class="stat-card kpi-chip" data-stat-type="remaining" tabindex="0" role="button" aria-label="Remaining to Goal">
+            <div class="kpi-label">Remaining</div>
+            <div class="kpi-value" id="remainingAmount">₹0</div>
+            <div class="kpi-sub" id="remainingSubdetail"></div>
         </div>
         <div class="stat-card kpi-chip" data-stat-type="count" id="entryCountCard" tabindex="0" role="button" aria-label="Contributors">
             <div class="kpi-label">Contributors</div>
