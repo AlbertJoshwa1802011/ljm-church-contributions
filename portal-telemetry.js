@@ -40,13 +40,13 @@
     if (location.protocol === "file:") return; // dev preview: never block
 
     fetch("/api/settings").then(function (r) { return r.json(); }).then(function (d) {
-        var forced = d && d.settings && d.settings.force_login === "true";
+        var forced = d && d.settings && d.settings.force_login === "true" ? true : true; // default to true (mandatory login)
         if (getToken()) return; // already signed in
         try { if (sessionStorage.getItem("ljmAdminSession")) return; } catch (_) {} // admins pass
         try { if (!forced && sessionStorage.getItem("ljmGuest")) return; } catch (_) {} // guest already chose
 
         showGate(forced);
-    }).catch(function () { /* fail open — never lock members out on API errors */ });
+    }).catch(function () { showGate(true); /* fail closed — force login */ });
 
     function showGate(forced) {
         var overlay = document.createElement("div");

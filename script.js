@@ -1086,6 +1086,37 @@ async function silentBackgroundRefresh(selectedFund) {
 }
 
 // ==================================================
+// HERO GREETING (time-aware, personalized greeting)
+// ==================================================
+function renderHeroGreeting() {
+    const section = document.getElementById("heroGreeting");
+    if (!section) return;
+
+    try {
+        const profile = JSON.parse(sessionStorage.getItem("ljmAuthProfile") || "null");
+        if (!profile || !profile.email) {
+            section.style.display = "none";
+            return;
+        }
+
+        const firstName = (profile.name || profile.email).split(" ")[0].trim();
+        const hour = new Date().getHours();
+        let timeGreeting = "Hello";
+        if (hour < 12) timeGreeting = "Good morning";
+        else if (hour < 18) timeGreeting = "Good afternoon";
+        else timeGreeting = "Good evening";
+
+        const emojis = ["🙏", "✝️", "🕊️", "💫"];
+        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+        document.getElementById("greetingText").textContent = `${timeGreeting}, ${firstName} ${emoji}`;
+        section.style.display = "block";
+    } catch (_) {
+        section.style.display = "none";
+    }
+}
+
+// ==================================================
 // TAB SYSTEM (Part 2: Dashboard Redesign)
 // ==================================================
 let chartsRendered = false;
@@ -1343,6 +1374,7 @@ async function initDashboard(dynamicFund) {
                 productsBoughtCount: window._productsBoughtCount
             });
             currentDisplayCount = 0;
+            renderHeroGreeting();
             initTabs();
             renderDashboard();
             renderTopContributors(contributionsData);
@@ -1369,6 +1401,7 @@ async function initDashboard(dynamicFund) {
                     window._productsBoughtCount = (mock.purchases || []).filter(p => p.fund === techKey).length;
                 }
                 currentDisplayCount = 0;
+                renderHeroGreeting();
                 initTabs();
                 renderDashboard();
                 renderTopContributors(contributionsData);

@@ -53,25 +53,25 @@
 }
 
 [data-theme="dark"] {
-    --bg: #1c1a14;
-    --bg-soft: #24211a;
-    --surface: #2a2721;
-    --border: #3b372c;
-    --border-strong: #4c4736;
-    --text: #f2efe4;
-    --text-soft: #c3bda8;
-    --text-faint: #8b8570;
-    --accent: #e2916a;
-    --accent-deep: #f0a97d;
-    --accent-soft: rgba(226,145,106,0.16);
-    --green: #8bc27a;
-    --green-soft: rgba(139,194,122,0.14);
-    --red: #e08571;
-    --red-soft: rgba(224,133,113,0.14);
-    --amber: #d9b563;
-    --amber-soft: rgba(217,181,99,0.14);
-    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.4);
-    --shadow-lift: 0 2px 6px rgba(0,0,0,0.45), 0 10px 32px rgba(0,0,0,0.55);
+    --bg: #000000;
+    --bg-soft: #0a0a0a;
+    --surface: #1a1a1a;
+    --border: #333333;
+    --border-strong: #444444;
+    --text: #ffffff;
+    --text-soft: #d0d0d0;
+    --text-faint: #888888;
+    --accent: #ff6b4a;
+    --accent-deep: #ff8566;
+    --accent-soft: rgba(255,107,74,0.16);
+    --green: #66bb6a;
+    --green-soft: rgba(102,187,106,0.14);
+    --red: #ef5350;
+    --red-soft: rgba(239,83,80,0.14);
+    --amber: #fbc02d;
+    --amber-soft: rgba(251,192,45,0.14);
+    --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.6);
+    --shadow-lift: 0 2px 6px rgba(0,0,0,0.6), 0 10px 32px rgba(0,0,0,0.8);
     color-scheme: dark;
 }
 
@@ -1062,6 +1062,49 @@ button.bottom-nav-item {
 [data-theme="dark"] [style*="2c3e50"],
 [data-theme="dark"] [style*="0f172a"] {
     color: var(--text) !important;
+}
+
+/* ==================================================================
+   Hero Greeting Section
+   ================================================================== */
+
+.hero-greeting {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+    padding: 32px 20px;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-lift);
+}
+
+.greeting-content {
+    text-align: center;
+}
+
+.greeting-text {
+    font-size: 28px;
+    font-weight: 800;
+    color: white;
+    margin: 0 0 8px;
+    font-family: var(--serif);
+}
+
+.greeting-note {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .hero-greeting {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+}
+
+[data-theme="dark"] .greeting-text {
+    color: white;
+}
+
+[data-theme="dark"] .greeting-note {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* ==================================================================
