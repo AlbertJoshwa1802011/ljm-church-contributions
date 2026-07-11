@@ -7,7 +7,8 @@ import { requireAuth, audit, HARDCODED_SUPER_ADMINS } from "./_lib.js";
 // (including "*") so a manage_roles holder cannot invent or widen scopes.
 const VALID_PERMISSIONS = [
   "edit_purchases", "edit_wishlist", "manage_roles",
-  "view_members", "manage_funds", "delete_funds", "view_audit", "manage_expenses"
+  "view_members", "manage_funds", "delete_funds", "view_audit",
+  "manage_expenses", "manage_sandha"
 ];
 
 // 1. GET: Fetch roles list and email mappings (Admin-only)
