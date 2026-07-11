@@ -38,21 +38,22 @@ export async function onRequestGet(context) {
         const extContrib = P("externalContribution") !== "" ? Number(P("externalContribution")) : 0;
 
         await db.prepare(
-          "INSERT INTO purchases (id, name, amount, date, fund, photo, vendor, description, status, fund_contribution, external_contribution, external_sources) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+          "INSERT INTO purchases (id, name, amount, date, fund, photo, vendor, description, status, fund_contribution, external_contribution, external_sources, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(
-          id, 
-          P("productName"), 
-          cost, 
-          P("purchaseDate"), 
-          P("fundSource"), 
-          P("photoURL"), 
-          P("vendorLink"), 
-          P("description"), 
-          P("status") || "Active", 
-          fundContrib, 
-          extContrib, 
-          P("externalSources")
+          id,
+          P("productName"),
+          cost,
+          P("purchaseDate"),
+          P("fundSource"),
+          P("photoURL"),
+          P("vendorLink"),
+          P("description"),
+          P("status") || "Active",
+          fundContrib,
+          extContrib,
+          P("externalSources"),
+          auth.email || ""
         )
         .run();
 
@@ -116,7 +117,7 @@ export async function onRequestGet(context) {
 
   // Default Listing (Public)
   try {
-    const query = await db.prepare("SELECT id, name, amount AS cost, date, fund, photo, vendor, description, status, fund_contribution AS fundContribution, external_contribution AS externalContribution, external_sources AS externalSources FROM purchases ORDER BY date DESC").all();
+    const query = await db.prepare("SELECT id, name, amount AS cost, date, fund, photo, vendor, description, status, fund_contribution AS fundContribution, external_contribution AS externalContribution, external_sources AS externalSources, created_by AS createdBy FROM purchases ORDER BY date DESC").all();
     const purchases = query.results || [];
     const totalSpent = purchases.reduce((sum, p) => sum + (p.fundContribution || 0), 0);
     const totalCost = purchases.reduce((sum, p) => sum + (p.cost || 0), 0);
