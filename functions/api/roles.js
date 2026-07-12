@@ -8,7 +8,7 @@ import { requireAuth, audit, HARDCODED_SUPER_ADMINS } from "./_lib.js";
 const VALID_PERMISSIONS = [
   "edit_purchases", "edit_wishlist", "manage_roles",
   "view_members", "manage_funds", "delete_funds", "view_audit",
-  "manage_expenses", "manage_sandha"
+  "manage_expenses", "manage_sandha", "manage_members", "manage_content"
 ];
 
 // 1. GET: Fetch roles list and email mappings (Admin-only)

@@ -175,7 +175,7 @@
         const breakdownBlock = hasBreakdown ? `
             <div class="funding-breakdown">
                 <div class="fb-row">
-                    <span class="fb-dot" style="background:#667eea;"></span>
+                    <span class="fb-dot" style="background:var(--info, #3f7a94);"></span>
                     <span class="fb-label">${escapeHTML(fundEmoji(p.fund))} ${escapeHTML(p.fund || "Fund")}</span>
                     <span class="fb-amount">${formatINR(fundContrib)}</span>
                 </div>
@@ -224,7 +224,7 @@
             "data:image/svg+xml;utf8," +
             encodeURIComponent(
                 `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='260'>
-                   <rect width='600' height='260' fill='#ecefff'/>
+                   <rect width='600' height='260' fill='#fbeee8'/>
                    <text x='50%' y='50%' text-anchor='middle' dy='.3em' font-size='72'>${fundEmoji(p.fund)}</text>
                  </svg>`
             );
@@ -257,7 +257,7 @@
                     </div>
                     <div class="modal-fb-rows">
                         <div class="modal-fb-row">
-                            <span><span class="fb-dot" style="background:#667eea;"></span> ${escapeHTML(p.fund || "Fund")}</span>
+                            <span><span class="fb-dot" style="background:var(--info, #3f7a94);"></span> ${escapeHTML(p.fund || "Fund")}</span>
                             <strong>${formatINR(fundContrib)}</strong>
                         </div>
                         <div class="modal-fb-row">

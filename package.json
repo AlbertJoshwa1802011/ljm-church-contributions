@@ -1,0 +1,12 @@
+{
+  "name": "ljm-church-contributions",
+  "private": true,
+  "description": "Light of Jesus Ministry — church contributions portal (static site + Cloudflare Pages Functions + D1). No build step; this file exists only to run the test suite.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test 'tests/**/*.test.mjs'"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

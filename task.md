@@ -78,3 +78,27 @@
 ## Deploy notes
 - [ ] Apply migrations on remote D1: `0002_dynamic_funds_audit.sql`, `0003_expenses.sql`
 - [ ] Production admins sign in with Google (verified) — no env flag needed. `ALLOW_LEGACY_EMAIL_TOKEN` is only for the local dev-login button.
+
+# Admin Console Redesign, Families, and Bible Verses (branch: claude/church-admin-console-redesign-oiopko)
+
+## Done
+- [x] Design system: reworked dark palette (warm near-black elevation scale instead of pure black, desaturated accent, new `--info` token), purged the legacy purple/indigo gradient from every file that still had it, extended real dark-mode support to `admin.html` (previously permanently light, forked its own tokens)
+- [x] Admin console nav: replaced the flat 13-item list (duplicated into a sidebar + a horizontally-scrolling mobile strip) with a grouped, two-level model (Overview/Giving/People/Content/Admin) — accordion sidebar on desktop, 5 group buttons + slide-up sheet on mobile
+- [x] Sticky section headers (`.page-head` in admin, `.dashboard-tabs` on the public dashboard) instead of scrolling out of view; unified the public header's conflicting 768px/820px mobile breakpoints into one
+- [x] Pastor contact: added an email field end-to-end, made phone/email tappable `tel:`/`mailto:` links, fixed the mobile top bar + "More" sheet so signed-in mobile users can actually reach pastor contact info (previously hidden below 580px with no fallback)
+- [x] Rewrote `payment-modal.css` (previously a standalone hardcoded-light Material purple/pink stylesheet) to use the shared design tokens, fixing dark-mode contrast on the contribution modal
+- [x] `purchases` table gains `created_by` — purchase records are now attributed to the admin who added them, shown in the admin table (`migrations/0005_purchase_attribution.sql`)
+- [x] Families/households: new `families` table + `family_id`/`relation`/`date_of_birth` on `members` (`migrations/0006_families.sql`); `functions/api/families.js`; admin "Families" tab (People group) — non-destructive to existing individual member/contribution/Sandha history
+- [x] Sandha reworked to per-family billing (paid once by the family head, not once per member) once a member is grouped into a family; members not yet grouped keep working exactly as before (`migrations/0007_sandha_family.sql`, rewritten `functions/api/sandha.js`, admin Sandha tab + public `sandha.html` both show family and individual status)
+- [x] Wishlist admin section relocated (Content group) and restyled as priority-colored cards
+- [x] About page CMS: `about_content` JSON setting + admin editor with dynamic add/remove rows (hero, mission cards, verses, motivation banner + CTAs, connect links); `about.html` now renders from settings instead of static HTML
+- [x] Bible verse data dictionary: `bible_versions`/`bible_verses` tables (`migrations/0008_bible_verses.sql`, `migrations/0009_bible_kjv_seed.sql`), `functions/api/bible.js` (browse/search/import), admin Verses tab now searches-and-picks instead of freeform typing; Verse of the Month/Year cards added to `member.html` (previously only on the public dashboard)
+- [x] First automated test suite: `node --test` + `node:sqlite` harness (`tests/`) running the real `functions/api/*.js` handlers against an in-memory DB seeded from `schema.sql` — 31 cases across families, sandha, settings, bible, purchases, wishlist, roles; CI workflow (`.github/workflows/test.yml`) runs it on every push/PR
+- [x] New docs: `README.md` (root — previously missing entirely), `TESTING.md`, `FAMILIES_AND_SANDHA.md`, `BIBLE_VERSES.md`, `THEME_AND_DESIGN_SYSTEM.md`, `ADMIN_CONSOLE_GUIDE.md`
+
+## After deploy
+- [ ] Apply migrations on remote D1 in order: `0005_purchase_attribution.sql`, `0006_families.sql`, `0007_sandha_family.sql`, `0008_bible_verses.sql`, `0009_bible_kjv_seed.sql`
+- [ ] Run admin → Self-Test in production
+- [ ] Group existing members into families via the new Families tab at the church's own pace (nothing breaks for members left ungrouped)
+- [ ] Decide on completing the Bible verse data (full KJV and/or Tamil O.V.) via `POST /api/bible {action:"import"}` — see BIBLE_VERSES.md
+- [ ] Review the About page editor once live and adjust copy as needed — it currently mirrors the original hardcoded About page exactly

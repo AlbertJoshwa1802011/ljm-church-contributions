@@ -29,6 +29,8 @@
         bought: '<svg viewBox="0 0 24 24"><path d="M6 8h12l1 12.5a1 1 0 0 1-1 1.5H6a1 1 0 0 1-1-1.5L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
         about: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".25" fill="currentColor" stroke-width="1.6"/></svg>',
         person: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.2c.9-3.9 3.8-6.2 7.2-6.2s6.3 2.3 7.2 6.2"/></svg>',
+        phone: '<svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.9 21 3 13.1 3 3.9c0-.6.4-1 1-1H7.3c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.3 1.1L6.6 10.8Z"/></svg>',
+        mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="m4 7 8 6 8-6"/></svg>',
         admin: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.3-7 10-4.1-1.7-7-5.6-7-10V6l7-3Z"/><path d="M9.2 12.2l2 2 3.8-4"/></svg>',
         signout: '<svg viewBox="0 0 24 24"><path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="M15 16l4-4-4-4"/><path d="M19 12H9"/></svg>',
         settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -45,14 +47,19 @@
     ];
 
     function currentPage() {
-        var p = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-        if (p === "" || p === "index.html") return "home";
-        if (p === "funds.html") return "funds";
-        if (p === "sandha.html") return "sandha";
-        if (p === "members.html") return "members";
-        if (p === "impact.html") return "impact";
-        if (p === "about.html") return "about";
-        if (p === "member.html") return "members";
+        // Cloudflare Pages serves clean URLs (redirects funds.html -> /funds),
+        // so match with any ".html" stripped — otherwise every check below
+        // silently never matches once a visitor lands on the extensionless
+        // URL (which Pages promotes), breaking active-nav highlighting.
+        var p = (location.pathname.split("/").pop() || "index").toLowerCase();
+        if (p.slice(-5) === ".html") p = p.slice(0, -5);
+        if (p === "" || p === "index") return "home";
+        if (p === "funds") return "funds";
+        if (p === "sandha") return "sandha";
+        if (p === "members") return "members";
+        if (p === "impact") return "impact";
+        if (p === "about") return "about";
+        if (p === "member") return "members";
         return "";
     }
 
@@ -130,6 +137,7 @@
             return {
                 pastor_name: "Pastor MK",
                 pastor_phone: "+91 99409 40326",
+                pastor_email: "",
                 pastor_address: "Light of Jesus Ministry, Coimbatore"
             };
         });
@@ -190,8 +198,10 @@
 
         getSettings().then(function (settings) {
             var phone = settings.pastor_phone || "+91 99409 40326";
+            var email = settings.pastor_email || "";
             var name = settings.pastor_name || "Pastor MK";
             var address = settings.pastor_address || "Light of Jesus Ministry, Coimbatore";
+            var telHref = "tel:" + phone.replace(/[^0-9+]/g, "");
 
             var topBar = document.getElementById("ljmTopBar");
             if (!topBar) {
@@ -200,16 +210,47 @@
                 topBar.className = "ljm-top-bar";
                 mount.parentNode.insertBefore(topBar, mount);
             }
-            topBar.innerHTML = '<span>📞 ' + esc(phone) + '</span>' +
-                               '<span class="ljm-top-divider">|</span>' +
-                               '<span>👤 Pastor: ' + esc(name) + '</span>' +
-                               '<span class="ljm-top-divider">|</span>' +
-                               '<span>📍 ' + esc(address) + '</span>';
+            // Phone/email (primary) stay tappable and visible at every width;
+            // name/address (secondary) collapse away only on narrow phones —
+            // see the .ljm-top-secondary media rule in theme.css.
+            topBar.innerHTML =
+                '<div class="ljm-top-primary">' +
+                    '<a class="ljm-top-item" href="' + esc(telHref) + '">📞 ' + esc(phone) + '</a>' +
+                    (email
+                        ? '<span class="ljm-top-divider">|</span><a class="ljm-top-item" href="mailto:' + esc(email) + '">✉️ ' + esc(email) + '</a>'
+                        : '') +
+                '</div>' +
+                '<span class="ljm-top-divider ljm-top-divider-sec">|</span>' +
+                '<div class="ljm-top-secondary">' +
+                    '<span class="ljm-top-item">👤 Pastor: ' + esc(name) + '</span>' +
+                    '<span class="ljm-top-divider">|</span>' +
+                    '<span class="ljm-top-item">📍 ' + esc(address) + '</span>' +
+                '</div>';
 
             var sheetUserDetail = document.getElementById("ljmhMoreSheetUserDetail");
             if (sheetUserDetail) {
                 sheetUserDetail.innerHTML = '<div class="ljmh-menu-name">Pastor ' + esc(name) + '</div>' +
                                             '<div class="ljmh-menu-email">' + esc(phone) + ' · ' + esc(address.split(",")[0]) + '</div>';
+            }
+
+            // Always-present contact shortcuts in the mobile "More" sheet —
+            // previously this slot only existed for signed-out visitors, so a
+            // signed-in mobile user had no way at all to reach pastor contact
+            // info (the top bar was also fully hidden below 580px).
+            var callItem = document.getElementById("ljmhSheetCallPastor");
+            if (callItem) {
+                callItem.href = telHref;
+                var callLabel = callItem.querySelector("span");
+                if (callLabel) callLabel.textContent = "Call " + name;
+            }
+            var emailItem = document.getElementById("ljmhSheetEmailPastor");
+            if (emailItem) {
+                if (email) {
+                    emailItem.href = "mailto:" + email;
+                    emailItem.style.display = "";
+                } else {
+                    emailItem.style.display = "none";
+                }
             }
         });
     }
@@ -345,6 +386,8 @@
                     '<a class="ljmh-sheet-item' + (page === "members" ? " active" : "") + '" href="members.html">' + ICONS.members + "<span>Members</span></a>" +
                     '<a class="ljmh-sheet-item' + (page === "impact" ? " active" : "") + '" href="impact.html">' + ICONS.bought + "<span>Impact</span></a>" +
                     '<a class="ljmh-sheet-item' + (page === "about" ? " active" : "") + '" href="about.html">' + ICONS.about + "<span>About</span></a>" +
+                    '<a class="ljmh-sheet-item" id="ljmhSheetCallPastor" href="tel:">' + ICONS.phone + "<span>Call Pastor</span></a>" +
+                    '<a class="ljmh-sheet-item" id="ljmhSheetEmailPastor" href="mailto:" style="display:none;">' + ICONS.mail + "<span>Email Pastor</span></a>" +
                     '<a class="ljmh-sheet-item" href="member.html">' + ICONS.person + "<span>My giving</span></a>" +
                     (admin ? '<a class="ljmh-sheet-item" href="admin.html">' + ICONS.admin + "<span>Admin</span></a>" +
                              '<a class="ljmh-sheet-item" href="admin.html#settings">' + ICONS.settings + "<span>Settings</span></a>" : "") +

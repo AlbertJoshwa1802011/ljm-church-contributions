@@ -1,13 +1,17 @@
 // Cloudflare Pages Function: /api/sandha
-// Sandha — monthly membership dues. The pastor (manage_sandha) marks members
-// paid/unpaid per month; everyone can see who has paid and who is pending
+// Sandha — monthly membership dues, billed per family (paid by the family
+// head) once believers are grouped into a household; a member not yet
+// grouped into any family is still billed and tracked individually, exactly
+// as before. Everyone can see who/which family has paid and who is pending
 // (explicitly requested: the whole church should see monthly Sandha status).
 //
-//   GET  /api/sandha?month=YYYY-MM       → { month, amount, paid:[{id,name,paidOn,method,amount}],
-//                                            pending:[{id,name}], totals, months:[...] }
-//   GET  /api/sandha?member=Name         → that member's paid months for the current year
-//   POST { action:'mark_paid',  memberId, month, amount?, method?, notes? }   (manage_sandha)
-//   POST { action:'unmark',     memberId, month }                             (manage_sandha)
+//   GET  /api/sandha?month=YYYY-MM   → { month, amount,
+//                                         paid:[...], pending:[...],            (ungrouped individuals)
+//                                         families:{ paid:[...], pending:[...] },
+//                                         totals, months:[...] }
+//   GET  /api/sandha?member=Name     → that member's (or their family's) paid months for the year
+//   POST { action:'mark_paid', memberId?, familyId?, month, amount?, method?, notes?, paidByMemberId? }  (manage_sandha)
+//   POST { action:'unmark',    memberId?, familyId?, month }                                              (manage_sandha)
 
 import { requireAuth, audit, json } from "./_lib.js";
 
@@ -40,54 +44,90 @@ export async function onRequestGet(context) {
   const memberName = (url.searchParams.get("member") || "").trim();
 
   try {
-    // ── Personal history: months this member paid in the requested year ──
+    // ── Personal history: months this member (or their family) paid in the requested year ──
     if (memberName) {
       const year = (url.searchParams.get("year") || new Date().getFullYear().toString()).substring(0, 4);
-      const rows = await db.prepare(
-        `SELECT sp.month, sp.amount, sp.paid_on AS paidOn, sp.method
-         FROM sandha_payments sp JOIN members m ON m.id = sp.member_id
-         WHERE LOWER(m.name) = LOWER(?) AND sp.month LIKE ?
-         ORDER BY sp.month`
-      ).bind(memberName, `${year}-%`).all();
+      const member = await db.prepare("SELECT id, family_id FROM members WHERE LOWER(name) = LOWER(?)").bind(memberName).first();
+
+      let rows, familyName = null;
+      if (member && member.family_id) {
+        const fam = await db.prepare("SELECT family_name FROM families WHERE id = ?").bind(member.family_id).first();
+        familyName = fam ? fam.family_name : null;
+        rows = await db.prepare(
+          `SELECT month, amount, paid_on AS paidOn, method
+           FROM sandha_family_payments WHERE family_id = ? AND month LIKE ? ORDER BY month`
+        ).bind(member.family_id, `${year}-%`).all();
+      } else {
+        rows = await db.prepare(
+          `SELECT sp.month, sp.amount, sp.paid_on AS paidOn, sp.method
+           FROM sandha_payments sp JOIN members m ON m.id = sp.member_id
+           WHERE LOWER(m.name) = LOWER(?) AND sp.month LIKE ?
+           ORDER BY sp.month`
+        ).bind(memberName, `${year}-%`).all();
+      }
+
       return json({
         success: true,
         member: memberName,
+        familyName,
+        isFamilyBased: !!familyName,
         year,
         amount: await getSandhaAmount(db),
         paidMonths: rows.results || []
       }, 200, corsHeaders({ "Cache-Control": "no-store" }));
     }
 
-    // ── Month view: paid + pending for every member ──
+    // ── Month view: paid + pending for every ungrouped member, and every family ──
     let month = (url.searchParams.get("month") || currentMonth()).trim();
     if (!MONTH_RE.test(month)) month = currentMonth();
 
     const amount = await getSandhaAmount(db);
 
+    // Ungrouped individuals only (family_id IS NULL) — members in a family are
+    // billed at the family level below, not tracked individually anymore.
     const paidQ = await db.prepare(
       `SELECT m.id, m.name, sp.amount, sp.paid_on AS paidOn, sp.method
        FROM sandha_payments sp JOIN members m ON m.id = sp.member_id
-       WHERE sp.month = ?
+       WHERE sp.month = ? AND m.family_id IS NULL
        ORDER BY m.name COLLATE NOCASE`
     ).bind(month).all();
     const paid = paidQ.results || [];
 
     const pendingQ = await db.prepare(
       `SELECT id, name FROM members
-       WHERE name NOT LIKE 'ZZ Selftest%'
+       WHERE family_id IS NULL AND name NOT LIKE 'ZZ Selftest%'
          AND id NOT IN (SELECT member_id FROM sandha_payments WHERE month = ?)
        ORDER BY name COLLATE NOCASE`
     ).bind(month).all();
     const pending = pendingQ.results || [];
 
-    // Which months have any activity (for the month selector)
+    // Families: paid vs pending for the month.
+    const familiesQ = await db.prepare(
+      `SELECT f.id, f.family_name AS familyName, f.head_member_id AS headMemberId,
+              (SELECT name FROM members WHERE id = f.head_member_id) AS headMemberName,
+              (SELECT COUNT(*) FROM members WHERE family_id = f.id) AS memberCount,
+              sfp.amount, sfp.paid_on AS paidOn, sfp.method
+       FROM families f
+       LEFT JOIN sandha_family_payments sfp ON sfp.family_id = f.id AND sfp.month = ?
+       WHERE f.status != 'archived'
+       ORDER BY f.family_name COLLATE NOCASE`
+    ).bind(month).all();
+    const allFamilies = familiesQ.results || [];
+    const familiesPaid = allFamilies.filter(f => f.paidOn != null || f.method != null || f.amount != null);
+    const familiesPending = allFamilies.filter(f => !(f.paidOn != null || f.method != null || f.amount != null))
+      .map(f => ({ id: f.id, familyName: f.familyName, headMemberId: f.headMemberId, headMemberName: f.headMemberName, memberCount: f.memberCount }));
+
+    // Which months have any activity (individual or family) — for the month selector.
     const monthsQ = await db.prepare(
-      "SELECT DISTINCT month FROM sandha_payments ORDER BY month DESC LIMIT 24"
+      `SELECT month FROM sandha_payments
+       UNION SELECT month FROM sandha_family_payments
+       ORDER BY month DESC LIMIT 24`
     ).all();
     const months = (monthsQ.results || []).map(r => r.month);
     if (!months.includes(month)) months.unshift(month);
 
-    const collected = paid.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const individualCollected = paid.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const familyCollected = familiesPaid.reduce((s, f) => s + (Number(f.amount) || 0), 0);
 
     return json({
       success: true,
@@ -95,10 +135,11 @@ export async function onRequestGet(context) {
       amount,
       paid,
       pending: pending.map(p => ({ id: p.id, name: p.name })),
+      families: { paid: familiesPaid, pending: familiesPending },
       totals: {
-        paidCount: paid.length,
-        pendingCount: pending.length,
-        collected: Math.round(collected * 100) / 100
+        paidCount: paid.length + familiesPaid.length,
+        pendingCount: pending.length + familiesPending.length,
+        collected: Math.round((individualCollected + familyCollected) * 100) / 100
       },
       months
     }, 200, corsHeaders({ "Cache-Control": "no-store" }));
@@ -118,15 +159,67 @@ export async function onRequestPost(context) {
   try {
     const body = await request.json();
     const action = body.action;
-    const memberId = Number(body.memberId);
     const month = String(body.month || "").trim();
+    const familyId = body.familyId != null ? Number(body.familyId) : null;
+    const memberId = body.memberId != null ? Number(body.memberId) : null;
 
-    if (!memberId || !MONTH_RE.test(month)) {
-      return json({ success: false, message: "memberId and month (YYYY-MM) are required" }, 400);
+    if ((!familyId && !memberId) || !MONTH_RE.test(month)) {
+      return json({ success: false, message: "familyId or memberId, and month (YYYY-MM), are required" }, 400);
     }
 
-    const member = await db.prepare("SELECT id, name FROM members WHERE id = ?").bind(memberId).first();
+    // ── Family-level Sandha ──
+    if (familyId) {
+      const family = await db.prepare("SELECT id, family_name, head_member_id FROM families WHERE id = ?").bind(familyId).first();
+      if (!family) return json({ success: false, message: "Family not found" }, 404);
+
+      if (action === "mark_paid") {
+        const configured = await getSandhaAmount(db);
+        const amount = body.amount != null && isFinite(Number(body.amount)) && Number(body.amount) >= 0
+          ? Number(body.amount) : configured;
+        const method = ["cash", "online"].includes(body.method) ? body.method : "cash";
+        const paidOn = String(body.paidOn || new Date().toISOString().substring(0, 10)).substring(0, 10);
+        const notes = String(body.notes || "").substring(0, 300);
+        const paidByMemberId = body.paidByMemberId != null ? Number(body.paidByMemberId) : family.head_member_id;
+
+        await db.prepare(
+          `INSERT INTO sandha_family_payments (family_id, month, amount, paid_on, method, paid_by_member_id, notes, recorded_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(family_id, month) DO UPDATE SET
+             amount = excluded.amount, paid_on = excluded.paid_on, method = excluded.method,
+             paid_by_member_id = excluded.paid_by_member_id, notes = excluded.notes, recorded_by = excluded.recorded_by`
+        ).bind(familyId, month, amount, paidOn, method, paidByMemberId, notes, auth.email).run();
+
+        await audit(context, {
+          actorEmail: auth.email, actorType: "admin", verified: auth.verified,
+          action: "sandha.family_mark_paid", entityType: "family", entityId: `${familyId}:${month}`,
+          details: { family: family.family_name, month, amount, method }
+        });
+        return json({ success: true, message: `${family.family_name} marked paid for ${month}` }, 200, corsHeaders());
+      }
+
+      if (action === "unmark") {
+        const res = await db.prepare("DELETE FROM sandha_family_payments WHERE family_id = ? AND month = ?")
+          .bind(familyId, month).run();
+        if (!res.meta || res.meta.changes === 0) {
+          return json({ success: false, message: "No Sandha record for that family/month" }, 404);
+        }
+        await audit(context, {
+          actorEmail: auth.email, actorType: "admin", verified: auth.verified,
+          action: "sandha.family_unmark", entityType: "family", entityId: `${familyId}:${month}`,
+          details: { family: family.family_name, month }
+        });
+        return json({ success: true, message: `${family.family_name} unmarked for ${month}` }, 200, corsHeaders());
+      }
+
+      return json({ success: false, message: "Unknown action" }, 400);
+    }
+
+    // ── Individual Sandha (member not yet grouped into a family) ──
+    const member = await db.prepare("SELECT id, name, family_id FROM members WHERE id = ?").bind(memberId).first();
     if (!member) return json({ success: false, message: "Member not found" }, 404);
+    if (member.family_id) {
+      return json({ success: false, message: `${member.name} is part of a family now — mark Sandha paid for the family instead` }, 400);
+    }
 
     if (action === "mark_paid") {
       const configured = await getSandhaAmount(db);

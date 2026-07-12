@@ -36,6 +36,26 @@
         </p>
     </section>
 
+    <!-- Verse Cards (pastor-curated Verse of the Month / Year) -->
+    <section class="verse-cards" id="verseCards" style="display:none;">
+        <article class="verse-card-lg" id="verseMonthCard">
+            <div class="vc-top">
+                <span class="vc-badge">✝ Verse of the Month</span>
+                <span class="vc-label" id="verseMonthLabel"></span>
+            </div>
+            <blockquote class="vc-text" id="verseMonthText"></blockquote>
+            <cite class="vc-ref" id="verseMonthRef"></cite>
+        </article>
+        <article class="verse-card-lg vc-year" id="verseYearCard">
+            <div class="vc-top">
+                <span class="vc-badge">🌟 Verse of the Year</span>
+                <span class="vc-label" id="verseYearLabel"></span>
+            </div>
+            <blockquote class="vc-text" id="verseYearText"></blockquote>
+            <cite class="vc-ref" id="verseYearRef"></cite>
+        </article>
+    </section>
+
     <!-- Member Summary -->
     <section class="summary">
         <div class="stat-card">
@@ -72,5 +92,37 @@
     </div>
 </footer>
 
+<script>
+(function () {
+    // Same verse-of-the-month/year card shown on the public dashboard —
+    // repeated here so a signed-in believer sees it on their own page too.
+    fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var s = (data && data.settings) || {};
+            var section = document.getElementById("verseCards");
+
+            function fill(cardId, labelId, textId, refId, label, text, ref) {
+                var card = document.getElementById(cardId);
+                var hasText = text && text.trim();
+                if (!hasText) { card.style.display = "none"; return false; }
+                card.style.display = "";
+                document.getElementById(labelId).textContent = label || "";
+                document.getElementById(textId).textContent = '"' + text.trim() + '"';
+                var refEl = document.getElementById(refId);
+                refEl.textContent = ref && ref.trim() ? "— " + ref.trim() : "";
+                return true;
+            }
+
+            var monthShown = fill("verseMonthCard", "verseMonthLabel", "verseMonthText", "verseMonthRef",
+                s.verse_month_label, s.verse_month_text, s.verse_month_ref);
+            var yearShown = fill("verseYearCard", "verseYearLabel", "verseYearText", "verseYearRef",
+                s.verse_year_label, s.verse_year_text, s.verse_year_ref);
+
+            section.style.display = (monthShown || yearShown) ? "" : "none";
+        })
+        .catch(function () { document.getElementById("verseCards").style.display = "none"; });
+})();
+</script>
 </body>
 </html>

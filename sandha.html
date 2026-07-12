@@ -82,6 +82,14 @@
         "</div>";
     }
 
+    function familyCard(f, paid) {
+        return '<div class="sandha-person' + (paid ? " is-paid" : "") + '">' +
+            '<span class="sp-avatar">👪</span>' +
+            '<span class="sp-name">' + esc(f.familyName) + ' <span style="font-weight:400;opacity:.7;">(' + f.memberCount + ')</span></span>' +
+            (paid ? '<span class="sp-meta">' + esc(f.paidOn || "") + "</span>" : "") +
+        "</div>";
+    }
+
     function linkedMemberName() {
         try {
             var profile = JSON.parse(sessionStorage.getItem("ljmAuthProfile") || "null");
@@ -95,23 +103,35 @@
         var mine = linkedMemberName();
         if (!mine) { section.style.display = "none"; return; }
 
-        var paidEntry = (data.paid || []).filter(function (p) { return p.name.toLowerCase() === mine.toLowerCase(); })[0];
-        var isCurrentMonth = data.month === new Date().toISOString().substring(0, 7);
-        var pretty = monthPretty(data.month);
+        // A believer's own status now depends on whether they've been grouped
+        // into a family (billed at the family level) — ask the personal
+        // endpoint rather than scanning the month view's individuals-only list,
+        // which no longer includes members who belong to a family.
+        var year = (data.month || "").substring(0, 4) || new Date().getFullYear();
+        fetch("/api/sandha?member=" + encodeURIComponent(mine) + "&year=" + year + "&_t=" + Date.now(), { cache: "no-store" })
+            .then(function (r) { return r.json(); })
+            .then(function (personal) {
+                if (!personal || !personal.success) { section.style.display = "none"; return; }
 
-        section.style.display = "";
-        section.innerHTML = paidEntry
-            ? '<div class="sandha-me is-paid">' +
-                '<span class="sm-icon">🎉</span>' +
-                '<div><strong>Praise God, ' + esc(firstName(mine)) + '!</strong>' +
-                "<span>Your Sandha for " + esc(pretty) + " is received" + (paidEntry.paidOn ? " on " + esc(paidEntry.paidOn) : "") + ". Thank you for your faithfulness. ✅</span></div>" +
-              "</div>"
-            : '<div class="sandha-me is-pending">' +
-                '<span class="sm-icon">🕊️</span>' +
-                '<div><strong>Hello, ' + esc(firstName(mine)) + ' 🙏</strong>' +
-                "<span>Your Sandha for " + esc(pretty) + " is " + (isCurrentMonth ? "still open — every gift builds His house." : "not recorded.") +
-                (data.amount ? " Amount: <b>" + inr(data.amount) + "</b>." : "") + "</span></div>" +
-              "</div>";
+                var isCurrentMonth = data.month === new Date().toISOString().substring(0, 7);
+                var pretty = monthPretty(data.month);
+                var paidEntry = (personal.paidMonths || []).filter(function (p) { return p.month === data.month; })[0];
+                var familyNote = personal.isFamilyBased ? " for the " + esc(personal.familyName) : "";
+
+                section.style.display = "";
+                section.innerHTML = paidEntry
+                    ? '<div class="sandha-me is-paid">' +
+                        '<span class="sm-icon">🎉</span>' +
+                        '<div><strong>Praise God, ' + esc(firstName(mine)) + '!</strong>' +
+                        "<span>Sandha" + familyNote + " for " + esc(pretty) + " is received" + (paidEntry.paidOn ? " on " + esc(paidEntry.paidOn) : "") + ". Thank you for your faithfulness. ✅</span></div>" +
+                      "</div>"
+                    : '<div class="sandha-me is-pending">' +
+                        '<span class="sm-icon">🕊️</span>' +
+                        '<div><strong>Hello, ' + esc(firstName(mine)) + ' 🙏</strong>' +
+                        "<span>Sandha" + familyNote + " for " + esc(pretty) + " is " + (isCurrentMonth ? "still open — every gift builds His house." : "not recorded.") +
+                        (personal.amount ? " Amount: <b>" + inr(personal.amount) + "</b>." : "") + "</span></div>" +
+                      "</div>";
+            }).catch(function () { section.style.display = "none"; });
     }
 
     function load(month) {
@@ -128,17 +148,23 @@
             document.getElementById("sandhaSummary").innerHTML =
                 '<div class="sandha-kpi"><div class="sk-value">' + t.paidCount + "<span>/" + total + "</span></div><div class=\"sk-label\">paid · " + monthPretty(d.month) + "</div></div>" +
                 '<div class="sandha-kpi"><div class="sk-value">' + inr(t.collected) + '</div><div class="sk-label">collected</div></div>' +
-                (d.amount ? '<div class="sandha-kpi"><div class="sk-value">' + inr(d.amount) + '</div><div class="sk-label">per member</div></div>' : "") +
+                (d.amount ? '<div class="sandha-kpi"><div class="sk-value">' + inr(d.amount) + '</div><div class="sk-label">Sandha amount</div></div>' : "") +
                 '<div class="sandha-progress"><div class="sandha-progress-fill" style="width:' + pct + '%"></div></div>';
 
             document.getElementById("paidCount").textContent = "(" + t.paidCount + ")";
             document.getElementById("pendingCount").textContent = "(" + t.pendingCount + ")";
 
-            document.getElementById("paidGrid").innerHTML =
-                (d.paid || []).map(function (p) { return personCard(p, true); }).join("") ||
+            var famPaid = (d.families && d.families.paid) || [];
+            var famPending = (d.families && d.families.pending) || [];
+
+            var paidHtml = famPaid.map(function (f) { return familyCard(f, true); }).join("") +
+                (d.paid || []).map(function (p) { return personCard(p, true); }).join("");
+            document.getElementById("paidGrid").innerHTML = paidHtml ||
                 '<div class="sandha-loading">No payments recorded for this month yet.</div>';
-            document.getElementById("pendingGrid").innerHTML =
-                (d.pending || []).map(function (p) { return personCard(p, false); }).join("") ||
+
+            var pendingHtml = famPending.map(function (f) { return familyCard(f, false); }).join("") +
+                (d.pending || []).map(function (p) { return personCard(p, false); }).join("");
+            document.getElementById("pendingGrid").innerHTML = pendingHtml ||
                 '<div class="sandha-loading">Everyone has paid — praise God! 🎉</div>';
 
             renderPersonal(d);
