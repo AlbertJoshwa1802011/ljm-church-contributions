@@ -387,7 +387,6 @@
                     '<a class="ljmh-sheet-item' + (page === "about" ? " active" : "") + '" href="about.html">' + ICONS.about + "<span>About</span></a>" +
                     '<a class="ljmh-sheet-item" id="ljmhSheetCallPastor" href="tel:">' + ICONS.phone + "<span>Call Pastor</span></a>" +
                     '<a class="ljmh-sheet-item" id="ljmhSheetEmailPastor" href="mailto:" style="display:none;">' + ICONS.mail + "<span>Email Pastor</span></a>" +
-                    '<a class="ljmh-sheet-item" href="member.html">' + ICONS.person + "<span>My giving</span></a>" +
                     (admin ? '<a class="ljmh-sheet-item" href="admin.html">' + ICONS.admin + "<span>Admin</span></a>" +
                              '<a class="ljmh-sheet-item" href="admin.html#settings">' + ICONS.settings + "<span>Settings</span></a>" : "") +
                     '<button type="button" class="ljmh-sheet-item" id="ljmhSheetTheme">' + ICONS.moon + "<span>Theme</span></button>" +
