@@ -24,9 +24,12 @@
            alias not needed — theme.css already ships --radius/--radius-sm).
            ───────────────────────────────────────────── */
         /* theme.css paints a faint full-page background photo behind public
-           pages (body::before) — the admin console keeps its own flat,
-           minimal surface instead. */
-        body::before { content: none !important; }
+           pages (body::before), including a MORE SPECIFIC dark-mode-only
+           rule ([data-theme="dark"] body::before) — match both so the
+           override actually wins in dark mode too. The admin console keeps
+           its own flat, minimal surface instead. */
+        body::before,
+        [data-theme="dark"] body::before { content: none !important; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; }
         body {
@@ -1315,7 +1318,6 @@
             $("fam_memberRows").appendChild(row);
         }
         function clearFamilyForm() {
-            setMsg("fam_msg", "");
             ["fam_name", "fam_phone", "fam_email", "fam_address", "fam_notes"].forEach(function (id) { $(id).value = ""; });
             $("fam_memberRows").innerHTML = "";
             addFamMemberRow();

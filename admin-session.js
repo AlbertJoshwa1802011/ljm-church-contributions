@@ -227,13 +227,18 @@
 
     function getActivePage() {
         const path = window.location.pathname;
-        const file = path.split("/").pop() || "index.html";
-        if (file === "" || file === "index.html") return "home";
-        if (file === "admin.html") return "dashboard";
-        if (file === "members.html") return "members";
-        if (file === "funds.html") return "funds";
-        if (file === "impact.html") return "impact";
-        if (file === "about.html") return "about";
+        // Cloudflare Pages serves clean URLs (redirects admin.html -> /admin),
+        // so match on the file name with any ".html" stripped, not the raw
+        // segment — otherwise every check below silently never matches once
+        // a visitor lands on the extensionless URL (which Pages promotes).
+        let file = path.split("/").pop() || "index";
+        if (file.endsWith(".html")) file = file.slice(0, -5);
+        if (file === "" || file === "index") return "home";
+        if (file === "admin") return "dashboard";
+        if (file === "members") return "members";
+        if (file === "funds") return "funds";
+        if (file === "impact") return "impact";
+        if (file === "about") return "about";
         return "";
     }
 
@@ -302,6 +307,13 @@
     async function showAdminBar() {
         const session = await readSession();
         if (!session) return false;
+
+        // admin.html has its own complete navigation (grouped sidebar on
+        // desktop, group buttons + sheet on mobile) — this floating quick-nav
+        // bar exists so an admin browsing the *public* site can jump back to
+        // admin pages; showing it on top of the admin console itself was a
+        // second, redundant navigation layer.
+        if (getActivePage() === "dashboard") return true;
 
         injectAdminBarCSS();
 

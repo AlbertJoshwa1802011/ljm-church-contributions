@@ -20,3 +20,6 @@ PURCHASES_SHEET_SETUP.md
 
 # Wrangler local dev state
 .wrangler/
+
+# Node (only used to run the test suite — see TESTING.md)
+node_modules/

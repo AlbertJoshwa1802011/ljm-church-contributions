@@ -47,14 +47,19 @@
     ];
 
     function currentPage() {
-        var p = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-        if (p === "" || p === "index.html") return "home";
-        if (p === "funds.html") return "funds";
-        if (p === "sandha.html") return "sandha";
-        if (p === "members.html") return "members";
-        if (p === "impact.html") return "impact";
-        if (p === "about.html") return "about";
-        if (p === "member.html") return "members";
+        // Cloudflare Pages serves clean URLs (redirects funds.html -> /funds),
+        // so match with any ".html" stripped — otherwise every check below
+        // silently never matches once a visitor lands on the extensionless
+        // URL (which Pages promotes), breaking active-nav highlighting.
+        var p = (location.pathname.split("/").pop() || "index").toLowerCase();
+        if (p.slice(-5) === ".html") p = p.slice(0, -5);
+        if (p === "" || p === "index") return "home";
+        if (p === "funds") return "funds";
+        if (p === "sandha") return "sandha";
+        if (p === "members") return "members";
+        if (p === "impact") return "impact";
+        if (p === "about") return "about";
+        if (p === "member") return "members";
         return "";
     }
 
