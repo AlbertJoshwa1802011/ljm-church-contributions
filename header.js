@@ -1,7 +1,7 @@
 // LJM Church — shared app shell for all public pages.
 // Injects: (1) top header (brand, desktop nav, fund switcher, theme toggle,
 // auth cluster with avatar menu + sign out), (2) mobile bottom nav
-// (Home · Funds · Give · Sandha · More) and (3) the "More" slide-up sheet.
+// (Home · Funds · Give · Subscriptions · More) and (3) the "More" slide-up sheet.
 // One component so every page stays consistent and easy to evolve.
 //
 // Auth contract: index.html's inline Google Sign-In script drives the ids
@@ -23,7 +23,7 @@
         home: '<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9"/><path d="M9.5 20v-6h5v6"/></svg>',
         funds: '<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-7h6v7"/></svg>',
         give: '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2 4.5 5.4 4a4.7 4.7 0 0 1 6.6 1.8A4.7 4.7 0 0 1 18.6 4c3.4.5 5 4.1 3.4 7.7C19.5 16.4 12 21 12 21Z"/></svg>',
-        sandha: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
+        subscriptions: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
         more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
         members: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.7 20c.7-3.4 3.2-5.5 6.3-5.5s5.6 2.1 6.3 5.5"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.8 14.8c2.2.3 3.9 2 4.5 4.7"/></svg>',
         bought: '<svg viewBox="0 0 24 24"><path d="M6 8h12l1 12.5a1 1 0 0 1-1 1.5H6a1 1 0 0 1-1-1.5L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
@@ -40,7 +40,7 @@
     var NAV = [
         ["home", "index.html", "Home"],
         ["funds", "funds.html", "Funds"],
-        ["sandha", "sandha.html", "Sandha"],
+        ["subscriptions", "subscriptions.html", "Subscriptions"],
         ["members", "members.html", "Members"],
         ["impact", "impact.html", "Impact"],
         ["about", "about.html", "About"]
@@ -55,7 +55,7 @@
         if (p.slice(-5) === ".html") p = p.slice(0, -5);
         if (p === "" || p === "index") return "home";
         if (p === "funds") return "funds";
-        if (p === "sandha") return "sandha";
+        if (p === "subscriptions") return "subscriptions";
         if (p === "members") return "members";
         if (p === "impact") return "impact";
         if (p === "about") return "about";
@@ -340,7 +340,7 @@
             item("home", "index.html", "Home", ICONS.home) +
             item("funds", "funds.html", "Funds", ICONS.funds) +
             item("give", "index.html#give", "", ICONS.give, " action-btn") +
-            item("sandha", "sandha.html", "Sandha", ICONS.sandha) +
+            item("subscriptions", "subscriptions.html", "Subscriptions", ICONS.subscriptions) +
             '<button type="button" class="bottom-nav-item" id="ljmhMoreBtn" data-tab="more">' +
                 '<span class="nav-icon">' + ICONS.more + "</span><span>More</span></button>";
         document.body.appendChild(nav);

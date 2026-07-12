@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Sandha · LJM Church</title>
+<title>Subscriptions · LJM Church</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="theme.css">
@@ -20,37 +20,37 @@
 <main class="container">
 
     <!-- Hero -->
-    <section class="sandha-hero">
+    <section class="subscriptions-hero">
         <div class="sh-icon">🪙</div>
-        <h1 class="sh-title">Monthly Sandha</h1>
+        <h1 class="sh-title">Monthly Subscriptions</h1>
         <p class="sh-sub">Our shared commitment as a church family — one small monthly gift from every believer keeps the ministry standing strong.</p>
     </section>
 
     <!-- Personal status (signed-in + mapped members only) -->
-    <section class="sandha-personal" id="sandhaPersonal" style="display:none;"></section>
+    <section class="subscriptions-personal" id="subscriptionsPersonal" style="display:none;"></section>
 
     <!-- Month selector + summary -->
-    <section class="sandha-controls">
-        <div class="sandha-summary" id="sandhaSummary"></div>
-        <div class="sandha-monthrow">
-            <label for="sandhaMonth" class="sandha-monthlabel">Month</label>
-            <input type="month" id="sandhaMonth" class="contrib-input sandha-monthinput">
+    <section class="subscriptions-controls">
+        <div class="subscriptions-summary" id="subscriptionsSummary"></div>
+        <div class="subscriptions-monthrow">
+            <label for="subscriptionsMonth" class="subscriptions-monthlabel">Month</label>
+            <input type="month" id="subscriptionsMonth" class="contrib-input subscriptions-monthinput">
         </div>
     </section>
 
     <!-- Paid / pending -->
-    <section class="sandha-lists">
-        <div class="sandha-col">
-            <h3 class="sandha-col-title paid">✅ Paid <span id="paidCount"></span></h3>
-            <div class="sandha-grid" id="paidGrid"><div class="sandha-loading">Loading…</div></div>
+    <section class="subscriptions-lists">
+        <div class="subscriptions-col">
+            <h3 class="subscriptions-col-title paid">✅ Paid <span id="paidCount"></span></h3>
+            <div class="subscriptions-grid" id="paidGrid"><div class="subscriptions-loading">Loading…</div></div>
         </div>
-        <div class="sandha-col">
-            <h3 class="sandha-col-title pending">⏳ Yet to pay <span id="pendingCount"></span></h3>
-            <div class="sandha-grid" id="pendingGrid"></div>
+        <div class="subscriptions-col">
+            <h3 class="subscriptions-col-title pending">⏳ Yet to pay <span id="pendingCount"></span></h3>
+            <div class="subscriptions-grid" id="pendingGrid"></div>
         </div>
     </section>
 
-    <p class="sandha-note">Paid your Sandha but not seeing it here? It may take a moment for the pastor to record it — or reach out after service. 🙏</p>
+    <p class="subscriptions-note">Paid your Subscriptions but not seeing it here? It may take a moment for the pastor to record it — or reach out after service. 🙏</p>
 
 </main>
 
@@ -75,7 +75,7 @@
     function initial(name) { return (name || "?").trim().charAt(0).toUpperCase(); }
 
     function personCard(p, paid) {
-        return '<div class="sandha-person' + (paid ? " is-paid" : "") + '">' +
+        return '<div class="subscriptions-person' + (paid ? " is-paid" : "") + '">' +
             '<span class="sp-avatar">' + esc(initial(p.name)) + "</span>" +
             '<span class="sp-name">' + esc(p.name) + "</span>" +
             (paid ? '<span class="sp-meta">' + esc(p.paidOn || "") + "</span>" : "") +
@@ -83,7 +83,7 @@
     }
 
     function familyCard(f, paid) {
-        return '<div class="sandha-person' + (paid ? " is-paid" : "") + '">' +
+        return '<div class="subscriptions-person' + (paid ? " is-paid" : "") + '">' +
             '<span class="sp-avatar">👪</span>' +
             '<span class="sp-name">' + esc(f.familyName) + ' <span style="font-weight:400;opacity:.7;">(' + f.memberCount + ')</span></span>' +
             (paid ? '<span class="sp-meta">' + esc(f.paidOn || "") + "</span>" : "") +
@@ -99,7 +99,7 @@
     function firstName(n) { return String(n || "").trim().split(" ")[0]; }
 
     function renderPersonal(data) {
-        var section = document.getElementById("sandhaPersonal");
+        var section = document.getElementById("subscriptionsPersonal");
         var mine = linkedMemberName();
         if (!mine) { section.style.display = "none"; return; }
 
@@ -108,7 +108,7 @@
         // endpoint rather than scanning the month view's individuals-only list,
         // which no longer includes members who belong to a family.
         var year = (data.month || "").substring(0, 4) || new Date().getFullYear();
-        fetch("/api/sandha?member=" + encodeURIComponent(mine) + "&year=" + year + "&_t=" + Date.now(), { cache: "no-store" })
+        fetch("/api/subscriptions?member=" + encodeURIComponent(mine) + "&year=" + year + "&_t=" + Date.now(), { cache: "no-store" })
             .then(function (r) { return r.json(); })
             .then(function (personal) {
                 if (!personal || !personal.success) { section.style.display = "none"; return; }
@@ -120,36 +120,36 @@
 
                 section.style.display = "";
                 section.innerHTML = paidEntry
-                    ? '<div class="sandha-me is-paid">' +
+                    ? '<div class="subscriptions-me is-paid">' +
                         '<span class="sm-icon">🎉</span>' +
                         '<div><strong>Praise God, ' + esc(firstName(mine)) + '!</strong>' +
-                        "<span>Sandha" + familyNote + " for " + esc(pretty) + " is received" + (paidEntry.paidOn ? " on " + esc(paidEntry.paidOn) : "") + ". Thank you for your faithfulness. ✅</span></div>" +
+                        "<span>Subscriptions" + familyNote + " for " + esc(pretty) + " is received" + (paidEntry.paidOn ? " on " + esc(paidEntry.paidOn) : "") + ". Thank you for your faithfulness. ✅</span></div>" +
                       "</div>"
-                    : '<div class="sandha-me is-pending">' +
+                    : '<div class="subscriptions-me is-pending">' +
                         '<span class="sm-icon">🕊️</span>' +
                         '<div><strong>Hello, ' + esc(firstName(mine)) + ' 🙏</strong>' +
-                        "<span>Sandha" + familyNote + " for " + esc(pretty) + " is " + (isCurrentMonth ? "still open — every gift builds His house." : "not recorded.") +
+                        "<span>Subscriptions" + familyNote + " for " + esc(pretty) + " is " + (isCurrentMonth ? "still open — every gift builds His house." : "not recorded.") +
                         (personal.amount ? " Amount: <b>" + inr(personal.amount) + "</b>." : "") + "</span></div>" +
                       "</div>";
             }).catch(function () { section.style.display = "none"; });
     }
 
     function load(month) {
-        var url = "/api/sandha" + (month ? "?month=" + month : "") + (month ? "&" : "?") + "_t=" + Date.now();
+        var url = "/api/subscriptions" + (month ? "?month=" + month : "") + (month ? "&" : "?") + "_t=" + Date.now();
         fetch(url, { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
             if (!d.success) throw new Error(d.message || "Failed");
 
-            var input = document.getElementById("sandhaMonth");
+            var input = document.getElementById("subscriptionsMonth");
             if (!input.value) input.value = d.month;
 
             var t = d.totals || { paidCount: 0, pendingCount: 0, collected: 0 };
             var total = t.paidCount + t.pendingCount;
             var pct = total ? Math.round((t.paidCount / total) * 100) : 0;
-            document.getElementById("sandhaSummary").innerHTML =
-                '<div class="sandha-kpi"><div class="sk-value">' + t.paidCount + "<span>/" + total + "</span></div><div class=\"sk-label\">paid · " + monthPretty(d.month) + "</div></div>" +
-                '<div class="sandha-kpi"><div class="sk-value">' + inr(t.collected) + '</div><div class="sk-label">collected</div></div>' +
-                (d.amount ? '<div class="sandha-kpi"><div class="sk-value">' + inr(d.amount) + '</div><div class="sk-label">Sandha amount</div></div>' : "") +
-                '<div class="sandha-progress"><div class="sandha-progress-fill" style="width:' + pct + '%"></div></div>';
+            document.getElementById("subscriptionsSummary").innerHTML =
+                '<div class="subscriptions-kpi"><div class="sk-value">' + t.paidCount + "<span>/" + total + "</span></div><div class=\"sk-label\">paid · " + monthPretty(d.month) + "</div></div>" +
+                '<div class="subscriptions-kpi"><div class="sk-value">' + inr(t.collected) + '</div><div class="sk-label">collected</div></div>' +
+                (d.amount ? '<div class="subscriptions-kpi"><div class="sk-value">' + inr(d.amount) + '</div><div class="sk-label">Subscriptions amount</div></div>' : "") +
+                '<div class="subscriptions-progress"><div class="subscriptions-progress-fill" style="width:' + pct + '%"></div></div>';
 
             document.getElementById("paidCount").textContent = "(" + t.paidCount + ")";
             document.getElementById("pendingCount").textContent = "(" + t.pendingCount + ")";
@@ -160,20 +160,20 @@
             var paidHtml = famPaid.map(function (f) { return familyCard(f, true); }).join("") +
                 (d.paid || []).map(function (p) { return personCard(p, true); }).join("");
             document.getElementById("paidGrid").innerHTML = paidHtml ||
-                '<div class="sandha-loading">No payments recorded for this month yet.</div>';
+                '<div class="subscriptions-loading">No payments recorded for this month yet.</div>';
 
             var pendingHtml = famPending.map(function (f) { return familyCard(f, false); }).join("") +
                 (d.pending || []).map(function (p) { return personCard(p, false); }).join("");
             document.getElementById("pendingGrid").innerHTML = pendingHtml ||
-                '<div class="sandha-loading">Everyone has paid — praise God! 🎉</div>';
+                '<div class="subscriptions-loading">Everyone has paid — praise God! 🎉</div>';
 
             renderPersonal(d);
         }).catch(function (e) {
-            document.getElementById("paidGrid").innerHTML = '<div class="sandha-loading">Could not load Sandha data (' + esc(e.message) + '). If the 0004 migration has not been applied yet, run it and refresh.</div>';
+            document.getElementById("paidGrid").innerHTML = '<div class="subscriptions-loading">Could not load Subscriptions data (' + esc(e.message) + '). If the 0004 migration has not been applied yet, run it and refresh.</div>';
         });
     }
 
-    document.getElementById("sandhaMonth").addEventListener("change", function () {
+    document.getElementById("subscriptionsMonth").addEventListener("change", function () {
         if (this.value) load(this.value);
     });
 

@@ -400,7 +400,7 @@
 
             <!-- FAMILIES -->
             <div class="section" id="section-families">
-                <div class="page-head"><h2>Families</h2><p>Group believers into households. Sandha (monthly dues) is billed per family once grouped — see the Sandha tab.</p></div>
+                <div class="page-head"><h2>Families</h2><p>Group believers into households. Subscriptions (monthly dues) is billed per family once grouped — see the Subscriptions tab.</p></div>
                 <div class="card">
                     <h3>Create a family</h3>
                     <div class="form-grid">
@@ -483,49 +483,49 @@
                 </div>
             </div>
 
-            <!-- SANDHA -->
-            <div class="section" id="section-sandha">
-                <div class="page-head"><h2>Sandha</h2><p>Monthly membership dues — billed once per family (paid by the head) once grouped in the Families tab, and individually for anyone not yet grouped. The whole church sees the status on the public Sandha page.</p></div>
-                <div class="kpi-grid" id="sa_kpis"></div>
+            <!-- SUBSCRIPTIONS -->
+            <div class="section" id="section-subscriptions">
+                <div class="page-head"><h2>Subscriptions</h2><p>Monthly membership dues — billed once per family (paid by the head) once grouped in the Families tab, and individually for anyone not yet grouped. The whole church sees the status on the public Subscriptions page.</p></div>
+                <div class="kpi-grid" id="sub_kpis"></div>
                 <div class="card">
-                    <h3>Monthly Sandha amount</h3>
+                    <h3>Monthly Subscriptions amount</h3>
                     <div style="display:flex; gap:10px; align-items:end; flex-wrap:wrap;">
-                        <div><label class="f-label">Amount (₹) — per family, or per believer if ungrouped</label><input class="input" id="sa_amount" type="number" min="0" style="max-width:280px;"></div>
-                        <button class="btn btn-primary" id="sa_saveAmount">Save amount</button>
-                        <span class="msg" id="sa_amountMsg"></span>
+                        <div><label class="f-label">Amount (₹) — per family, or per believer if ungrouped</label><input class="input" id="sub_amount" type="number" min="0" style="max-width:280px;"></div>
+                        <button class="btn btn-primary" id="sub_saveAmount">Save amount</button>
+                        <span class="msg" id="sub_amountMsg"></span>
                     </div>
                 </div>
                 <div class="card">
                     <h3>Add a believer</h3>
                     <p class="msg" style="margin-bottom:10px;">Adds a standalone individual (not part of any family yet) — head to the Families tab to build out full households.</p>
                     <div class="form-grid">
-                        <div><label class="f-label">Full name *</label><input class="input" id="sa_newName"></div>
-                        <div><label class="f-label">Email</label><input class="input" id="sa_newEmail" type="email"></div>
-                        <div><label class="f-label">Phone</label><input class="input" id="sa_newPhone"></div>
-                        <div><label class="f-label">Joined on</label><input class="input" id="sa_newJoin" type="date"></div>
+                        <div><label class="f-label">Full name *</label><input class="input" id="sub_newName"></div>
+                        <div><label class="f-label">Email</label><input class="input" id="sub_newEmail" type="email"></div>
+                        <div><label class="f-label">Phone</label><input class="input" id="sub_newPhone"></div>
+                        <div><label class="f-label">Joined on</label><input class="input" id="sub_newJoin" type="date"></div>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-primary" id="sa_addBtn">Add believer</button>
-                        <span class="msg" id="sa_addMsg"></span>
+                        <button class="btn btn-primary" id="sub_addBtn">Add believer</button>
+                        <span class="msg" id="sub_addMsg"></span>
                     </div>
                 </div>
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
-                        <h3 style="margin:0;">Sandha status — <span id="sa_monthLabel"></span></h3>
+                        <h3 style="margin:0;">Subscriptions status — <span id="sub_monthLabel"></span></h3>
                         <div style="display:flex; gap:8px; align-items:center;">
-                            <input class="input" id="sa_month" type="month" style="max-width:170px;">
-                            <input class="input" id="sa_search" placeholder="Search family or believer…" style="max-width:200px;">
+                            <input class="input" id="sub_month" type="month" style="max-width:170px;">
+                            <input class="input" id="sub_search" placeholder="Search family or believer…" style="max-width:200px;">
                         </div>
                     </div>
                     <h4 style="font-size:13px; color:var(--text-soft); margin:0 0 8px;">Families</h4>
-                    <div class="table-wrap"><table id="sa_famTable"><thead><tr>
+                    <div class="table-wrap"><table id="sub_famTable"><thead><tr>
                         <th>Family</th><th>Head</th><th>Members</th><th>Status</th><th>Paid on</th><th>Amount</th><th></th>
                     </tr></thead><tbody></tbody></table></div>
                     <h4 style="font-size:13px; color:var(--text-soft); margin:20px 0 8px;">Individuals not yet in a family</h4>
-                    <div class="table-wrap"><table id="sa_table"><thead><tr>
+                    <div class="table-wrap"><table id="sub_table"><thead><tr>
                         <th>Member</th><th>Status</th><th>Paid on</th><th>Amount</th><th></th>
                     </tr></thead><tbody></tbody></table></div>
-                    <div class="btn-row"><span class="msg" id="sa_msg"></span></div>
+                    <div class="btn-row"><span class="msg" id="sub_msg"></span></div>
                 </div>
             </div>
 
@@ -827,7 +827,7 @@
         var PERMISSION_SCOPES = [
             "edit_purchases", "edit_wishlist", "view_members", "manage_members",
             "manage_roles", "manage_funds", "delete_funds", "view_audit", "manage_expenses",
-            "manage_sandha", "manage_content"
+            "manage_subscriptions", "manage_content"
         ];
         // Two-level nav: a handful of top-level groups, each expanding to its
         // pages — replaces the old flat 13-item list that had to be rendered
@@ -842,7 +842,7 @@
             { id: "giving", icon: "🏛️", label: "Giving", items: [
                 ["funds", "🏛️", "Funds"],
                 ["contributions", "📒", "Contributions"],
-                ["sandha", "🪙", "Sandha"],
+                ["subscriptions", "🪙", "Subscriptions"],
                 ["purchases", "🛍️", "Purchases"],
                 ["expenses", "💸", "Expenses"]
             ] },
@@ -1564,35 +1564,35 @@
                 .catch(function (e) { setMsg("p_msg", e.message, "err"); });
         }
 
-        // ═══════════════ Sandha ═══════════════
-        function loadSandha() {
-            if (!$("sa_month").value) $("sa_month").value = new Date().toISOString().substring(0, 7);
+        // ═══════════════ Subscriptions ═══════════════
+        function loadSubscriptions() {
+            if (!$("sub_month").value) $("sub_month").value = new Date().toISOString().substring(0, 7);
             fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
                 .then(function (r) { return r.json(); })
-                .then(function (d) { $("sa_amount").value = (d.settings && d.settings.sandha_amount) || 0; });
-            fetchSandha();
+                .then(function (d) { $("sub_amount").value = (d.settings && d.settings.sandha_amount) || 0; });
+            fetchSubscriptions();
         }
-        function fetchSandha() {
-            var month = $("sa_month").value || new Date().toISOString().substring(0, 7);
-            $("sa_monthLabel").textContent = month;
-            api("/api/sandha?month=" + month + "&_t=" + Date.now()).then(function (d) {
-                if (!d.success) { setMsg("sa_msg", d.message || "Failed to load", "err"); return; }
-                state.sandhaCache = d;
+        function fetchSubscriptions() {
+            var month = $("sub_month").value || new Date().toISOString().substring(0, 7);
+            $("sub_monthLabel").textContent = month;
+            api("/api/subscriptions?month=" + month + "&_t=" + Date.now()).then(function (d) {
+                if (!d.success) { setMsg("sub_msg", d.message || "Failed to load", "err"); return; }
+                state.subscriptionsCache = d;
                 var t = d.totals || {};
                 var expected = (t.paidCount + t.pendingCount) * (Number(d.amount) || 0);
-                $("sa_kpis").innerHTML =
+                $("sub_kpis").innerHTML =
                     kpi("Paid this month", t.paidCount + " / " + (t.paidCount + t.pendingCount), "families + individuals") +
                     kpi("Collected", inr(t.collected), "this month") +
                     kpi("Pending", String(t.pendingCount), "yet to pay") +
                     kpi("Monthly amount", inr(d.amount), expected ? "expected " + inr(expected) : "set the amount below");
-                renderSandhaFamiliesTable();
-                renderSandhaTable();
-            }).catch(function (e) { setMsg("sa_msg", e.message, "err"); });
+                renderSubscriptionsFamiliesTable();
+                renderSubscriptionsTable();
+            }).catch(function (e) { setMsg("sub_msg", e.message, "err"); });
         }
-        function renderSandhaFamiliesTable() {
-            var d = state.sandhaCache;
+        function renderSubscriptionsFamiliesTable() {
+            var d = state.subscriptionsCache;
             if (!d) return;
-            var q = ($("sa_search").value || "").toLowerCase();
+            var q = ($("sub_search").value || "").toLowerCase();
             var month = d.month;
             var fam = d.families || { paid: [], pending: [] };
             var rows = [];
@@ -1601,7 +1601,7 @@
             rows.sort(function (a, b) { return a.familyName.localeCompare(b.familyName); });
             rows = rows.filter(function (r) { return !q || r.familyName.toLowerCase().indexOf(q) > -1 || (r.headMemberName || "").toLowerCase().indexOf(q) > -1; });
 
-            var tb = $("sa_famTable").querySelector("tbody");
+            var tb = $("sub_famTable").querySelector("tbody");
             tb.innerHTML = rows.map(function (r) {
                 return "<tr><td><strong>" + esc(r.familyName) + "</strong></td>" +
                     "<td>" + esc(r.headMemberName || "—") + "</td>" +
@@ -1620,16 +1620,16 @@
                 b.onclick = function () {
                     var action = b.dataset.act === "mark" ? "mark_paid" : "unmark";
                     b.disabled = true;
-                    api("/api/sandha", { method: "POST", body: JSON.stringify({ action: action, familyId: Number(b.dataset.id), month: month }) })
-                        .then(function (res) { setMsg("sa_msg", res.message, res.success ? "ok" : "err"); fetchSandha(); })
-                        .catch(function (e) { b.disabled = false; setMsg("sa_msg", e.message, "err"); });
+                    api("/api/subscriptions", { method: "POST", body: JSON.stringify({ action: action, familyId: Number(b.dataset.id), month: month }) })
+                        .then(function (res) { setMsg("sub_msg", res.message, res.success ? "ok" : "err"); fetchSubscriptions(); })
+                        .catch(function (e) { b.disabled = false; setMsg("sub_msg", e.message, "err"); });
                 };
             });
         }
-        function renderSandhaTable() {
-            var d = state.sandhaCache;
+        function renderSubscriptionsTable() {
+            var d = state.subscriptionsCache;
             if (!d) return;
-            var q = ($("sa_search").value || "").toLowerCase();
+            var q = ($("sub_search").value || "").toLowerCase();
             var month = d.month;
             var rows = [];
             (d.paid || []).forEach(function (p) { rows.push({ id: p.id, name: p.name, paid: true, paidOn: p.paidOn, amount: p.amount }); });
@@ -1637,7 +1637,7 @@
             rows.sort(function (a, b) { return a.name.localeCompare(b.name); });
             rows = rows.filter(function (r) { return !q || r.name.toLowerCase().indexOf(q) > -1; });
 
-            var tb = $("sa_table").querySelector("tbody");
+            var tb = $("sub_table").querySelector("tbody");
             tb.innerHTML = rows.map(function (r) {
                 return "<tr><td><strong>" + esc(r.name) + "</strong></td>" +
                     "<td>" + (r.paid ? '<span class="pill pill-green">Paid ✓</span>' : '<span class="pill pill-amber">Pending</span>') + "</td>" +
@@ -1654,33 +1654,33 @@
                 b.onclick = function () {
                     var action = b.dataset.act === "mark" ? "mark_paid" : "unmark";
                     b.disabled = true;
-                    api("/api/sandha", { method: "POST", body: JSON.stringify({ action: action, memberId: Number(b.dataset.id), month: month }) })
-                        .then(function (res) { setMsg("sa_msg", res.message, res.success ? "ok" : "err"); fetchSandha(); })
-                        .catch(function (e) { b.disabled = false; setMsg("sa_msg", e.message, "err"); });
+                    api("/api/subscriptions", { method: "POST", body: JSON.stringify({ action: action, memberId: Number(b.dataset.id), month: month }) })
+                        .then(function (res) { setMsg("sub_msg", res.message, res.success ? "ok" : "err"); fetchSubscriptions(); })
+                        .catch(function (e) { b.disabled = false; setMsg("sub_msg", e.message, "err"); });
                 };
             });
         }
-        function saveSandhaAmount() {
-            var v = String(Number($("sa_amount").value) || 0);
+        function saveSubscriptionsAmount() {
+            var v = String(Number($("sub_amount").value) || 0);
             api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "sandha_amount", value: v }) })
-                .then(function (d) { setMsg("sa_amountMsg", d.success ? "Amount saved" : d.message, d.success ? "ok" : "err"); if (d.success) fetchSandha(); })
-                .catch(function (e) { setMsg("sa_amountMsg", e.message, "err"); });
+                .then(function (d) { setMsg("sub_amountMsg", d.success ? "Amount saved" : d.message, d.success ? "ok" : "err"); if (d.success) fetchSubscriptions(); })
+                .catch(function (e) { setMsg("sub_amountMsg", e.message, "err"); });
         }
         function addBeliever() {
-            var name = $("sa_newName").value.trim();
-            if (!name) { setMsg("sa_addMsg", "Name is required", "err"); return; }
-            $("sa_addBtn").disabled = true;
+            var name = $("sub_newName").value.trim();
+            if (!name) { setMsg("sub_addMsg", "Name is required", "err"); return; }
+            $("sub_addBtn").disabled = true;
             api("/api/members", {
                 method: "POST",
-                body: JSON.stringify({ name: name, email: $("sa_newEmail").value.trim(), phone: $("sa_newPhone").value.trim(), firstJoinDate: $("sa_newJoin").value })
+                body: JSON.stringify({ name: name, email: $("sub_newEmail").value.trim(), phone: $("sub_newPhone").value.trim(), firstJoinDate: $("sub_newJoin").value })
             }).then(function (d) {
-                $("sa_addBtn").disabled = false;
-                setMsg("sa_addMsg", d.message, d.success ? "ok" : "err");
+                $("sub_addBtn").disabled = false;
+                setMsg("sub_addMsg", d.message, d.success ? "ok" : "err");
                 if (d.success) {
-                    ["sa_newName", "sa_newEmail", "sa_newPhone", "sa_newJoin"].forEach(function (id) { $(id).value = ""; });
-                    fetchSandha();
+                    ["sub_newName", "sub_newEmail", "sub_newPhone", "sub_newJoin"].forEach(function (id) { $(id).value = ""; });
+                    fetchSubscriptions();
                 }
-            }).catch(function (e) { $("sa_addBtn").disabled = false; setMsg("sa_addMsg", e.message, "err"); });
+            }).catch(function (e) { $("sub_addBtn").disabled = false; setMsg("sub_addMsg", e.message, "err"); });
         }
 
         // ═══════════════ Expenses ═══════════════
@@ -2201,7 +2201,7 @@
             overview: loadOverview, funds: loadFunds, members: loadMembers,
             families: loadFamilies,
             contributions: loadContributions, purchases: loadPurchases,
-            sandha: loadSandha, expenses: loadExpenses, wishlist: loadWishlist,
+            sandha: loadSubscriptions, expenses: loadExpenses, wishlist: loadWishlist,
             roles: loadRoles, audit: loadAudit,
             verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {}
         };
@@ -2246,10 +2246,10 @@
             $("ab_addMissionBtn").onclick = function () { state.aboutContent.missionCards.push({ icon: "✨", title: "", body: "" }); renderMissionRows(); };
             $("ab_addVerseBtn").onclick = function () { state.aboutContent.verses.push({ text: "", ref: "" }); renderVerseRows(); };
             $("ab_addConnectBtn").onclick = function () { state.aboutContent.connectLinks.push({ icon: "🔗", label: "", url: "" }); renderConnectRows(); };
-            $("sa_saveAmount").onclick = saveSandhaAmount;
-            $("sa_addBtn").onclick = addBeliever;
-            $("sa_month").onchange = fetchSandha;
-            $("sa_search").oninput = renderSandhaTable;
+            $("sub_saveAmount").onclick = saveSandhaAmount;
+            $("sub_addBtn").onclick = addBeliever;
+            $("sub_month").onchange = fetchSubscriptions;
+            $("sub_search").oninput = renderSubscriptionsTable;
             $("st_runBtn").onclick = runSelfTest;
             $("logoutLink").onclick = function () {
                 sessionStorage.removeItem(TOKEN_KEY);

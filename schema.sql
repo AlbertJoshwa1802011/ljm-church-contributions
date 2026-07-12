@@ -88,10 +88,10 @@ CREATE TABLE IF NOT EXISTS member_roles (
 );
 
 -- Seed Default Roles
-INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_sandha","manage_members","manage_content"]');
+INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_subscriptions","manage_members","manage_content"]');
 INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('editor', '["edit_purchases","edit_wishlist"]');
 -- Keep existing super_admin rows in sync with the scope list above (idempotent)
-UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_sandha","manage_members","manage_content"]' WHERE role_name = 'super_admin';
+UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_subscriptions","manage_members","manage_content"]' WHERE role_name = 'super_admin';
 
 -- Seed Default Super Admins
 INSERT OR IGNORE INTO member_roles (email, role_name) VALUES ('albertjoshrock101@gmail.com', 'super_admin');
@@ -167,7 +167,7 @@ CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date DESC);
 CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);
 CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
 
--- 13. Sandha payment ledger (see migrations/0004_sandha.sql)
+-- 13. Subscriptions payment ledger (see migrations/0004_sandha.sql)
 CREATE TABLE IF NOT EXISTS sandha_payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     member_id INTEGER NOT NULL,
@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS families (
 CREATE INDEX IF NOT EXISTS idx_families_status ON families(status);
 CREATE INDEX IF NOT EXISTS idx_members_family ON members(family_id);
 
--- 15. Per-family Sandha payments (see migrations/0007_sandha_family.sql)
+-- 15. Per-family Subscriptions payments (see migrations/0007_sandha_family.sql)
 CREATE TABLE IF NOT EXISTS sandha_family_payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     family_id INTEGER NOT NULL,

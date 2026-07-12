@@ -635,32 +635,32 @@ button.bottom-nav-item {
 }
 
 /* ==================================================================
-   Sandha page
+   Subscriptions page
    ================================================================== */
-.sandha-hero { text-align: center; padding: 34px 16px 10px; }
+.subscriptions-hero { text-align: center; padding: 34px 16px 10px; }
 .sh-icon { font-size: 44px; }
 .sh-title { font-family: var(--serif); font-size: 30px; font-weight: 700; color: var(--text); margin: 10px 0 8px; }
 .sh-sub { font-size: 15px; color: var(--text-soft); max-width: 560px; margin: 0 auto; line-height: 1.55; }
 
-.sandha-me {
+.subscriptions-me {
     display: flex; align-items: center; gap: 14px;
     border-radius: var(--radius);
     padding: 16px 20px;
     margin: 18px 0 4px;
     border: 1px solid var(--border);
 }
-.sandha-me.is-paid { background: var(--green-soft); border-color: var(--green); }
-.sandha-me.is-pending { background: var(--amber-soft); border-color: var(--amber); }
-.sandha-me .sm-icon { font-size: 30px; flex-shrink: 0; }
-.sandha-me strong { display: block; font-family: var(--serif); font-size: 16.5px; color: var(--text); margin-bottom: 2px; }
-.sandha-me span:not(.sm-icon) { font-size: 13.5px; color: var(--text-soft); line-height: 1.45; }
+.subscriptions-me.is-paid { background: var(--green-soft); border-color: var(--green); }
+.subscriptions-me.is-pending { background: var(--amber-soft); border-color: var(--amber); }
+.subscriptions-me .sm-icon { font-size: 30px; flex-shrink: 0; }
+.subscriptions-me strong { display: block; font-family: var(--serif); font-size: 16.5px; color: var(--text); margin-bottom: 2px; }
+.subscriptions-me span:not(.sm-icon) { font-size: 13.5px; color: var(--text-soft); line-height: 1.45; }
 
-.sandha-controls {
+.subscriptions-controls {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
     gap: 14px; margin: 20px 0 22px;
 }
-.sandha-summary { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; }
-.sandha-kpi {
+.subscriptions-summary { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; }
+.subscriptions-kpi {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--radius); box-shadow: var(--shadow);
     padding: 10px 16px; text-align: center;
@@ -668,43 +668,43 @@ button.bottom-nav-item {
 .sk-value { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--text); }
 .sk-value span { font-size: 14px; color: var(--text-faint); font-weight: 600; }
 .sk-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin-top: 1px; }
-.sandha-progress {
+.subscriptions-progress {
     flex: 1 1 140px; height: 8px; border-radius: 999px;
     background: var(--bg-soft); overflow: hidden; min-width: 120px;
 }
-.sandha-progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--accent)); border-radius: 999px; transition: width .6s ease; }
-.sandha-monthrow { display: flex; align-items: center; gap: 8px; }
-.sandha-monthlabel { font-size: 12.5px; font-weight: 700; color: var(--text-soft); }
-.sandha-monthinput { max-width: 175px; }
+.subscriptions-progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--accent)); border-radius: 999px; transition: width .6s ease; }
+.subscriptions-monthrow { display: flex; align-items: center; gap: 8px; }
+.subscriptions-monthlabel { font-size: 12.5px; font-weight: 700; color: var(--text-soft); }
+.subscriptions-monthinput { max-width: 175px; }
 
-.sandha-lists {
+.subscriptions-lists {
     display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
 }
-@media (max-width: 720px) { .sandha-lists { grid-template-columns: 1fr; } }
-.sandha-col-title {
+@media (max-width: 720px) { .subscriptions-lists { grid-template-columns: 1fr; } }
+.subscriptions-col-title {
     font-family: var(--serif); font-size: 17px; color: var(--text);
     margin: 0 0 12px;
 }
-.sandha-col-title span { color: var(--text-faint); font-size: 14px; }
-.sandha-grid { display: flex; flex-direction: column; gap: 8px; }
-.sandha-person {
+.subscriptions-col-title span { color: var(--text-faint); font-size: 14px; }
+.subscriptions-grid { display: flex; flex-direction: column; gap: 8px; }
+.subscriptions-person {
     display: flex; align-items: center; gap: 12px;
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 12px; padding: 10px 14px;
 }
-.sandha-person.is-paid { border-left: 3px solid var(--green); }
-.sandha-person:not(.is-paid) { border-left: 3px solid var(--amber); opacity: 0.92; }
+.subscriptions-person.is-paid { border-left: 3px solid var(--green); }
+.subscriptions-person:not(.is-paid) { border-left: 3px solid var(--amber); opacity: 0.92; }
 .sp-avatar {
     width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg, var(--accent), var(--accent-deep));
     color: #fff; font-weight: 700; font-size: 14px;
     display: inline-flex; align-items: center; justify-content: center;
 }
-.sandha-person.is-paid .sp-avatar { background: linear-gradient(135deg, var(--green), #4a7040); }
+.subscriptions-person.is-paid .sp-avatar { background: linear-gradient(135deg, var(--green), #4a7040); }
 .sp-name { flex: 1; font-weight: 600; font-size: 14px; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sp-meta { font-size: 11.5px; color: var(--text-faint); flex-shrink: 0; }
-.sandha-loading { color: var(--text-faint); font-size: 13.5px; text-align: center; padding: 18px 8px; }
-.sandha-note { text-align: center; font-size: 12.5px; color: var(--text-faint); margin: 26px 0 10px; }
+.subscriptions-loading { color: var(--text-faint); font-size: 13.5px; text-align: center; padding: 18px 8px; }
+.subscriptions-note { text-align: center; font-size: 12.5px; color: var(--text-faint); margin: 26px 0 10px; }
 
 .ljm-top-bar {
     background: var(--bg-soft);

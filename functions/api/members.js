@@ -50,7 +50,7 @@ export async function onRequestGet(context) {
   }
 }
 
-// Add a new believer — used by the pastor from the admin Sandha/Members screens.
+// Add a new believer — used by the pastor from the admin Subscriptions/Members screens.
 export async function onRequestPost(context) {
   const { env, request } = context;
   const db = env.DB;

@@ -71,7 +71,7 @@
 
 ## Remaining roadmap (in order)
 - [ ] Phase 2 — Welcome/login page: "Welcome to Light of Jesus Ministry", Google sign-in + "Continue as guest"; unify auth across pages; user→believer mapping on first sign-in; editable email in user settings
-- [ ] Phase 3 — Sandha (monthly membership dues): pastor sets single amount; add believers + contacts; mark paid; "who paid / who's pending this month"; member's personal Sandha status + greeting on dashboard
+- [ ] Phase 3 — Subscriptions (monthly membership dues): pastor sets single amount; add believers + contacts; mark paid; "who paid / who's pending this month"; member's personal Subscriptions status + greeting on dashboard
 - [ ] Phase 4 — Email reminders: template editor + reminder composer in admin; send via existing Apps Script (receipt mailer already exists there)
 - [ ] Richer stats + landscape dashboard layout (desktop), reframed mobile
 
@@ -88,12 +88,12 @@
 - [x] Pastor contact: added an email field end-to-end, made phone/email tappable `tel:`/`mailto:` links, fixed the mobile top bar + "More" sheet so signed-in mobile users can actually reach pastor contact info (previously hidden below 580px with no fallback)
 - [x] Rewrote `payment-modal.css` (previously a standalone hardcoded-light Material purple/pink stylesheet) to use the shared design tokens, fixing dark-mode contrast on the contribution modal
 - [x] `purchases` table gains `created_by` — purchase records are now attributed to the admin who added them, shown in the admin table (`migrations/0005_purchase_attribution.sql`)
-- [x] Families/households: new `families` table + `family_id`/`relation`/`date_of_birth` on `members` (`migrations/0006_families.sql`); `functions/api/families.js`; admin "Families" tab (People group) — non-destructive to existing individual member/contribution/Sandha history
-- [x] Sandha reworked to per-family billing (paid once by the family head, not once per member) once a member is grouped into a family; members not yet grouped keep working exactly as before (`migrations/0007_sandha_family.sql`, rewritten `functions/api/sandha.js`, admin Sandha tab + public `sandha.html` both show family and individual status)
+- [x] Families/households: new `families` table + `family_id`/`relation`/`date_of_birth` on `members` (`migrations/0006_families.sql`); `functions/api/families.js`; admin "Families" tab (People group) — non-destructive to existing individual member/contribution/Subscriptions history
+- [x] Subscriptions reworked to per-family billing (paid once by the family head, not once per member) once a member is grouped into a family; members not yet grouped keep working exactly as before (`migrations/0007_sandha_family.sql`, rewritten `functions/api/subscriptions.js`, admin Subscriptions tab + public `subscriptions.html` both show family and individual status)
 - [x] Wishlist admin section relocated (Content group) and restyled as priority-colored cards
 - [x] About page CMS: `about_content` JSON setting + admin editor with dynamic add/remove rows (hero, mission cards, verses, motivation banner + CTAs, connect links); `about.html` now renders from settings instead of static HTML
 - [x] Bible verse data dictionary: `bible_versions`/`bible_verses` tables (`migrations/0008_bible_verses.sql`, `migrations/0009_bible_kjv_seed.sql`), `functions/api/bible.js` (browse/search/import), admin Verses tab now searches-and-picks instead of freeform typing; Verse of the Month/Year cards added to `member.html` (previously only on the public dashboard)
-- [x] First automated test suite: `node --test` + `node:sqlite` harness (`tests/`) running the real `functions/api/*.js` handlers against an in-memory DB seeded from `schema.sql` — 31 cases across families, sandha, settings, bible, purchases, wishlist, roles; CI workflow (`.github/workflows/test.yml`) runs it on every push/PR
+- [x] First automated test suite: `node --test` + `node:sqlite` harness (`tests/`) running the real `functions/api/*.js` handlers against an in-memory DB seeded from `schema.sql` — 31 cases across families, subscriptions, settings, bible, purchases, wishlist, roles; CI workflow (`.github/workflows/test.yml`) runs it on every push/PR
 - [x] New docs: `README.md` (root — previously missing entirely), `TESTING.md`, `FAMILIES_AND_SANDHA.md`, `BIBLE_VERSES.md`, `THEME_AND_DESIGN_SYSTEM.md`, `ADMIN_CONSOLE_GUIDE.md`
 
 ## After deploy

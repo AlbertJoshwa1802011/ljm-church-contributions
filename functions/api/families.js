@@ -1,7 +1,7 @@
 // Cloudflare Pages Function: /api/families
 // Family/household management: group believers into families, track relation
-// and date of birth, and designate a family head. Sandha (monthly dues) is
-// charged per family once members are grouped — see /api/sandha for that.
+// and date of birth, and designate a family head. Subscriptions (monthly dues) is
+// charged per family once members are grouped — see /api/subscriptions for that.
 //
 // GET    — list families (with nested members) + still-unassigned members (view_members).
 // POST   — create a family (with optional initial members), or an action:
@@ -141,7 +141,7 @@ export async function onRequestPost(context) {
       return json({ success: true, message: `Added to ${family.family_name}`, memberId: resolved.id });
     }
 
-    // ── Set which member is the family head (who Sandha is billed to) ──
+    // ── Set which member is the family head (who Subscriptions is billed to) ──
     if (action === "set_head") {
       const familyId = Number(body.familyId);
       const memberId = Number(body.memberId);

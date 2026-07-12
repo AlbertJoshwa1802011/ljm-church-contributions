@@ -1,17 +1,17 @@
-// Cloudflare Pages Function: /api/sandha
-// Sandha — monthly membership dues, billed per family (paid by the family
+// Cloudflare Pages Function: /api/subscriptions
+// Subscriptions — monthly membership dues, billed per family (paid by the family
 // head) once believers are grouped into a household; a member not yet
 // grouped into any family is still billed and tracked individually, exactly
 // as before. Everyone can see who/which family has paid and who is pending
-// (explicitly requested: the whole church should see monthly Sandha status).
+// (explicitly requested: the whole church should see monthly Subscriptions status).
 //
-//   GET  /api/sandha?month=YYYY-MM   → { month, amount,
+//   GET  /api/subscriptions?month=YYYY-MM   → { month, amount,
 //                                         paid:[...], pending:[...],            (ungrouped individuals)
 //                                         families:{ paid:[...], pending:[...] },
 //                                         totals, months:[...] }
-//   GET  /api/sandha?member=Name     → that member's (or their family's) paid months for the year
-//   POST { action:'mark_paid', memberId?, familyId?, month, amount?, method?, notes?, paidByMemberId? }  (manage_sandha)
-//   POST { action:'unmark',    memberId?, familyId?, month }                                              (manage_sandha)
+//   GET  /api/subscriptions?member=Name     → that member's (or their family's) paid months for the year
+//   POST { action:'mark_paid', memberId?, familyId?, month, amount?, method?, notes?, paidByMemberId? }  (manage_subscriptions)
+//   POST { action:'unmark',    memberId?, familyId?, month }                                              (manage_subscriptions)
 
 import { requireAuth, audit, json } from "./_lib.js";
 
@@ -30,7 +30,7 @@ function corsHeaders(extra) {
   };
 }
 
-async function getSandhaAmount(db) {
+async function getSubscriptionsAmount(db) {
   const row = await db.prepare("SELECT value FROM config WHERE key = 'sandha_amount'").first();
   return Number(row && row.value) || 0;
 }
@@ -72,7 +72,7 @@ export async function onRequestGet(context) {
         familyName,
         isFamilyBased: !!familyName,
         year,
-        amount: await getSandhaAmount(db),
+        amount: await getSubscriptionsAmount(db),
         paidMonths: rows.results || []
       }, 200, corsHeaders({ "Cache-Control": "no-store" }));
     }
@@ -81,7 +81,7 @@ export async function onRequestGet(context) {
     let month = (url.searchParams.get("month") || currentMonth()).trim();
     if (!MONTH_RE.test(month)) month = currentMonth();
 
-    const amount = await getSandhaAmount(db);
+    const amount = await getSubscriptionsAmount(db);
 
     // Ungrouped individuals only (family_id IS NULL) — members in a family are
     // billed at the family level below, not tracked individually anymore.
@@ -153,7 +153,7 @@ export async function onRequestPost(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "manage_sandha");
+  const auth = await requireAuth(context, "manage_subscriptions");
   if (!auth.ok) return auth.response;
 
   try {
@@ -167,13 +167,13 @@ export async function onRequestPost(context) {
       return json({ success: false, message: "familyId or memberId, and month (YYYY-MM), are required" }, 400);
     }
 
-    // ── Family-level Sandha ──
+    // ── Family-level Subscriptions ──
     if (familyId) {
       const family = await db.prepare("SELECT id, family_name, head_member_id FROM families WHERE id = ?").bind(familyId).first();
       if (!family) return json({ success: false, message: "Family not found" }, 404);
 
       if (action === "mark_paid") {
-        const configured = await getSandhaAmount(db);
+        const configured = await getSubscriptionsAmount(db);
         const amount = body.amount != null && isFinite(Number(body.amount)) && Number(body.amount) >= 0
           ? Number(body.amount) : configured;
         const method = ["cash", "online"].includes(body.method) ? body.method : "cash";
@@ -191,7 +191,7 @@ export async function onRequestPost(context) {
 
         await audit(context, {
           actorEmail: auth.email, actorType: "admin", verified: auth.verified,
-          action: "sandha.family_mark_paid", entityType: "family", entityId: `${familyId}:${month}`,
+          action: "subscriptions.family_mark_paid", entityType: "family", entityId: `${familyId}:${month}`,
           details: { family: family.family_name, month, amount, method }
         });
         return json({ success: true, message: `${family.family_name} marked paid for ${month}` }, 200, corsHeaders());
@@ -201,11 +201,11 @@ export async function onRequestPost(context) {
         const res = await db.prepare("DELETE FROM sandha_family_payments WHERE family_id = ? AND month = ?")
           .bind(familyId, month).run();
         if (!res.meta || res.meta.changes === 0) {
-          return json({ success: false, message: "No Sandha record for that family/month" }, 404);
+          return json({ success: false, message: "No Subscriptions record for that family/month" }, 404);
         }
         await audit(context, {
           actorEmail: auth.email, actorType: "admin", verified: auth.verified,
-          action: "sandha.family_unmark", entityType: "family", entityId: `${familyId}:${month}`,
+          action: "subscriptions.family_unmark", entityType: "family", entityId: `${familyId}:${month}`,
           details: { family: family.family_name, month }
         });
         return json({ success: true, message: `${family.family_name} unmarked for ${month}` }, 200, corsHeaders());
@@ -214,15 +214,15 @@ export async function onRequestPost(context) {
       return json({ success: false, message: "Unknown action" }, 400);
     }
 
-    // ── Individual Sandha (member not yet grouped into a family) ──
+    // ── Individual Subscriptions (member not yet grouped into a family) ──
     const member = await db.prepare("SELECT id, name, family_id FROM members WHERE id = ?").bind(memberId).first();
     if (!member) return json({ success: false, message: "Member not found" }, 404);
     if (member.family_id) {
-      return json({ success: false, message: `${member.name} is part of a family now — mark Sandha paid for the family instead` }, 400);
+      return json({ success: false, message: `${member.name} is part of a family now — mark Subscriptions paid for the family instead` }, 400);
     }
 
     if (action === "mark_paid") {
-      const configured = await getSandhaAmount(db);
+      const configured = await getSubscriptionsAmount(db);
       const amount = body.amount != null && isFinite(Number(body.amount)) && Number(body.amount) >= 0
         ? Number(body.amount)
         : configured;
@@ -241,7 +241,7 @@ export async function onRequestPost(context) {
 
       await audit(context, {
         actorEmail: auth.email, actorType: "admin", verified: auth.verified,
-        action: "sandha.mark_paid", entityType: "sandha", entityId: `${memberId}:${month}`,
+        action: "subscriptions.mark_paid", entityType: "subscriptions", entityId: `${memberId}:${month}`,
         details: { member: member.name, month, amount, method }
       });
       return json({ success: true, message: `${member.name} marked paid for ${month}` }, 200, corsHeaders());
@@ -251,11 +251,11 @@ export async function onRequestPost(context) {
       const res = await db.prepare("DELETE FROM sandha_payments WHERE member_id = ? AND month = ?")
         .bind(memberId, month).run();
       if (!res.meta || res.meta.changes === 0) {
-        return json({ success: false, message: "No Sandha record for that member/month" }, 404);
+        return json({ success: false, message: "No Subscriptions record for that member/month" }, 404);
       }
       await audit(context, {
         actorEmail: auth.email, actorType: "admin", verified: auth.verified,
-        action: "sandha.unmark", entityType: "sandha", entityId: `${memberId}:${month}`,
+        action: "subscriptions.unmark", entityType: "subscriptions", entityId: `${memberId}:${month}`,
         details: { member: member.name, month }
       });
       return json({ success: true, message: `${member.name} unmarked for ${month}` }, 200, corsHeaders());

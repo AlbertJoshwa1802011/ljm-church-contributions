@@ -1,7 +1,7 @@
--- Migration 0007: Per-family Sandha payments.
+-- Migration 0007: Per-family Subscriptions payments.
 -- Purely additive — the existing per-member sandha_payments table (and its
 -- history) is untouched. Once a member is grouped into a family (see
--- migrations/0006_families.sql), Sandha for that household is billed and
+-- migrations/0006_families.sql), Subscriptions for that household is billed and
 -- tracked here instead, normally paid by the family head.
 
 CREATE TABLE IF NOT EXISTS sandha_family_payments (
