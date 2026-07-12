@@ -210,11 +210,12 @@
                 topBar.className = "ljm-top-bar";
                 mount.parentNode.insertBefore(topBar, mount);
             }
-            // Phone/email (primary) stay tappable and visible at every width;
-            // name/address (secondary) collapse away only on narrow phones —
-            // see the .ljm-top-secondary media rule in theme.css.
+            // On mobile, show pastor name + phone in primary section;
+            // on desktop, show name + address in secondary section for more detail.
             topBar.innerHTML =
                 '<div class="ljm-top-primary">' +
+                    '<span class="ljm-top-item ljm-top-pastor-name">👤 ' + esc(name) + '</span>' +
+                    '<span class="ljm-top-divider">|</span>' +
                     '<a class="ljm-top-item" href="' + esc(telHref) + '">📞 ' + esc(phone) + '</a>' +
                     (email
                         ? '<span class="ljm-top-divider">|</span><a class="ljm-top-item" href="mailto:' + esc(email) + '">✉️ ' + esc(email) + '</a>'
@@ -222,8 +223,6 @@
                 '</div>' +
                 '<span class="ljm-top-divider ljm-top-divider-sec">|</span>' +
                 '<div class="ljm-top-secondary">' +
-                    '<span class="ljm-top-item">👤 Pastor: ' + esc(name) + '</span>' +
-                    '<span class="ljm-top-divider">|</span>' +
                     '<span class="ljm-top-item">📍 ' + esc(address) + '</span>' +
                 '</div>';
 
