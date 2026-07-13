@@ -225,6 +225,24 @@
         .family-card-body { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-strong); }
         .family-card.open .family-card-body { display: block; }
         .family-card.open .fc-chevron { transform: rotate(180deg); }
+        .family-list-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-soft);
+            border-bottom: 2px solid var(--border);
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            border-radius: 8px;
+        }
+        @media (max-width: 760px) {
+            .family-list-header { display: none; }
+        }
         .fc-chevron { transition: transform .18s; color: var(--text-faint); flex-shrink: 0; }
         .family-member-item {
             display: flex; align-items: center; gap: 10px; padding: 8px 0;
@@ -284,6 +302,7 @@
             #mobileNav .nav-item span:last-child { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
             #mobileNav .nav-item.active { background: var(--accent-soft); color: var(--accent-deep); }
             #mobileNav .ni-icon { font-size: 18px; }
+            .form-grid { grid-template-columns: 1fr !important; }
         }
 
         /* Mobile nav-group sub-panel — reuses the public site's .ljmh-sheet*
@@ -1370,7 +1389,15 @@
                 return (f.members || []).some(function (m) { return (m.name || "").toLowerCase().indexOf(q) > -1; });
             });
             $("fam_count").textContent = (state.familiesCache || []).length;
-            $("fam_list").innerHTML = families.map(function (f) {
+            var header = '<div class="family-list-header">' +
+                        '<span>Family Name</span>' +
+                        '<span>Members</span>' +
+                        '<span>Head</span>' +
+                        '<span>Address</span>' +
+                        '<span>Actions</span>' +
+                        '</div>';
+
+            $("fam_list").innerHTML = header + families.map(function (f) {
                 var membersHtml = (f.members || []).map(function (m) {
                     return '<div class="family-member-item">' +
                         '<span class="fm-name">' + esc(m.name) + (m.id === f.headMemberId ? ' <span class="pill pill-accent">Head</span>' : "") + "</span>" +
