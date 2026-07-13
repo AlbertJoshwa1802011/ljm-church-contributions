@@ -2516,7 +2516,9 @@ async function loadHomeWishlist() {
             card.style.borderLeft = item.priority === "High" ? "4px solid var(--danger)" : (item.priority === "Medium" ? "4px solid var(--warning)" : "4px solid var(--success)");
             
             // Build simple Google styling content
+            const imageHtml = item.image_url ? `<img src="${item.image_url}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px; margin-bottom: 12px;" alt="${escapeHtml(item.name)}">` : '';
             card.innerHTML = `
+                ${imageHtml}
                 <div style="font-size: 11px; font-weight: 700; color: ${item.priority === 'High' ? 'var(--danger)' : 'var(--google-text-secondary)'}; text-transform: uppercase; margin-bottom: 6px;">
                     ${item.priority} Priority
                 </div>

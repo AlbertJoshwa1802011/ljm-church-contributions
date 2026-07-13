@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS wishlist (
     cost REAL NOT NULL,
     priority TEXT DEFAULT 'Medium', -- 'High', 'Medium', 'Low'
     notes TEXT,
+    image_url TEXT, -- Base64 data URL or external image URL
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -694,6 +694,8 @@
                         <div><label class="f-label">Estimated cost (₹) *</label><input class="input" id="w_cost" type="number"></div>
                         <div><label class="f-label">Priority</label><select class="input" id="w_priority"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
                         <div class="span-all"><label class="f-label">Notes</label><textarea class="input" id="w_notes" rows="2"></textarea></div>
+                        <div class="span-all"><label class="f-label">Image (optional)</label><input class="input" id="w_imageFile" type="file" accept="image/jpeg,image/png,image/webp"></div>
+                        <div class="span-all" id="w_imagePreviewContainer" style="display:none;"><img id="w_imagePreview" style="max-width:200px;max-height:200px;border-radius:8px;"></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="w_saveBtn">Save item</button>
@@ -942,6 +944,7 @@
             editingFundSlug: null,
             editingPurchaseId: null,
             editingWishlistId: null,
+            wishlistImageUrl: null,
             loaded: {}
         };
         var PERMISSION_SCOPES = [
@@ -1931,7 +1934,9 @@
                 });
                 var host = $("w_list");
                 host.innerHTML = sorted.map(function (w) {
+                    var imageHtml = w.image_url ? '<img src="' + w.image_url + '" style="width:100%;height:150px;object-fit:cover;border-radius:6px;margin-bottom:8px;">' : '';
                     return '<div class="wishlist-item-card priority-' + String(w.priority || "medium").toLowerCase() + '">' +
+                        imageHtml +
                         '<div class="wi-top"><div class="wi-name">' + (iconFor[w.priority] || "⚪") + " " + esc(w.name) + '</div><div class="wi-cost">' + inr(w.cost) + "</div></div>" +
                         '<div class="wi-notes">' + esc(w.notes || "No notes") + "</div>" +
                         '<div class="wi-actions"><button class="mini-btn" data-act="edit" data-id="' + w.id + '">Edit</button>' +
@@ -1950,6 +1955,14 @@
             $("w_formTitle").textContent = "Edit wishlist item — #" + id;
             $("w_name").value = w.name; $("w_cost").value = w.cost;
             $("w_priority").value = w.priority || "Medium"; $("w_notes").value = w.notes || "";
+            if (w.image_url) {
+                $("w_imagePreview").src = w.image_url;
+                $("w_imagePreviewContainer").style.display = "block";
+                state.wishlistImageUrl = w.image_url;
+            } else {
+                $("w_imagePreviewContainer").style.display = "none";
+                state.wishlistImageUrl = null;
+            }
         }
         function deleteWishlist(id) {
             if (!confirm("Delete wishlist item #" + id + "?")) return;
@@ -1960,12 +1973,30 @@
         function clearWishlistForm() {
             state.editingWishlistId = null;
             $("w_formTitle").textContent = "Add wishlist item";
-            ["w_name", "w_cost", "w_notes"].forEach(function (id) { $(id).value = ""; });
+            ["w_name", "w_cost", "w_notes", "w_imageFile"].forEach(function (id) { $(id).value = ""; });
             $("w_priority").value = "Medium";
+            $("w_imagePreviewContainer").style.display = "none";
+            state.wishlistImageUrl = null;
         }
         function saveWishlist() {
             var payload = { name: $("w_name").value.trim(), cost: Number($("w_cost").value) || 0, priority: $("w_priority").value, notes: $("w_notes").value.trim() };
             if (!payload.name || !payload.cost) { setMsg("w_msg", "Name and cost are required", "err"); return; }
+
+            var imageFile = $("w_imageFile").files[0];
+            if (imageFile) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    payload.imageUrl = e.target.result;
+                    submitWishlist(payload);
+                };
+                reader.onerror = function () { setMsg("w_msg", "Failed to read image file", "err"); };
+                reader.readAsDataURL(imageFile);
+            } else {
+                if (state.wishlistImageUrl) payload.imageUrl = state.wishlistImageUrl;
+                submitWishlist(payload);
+            }
+        }
+        function submitWishlist(payload) {
             var req = state.editingWishlistId
                 ? api("/api/wishlist", { method: "PUT", body: JSON.stringify(Object.assign(payload, { id: state.editingWishlistId })) })
                 : api("/api/wishlist", { method: "POST", body: JSON.stringify(payload) });
@@ -2467,6 +2498,17 @@
             $("p_saveBtn").onclick = savePurchase; $("p_clearBtn").onclick = clearPurchaseForm;
             $("x_saveBtn").onclick = saveExpense; $("x_clearBtn").onclick = clearExpenseForm;
             $("w_saveBtn").onclick = saveWishlist; $("w_clearBtn").onclick = clearWishlistForm;
+            $("w_imageFile").onchange = function () {
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $("w_imagePreview").src = e.target.result;
+                        $("w_imagePreviewContainer").style.display = "block";
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
             $("r_saveBtn").onclick = saveRole; $("r_linkBtn").onclick = linkEmail;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };
