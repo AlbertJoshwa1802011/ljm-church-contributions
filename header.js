@@ -419,6 +419,7 @@
         s.hidden = false;
         requestAnimationFrame(function () { s.classList.add("open"); });
         document.documentElement.style.overflow = "hidden";
+        setupSheetGestures(s);
     }
     function closeMoreSheet() {
         var s = document.getElementById("ljmhMoreSheet");
@@ -426,6 +427,38 @@
         s.classList.remove("open");
         document.documentElement.style.overflow = "";
         setTimeout(function () { s.hidden = true; }, 220);
+    }
+
+    function setupSheetGestures(sheet) {
+        var sheet_el = sheet.querySelector(".ljmh-sheet");
+        var startY = 0;
+
+        sheet_el.addEventListener("touchstart", function (e) {
+            startY = e.touches[0].clientY;
+        }, false);
+
+        sheet_el.addEventListener("touchmove", function (e) {
+            var currentY = e.touches[0].clientY;
+            var deltaY = currentY - startY;
+            // Allow dragging down (positive deltaY)
+            if (deltaY > 0) {
+                sheet_el.style.transform = "translateY(" + deltaY + "px)";
+            }
+        }, false);
+
+        sheet_el.addEventListener("touchend", function (e) {
+            var sheet_content = sheet.querySelector(".ljmh-sheet");
+            var currentTransform = sheet_content.style.transform;
+            var deltaY = parseInt(currentTransform.match(/\d+/)?.[0] || 0);
+
+            // Close sheet if dragged down more than 60px
+            if (deltaY > 60) {
+                closeMoreSheet();
+            } else {
+                // Snap back to open position
+                sheet_content.style.transform = "";
+            }
+        }, false);
     }
 
     // #give deep link (from other pages' Give button)
