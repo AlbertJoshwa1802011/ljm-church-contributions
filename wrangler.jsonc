@@ -11,5 +11,9 @@
       "database_name": "ljm-contributions-db",
       "database_id": "c8fad1c1-9d94-43dd-8a96-ce6b131c900c"
     }
-  ]
+  ],
+
+  "vars": {
+    "ALLOW_LEGACY_EMAIL_TOKEN": "true"
+  }
 }

@@ -5,7 +5,7 @@
 --
 -- Design note: this does NOT touch the existing per-member sandha_payments
 -- table or its historical rows. A member who hasn't been grouped into a
--- family yet keeps being tracked individually; once grouped, Sandha for
+-- family yet keeps being tracked individually; once grouped, Subscriptions for
 -- that household is tracked in the new sandha_family_payments table
 -- instead (see migrations/0007_sandha_family.sql). Nothing is deleted or
 -- reinterpreted retroactively.
@@ -13,7 +13,7 @@
 CREATE TABLE IF NOT EXISTS families (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     family_name TEXT NOT NULL,
-    head_member_id INTEGER,             -- who Sandha is billed to; also the default contact
+    head_member_id INTEGER,             -- who Subscriptions is billed to; also the default contact
     address TEXT,
     primary_phone TEXT,
     primary_email TEXT,

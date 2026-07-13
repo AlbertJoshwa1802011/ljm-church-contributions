@@ -1,7 +1,7 @@
 // LJM Church — shared app shell for all public pages.
 // Injects: (1) top header (brand, desktop nav, fund switcher, theme toggle,
 // auth cluster with avatar menu + sign out), (2) mobile bottom nav
-// (Home · Funds · Give · Sandha · More) and (3) the "More" slide-up sheet.
+// (Home · Funds · Give · Subscriptions · More) and (3) the "More" slide-up sheet.
 // One component so every page stays consistent and easy to evolve.
 //
 // Auth contract: index.html's inline Google Sign-In script drives the ids
@@ -23,7 +23,7 @@
         home: '<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9"/><path d="M9.5 20v-6h5v6"/></svg>',
         funds: '<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-7h6v7"/></svg>',
         give: '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2 4.5 5.4 4a4.7 4.7 0 0 1 6.6 1.8A4.7 4.7 0 0 1 18.6 4c3.4.5 5 4.1 3.4 7.7C19.5 16.4 12 21 12 21Z"/></svg>',
-        sandha: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
+        subscriptions: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
         more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
         members: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.7 20c.7-3.4 3.2-5.5 6.3-5.5s5.6 2.1 6.3 5.5"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.8 14.8c2.2.3 3.9 2 4.5 4.7"/></svg>',
         bought: '<svg viewBox="0 0 24 24"><path d="M6 8h12l1 12.5a1 1 0 0 1-1 1.5H6a1 1 0 0 1-1-1.5L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
@@ -40,7 +40,7 @@
     var NAV = [
         ["home", "index.html", "Home"],
         ["funds", "funds.html", "Funds"],
-        ["sandha", "sandha.html", "Sandha"],
+        ["subscriptions", "subscriptions.html", "Subscriptions"],
         ["members", "members.html", "Members"],
         ["impact", "impact.html", "Impact"],
         ["about", "about.html", "About"]
@@ -55,7 +55,7 @@
         if (p.slice(-5) === ".html") p = p.slice(0, -5);
         if (p === "" || p === "index") return "home";
         if (p === "funds") return "funds";
-        if (p === "sandha") return "sandha";
+        if (p === "subscriptions") return "subscriptions";
         if (p === "members") return "members";
         if (p === "impact") return "impact";
         if (p === "about") return "about";
@@ -210,11 +210,12 @@
                 topBar.className = "ljm-top-bar";
                 mount.parentNode.insertBefore(topBar, mount);
             }
-            // Phone/email (primary) stay tappable and visible at every width;
-            // name/address (secondary) collapse away only on narrow phones —
-            // see the .ljm-top-secondary media rule in theme.css.
+            // On mobile, show pastor name + phone in primary section;
+            // on desktop, show name + address in secondary section for more detail.
             topBar.innerHTML =
                 '<div class="ljm-top-primary">' +
+                    '<span class="ljm-top-item ljm-top-pastor-name">👤 ' + esc(name) + '</span>' +
+                    '<span class="ljm-top-divider">|</span>' +
                     '<a class="ljm-top-item" href="' + esc(telHref) + '">📞 ' + esc(phone) + '</a>' +
                     (email
                         ? '<span class="ljm-top-divider">|</span><a class="ljm-top-item" href="mailto:' + esc(email) + '">✉️ ' + esc(email) + '</a>'
@@ -222,8 +223,6 @@
                 '</div>' +
                 '<span class="ljm-top-divider ljm-top-divider-sec">|</span>' +
                 '<div class="ljm-top-secondary">' +
-                    '<span class="ljm-top-item">👤 Pastor: ' + esc(name) + '</span>' +
-                    '<span class="ljm-top-divider">|</span>' +
                     '<span class="ljm-top-item">📍 ' + esc(address) + '</span>' +
                 '</div>';
 
@@ -340,7 +339,7 @@
             item("home", "index.html", "Home", ICONS.home) +
             item("funds", "funds.html", "Funds", ICONS.funds) +
             item("give", "index.html#give", "", ICONS.give, " action-btn") +
-            item("sandha", "sandha.html", "Sandha", ICONS.sandha) +
+            item("subscriptions", "subscriptions.html", "Subscriptions", ICONS.subscriptions) +
             '<button type="button" class="bottom-nav-item" id="ljmhMoreBtn" data-tab="more">' +
                 '<span class="nav-icon">' + ICONS.more + "</span><span>More</span></button>";
         document.body.appendChild(nav);
@@ -388,7 +387,6 @@
                     '<a class="ljmh-sheet-item' + (page === "about" ? " active" : "") + '" href="about.html">' + ICONS.about + "<span>About</span></a>" +
                     '<a class="ljmh-sheet-item" id="ljmhSheetCallPastor" href="tel:">' + ICONS.phone + "<span>Call Pastor</span></a>" +
                     '<a class="ljmh-sheet-item" id="ljmhSheetEmailPastor" href="mailto:" style="display:none;">' + ICONS.mail + "<span>Email Pastor</span></a>" +
-                    '<a class="ljmh-sheet-item" href="member.html">' + ICONS.person + "<span>My giving</span></a>" +
                     (admin ? '<a class="ljmh-sheet-item" href="admin.html">' + ICONS.admin + "<span>Admin</span></a>" +
                              '<a class="ljmh-sheet-item" href="admin.html#settings">' + ICONS.settings + "<span>Settings</span></a>" : "") +
                     '<button type="button" class="ljmh-sheet-item" id="ljmhSheetTheme">' + ICONS.moon + "<span>Theme</span></button>" +
@@ -421,6 +419,7 @@
         s.hidden = false;
         requestAnimationFrame(function () { s.classList.add("open"); });
         document.documentElement.style.overflow = "hidden";
+        setupSheetGestures(s);
     }
     function closeMoreSheet() {
         var s = document.getElementById("ljmhMoreSheet");
@@ -428,6 +427,38 @@
         s.classList.remove("open");
         document.documentElement.style.overflow = "";
         setTimeout(function () { s.hidden = true; }, 220);
+    }
+
+    function setupSheetGestures(sheet) {
+        var sheet_el = sheet.querySelector(".ljmh-sheet");
+        var startY = 0;
+
+        sheet_el.addEventListener("touchstart", function (e) {
+            startY = e.touches[0].clientY;
+        }, false);
+
+        sheet_el.addEventListener("touchmove", function (e) {
+            var currentY = e.touches[0].clientY;
+            var deltaY = currentY - startY;
+            // Allow dragging down (positive deltaY)
+            if (deltaY > 0) {
+                sheet_el.style.transform = "translateY(" + deltaY + "px)";
+            }
+        }, false);
+
+        sheet_el.addEventListener("touchend", function (e) {
+            var sheet_content = sheet.querySelector(".ljmh-sheet");
+            var currentTransform = sheet_content.style.transform;
+            var deltaY = parseInt(currentTransform.match(/\d+/)?.[0] || 0);
+
+            // Close sheet if dragged down more than 60px
+            if (deltaY > 60) {
+                closeMoreSheet();
+            } else {
+                // Snap back to open position
+                sheet_content.style.transform = "";
+            }
+        }, false);
     }
 
     // #give deep link (from other pages' Give button)

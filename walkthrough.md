@@ -60,7 +60,7 @@ We have completed the next-generation upgrades to your church contribution porta
 
 ---
 
-## Admin Console Redesign, Families & Sandha, About Page CMS, Bible Verses (July 11, 2026)
+## Admin Console Redesign, Families & Subscriptions, About Page CMS, Bible Verses (July 11, 2026)
 
 A larger pass covering navigation, theming, and three new admin-manageable features.
 
@@ -82,9 +82,9 @@ A larger pass covering navigation, theming, and three new admin-manageable featu
 ### 4. Purchases now show who added them
 * `purchases` gained a `created_by` column (`migrations/0005_purchase_attribution.sql`), set automatically from the signed-in admin session — matching the pattern `expenses` already used. Shown as "Added by" in the admin Purchases table.
 
-### 5. Families & per-family Sandha
+### 5. Families & per-family Subscriptions
 * New `families` table plus `family_id`/`relation`/`date_of_birth` on `members` — fully additive, no existing data touched. Admin "Families" tab (People group): create a family with initial members, expandable family cards, make-head/remove-member actions, and an "unassigned believers" list to fold existing individuals into a household.
-* Sandha (monthly dues) is now billed once per family (paid by the head) once grouped, instead of once per member — matching how the church actually collects it. A member not yet grouped into a family keeps working exactly as before; nothing was retroactively reinterpreted.
+* Subscriptions (monthly dues) is now billed once per family (paid by the head) once grouped, instead of once per member — matching how the church actually collects it. A member not yet grouped into a family keeps working exactly as before; nothing was retroactively reinterpreted.
 * See [FAMILIES_AND_SANDHA.md](FAMILIES_AND_SANDHA.md).
 
 ### 6. About page, fully pastor-editable
@@ -96,5 +96,5 @@ A larger pass covering navigation, theming, and three new admin-manageable featu
 * Added the same Verse of the Month/Year cards to `member.html` (the signed-in believer's own page) — previously only shown on the public dashboard.
 
 ### 8. Automated tests, for the first time
-* `tests/helpers/mock-d1.mjs` makes Node's built-in `node:sqlite` look enough like a Cloudflare D1 binding to run the real `functions/api/*.js` handlers directly, offline, with `schema.sql` as the seed. 31 test cases across families, Sandha, settings, Bible verses, purchases, wishlist, and roles. `npm test` runs it locally; `.github/workflows/test.yml` runs it in CI on every push and PR. See [TESTING.md](TESTING.md).
+* `tests/helpers/mock-d1.mjs` makes Node's built-in `node:sqlite` look enough like a Cloudflare D1 binding to run the real `functions/api/*.js` handlers directly, offline, with `schema.sql` as the seed. 31 test cases across families, Subscriptions, settings, Bible verses, purchases, wishlist, and roles. `npm test` runs it locally; `.github/workflows/test.yml` runs it in CI on every push and PR. See [TESTING.md](TESTING.md).
 

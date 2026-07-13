@@ -1,7 +1,7 @@
--- Migration 0004: Sandha (monthly membership dues).
+-- Migration 0004: Subscriptions (monthly membership dues).
 -- Purely additive and idempotent. Safe to run on the live database.
 
--- 1. Sandha payment ledger: one row per member per month.
+-- 1. Subscriptions payment ledger: one row per member per month.
 CREATE TABLE IF NOT EXISTS sandha_payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     member_id INTEGER NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS sandha_payments (
 CREATE INDEX IF NOT EXISTS idx_sandha_month ON sandha_payments(month);
 CREATE INDEX IF NOT EXISTS idx_sandha_member ON sandha_payments(member_id);
 
--- 2. Single monthly Sandha amount, set by the pastor in admin settings.
+-- 2. Single monthly Subscriptions amount, set by the pastor in admin settings.
 INSERT OR IGNORE INTO config (key, value) VALUES ('sandha_amount', '0');
 
 -- 3. Grant the new manage_sandha scope to super_admin (idempotent fixed value).

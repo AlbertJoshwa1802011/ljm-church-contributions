@@ -225,6 +225,24 @@
         .family-card-body { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-strong); }
         .family-card.open .family-card-body { display: block; }
         .family-card.open .fc-chevron { transform: rotate(180deg); }
+        .family-list-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-soft);
+            border-bottom: 2px solid var(--border);
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            border-radius: 8px;
+        }
+        @media (max-width: 760px) {
+            .family-list-header { display: none; }
+        }
         .fc-chevron { transition: transform .18s; color: var(--text-faint); flex-shrink: 0; }
         .family-member-item {
             display: flex; align-items: center; gap: 10px; padding: 8px 0;
@@ -265,9 +283,91 @@
            horizontal scrolling needed) — tapping one opens a slide-up sheet
            listing that group's pages, instead of 13 items in a scroll strip. ── */
         #mobileNav { display: none; }
+        /* Admin Profile Shortcut */
+        .admin-profile-shortcut {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 100;
+        }
+        .profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-soft);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .profile-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent-deep);
+        }
+        .profile-avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent-soft);
+            color: var(--accent-deep);
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .profile-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 200px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            overflow: hidden;
+            z-index: 1000;
+        }
+        .profile-dropdown[hidden] {
+            display: none !important;
+        }
+        .dropdown-item {
+            width: 100%;
+            padding: 10px 12px;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            text-align: left;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.15s;
+        }
+        .dropdown-item:hover:not([style*="cursor: default"]) {
+            background: var(--bg-soft);
+        }
+        .dropdown-item.danger {
+            color: #d32f2f;
+        }
+        .dropdown-item.danger:hover {
+            background: rgba(211, 47, 47, 0.1);
+        }
+
         @media (max-width: 820px) {
             aside { display: none; }
             main { padding: 18px 16px 90px; }
+            .admin-profile-shortcut {
+                top: 10px;
+                right: 10px;
+            }
+            .profile-name {
+                display: none;
+            }
             .page-head { margin: -18px -16px 22px; padding: 18px 16px 14px; }
             #mobileNav {
                 display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
@@ -284,6 +384,7 @@
             #mobileNav .nav-item span:last-child { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
             #mobileNav .nav-item.active { background: var(--accent-soft); color: var(--accent-deep); }
             #mobileNav .ni-icon { font-size: 18px; }
+            .form-grid { grid-template-columns: 1fr !important; }
         }
 
         /* Mobile nav-group sub-panel — reuses the public site's .ljmh-sheet*
@@ -334,6 +435,22 @@
         </aside>
 
         <main>
+            <!-- Admin Profile Shortcut (Top-Right) -->
+            <div class="admin-profile-shortcut" id="adminProfileShortcut">
+                <button class="profile-btn" id="profileBtn" aria-label="Admin profile menu">
+                    <span class="profile-avatar" id="profileAvatar">👤</span>
+                    <span class="profile-name" id="profileName">Admin</span>
+                </button>
+                <div class="profile-dropdown" id="profileDropdown" hidden>
+                    <div class="dropdown-item" id="profileNameDisplay" style="font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-soft); font-size: 12px;">—</div>
+                    <button class="dropdown-item" id="profileEmailDisplay" style="text-align: left; white-space: normal; word-break: break-all; font-size: 11px; color: var(--text-faint); cursor: default; pointer-events: none;">—</button>
+                    <div style="border-top: 1px solid var(--border); margin: 6px 0;"></div>
+                    <button class="dropdown-item" id="changePasswordBtn">🔐 Change password</button>
+                    <div style="border-top: 1px solid var(--border); margin: 6px 0;"></div>
+                    <button class="dropdown-item danger" id="signOutBtn">👋 Sign out</button>
+                </div>
+            </div>
+
             <!-- OVERVIEW -->
             <div class="section" id="section-overview">
                 <div class="page-head"><h2>Overview</h2><p>Live picture across every fund.</p></div>
@@ -365,9 +482,12 @@
                         </div>
                         <div class="span-all"><label class="f-label">Description</label><textarea class="input" id="f_desc" rows="2" placeholder="What is this fund for?"></textarea></div>
                     </div>
+                    <div style="display:none;" id="f_editingSlug"></div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="f_saveBtn">Save fund</button>
                         <button class="btn btn-outline" id="f_clearBtn">Clear</button>
+                        <button class="btn btn-outline" id="f_archiveBtn" style="display:none;">📦 Archive fund</button>
+                        <button class="btn" style="background:#dc2626; color:#fff;" id="f_deleteBtn" style="display:none;">🗑️ Delete fund</button>
                         <span class="msg" id="f_msg"></span>
                     </div>
                 </div>
@@ -400,7 +520,7 @@
 
             <!-- FAMILIES -->
             <div class="section" id="section-families">
-                <div class="page-head"><h2>Families</h2><p>Group believers into households. Sandha (monthly dues) is billed per family once grouped — see the Sandha tab.</p></div>
+                <div class="page-head"><h2>Families</h2><p>Group believers into households. Subscriptions (monthly dues) is billed per family once grouped — see the Subscriptions tab.</p></div>
                 <div class="card">
                     <h3>Create a family</h3>
                     <div class="form-grid">
@@ -483,49 +603,49 @@
                 </div>
             </div>
 
-            <!-- SANDHA -->
-            <div class="section" id="section-sandha">
-                <div class="page-head"><h2>Sandha</h2><p>Monthly membership dues — billed once per family (paid by the head) once grouped in the Families tab, and individually for anyone not yet grouped. The whole church sees the status on the public Sandha page.</p></div>
-                <div class="kpi-grid" id="sa_kpis"></div>
+            <!-- SUBSCRIPTIONS -->
+            <div class="section" id="section-subscriptions">
+                <div class="page-head"><h2>Subscriptions</h2><p>Monthly membership dues — billed once per family (paid by the head) once grouped in the Families tab, and individually for anyone not yet grouped. The whole church sees the status on the public Subscriptions page.</p></div>
+                <div class="kpi-grid" id="sub_kpis"></div>
                 <div class="card">
-                    <h3>Monthly Sandha amount</h3>
+                    <h3>Monthly Subscriptions amount</h3>
                     <div style="display:flex; gap:10px; align-items:end; flex-wrap:wrap;">
-                        <div><label class="f-label">Amount (₹) — per family, or per believer if ungrouped</label><input class="input" id="sa_amount" type="number" min="0" style="max-width:280px;"></div>
-                        <button class="btn btn-primary" id="sa_saveAmount">Save amount</button>
-                        <span class="msg" id="sa_amountMsg"></span>
+                        <div><label class="f-label">Amount (₹) — per family, or per believer if ungrouped</label><input class="input" id="sub_amount" type="number" min="0" style="max-width:280px;"></div>
+                        <button class="btn btn-primary" id="sub_saveAmount">Save amount</button>
+                        <span class="msg" id="sub_amountMsg"></span>
                     </div>
                 </div>
                 <div class="card">
                     <h3>Add a believer</h3>
                     <p class="msg" style="margin-bottom:10px;">Adds a standalone individual (not part of any family yet) — head to the Families tab to build out full households.</p>
                     <div class="form-grid">
-                        <div><label class="f-label">Full name *</label><input class="input" id="sa_newName"></div>
-                        <div><label class="f-label">Email</label><input class="input" id="sa_newEmail" type="email"></div>
-                        <div><label class="f-label">Phone</label><input class="input" id="sa_newPhone"></div>
-                        <div><label class="f-label">Joined on</label><input class="input" id="sa_newJoin" type="date"></div>
+                        <div><label class="f-label">Full name *</label><input class="input" id="sub_newName"></div>
+                        <div><label class="f-label">Email</label><input class="input" id="sub_newEmail" type="email"></div>
+                        <div><label class="f-label">Phone</label><input class="input" id="sub_newPhone"></div>
+                        <div><label class="f-label">Joined on</label><input class="input" id="sub_newJoin" type="date"></div>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-primary" id="sa_addBtn">Add believer</button>
-                        <span class="msg" id="sa_addMsg"></span>
+                        <button class="btn btn-primary" id="sub_addBtn">Add believer</button>
+                        <span class="msg" id="sub_addMsg"></span>
                     </div>
                 </div>
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
-                        <h3 style="margin:0;">Sandha status — <span id="sa_monthLabel"></span></h3>
+                        <h3 style="margin:0;">Subscriptions status — <span id="sub_monthLabel"></span></h3>
                         <div style="display:flex; gap:8px; align-items:center;">
-                            <input class="input" id="sa_month" type="month" style="max-width:170px;">
-                            <input class="input" id="sa_search" placeholder="Search family or believer…" style="max-width:200px;">
+                            <input class="input" id="sub_month" type="month" style="max-width:170px;">
+                            <input class="input" id="sub_search" placeholder="Search family or believer…" style="max-width:200px;">
                         </div>
                     </div>
                     <h4 style="font-size:13px; color:var(--text-soft); margin:0 0 8px;">Families</h4>
-                    <div class="table-wrap"><table id="sa_famTable"><thead><tr>
+                    <div class="table-wrap"><table id="sub_famTable"><thead><tr>
                         <th>Family</th><th>Head</th><th>Members</th><th>Status</th><th>Paid on</th><th>Amount</th><th></th>
                     </tr></thead><tbody></tbody></table></div>
                     <h4 style="font-size:13px; color:var(--text-soft); margin:20px 0 8px;">Individuals not yet in a family</h4>
-                    <div class="table-wrap"><table id="sa_table"><thead><tr>
+                    <div class="table-wrap"><table id="sub_table"><thead><tr>
                         <th>Member</th><th>Status</th><th>Paid on</th><th>Amount</th><th></th>
                     </tr></thead><tbody></tbody></table></div>
-                    <div class="btn-row"><span class="msg" id="sa_msg"></span></div>
+                    <div class="btn-row"><span class="msg" id="sub_msg"></span></div>
                 </div>
             </div>
 
@@ -574,6 +694,8 @@
                         <div><label class="f-label">Estimated cost (₹) *</label><input class="input" id="w_cost" type="number"></div>
                         <div><label class="f-label">Priority</label><select class="input" id="w_priority"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
                         <div class="span-all"><label class="f-label">Notes</label><textarea class="input" id="w_notes" rows="2"></textarea></div>
+                        <div class="span-all"><label class="f-label">Image (optional)</label><input class="input" id="w_imageFile" type="file" accept="image/jpeg,image/png,image/webp"></div>
+                        <div class="span-all" id="w_imagePreviewContainer" style="display:none;"><img id="w_imagePreview" style="max-width:200px;max-height:200px;border-radius:8px;"></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="w_saveBtn">Save item</button>
@@ -822,12 +944,13 @@
             editingFundSlug: null,
             editingPurchaseId: null,
             editingWishlistId: null,
+            wishlistImageUrl: null,
             loaded: {}
         };
         var PERMISSION_SCOPES = [
             "edit_purchases", "edit_wishlist", "view_members", "manage_members",
             "manage_roles", "manage_funds", "delete_funds", "view_audit", "manage_expenses",
-            "manage_sandha", "manage_content"
+            "manage_subscriptions", "manage_content"
         ];
         // Two-level nav: a handful of top-level groups, each expanding to its
         // pages — replaces the old flat 13-item list that had to be rendered
@@ -842,7 +965,7 @@
             { id: "giving", icon: "🏛️", label: "Giving", items: [
                 ["funds", "🏛️", "Funds"],
                 ["contributions", "📒", "Contributions"],
-                ["sandha", "🪙", "Sandha"],
+                ["subscriptions", "🪙", "Subscriptions"],
                 ["purchases", "🛍️", "Purchases"],
                 ["expenses", "💸", "Expenses"]
             ] },
@@ -1191,6 +1314,26 @@
                 $("f_goal").value = f.goalAmount; $("f_desc").value = f.description || "";
                 $("f_visibility").value = f.visibility;
                 $("f_name").disabled = $("f_slug").disabled = $("f_desc").disabled = $("f_visibility").disabled = !!f.isSystem;
+
+                // Show delete/archive buttons only for non-system funds
+                var archiveBtn = $("f_archiveBtn");
+                var deleteBtn = $("f_deleteBtn");
+                if (!f.isSystem) {
+                    var identity = readStoredIdentity();
+                    var isSuperAdmin = identity && identity.email === "albertjoshrock101@gmail.com";
+
+                    if (isSuperAdmin) {
+                        archiveBtn.style.display = "none";
+                        deleteBtn.style.display = "inline-flex";
+                    } else {
+                        archiveBtn.style.display = "inline-flex";
+                        deleteBtn.style.display = "none";
+                    }
+                } else {
+                    archiveBtn.style.display = "none";
+                    deleteBtn.style.display = "none";
+                }
+
                 window.scrollTo({ top: 0, behavior: "smooth" });
             } else if (act === "delete") {
                 if (!confirm('Delete fund "' + f.name + '"?\n\nThis is a soft delete — contribution records are preserved. Only super admins can do this.')) return;
@@ -1230,6 +1373,8 @@
         function clearFundForm() {
             state.editingFundSlug = null;
             $("fundFormTitle").textContent = "Create a fund";
+            $("f_archiveBtn").style.display = "none";
+            $("f_deleteBtn").style.display = "none";
             ["f_name", "f_slug", "f_goal", "f_desc"].forEach(function (id) { $(id).value = ""; $(id).disabled = false; });
             $("f_visibility").value = "public"; $("f_visibility").disabled = false;
         }
@@ -1370,7 +1515,15 @@
                 return (f.members || []).some(function (m) { return (m.name || "").toLowerCase().indexOf(q) > -1; });
             });
             $("fam_count").textContent = (state.familiesCache || []).length;
-            $("fam_list").innerHTML = families.map(function (f) {
+            var header = '<div class="family-list-header">' +
+                        '<span>Family Name</span>' +
+                        '<span>Members</span>' +
+                        '<span>Head</span>' +
+                        '<span>Address</span>' +
+                        '<span>Actions</span>' +
+                        '</div>';
+
+            $("fam_list").innerHTML = header + families.map(function (f) {
                 var membersHtml = (f.members || []).map(function (m) {
                     return '<div class="family-member-item">' +
                         '<span class="fm-name">' + esc(m.name) + (m.id === f.headMemberId ? ' <span class="pill pill-accent">Head</span>' : "") + "</span>" +
@@ -1564,35 +1717,35 @@
                 .catch(function (e) { setMsg("p_msg", e.message, "err"); });
         }
 
-        // ═══════════════ Sandha ═══════════════
-        function loadSandha() {
-            if (!$("sa_month").value) $("sa_month").value = new Date().toISOString().substring(0, 7);
+        // ═══════════════ Subscriptions ═══════════════
+        function loadSubscriptions() {
+            if (!$("sub_month").value) $("sub_month").value = new Date().toISOString().substring(0, 7);
             fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
                 .then(function (r) { return r.json(); })
-                .then(function (d) { $("sa_amount").value = (d.settings && d.settings.sandha_amount) || 0; });
-            fetchSandha();
+                .then(function (d) { $("sub_amount").value = (d.settings && d.settings.sandha_amount) || 0; });
+            fetchSubscriptions();
         }
-        function fetchSandha() {
-            var month = $("sa_month").value || new Date().toISOString().substring(0, 7);
-            $("sa_monthLabel").textContent = month;
-            api("/api/sandha?month=" + month + "&_t=" + Date.now()).then(function (d) {
-                if (!d.success) { setMsg("sa_msg", d.message || "Failed to load", "err"); return; }
-                state.sandhaCache = d;
+        function fetchSubscriptions() {
+            var month = $("sub_month").value || new Date().toISOString().substring(0, 7);
+            $("sub_monthLabel").textContent = month;
+            api("/api/subscriptions?month=" + month + "&_t=" + Date.now()).then(function (d) {
+                if (!d.success) { setMsg("sub_msg", d.message || "Failed to load", "err"); return; }
+                state.subscriptionsCache = d;
                 var t = d.totals || {};
                 var expected = (t.paidCount + t.pendingCount) * (Number(d.amount) || 0);
-                $("sa_kpis").innerHTML =
+                $("sub_kpis").innerHTML =
                     kpi("Paid this month", t.paidCount + " / " + (t.paidCount + t.pendingCount), "families + individuals") +
                     kpi("Collected", inr(t.collected), "this month") +
                     kpi("Pending", String(t.pendingCount), "yet to pay") +
                     kpi("Monthly amount", inr(d.amount), expected ? "expected " + inr(expected) : "set the amount below");
-                renderSandhaFamiliesTable();
-                renderSandhaTable();
-            }).catch(function (e) { setMsg("sa_msg", e.message, "err"); });
+                renderSubscriptionsFamiliesTable();
+                renderSubscriptionsTable();
+            }).catch(function (e) { setMsg("sub_msg", e.message, "err"); });
         }
-        function renderSandhaFamiliesTable() {
-            var d = state.sandhaCache;
+        function renderSubscriptionsFamiliesTable() {
+            var d = state.subscriptionsCache;
             if (!d) return;
-            var q = ($("sa_search").value || "").toLowerCase();
+            var q = ($("sub_search").value || "").toLowerCase();
             var month = d.month;
             var fam = d.families || { paid: [], pending: [] };
             var rows = [];
@@ -1601,7 +1754,7 @@
             rows.sort(function (a, b) { return a.familyName.localeCompare(b.familyName); });
             rows = rows.filter(function (r) { return !q || r.familyName.toLowerCase().indexOf(q) > -1 || (r.headMemberName || "").toLowerCase().indexOf(q) > -1; });
 
-            var tb = $("sa_famTable").querySelector("tbody");
+            var tb = $("sub_famTable").querySelector("tbody");
             tb.innerHTML = rows.map(function (r) {
                 return "<tr><td><strong>" + esc(r.familyName) + "</strong></td>" +
                     "<td>" + esc(r.headMemberName || "—") + "</td>" +
@@ -1620,16 +1773,16 @@
                 b.onclick = function () {
                     var action = b.dataset.act === "mark" ? "mark_paid" : "unmark";
                     b.disabled = true;
-                    api("/api/sandha", { method: "POST", body: JSON.stringify({ action: action, familyId: Number(b.dataset.id), month: month }) })
-                        .then(function (res) { setMsg("sa_msg", res.message, res.success ? "ok" : "err"); fetchSandha(); })
-                        .catch(function (e) { b.disabled = false; setMsg("sa_msg", e.message, "err"); });
+                    api("/api/subscriptions", { method: "POST", body: JSON.stringify({ action: action, familyId: Number(b.dataset.id), month: month }) })
+                        .then(function (res) { setMsg("sub_msg", res.message, res.success ? "ok" : "err"); fetchSubscriptions(); })
+                        .catch(function (e) { b.disabled = false; setMsg("sub_msg", e.message, "err"); });
                 };
             });
         }
-        function renderSandhaTable() {
-            var d = state.sandhaCache;
+        function renderSubscriptionsTable() {
+            var d = state.subscriptionsCache;
             if (!d) return;
-            var q = ($("sa_search").value || "").toLowerCase();
+            var q = ($("sub_search").value || "").toLowerCase();
             var month = d.month;
             var rows = [];
             (d.paid || []).forEach(function (p) { rows.push({ id: p.id, name: p.name, paid: true, paidOn: p.paidOn, amount: p.amount }); });
@@ -1637,7 +1790,7 @@
             rows.sort(function (a, b) { return a.name.localeCompare(b.name); });
             rows = rows.filter(function (r) { return !q || r.name.toLowerCase().indexOf(q) > -1; });
 
-            var tb = $("sa_table").querySelector("tbody");
+            var tb = $("sub_table").querySelector("tbody");
             tb.innerHTML = rows.map(function (r) {
                 return "<tr><td><strong>" + esc(r.name) + "</strong></td>" +
                     "<td>" + (r.paid ? '<span class="pill pill-green">Paid ✓</span>' : '<span class="pill pill-amber">Pending</span>') + "</td>" +
@@ -1654,33 +1807,33 @@
                 b.onclick = function () {
                     var action = b.dataset.act === "mark" ? "mark_paid" : "unmark";
                     b.disabled = true;
-                    api("/api/sandha", { method: "POST", body: JSON.stringify({ action: action, memberId: Number(b.dataset.id), month: month }) })
-                        .then(function (res) { setMsg("sa_msg", res.message, res.success ? "ok" : "err"); fetchSandha(); })
-                        .catch(function (e) { b.disabled = false; setMsg("sa_msg", e.message, "err"); });
+                    api("/api/subscriptions", { method: "POST", body: JSON.stringify({ action: action, memberId: Number(b.dataset.id), month: month }) })
+                        .then(function (res) { setMsg("sub_msg", res.message, res.success ? "ok" : "err"); fetchSubscriptions(); })
+                        .catch(function (e) { b.disabled = false; setMsg("sub_msg", e.message, "err"); });
                 };
             });
         }
-        function saveSandhaAmount() {
-            var v = String(Number($("sa_amount").value) || 0);
+        function saveSubscriptionsAmount() {
+            var v = String(Number($("sub_amount").value) || 0);
             api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "sandha_amount", value: v }) })
-                .then(function (d) { setMsg("sa_amountMsg", d.success ? "Amount saved" : d.message, d.success ? "ok" : "err"); if (d.success) fetchSandha(); })
-                .catch(function (e) { setMsg("sa_amountMsg", e.message, "err"); });
+                .then(function (d) { setMsg("sub_amountMsg", d.success ? "Amount saved" : d.message, d.success ? "ok" : "err"); if (d.success) fetchSubscriptions(); })
+                .catch(function (e) { setMsg("sub_amountMsg", e.message, "err"); });
         }
         function addBeliever() {
-            var name = $("sa_newName").value.trim();
-            if (!name) { setMsg("sa_addMsg", "Name is required", "err"); return; }
-            $("sa_addBtn").disabled = true;
+            var name = $("sub_newName").value.trim();
+            if (!name) { setMsg("sub_addMsg", "Name is required", "err"); return; }
+            $("sub_addBtn").disabled = true;
             api("/api/members", {
                 method: "POST",
-                body: JSON.stringify({ name: name, email: $("sa_newEmail").value.trim(), phone: $("sa_newPhone").value.trim(), firstJoinDate: $("sa_newJoin").value })
+                body: JSON.stringify({ name: name, email: $("sub_newEmail").value.trim(), phone: $("sub_newPhone").value.trim(), firstJoinDate: $("sub_newJoin").value })
             }).then(function (d) {
-                $("sa_addBtn").disabled = false;
-                setMsg("sa_addMsg", d.message, d.success ? "ok" : "err");
+                $("sub_addBtn").disabled = false;
+                setMsg("sub_addMsg", d.message, d.success ? "ok" : "err");
                 if (d.success) {
-                    ["sa_newName", "sa_newEmail", "sa_newPhone", "sa_newJoin"].forEach(function (id) { $(id).value = ""; });
-                    fetchSandha();
+                    ["sub_newName", "sub_newEmail", "sub_newPhone", "sub_newJoin"].forEach(function (id) { $(id).value = ""; });
+                    fetchSubscriptions();
                 }
-            }).catch(function (e) { $("sa_addBtn").disabled = false; setMsg("sa_addMsg", e.message, "err"); });
+            }).catch(function (e) { $("sub_addBtn").disabled = false; setMsg("sub_addMsg", e.message, "err"); });
         }
 
         // ═══════════════ Expenses ═══════════════
@@ -1781,7 +1934,9 @@
                 });
                 var host = $("w_list");
                 host.innerHTML = sorted.map(function (w) {
+                    var imageHtml = w.image_url ? '<img src="' + w.image_url + '" style="width:100%;height:150px;object-fit:cover;border-radius:6px;margin-bottom:8px;">' : '';
                     return '<div class="wishlist-item-card priority-' + String(w.priority || "medium").toLowerCase() + '">' +
+                        imageHtml +
                         '<div class="wi-top"><div class="wi-name">' + (iconFor[w.priority] || "⚪") + " " + esc(w.name) + '</div><div class="wi-cost">' + inr(w.cost) + "</div></div>" +
                         '<div class="wi-notes">' + esc(w.notes || "No notes") + "</div>" +
                         '<div class="wi-actions"><button class="mini-btn" data-act="edit" data-id="' + w.id + '">Edit</button>' +
@@ -1800,6 +1955,14 @@
             $("w_formTitle").textContent = "Edit wishlist item — #" + id;
             $("w_name").value = w.name; $("w_cost").value = w.cost;
             $("w_priority").value = w.priority || "Medium"; $("w_notes").value = w.notes || "";
+            if (w.image_url) {
+                $("w_imagePreview").src = w.image_url;
+                $("w_imagePreviewContainer").style.display = "block";
+                state.wishlistImageUrl = w.image_url;
+            } else {
+                $("w_imagePreviewContainer").style.display = "none";
+                state.wishlistImageUrl = null;
+            }
         }
         function deleteWishlist(id) {
             if (!confirm("Delete wishlist item #" + id + "?")) return;
@@ -1810,12 +1973,30 @@
         function clearWishlistForm() {
             state.editingWishlistId = null;
             $("w_formTitle").textContent = "Add wishlist item";
-            ["w_name", "w_cost", "w_notes"].forEach(function (id) { $(id).value = ""; });
+            ["w_name", "w_cost", "w_notes", "w_imageFile"].forEach(function (id) { $(id).value = ""; });
             $("w_priority").value = "Medium";
+            $("w_imagePreviewContainer").style.display = "none";
+            state.wishlistImageUrl = null;
         }
         function saveWishlist() {
             var payload = { name: $("w_name").value.trim(), cost: Number($("w_cost").value) || 0, priority: $("w_priority").value, notes: $("w_notes").value.trim() };
             if (!payload.name || !payload.cost) { setMsg("w_msg", "Name and cost are required", "err"); return; }
+
+            var imageFile = $("w_imageFile").files[0];
+            if (imageFile) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    payload.imageUrl = e.target.result;
+                    submitWishlist(payload);
+                };
+                reader.onerror = function () { setMsg("w_msg", "Failed to read image file", "err"); };
+                reader.readAsDataURL(imageFile);
+            } else {
+                if (state.wishlistImageUrl) payload.imageUrl = state.wishlistImageUrl;
+                submitWishlist(payload);
+            }
+        }
+        function submitWishlist(payload) {
             var req = state.editingWishlistId
                 ? api("/api/wishlist", { method: "PUT", body: JSON.stringify(Object.assign(payload, { id: state.editingWishlistId })) })
                 : api("/api/wishlist", { method: "POST", body: JSON.stringify(payload) });
@@ -2201,7 +2382,7 @@
             overview: loadOverview, funds: loadFunds, members: loadMembers,
             families: loadFamilies,
             contributions: loadContributions, purchases: loadPurchases,
-            sandha: loadSandha, expenses: loadExpenses, wishlist: loadWishlist,
+            sandha: loadSubscriptions, expenses: loadExpenses, wishlist: loadWishlist,
             roles: loadRoles, audit: loadAudit,
             verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {}
         };
@@ -2214,13 +2395,100 @@
             btn.onclick = function () { window.LJMTheme.toggle(); paint(); };
         }
 
+        function initProfileMenu() {
+            var profileBtn = $("profileBtn");
+            var profileDropdown = $("profileDropdown");
+            var profileNameEl = $("profileNameDisplay");
+            var profileEmailEl = $("profileEmailDisplay");
+            var profileAvatarEl = $("profileAvatar");
+            var profileNameDisplay = $("profileName");
+            var changePasswordBtn = $("changePasswordBtn");
+            var signOutBtn = $("signOutBtn");
+
+            if (!profileBtn || !profileDropdown) return;
+
+            // Update profile info
+            function updateProfile() {
+                var identity = readStoredIdentity();
+                if (identity && identity.name) {
+                    var firstLetter = (identity.name.charAt(0) || "?").toUpperCase();
+                    profileAvatarEl.textContent = firstLetter;
+                    profileNameDisplay.textContent = identity.name;
+                    profileNameEl.textContent = "👤 " + identity.name;
+                    profileEmailEl.textContent = identity.email || "—";
+                } else {
+                    profileAvatarEl.textContent = "👤";
+                    profileNameDisplay.textContent = "Admin";
+                    profileNameEl.textContent = "—";
+                    profileEmailEl.textContent = "—";
+                }
+            }
+
+            // Toggle dropdown
+            profileBtn.onclick = function (e) {
+                e.stopPropagation();
+                var isHidden = profileDropdown.hasAttribute("hidden");
+                if (isHidden) {
+                    profileDropdown.removeAttribute("hidden");
+                    updateProfile();
+                } else {
+                    profileDropdown.setAttribute("hidden", "");
+                }
+            };
+
+            // Close dropdown on outside click
+            document.addEventListener("click", function (e) {
+                if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+                    profileDropdown.setAttribute("hidden", "");
+                }
+            });
+
+            // Change password (placeholder)
+            changePasswordBtn.onclick = function (e) {
+                e.preventDefault();
+                alert("Password change feature coming soon. For now, use your Google account settings.");
+            };
+
+            // Sign out
+            signOutBtn.onclick = function (e) {
+                e.preventDefault();
+                sessionStorage.removeItem(TOKEN_KEY);
+                if (window.LJMAdmin) LJMAdmin.destroySession();
+                location.reload();
+            };
+
+            // Initial update
+            updateProfile();
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             buildNav();
             wireThemeToggle();
+            initProfileMenu();
             $("navGroupSheet").querySelector(".ljmh-sheet-backdrop").addEventListener("click", closeGroupSheet);
             document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeGroupSheet(); });
             initGate();
-            $("f_saveBtn").onclick = saveFund; $("f_clearBtn").onclick = clearFundForm;
+            $("f_saveBtn").onclick = saveFund;
+            $("f_clearBtn").onclick = clearFundForm;
+            $("f_archiveBtn").onclick = function () {
+                if (!state.editingFundSlug) return;
+                if (!confirm("Archive this fund? It will be hidden from the public but data is preserved.")) return;
+                api("/api/funds", {
+                    method: "PUT",
+                    body: JSON.stringify({ slug: state.editingFundSlug, action: "archive" })
+                }).then(function (d) {
+                    setMsg("f_msg", d.message, d.success ? "ok" : "err");
+                    if (d.success) { clearFundForm(); loadFunds(); state.loaded.overview = false; }
+                }).catch(function (e) { setMsg("f_msg", e.message, "err"); });
+            };
+            $("f_deleteBtn").onclick = function () {
+                if (!state.editingFundSlug) return;
+                if (!confirm('Permanently delete this fund?\n\nThis is a soft delete — contribution records are preserved.\n\nOnly super admins can do this.')) return;
+                api("/api/funds?slug=" + encodeURIComponent(state.editingFundSlug), { method: "DELETE" }).then(function (d) {
+                    setMsg("f_msg", d.message, d.success ? "ok" : "err");
+                    if (d.success) { clearFundForm(); loadFunds(); state.loaded.overview = false; }
+                }).catch(function (e) { setMsg("f_msg", e.message, "err"); });
+            };
             $("f_name").oninput = function () { if (!state.editingFundSlug) $("f_slug").placeholder = $("f_name").value.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-"); };
             $("memberRefresh").onclick = loadMembers;
             $("memberSearch").oninput = renderMembers;
@@ -2230,6 +2498,17 @@
             $("p_saveBtn").onclick = savePurchase; $("p_clearBtn").onclick = clearPurchaseForm;
             $("x_saveBtn").onclick = saveExpense; $("x_clearBtn").onclick = clearExpenseForm;
             $("w_saveBtn").onclick = saveWishlist; $("w_clearBtn").onclick = clearWishlistForm;
+            $("w_imageFile").onchange = function () {
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $("w_imagePreview").src = e.target.result;
+                        $("w_imagePreviewContainer").style.display = "block";
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
             $("r_saveBtn").onclick = saveRole; $("r_linkBtn").onclick = linkEmail;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };
@@ -2246,10 +2525,10 @@
             $("ab_addMissionBtn").onclick = function () { state.aboutContent.missionCards.push({ icon: "✨", title: "", body: "" }); renderMissionRows(); };
             $("ab_addVerseBtn").onclick = function () { state.aboutContent.verses.push({ text: "", ref: "" }); renderVerseRows(); };
             $("ab_addConnectBtn").onclick = function () { state.aboutContent.connectLinks.push({ icon: "🔗", label: "", url: "" }); renderConnectRows(); };
-            $("sa_saveAmount").onclick = saveSandhaAmount;
-            $("sa_addBtn").onclick = addBeliever;
-            $("sa_month").onchange = fetchSandha;
-            $("sa_search").oninput = renderSandhaTable;
+            $("sub_saveAmount").onclick = saveSandhaAmount;
+            $("sub_addBtn").onclick = addBeliever;
+            $("sub_month").onchange = fetchSubscriptions;
+            $("sub_search").oninput = renderSubscriptionsTable;
             $("st_runBtn").onclick = runSelfTest;
             $("logoutLink").onclick = function () {
                 sessionStorage.removeItem(TOKEN_KEY);

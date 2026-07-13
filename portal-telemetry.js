@@ -59,7 +59,7 @@
                 '<div class="ljm-gate-mark">🕊️</div>' +
                 '<div class="ljm-gate-title">Welcome to LJM Church</div>' +
                 '<div class="ljm-gate-sub">Light of Jesus Ministry</div>' +
-                '<div class="ljm-gate-body">Our church family’s home for giving, Sandha, and stewardship — open and transparent before God and one another.</div>' +
+                '<div class="ljm-gate-body">Our church family’s home for giving, Subscriptions, and stewardship — open and transparent before God and one another.</div>' +
                 '<div id="ljmGateBtn" style="min-height:44px;display:flex;justify-content:center;"></div>' +
                 (forced ? "" : '<button type="button" id="ljmGateGuest" class="ljm-gate-guest">Continue as guest →</button>') +
                 '<div id="ljmGateErr" style="font-size:12px;color:#d06248;min-height:16px;margin-top:4px;"></div>' +

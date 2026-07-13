@@ -8,7 +8,7 @@ This is a **static site with no build step** — plain HTML/CSS/vanilla JavaScri
 
 | Layer | What it is |
 |---|---|
-| Frontend | Multi-page site (`index.html`, `admin.html`, `members.html`, `funds.html`, `impact.html`, `sandha.html`, `about.html`, `member.html`), shared logic in root-level `.js`/`.css` files |
+| Frontend | Multi-page site (`index.html`, `admin.html`, `members.html`, `funds.html`, `impact.html`, `subscriptions.html`, `about.html`, `member.html`), shared logic in root-level `.js`/`.css` files |
 | Backend | [Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/) — one file per route under `functions/api/*.js` |
 | Database | [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite), binding name `DB` — schema in `schema.sql`, incremental changes in `migrations/*.sql` |
 | Payments | [Razorpay](https://razorpay.com/) checkout, verified server-side in `functions/api/webhook.js` |
@@ -38,7 +38,7 @@ See [TESTING.md](TESTING.md) for how the test harness works and the conventions 
 
 - **[ADMIN_CONSOLE_GUIDE.md](ADMIN_CONSOLE_GUIDE.md)** — the admin console's navigation structure (grouped sections) and what each one does.
 - **[THEME_AND_DESIGN_SYSTEM.md](THEME_AND_DESIGN_SYSTEM.md)** — the light/dark design token system, how dark mode works, and the color palette.
-- **[FAMILIES_AND_SANDHA.md](FAMILIES_AND_SANDHA.md)** — grouping believers into families/households, and how Sandha (monthly dues) billing works per-family vs. per-individual.
+- **[FAMILIES_AND_SANDHA.md](FAMILIES_AND_SANDHA.md)** — grouping believers into families/households, and how Subscriptions (monthly dues) billing works per-family vs. per-individual.
 - **[BIBLE_VERSES.md](BIBLE_VERSES.md)** — the Bible verse data dictionary, the King James Version starter seed, and how to import a complete translation (including Tamil O.V.).
 - **[TESTING.md](TESTING.md)** — the test suite, and the project's other (non-automated) verification tools.
 - **[DATABASE_SETUP.md](DATABASE_SETUP.md)** — creating and binding the D1 database.

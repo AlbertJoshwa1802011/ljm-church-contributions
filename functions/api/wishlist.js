@@ -12,7 +12,7 @@ export async function onRequestGet(context) {
   }
 
   try {
-    const query = await db.prepare("SELECT id, item_name AS name, cost, priority, notes FROM wishlist ORDER BY priority DESC, created_at DESC").all();
+    const query = await db.prepare("SELECT id, item_name AS name, cost, priority, notes, image_url FROM wishlist ORDER BY priority DESC, created_at DESC").all();
     const wishlist = query.results || [];
 
     return new Response(JSON.stringify({ wishlist }), {
@@ -40,22 +40,22 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const { name, cost, priority, notes } = body;
+    const { name, cost, priority, notes, imageUrl } = body;
 
     if (!name || !cost) {
       return new Response(JSON.stringify({ error: "Missing name or cost parameters" }), { status: 400 });
     }
 
     const result = await db.prepare(
-      "INSERT INTO wishlist (item_name, cost, priority, notes) VALUES (?, ?, ?, ?)"
+      "INSERT INTO wishlist (item_name, cost, priority, notes, image_url) VALUES (?, ?, ?, ?, ?)"
     )
-    .bind(name, Number(cost), priority || "Medium", notes || "")
+    .bind(name, Number(cost), priority || "Medium", notes || "", imageUrl || null)
     .run();
 
     await audit(context, {
       actorEmail: auth.email, actorType: "admin", verified: auth.verified,
       action: "wishlist.add", entityType: "wishlist", entityId: result.meta.last_row_id,
-      details: { name, cost: Number(cost), priority: priority || "Medium" }
+      details: { name, cost: Number(cost), priority: priority || "Medium", hasImage: !!imageUrl }
     });
 
     return new Response(JSON.stringify({ success: true, message: "Wishlist item added successfully", id: result.meta.last_row_id }), {
@@ -79,22 +79,22 @@ export async function onRequestPut(context) {
 
   try {
     const body = await request.json();
-    const { id, name, cost, priority, notes } = body;
+    const { id, name, cost, priority, notes, imageUrl } = body;
 
     if (!id || !name || !cost) {
       return new Response(JSON.stringify({ error: "Missing id, name, or cost parameters" }), { status: 400 });
     }
 
     await db.prepare(
-      "UPDATE wishlist SET item_name = ?, cost = ?, priority = ?, notes = ? WHERE id = ?"
+      "UPDATE wishlist SET item_name = ?, cost = ?, priority = ?, notes = ?, image_url = ? WHERE id = ?"
     )
-    .bind(name, Number(cost), priority || "Medium", notes || "", Number(id))
+    .bind(name, Number(cost), priority || "Medium", notes || "", imageUrl || null, Number(id))
     .run();
 
     await audit(context, {
       actorEmail: auth.email, actorType: "admin", verified: auth.verified,
       action: "wishlist.update", entityType: "wishlist", entityId: id,
-      details: { name, cost: Number(cost), priority: priority || "Medium" }
+      details: { name, cost: Number(cost), priority: priority || "Medium", hasImage: !!imageUrl }
     });
 
     return new Response(JSON.stringify({ success: true, message: "Wishlist item updated successfully" }), {

@@ -2,19 +2,19 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
 import * as families from "../../functions/api/families.js";
-import * as sandha from "../../functions/api/sandha.js";
+import * as subscriptions from "../../functions/api/subscriptions.js";
 
 async function readJson(response) {
   return JSON.parse(await response.text());
 }
 
-async function setSandhaAmount(db, amount) {
+async function setSubscriptionsAmount(db, amount) {
   await db.prepare("UPDATE config SET value = ? WHERE key = 'sandha_amount'").bind(String(amount)).run();
 }
 
-test("sandha: family payment is billed once regardless of member count, individual stays untouched", async () => {
+test("subscriptions: family payment is billed once regardless of member count, individual stays untouched", async () => {
   const db = freshDb();
-  await setSandhaAmount(db, 100);
+  await setSubscriptionsAmount(db, 100);
 
   // An ungrouped individual, tracked exactly as before.
   const soloRes = await db.prepare("INSERT INTO members (name) VALUES ('Solo Believer')").run();
@@ -38,7 +38,7 @@ test("sandha: family payment is billed once regardless of member count, individu
   const month = "2026-07";
 
   // Mark the family paid — should default paid_by to the head, and be ONE payment, not 3.
-  const markFamily = await readJson(await sandha.onRequestPost(makeContext({
+  const markFamily = await readJson(await subscriptions.onRequestPost(makeContext({
     db, body: { action: "mark_paid", familyId, month }
   })));
   assert.equal(markFamily.success, true, markFamily.message);
@@ -52,14 +52,14 @@ test("sandha: family payment is billed once regardless of member count, individu
   assert.equal(paymentRow.paid_by_member_id, head.id, "should default to the family head as payer");
 
   // Mark the solo believer paid individually — unaffected by family logic.
-  const markSolo = await readJson(await sandha.onRequestPost(makeContext({
+  const markSolo = await readJson(await subscriptions.onRequestPost(makeContext({
     db, body: { action: "mark_paid", memberId: soloId, month }
   })));
   assert.equal(markSolo.success, true, markSolo.message);
 
   // The month view should show: 1 paid individual, 1 paid family, family members
   // NOT double-counted as individuals.
-  const view = await readJson(await sandha.onRequestGet(makeContext({ db, url: `https://test.local/api/sandha?month=${month}` })));
+  const view = await readJson(await subscriptions.onRequestGet(makeContext({ db, url: `https://test.local/api/subscriptions?month=${month}` })));
   assert.equal(view.paid.length, 1);
   assert.equal(view.paid[0].name, "Solo Believer");
   assert.equal(view.families.paid.length, 1);
@@ -73,21 +73,21 @@ test("sandha: family payment is billed once regardless of member count, individu
   assert.equal(anyFamilyMemberInPending, false);
 });
 
-test("sandha: cannot mark a family member paid individually once grouped", async () => {
+test("subscriptions: cannot mark a family member paid individually once grouped", async () => {
   const db = freshDb();
   const createRes = await readJson(await families.onRequestPost(makeContext({
     db, body: { familyName: "Solo In Family", members: [{ name: "Grouped Person", relation: "Head" }] }
   })));
   const member = await db.prepare("SELECT id FROM members WHERE name = 'Grouped Person'").first();
 
-  const res = await readJson(await sandha.onRequestPost(makeContext({
+  const res = await readJson(await subscriptions.onRequestPost(makeContext({
     db, body: { action: "mark_paid", memberId: member.id, month: "2026-07" }
   })));
   assert.equal(res.success, false);
   assert.match(res.message, /part of a family/);
 });
 
-test("sandha: unmarking a family payment removes it and it reverts to pending", async () => {
+test("subscriptions: unmarking a family payment removes it and it reverts to pending", async () => {
   const db = freshDb();
   const createRes = await readJson(await families.onRequestPost(makeContext({
     db, body: { familyName: "Toggle Family", members: [{ name: "Toggle Head", relation: "Head" }] }
@@ -95,27 +95,27 @@ test("sandha: unmarking a family payment removes it and it reverts to pending", 
   const familyId = createRes.id;
   const month = "2026-08";
 
-  await sandha.onRequestPost(makeContext({ db, body: { action: "mark_paid", familyId, month } }));
-  let view = await readJson(await sandha.onRequestGet(makeContext({ db, url: `https://test.local/api/sandha?month=${month}` })));
+  await subscriptions.onRequestPost(makeContext({ db, body: { action: "mark_paid", familyId, month } }));
+  let view = await readJson(await subscriptions.onRequestGet(makeContext({ db, url: `https://test.local/api/subscriptions?month=${month}` })));
   assert.equal(view.families.paid.length, 1);
 
-  const unmarkRes = await readJson(await sandha.onRequestPost(makeContext({ db, body: { action: "unmark", familyId, month } })));
+  const unmarkRes = await readJson(await subscriptions.onRequestPost(makeContext({ db, body: { action: "unmark", familyId, month } })));
   assert.equal(unmarkRes.success, true);
 
-  view = await readJson(await sandha.onRequestGet(makeContext({ db, url: `https://test.local/api/sandha?month=${month}` })));
+  view = await readJson(await subscriptions.onRequestGet(makeContext({ db, url: `https://test.local/api/subscriptions?month=${month}` })));
   assert.equal(view.families.paid.length, 0);
   assert.equal(view.families.pending.length, 1);
 });
 
-test("sandha: personal history reflects the family's payments once grouped", async () => {
+test("subscriptions: personal history reflects the family's payments once grouped", async () => {
   const db = freshDb();
   const createRes = await readJson(await families.onRequestPost(makeContext({
     db, body: { familyName: "History Family", members: [{ name: "History Head", relation: "Head" }, { name: "History Kid", relation: "Child" }] }
   })));
   const familyId = createRes.id;
-  await sandha.onRequestPost(makeContext({ db, body: { action: "mark_paid", familyId, month: "2026-01" } }));
+  await subscriptions.onRequestPost(makeContext({ db, body: { action: "mark_paid", familyId, month: "2026-01" } }));
 
-  const personal = await readJson(await sandha.onRequestGet(makeContext({ db, url: "https://test.local/api/sandha?member=History%20Kid&year=2026" })));
+  const personal = await readJson(await subscriptions.onRequestGet(makeContext({ db, url: "https://test.local/api/subscriptions?member=History%20Kid&year=2026" })));
   assert.equal(personal.isFamilyBased, true);
   assert.equal(personal.familyName, "History Family");
   assert.equal(personal.paidMonths.length, 1);

@@ -9,7 +9,7 @@ Everything is organized into 5 top-level groups, each expanding to its pages:
 | Group | Pages | What it's for |
 |---|---|---|
 | **Overview** | Overview | Dashboard KPIs, giving trend, fund distribution, recent contributions |
-| **Giving** | Funds, Contributions, Sandha, Purchases, Expenses | Money in and money out |
+| **Giving** | Funds, Contributions, Subscriptions, Purchases, Expenses | Money in and money out |
 | **People** | Members, Families | The church directory and household grouping |
 | **Content** | Wishlist, Verses, About page | What believers see on the public site, editable without a code deploy |
 | **Admin** | Roles, Audit log, Settings, Self-test | Permissions, configuration, and system health |
@@ -40,6 +40,6 @@ Three admin sections exist specifically so the site's content stays current with
 - **Content → Verses**: the Verse of the Month/Year cards shown on the dashboard and to signed-in believers. Search by reference (e.g. `Philippians 4:13`) or keyword, click a result to fill in the reference and text — see [BIBLE_VERSES.md](BIBLE_VERSES.md).
 - **Admin → Settings**: force-login toggle, fund goals, and pastor contact info (name, phone, email, address) — shown at the top of every public page and in the mobile "More" menu.
 
-## Families & Sandha
+## Families & Subscriptions
 
 See [FAMILIES_AND_SANDHA.md](FAMILIES_AND_SANDHA.md) — this is substantial enough to warrant its own document.

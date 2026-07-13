@@ -224,7 +224,7 @@ body::before {
     transform: translateY(-1px);
 }
 .navbar nav a:hover {
-    color: #ffd700; /* gold hover */
+    color: #e2825f; /* gold hover */
 }
 
 /* ===== Container ===== */
@@ -429,7 +429,7 @@ body::before {
 /* Gradient colors for different stats */
 .stat-card .stat-value.goal { color: #2c3e50; }
 .stat-card .stat-value.total {
-    background: linear-gradient(90deg, #ffd700, #f1c40f);
+    background: linear-gradient(90deg, #e2825f, #f1c40f);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1339,9 +1339,101 @@ footer {
     background: linear-gradient(135deg, var(--accent-deep, #c05f3f), var(--accent, #d97757));
 }
 
+/* Fund Card Metadata Styling */
+.fc-name {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #1f1e1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.fc-slug {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.fc-bar {
+    width: 100%;
+    height: 8px;
+    background: #e8e8e8;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.fc-bar div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent, #d97757), var(--accent-deep, #c05f3f));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.fc-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.fc-meta span {
+    flex: 1;
+}
+
+.fc-meta span:last-child {
+    text-align: right;
+    font-weight: 600;
+    color: var(--accent, #d97757);
+}
+
+.fc-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.mini-btn {
+    background: var(--bg-soft, #f0f0f0);
+    border: 1px solid var(--border, #e0e0e0);
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mini-btn:hover {
+    background: var(--accent-soft, #fbeee8);
+    border-color: var(--accent, #d97757);
+    color: var(--accent-deep, #c05f3f);
+}
+
+.mini-btn.danger {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+}
+
+.mini-btn.danger:hover {
+    background: #ffe8e8;
+    border-color: #ff4444;
+    color: #ff4444;
+}
+
 .navbar nav a.active {
-    color: #ffd700;
-    border-bottom: 2px solid #ffd700;
+    color: #e2825f;
+    border-bottom: 2px solid #e2825f;
     padding-bottom: 4px;
 }
 
@@ -1480,27 +1572,72 @@ footer {
 }
 
 @media (max-width: 480px) {
-.fund-heading h2 {
+    .fund-heading h2 {
         font-size: 24px;
-    font-weight: 700;
+        font-weight: 700;
         margin-bottom: 8px;
     }
-    
+
     .fund-subtitle {
         font-size: 12px;
         margin-top: 4px;
         letter-spacing: 0.2px;
     }
-    
+
     .navbar .logo {
         font-size: 16px;
         font-weight: 700;
         max-width: 55%;
     }
-    
+
     .fund-heading {
         margin: 20px 0 15px 0;
         padding: 0 15px;
+    }
+
+    /* Mobile fund card improvements */
+    .fund-card {
+        padding: 18px 16px;
+    }
+
+    .fc-name {
+        font-size: 15px;
+        margin-bottom: 8px;
+    }
+
+    .fc-slug {
+        font-size: 11px;
+        margin-bottom: 10px;
+    }
+
+    .fc-bar {
+        margin-bottom: 10px;
+        height: 6px;
+    }
+
+    .fc-meta {
+        font-size: 12px;
+        margin-bottom: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fc-meta span {
+        width: 100%;
+    }
+
+    .fc-meta span:last-child {
+        text-align: left;
+        margin-top: 4px;
+    }
+
+    .fc-actions {
+        gap: 6px;
+    }
+
+    .mini-btn {
+        padding: 5px 10px;
+        font-size: 11px;
     }
 }
 
@@ -1566,7 +1703,7 @@ footer {
     border: none;
     cursor: pointer;
 
-    background: linear-gradient(135deg, #b08d57, #ffd700);
+    background: linear-gradient(135deg, #b08d57, #e2825f);
     color: #fff;
 
     font-weight: 700;
@@ -1735,7 +1872,7 @@ footer {
     align-items: center;
     font-size: 32px;
     font-weight: bold;
-    color: #ffd700;
+    color: #e2825f;
     animation: pulse 1.5s infinite alternate;
 }
 
@@ -1743,7 +1880,7 @@ footer {
     position: absolute;
     width: 120px;
     height: 120px;
-    border: 4px solid #ffd700;
+    border: 4px solid #e2825f;
     border-radius: 50%;
     animation: rotateHalo 2s linear infinite;
 }
@@ -1763,8 +1900,8 @@ footer {
 }
 
 @keyframes pulse {
-    0% { transform: scale(1); text-shadow: 0 0 5px #ffd700; }
-    100% { transform: scale(1.2); text-shadow: 0 0 15px #ffd700; }
+    0% { transform: scale(1); text-shadow: 0 0 5px #e2825f; }
+    100% { transform: scale(1.2); text-shadow: 0 0 15px #e2825f; }
 }
 
 /* ===== Stat card sub-details ===== */
