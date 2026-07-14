@@ -44,7 +44,7 @@ test("appearance: GET returns nulls for a signed-out caller", async () => {
 test("appearance: PUT then GET round-trips per-mode accents", withVerifiedMember("member@example.com", async () => {
   const db = freshDb();
   const putRes = await appearance.onRequestPut(makeContext({
-    db, method: "PUT", authToken: JWT, body: { accent_light: "ocean", accent_dark: "coral" }
+    db, method: "PUT", authToken: JWT, body: { accent_light: "wedgwood", accent_dark: "claret" }
   }));
   const putResult = await readJson(putRes);
   assert.equal(putResult.success, true, putResult.message);
@@ -52,22 +52,22 @@ test("appearance: PUT then GET round-trips per-mode accents", withVerifiedMember
   const getRes = await appearance.onRequestGet(makeContext({ db, authToken: JWT }));
   const getResult = await readJson(getRes);
   assert.equal(getResult.signedIn, true);
-  assert.equal(getResult.accent_light, "ocean");
-  assert.equal(getResult.accent_dark, "coral");
+  assert.equal(getResult.accent_light, "wedgwood");
+  assert.equal(getResult.accent_dark, "claret");
 }));
 
 test("appearance: partial PUT preserves the other mode's choice", withVerifiedMember("member@example.com", async () => {
   const db = freshDb();
   await appearance.onRequestPut(makeContext({
-    db, method: "PUT", authToken: JWT, body: { accent_light: "teal", accent_dark: "violet" }
+    db, method: "PUT", authToken: JWT, body: { accent_light: "teal", accent_dark: "heather" }
   }));
   // Now update only the dark accent.
   await appearance.onRequestPut(makeContext({
-    db, method: "PUT", authToken: JWT, body: { accent_dark: "rose" }
+    db, method: "PUT", authToken: JWT, body: { accent_dark: "aubergine" }
   }));
   const getResult = await readJson(await appearance.onRequestGet(makeContext({ db, authToken: JWT })));
   assert.equal(getResult.accent_light, "teal", "light choice must be preserved");
-  assert.equal(getResult.accent_dark, "rose");
+  assert.equal(getResult.accent_dark, "aubergine");
 }));
 
 test("appearance: PUT rejects an unknown palette id", withVerifiedMember("member@example.com", async () => {
@@ -83,7 +83,7 @@ test("appearance: PUT rejects an unknown palette id", withVerifiedMember("member
 test("appearance: PUT requires a signed-in caller", async () => {
   const db = freshDb();
   const res = await appearance.onRequestPut(makeContext({
-    db, method: "PUT", authToken: null, body: { accent_light: "ocean" }
+    db, method: "PUT", authToken: null, body: { accent_light: "wedgwood" }
   }));
   assert.equal(res.status, 401);
   assert.equal((await readJson(res)).success, false);
@@ -95,7 +95,7 @@ test("appearance: PUT rejects an unverified (legacy email) token", async () => {
   // the test env, so resolveViewer yields no email -> 401 (still blocked). Even
   // if legacy were enabled it would be verified:false -> 403. Either way, no write.
   const res = await appearance.onRequestPut(makeContext({
-    db, method: "PUT", authToken: "member@example.com", body: { accent_dark: "ocean" }
+    db, method: "PUT", authToken: "member@example.com", body: { accent_dark: "wedgwood" }
   }));
   assert.ok(res.status === 401 || res.status === 403, `expected 401/403, got ${res.status}`);
   assert.equal((await readJson(res)).success, false);

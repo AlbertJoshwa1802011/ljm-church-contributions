@@ -12,7 +12,7 @@ import { resolveViewer, json } from "./_lib.js";
 
 // Keep in sync with the PALETTES catalog in theme.js. Stored as ids (not hex) so
 // the palette's actual colors can change client-side without a data migration.
-const PALETTE_IDS = ["indigo", "violet", "ocean", "teal", "emerald", "coral", "rose", "graphite"];
+const PALETTE_IDS = ["wedgwood", "sage", "heather", "aubergine", "claret", "terracotta", "ochre", "teal", "slate"];
 
 function isValidId(v) {
   return v == null || v === "" || PALETTE_IDS.includes(v);

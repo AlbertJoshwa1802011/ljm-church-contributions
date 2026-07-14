@@ -16,9 +16,9 @@
     --text: #1f1e1a;
     --text-soft: #6e6a5e;
     --text-faint: #a09a8a;
-    --accent: #5046E5;
-    --accent-deep: #3F3BC7;
-    --accent-soft: #ECEBFB;
+    --accent: #3D6079;
+    --accent-deep: #2E4A5E;
+    --accent-soft: #E8ECEF;
     --green: #5f8d4e;
     --green-soft: #eef4ea;
     --red: #b3452f;
@@ -66,11 +66,13 @@
     --text: #f2ede4;
     --text-soft: #bfb7a8;
     --text-faint: #8a8274;
-    /* Softened indigo blue — less bright/saturated to reduce eye strain
-       on the pitch-black background while keeping it refined and readable. */
-    --accent: #6B63D8;
-    --accent-deep: #7B72E8;
-    --accent-soft: rgba(137, 131, 255, 0.16);
+    /* Default accent = Wedgwood, a muted "English heritage" dusty blue. The
+       dark-mode variant is the same hue lifted to a medium tone so it reads as
+       refined against the dark surface (and members can swap it for any palette
+       in the Appearance panel — see theme.js PALETTES). */
+    --accent: #5E90AB;
+    --accent-deep: #A9C7DB;
+    --accent-soft: rgba(94, 144, 171, 0.16);
     --green: #7fb56a;
     --green-soft: rgba(127,181,106,0.14);
     --red: #e0705c;
@@ -544,7 +546,7 @@ button.bottom-nav-item {
 }
 
 [data-theme="dark"] .verse-card {
-    background: linear-gradient(135deg, rgba(137, 131, 255,0.10), rgba(137, 131, 255,0.04)) !important;
+    background: linear-gradient(135deg, rgba(94, 144, 171,0.10), rgba(94, 144, 171,0.04)) !important;
     border-color: var(--border) !important;
 }
 [data-theme="dark"] .verse-text { color: var(--text) !important; }
@@ -1015,7 +1017,7 @@ button.bottom-nav-item {
 .activity-row:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift, 0 8px 24px rgba(0,0,0,0.08)); }
 .activity-avatar {
     width: 40px; height: 40px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent, #5046E5), var(--accent-deep, #3F3BC7));
+    background: linear-gradient(135deg, var(--accent, #3D6079), var(--accent-deep, #2E4A5E));
     color: #fff; font-weight: 700; font-size: 16px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;

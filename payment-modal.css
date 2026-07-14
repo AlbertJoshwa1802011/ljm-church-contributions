@@ -14,7 +14,7 @@
     border: 1px solid var(--border, rgba(0,0,0,0.05));
 }
 .contrib-header {
-    background: linear-gradient(135deg, var(--accent-soft, #ECEBFB), var(--bg-soft, #f4f2ec));
+    background: linear-gradient(135deg, var(--accent-soft, #E8ECEF), var(--bg-soft, #f4f2ec));
     padding: 30px 20px 20px;
     text-align: center;
     border-bottom: 1px solid var(--border, rgba(0,0,0,0.05));
@@ -58,7 +58,7 @@
 }
 .contrib-toggle.active {
     background: var(--surface, #fff);
-    color: var(--accent-deep, #3F3BC7);
+    color: var(--accent-deep, #2E4A5E);
     box-shadow: var(--shadow, 0 2px 8px rgba(0,0,0,0.1));
 }
 .contrib-field {
@@ -85,7 +85,7 @@
     color: var(--text, #1f1e1a);
 }
 .contrib-input:focus {
-    border-color: var(--accent, #5046E5);
+    border-color: var(--accent, #3D6079);
     outline: none;
     background: var(--surface, #fff);
 }
@@ -137,9 +137,9 @@
     transition: all 0.2s;
 }
 .amount-chip:hover, .amount-chip.selected {
-    background: var(--accent-soft, #ECEBFB);
-    border-color: var(--accent, #5046E5);
-    color: var(--accent-deep, #3F3BC7);
+    background: var(--accent-soft, #E8ECEF);
+    border-color: var(--accent, #3D6079);
+    color: var(--accent-deep, #2E4A5E);
 }
 .proceed-btn {
     width: 100%;
@@ -147,8 +147,8 @@
     padding: 15px;
     font-size: 18px;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent, #5046E5), var(--accent-deep, #3F3BC7));
-    box-shadow: 0 4px 15px color-mix(in srgb, var(--accent, #5046E5) 30%, transparent);
+    background: linear-gradient(135deg, var(--accent, #3D6079), var(--accent-deep, #2E4A5E));
+    box-shadow: 0 4px 15px color-mix(in srgb, var(--accent, #3D6079) 30%, transparent);
     color: #fff;
     border: none;
     font-weight: bold;
@@ -157,7 +157,7 @@
 }
 .proceed-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px color-mix(in srgb, var(--accent, #5046E5) 40%, transparent);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--accent, #3D6079) 40%, transparent);
 }
 .proceed-btn:disabled {
     opacity: 0.6;

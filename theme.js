@@ -24,17 +24,21 @@
     // theme.css point at them), overriding them inline on <html> re-themes
     // everything. The selection is stored PER MODE — a member can run one accent
     // in light mode and a different one in dark mode.
+    // A curated "English heritage" collection — muted, sophisticated tones
+    // (think Farrow & Ball) rather than bright primaries. Every triplet is
+    // WCAG-AA validated for both modes against the real bg/surface colors.
     var PALETTES = {
-        indigo: { name: "Indigo", light: { a: "#5046E5", d: "#3F3BC7", s: "#ECEBFB" }, dark: { a: "#8983FF", d: "#A79FFF", s: "rgba(137,131,255,0.16)" } },
-        violet: { name: "Royal Violet", light: { a: "#6D28D9", d: "#5B21B6", s: "#EDE5FA" }, dark: { a: "#9B7DF0", d: "#C4B5FD", s: "rgba(155,125,240,0.16)" } },
-        ocean: { name: "Ocean Blue", light: { a: "#1D4ED8", d: "#1E40AF", s: "#E4EAFA" }, dark: { a: "#4B90F7", d: "#93C5FD", s: "rgba(75,144,247,0.16)" } },
-        teal: { name: "Teal", light: { a: "#0F766E", d: "#115E59", s: "#E2EFEE" }, dark: { a: "#0FA192", d: "#5EEAD4", s: "rgba(15,161,146,0.16)" } },
-        emerald: { name: "Emerald", light: { a: "#047857", d: "#065F46", s: "#E1EFEB" }, dark: { a: "#10A56C", d: "#6EE7B7", s: "rgba(16,165,108,0.16)" } },
-        coral: { name: "Coral", light: { a: "#B4470F", d: "#8A3609", s: "#F6E9E2" }, dark: { a: "#E0640F", d: "#FBB48A", s: "rgba(224,100,15,0.16)" } },
-        rose: { name: "Rose", light: { a: "#BE185D", d: "#9D174D", s: "#F7E3EC" }, dark: { a: "#F4547A", d: "#FB9DB2", s: "rgba(244,84,122,0.16)" } },
-        graphite: { name: "Graphite", light: { a: "#44546A", d: "#2E3A4C", s: "#E9EAED" }, dark: { a: "#7C8CA4", d: "#CBD5E1", s: "rgba(124,140,164,0.16)" } }
+        wedgwood: { name: "Wedgwood", light: { a: "#3D6079", d: "#2E4A5E", s: "#E8ECEF" }, dark: { a: "#5E90AB", d: "#A9C7DB", s: "rgba(94,144,171,0.16)" } },
+        sage: { name: "Sage", light: { a: "#4F6A57", d: "#3D5344", s: "#EAEDEB" }, dark: { a: "#699680", d: "#B4CDBC", s: "rgba(105,150,128,0.16)" } },
+        heather: { name: "Heather", light: { a: "#6E5A8C", d: "#574571", s: "#EEEBF1" }, dark: { a: "#9280BA", d: "#C6B6DE", s: "rgba(146,128,186,0.16)" } },
+        aubergine: { name: "Aubergine", light: { a: "#6D4266", d: "#542F4F", s: "#EDE8ED" }, dark: { a: "#B07FA6", d: "#C9A3C1", s: "rgba(176,127,166,0.16)" } },
+        claret: { name: "Claret", light: { a: "#8A3B44", d: "#6E2C34", s: "#F1E7E9" }, dark: { a: "#C77680", d: "#DBA0A7", s: "rgba(199,118,128,0.16)" } },
+        terracotta: { name: "Terracotta", light: { a: "#A65A3F", d: "#85422C", s: "#F4EBE8" }, dark: { a: "#C27753", d: "#E0AE95", s: "rgba(194,119,83,0.16)" } },
+        ochre: { name: "Ochre", light: { a: "#8A6A2A", d: "#6E531E", s: "#F1EDE5" }, dark: { a: "#A8863C", d: "#DBC084", s: "rgba(168,134,60,0.16)" } },
+        teal: { name: "Teal", light: { a: "#2C6E6A", d: "#1F5450", s: "#E6EEED" }, dark: { a: "#4C948E", d: "#9CCBC6", s: "rgba(76,148,142,0.16)" } },
+        slate: { name: "Slate", light: { a: "#4A5A73", d: "#37455B", s: "#E9EBEE" }, dark: { a: "#7789A8", d: "#B4C0D3", s: "rgba(119,137,168,0.16)" } }
     };
-    var DEFAULT_ACCENT = "indigo"; // matches the shipped theme.css baseline
+    var DEFAULT_ACCENT = "wedgwood"; // matches the theme.css baseline tokens
     var ACCENT_KEYS = { light: "ljmAccentLight", dark: "ljmAccentDark" };
 
     function systemPrefersDark() {
