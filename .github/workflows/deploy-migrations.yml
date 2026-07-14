@@ -16,6 +16,7 @@ on:
           - 0009_bible_kjv_seed
           - 0010_wishlist_images
           - 0011_events
+          - 0011_member_appearance
 
 jobs:
   deploy_migration:

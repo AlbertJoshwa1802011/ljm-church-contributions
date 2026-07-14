@@ -224,7 +224,7 @@
             "data:image/svg+xml;utf8," +
             encodeURIComponent(
                 `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='260'>
-                   <rect width='600' height='260' fill='#ECEBFB'/>
+                   <rect width='600' height='260' fill='#E8ECEF'/>
                    <text x='50%' y='50%' text-anchor='middle' dy='.3em' font-size='72'>${fundEmoji(p.fund)}</text>
                  </svg>`
             );

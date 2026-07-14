@@ -17,6 +17,30 @@
 
     var STORAGE_KEY = "ljmTheme"; // "light" | "dark" — absent = follow system
 
+    // ---- Accent palettes (user-selectable "themes") ----
+    // Each palette carries a WCAG-AA-validated triplet for BOTH light and dark
+    // mode (a = --accent, d = --accent-deep, s = --accent-soft). Because the
+    // whole app derives from these three tokens (and the --google-* aliases in
+    // theme.css point at them), overriding them inline on <html> re-themes
+    // everything. The selection is stored PER MODE — a member can run one accent
+    // in light mode and a different one in dark mode.
+    // A curated "English heritage" collection — muted, sophisticated tones
+    // (think Farrow & Ball) rather than bright primaries. Every triplet is
+    // WCAG-AA validated for both modes against the real bg/surface colors.
+    var PALETTES = {
+        wedgwood: { name: "Wedgwood", light: { a: "#3D6079", d: "#2E4A5E", s: "#E8ECEF" }, dark: { a: "#5E90AB", d: "#A9C7DB", s: "rgba(94,144,171,0.16)" } },
+        sage: { name: "Sage", light: { a: "#4F6A57", d: "#3D5344", s: "#EAEDEB" }, dark: { a: "#699680", d: "#B4CDBC", s: "rgba(105,150,128,0.16)" } },
+        heather: { name: "Heather", light: { a: "#6E5A8C", d: "#574571", s: "#EEEBF1" }, dark: { a: "#9280BA", d: "#C6B6DE", s: "rgba(146,128,186,0.16)" } },
+        aubergine: { name: "Aubergine", light: { a: "#6D4266", d: "#542F4F", s: "#EDE8ED" }, dark: { a: "#B07FA6", d: "#C9A3C1", s: "rgba(176,127,166,0.16)" } },
+        claret: { name: "Claret", light: { a: "#8A3B44", d: "#6E2C34", s: "#F1E7E9" }, dark: { a: "#C77680", d: "#DBA0A7", s: "rgba(199,118,128,0.16)" } },
+        terracotta: { name: "Terracotta", light: { a: "#A65A3F", d: "#85422C", s: "#F4EBE8" }, dark: { a: "#C27753", d: "#E0AE95", s: "rgba(194,119,83,0.16)" } },
+        ochre: { name: "Ochre", light: { a: "#8A6A2A", d: "#6E531E", s: "#F1EDE5" }, dark: { a: "#A8863C", d: "#DBC084", s: "rgba(168,134,60,0.16)" } },
+        teal: { name: "Teal", light: { a: "#2C6E6A", d: "#1F5450", s: "#E6EEED" }, dark: { a: "#4C948E", d: "#9CCBC6", s: "rgba(76,148,142,0.16)" } },
+        slate: { name: "Slate", light: { a: "#4A5A73", d: "#37455B", s: "#E9EBEE" }, dark: { a: "#7789A8", d: "#B4C0D3", s: "rgba(119,137,168,0.16)" } }
+    };
+    var DEFAULT_ACCENT = "wedgwood"; // matches the theme.css baseline tokens
+    var ACCENT_KEYS = { light: "ljmAccentLight", dark: "ljmAccentDark" };
+
     function systemPrefersDark() {
         return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
@@ -31,8 +55,35 @@
         return systemPrefersDark() ? "dark" : "light";
     }
 
+    // Stored palette id for a given mode ("light"|"dark"), defaulting to indigo.
+    function getAccentId(mode) {
+        try {
+            var id = localStorage.getItem(ACCENT_KEYS[mode]);
+            if (id && PALETTES[id]) return id;
+        } catch (_) {}
+        return DEFAULT_ACCENT;
+    }
+
+    // Write the three --accent* tokens for `mode`'s chosen palette as inline
+    // styles on <html>. Inline styles win over both the :root and
+    // [data-theme="dark"] blocks in theme.css, so this is what actually recolors
+    // the app. `data-accent` is set so a MutationObserver (e.g. the progress
+    // ring in script.js) can react to accent-only changes.
+    function applyAccent() {
+        var mode = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+        var id = getAccentId(mode);
+        var p = (PALETTES[id] || PALETTES[DEFAULT_ACCENT])[mode];
+        var root = document.documentElement;
+        root.style.setProperty("--accent", p.a);
+        root.style.setProperty("--accent-deep", p.d);
+        root.style.setProperty("--accent-soft", p.s);
+        root.setAttribute("data-accent", id);
+    }
+
     function applyTheme(theme) {
         document.documentElement.setAttribute("data-theme", theme);
+        // The chosen accent differs per mode, so re-apply whenever the mode changes.
+        applyAccent();
     }
 
     // Apply immediately (this script runs before <body> is parsed).
@@ -45,11 +96,20 @@
         });
     }
 
+    function emitChange() {
+        try {
+            window.dispatchEvent(new CustomEvent("ljm:appearancechange", {
+                detail: { theme: effectiveTheme(), accentLight: getAccentId("light"), accentDark: getAccentId("dark") }
+            }));
+        } catch (_) {}
+    }
+
     window.LJMTheme = {
         get: effectiveTheme,
         set: function (theme) {
             try { localStorage.setItem(STORAGE_KEY, theme); } catch (_) {}
             applyTheme(theme);
+            emitChange();
         },
         toggle: function () {
             var next = effectiveTheme() === "dark" ? "light" : "dark";
@@ -59,6 +119,29 @@
         resetToSystem: function () {
             try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
             applyTheme(systemPrefersDark() ? "dark" : "light");
+            emitChange();
+        },
+        // ---- Accent (theme color) API ----
+        getPalettes: function () { return PALETTES; },
+        // Returns the stored palette id for a mode ("light"|"dark").
+        getAccent: function (mode) { return getAccentId(mode === "dark" ? "dark" : "light"); },
+        // Persist + (if it affects the active mode) live-apply an accent choice.
+        // `opts.silent` skips the change event (used when seeding from the server).
+        setAccent: function (mode, id, opts) {
+            mode = mode === "dark" ? "dark" : "light";
+            if (!PALETTES[id]) return false;
+            try { localStorage.setItem(ACCENT_KEYS[mode], id); } catch (_) {}
+            if (effectiveTheme() === mode) applyAccent();
+            if (!(opts && opts.silent)) emitChange();
+            return true;
+        },
+        resetAccent: function () {
+            try {
+                localStorage.removeItem(ACCENT_KEYS.light);
+                localStorage.removeItem(ACCENT_KEYS.dark);
+            } catch (_) {}
+            applyAccent();
+            emitChange();
         }
     };
 

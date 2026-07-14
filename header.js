@@ -34,7 +34,8 @@
         mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="m4 7 8 6 8-6"/></svg>',
         admin: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.3-7 10-4.1-1.7-7-5.6-7-10V6l7-3Z"/><path d="M9.2 12.2l2 2 3.8-4"/></svg>',
         signout: '<svg viewBox="0 0 24 24"><path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="M15 16l4-4-4-4"/><path d="M19 12H9"/></svg>',
-        settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        palette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-3.9-4-6.5-9-6.5Z"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.5" cy="11.5" r="1.1" fill="currentColor" stroke="none"/></svg>'
     };
 
     // Desktop top-nav order (mobile uses bottom nav + More sheet instead).
@@ -190,11 +191,13 @@
                         "</button>" +
                         '<div class="ljmh-fundmenu" role="listbox" hidden></div>' +
                     "</div>" +
+                    '<button type="button" class="ljmh-appearance-btn" aria-label="Theme color" title="Theme color"></button>' +
                     '<button type="button" class="theme-toggle-btn" aria-label="Toggle dark mode"></button>' +
                     '<div class="ljmh-auth" data-page="' + page + '">' + gisHtml + accountHtml + "</div>" +
                 "</div>" +
             "</div>";
 
+        wireAppearance(mount.querySelector(".ljmh-appearance-btn"));
         wireTheme(mount.querySelector(".theme-toggle-btn"));
         wireFundSwitch(mount);
         wireAvatarMenu(identity);
@@ -257,6 +260,14 @@
         });
     }
 
+    function wireAppearance(btn) {
+        if (!btn) return;
+        btn.innerHTML = (window.LJMAppearance && window.LJMAppearance.paletteIcon) || ICONS.settings;
+        btn.addEventListener("click", function () {
+            if (window.LJMAppearance) window.LJMAppearance.open();
+        });
+    }
+
     function wireTheme(btn) {
         if (!btn || !window.LJMTheme) return;
         var paint = function () { btn.innerHTML = window.LJMTheme.get() === "dark" ? ICONS.sun : ICONS.moon; };
@@ -308,6 +319,7 @@
                 '<div class="ljmh-menu-email">' + esc(identity.email) + "</div>" +
             "</div>" +
             '<a class="ljmh-menu-item" href="member.html">' + ICONS.person + "<span>My contributions</span></a>" +
+            '<button type="button" class="ljmh-menu-item" id="ljmhAppearanceItem">' + ICONS.palette + "<span>Appearance</span></button>" +
             (admin ? '<a class="ljmh-menu-item" href="admin.html">' + ICONS.admin + "<span>Admin console</span></a>" +
                      '<a class="ljmh-menu-item" href="admin.html#settings">' + ICONS.settings + "<span>System Settings</span></a>" : "") +
             '<button type="button" class="ljmh-menu-item ljmh-menu-signout" id="ljmhSignOutBtn">' + ICONS.signout + "<span>Sign out</span></button>";
@@ -322,6 +334,8 @@
         document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
         var so = document.getElementById("ljmhSignOutBtn");
         if (so) so.addEventListener("click", signOut);
+        var appr = document.getElementById("ljmhAppearanceItem");
+        if (appr) appr.addEventListener("click", function () { close(); if (window.LJMAppearance) window.LJMAppearance.open(); });
     }
 
     // ================= bottom nav + More sheet =================
@@ -393,6 +407,7 @@
                     '<a class="ljmh-sheet-item" id="ljmhSheetEmailPastor" href="mailto:" style="display:none;">' + ICONS.mail + "<span>Email Pastor</span></a>" +
                     (admin ? '<a class="ljmh-sheet-item" href="admin.html">' + ICONS.admin + "<span>Admin</span></a>" +
                              '<a class="ljmh-sheet-item" href="admin.html#settings">' + ICONS.settings + "<span>Settings</span></a>" : "") +
+                    '<button type="button" class="ljmh-sheet-item" id="ljmhSheetAppearance">' + ICONS.palette + "<span>Appearance</span></button>" +
                     '<button type="button" class="ljmh-sheet-item" id="ljmhSheetTheme">' + ICONS.moon + "<span>Theme</span></button>" +
                 "</div>" +
                 (identity
@@ -413,6 +428,8 @@
             paint();
             themeBtn.addEventListener("click", function () { window.LJMTheme.toggle(); paint(); });
         }
+        var apprBtn = document.getElementById("ljmhSheetAppearance");
+        if (apprBtn) apprBtn.addEventListener("click", function () { closeMoreSheet(); if (window.LJMAppearance) window.LJMAppearance.open(); });
         var so = document.getElementById("ljmhSheetSignOut");
         if (so) so.addEventListener("click", signOut);
     }

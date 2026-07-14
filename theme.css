@@ -16,9 +16,9 @@
     --text: #1f1e1a;
     --text-soft: #6e6a5e;
     --text-faint: #a09a8a;
-    --accent: #5046E5;
-    --accent-deep: #3F3BC7;
-    --accent-soft: #ECEBFB;
+    --accent: #3D6079;
+    --accent-deep: #2E4A5E;
+    --accent-soft: #E8ECEF;
     --green: #5f8d4e;
     --green-soft: #eef4ea;
     --red: #b3452f;
@@ -66,11 +66,13 @@
     --text: #f2ede4;
     --text-soft: #bfb7a8;
     --text-faint: #8a8274;
-    /* Softened indigo blue — less bright/saturated to reduce eye strain
-       on the pitch-black background while keeping it refined and readable. */
-    --accent: #6B63D8;
-    --accent-deep: #7B72E8;
-    --accent-soft: rgba(137, 131, 255, 0.16);
+    /* Default accent = Wedgwood, a muted "English heritage" dusty blue. The
+       dark-mode variant is the same hue lifted to a medium tone so it reads as
+       refined against the dark surface (and members can swap it for any palette
+       in the Appearance panel — see theme.js PALETTES). */
+    --accent: #5E90AB;
+    --accent-deep: #A9C7DB;
+    --accent-soft: rgba(94, 144, 171, 0.16);
     --green: #7fb56a;
     --green-soft: rgba(127,181,106,0.14);
     --red: #e0705c;
@@ -260,6 +262,26 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
     fill: none; stroke: currentColor;
     stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
 }
+
+/* Appearance (theme-color picker) button — sits next to the theme toggle,
+   present for everyone incl. signed-out visitors. */
+.ljmh-appearance-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-soft);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color .15s, color .15s, transform .12s;
+}
+.ljmh-appearance-btn:hover { border-color: var(--accent); color: var(--accent-deep); }
+.ljmh-appearance-btn:active { transform: scale(0.92); }
+.ljmh-appearance-btn svg { width: 18px; height: 18px; }
+@media (max-width: 820px) { .ljmh-appearance-btn { width: 34px; height: 34px; } }
 
 /* Auth cluster */
 .ljmh-auth { display: inline-flex; align-items: center; gap: 10px; }
@@ -524,7 +546,7 @@ button.bottom-nav-item {
 }
 
 [data-theme="dark"] .verse-card {
-    background: linear-gradient(135deg, rgba(137, 131, 255,0.10), rgba(137, 131, 255,0.04)) !important;
+    background: linear-gradient(135deg, rgba(94, 144, 171,0.10), rgba(94, 144, 171,0.04)) !important;
     border-color: var(--border) !important;
 }
 [data-theme="dark"] .verse-text { color: var(--text) !important; }
@@ -995,7 +1017,7 @@ button.bottom-nav-item {
 .activity-row:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift, 0 8px 24px rgba(0,0,0,0.08)); }
 .activity-avatar {
     width: 40px; height: 40px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent, #5046E5), var(--accent-deep, #3F3BC7));
+    background: linear-gradient(135deg, var(--accent, #3D6079), var(--accent-deep, #2E4A5E));
     color: #fff; font-weight: 700; font-size: 16px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
@@ -1437,4 +1459,155 @@ button.bottom-nav-item {
     .kpi-strip {
         grid-template-columns: repeat(4, 1fr);
     }
+}
+
+/* ==================================================================
+   Appearance panel — user-selectable accent-color themes (appearance.js).
+   Centered card on desktop, bottom sheet on mobile. Reuses the shared
+   design tokens so it is fully light/dark aware like everything else.
+   ================================================================== */
+#ljmAppearOverlay { position: fixed; inset: 0; z-index: 13000; }
+#ljmAppearOverlay[hidden] { display: none !important; }
+.ljm-appear-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(15, 12, 6, 0.55);
+    opacity: 0; transition: opacity .22s;
+}
+#ljmAppearOverlay.open .ljm-appear-backdrop { opacity: 1; }
+[data-theme="dark"] .ljm-appear-backdrop { background: rgba(0, 0, 0, 0.65); }
+
+.ljm-appear-panel {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -46%);
+    box-sizing: border-box;
+    width: min(460px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: var(--shadow-lift);
+    padding: 20px 22px 18px;
+    opacity: 0;
+    transition: opacity .22s, transform .22s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: var(--sans);
+}
+#ljmAppearOverlay.open .ljm-appear-panel { opacity: 1; transform: translate(-50%, -50%); }
+.ljm-appear-grip { display: none; }
+
+.ljm-appear-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+}
+.ljm-appear-title { font-family: var(--serif); font-size: 21px; font-weight: 700; color: var(--text); }
+.ljm-appear-close {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: none; background: var(--bg-soft); color: var(--text-soft);
+    font-size: 22px; line-height: 1; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s;
+}
+.ljm-appear-close:hover { background: var(--accent-soft); color: var(--accent-deep); }
+
+.ljm-appear-section { margin-bottom: 18px; }
+.ljm-appear-label {
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-faint); margin-bottom: 10px;
+}
+.ljm-appear-modehint { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text-faint); }
+
+/* Mode segmented control */
+.ljm-appear-modes {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.ljm-appear-mode {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 12px 6px; border-radius: 13px;
+    border: 1px solid var(--border); background: var(--bg-soft);
+    color: var(--text-soft); font: 600 12.5px var(--sans); cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+}
+.ljm-appear-mode svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ljm-appear-mode:hover { border-color: var(--border-strong); color: var(--text); }
+.ljm-appear-mode.active {
+    border-color: var(--accent); background: var(--accent-soft); color: var(--accent-deep);
+}
+
+/* Accent swatch grid */
+.ljm-appear-swatches {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 8px;
+}
+.ljm-appear-swatch {
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    padding: 6px 2px; border: none; background: transparent; cursor: pointer;
+    border-radius: 12px; transition: transform .12s;
+}
+.ljm-appear-swatch:hover { transform: translateY(-2px); }
+.ljm-appear-swatch:active { transform: scale(0.95); }
+.ljm-appear-chip {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: box-shadow .15s;
+}
+.ljm-appear-chip svg { width: 20px; height: 20px; }
+.ljm-appear-swatch-name { font-size: 11px; font-weight: 600; color: var(--text-soft); text-align: center; line-height: 1.2; }
+.ljm-appear-swatch.selected .ljm-appear-swatch-name { color: var(--text); }
+
+/* Live preview */
+.ljm-appear-preview { margin-bottom: 16px; }
+.ljm-appear-preview-card {
+    border: 1px solid var(--border); border-radius: 16px;
+    background: var(--bg-soft); padding: 16px 18px;
+}
+.ljm-appear-preview-badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--accent-deep); background: var(--accent-soft);
+    padding: 3px 10px; border-radius: 999px; margin-bottom: 10px;
+}
+.ljm-appear-preview-title { font-family: var(--serif); font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.ljm-appear-preview-row { display: flex; align-items: center; gap: 14px; }
+.ljm-appear-preview-btn {
+    border: none; cursor: default;
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color: #fff; font: 600 13px var(--sans);
+    padding: 9px 18px; border-radius: 999px;
+}
+.ljm-appear-preview-link { color: var(--accent); font: 600 13px var(--sans); cursor: default; }
+
+.ljm-appear-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding-top: 4px;
+}
+.ljm-appear-reset {
+    border: 1px solid var(--border-strong); background: transparent;
+    color: var(--text-soft); font: 600 12.5px var(--sans);
+    padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    transition: border-color .15s, color .15s;
+}
+.ljm-appear-reset:hover { border-color: var(--accent); color: var(--accent-deep); }
+.ljm-appear-sync { font-size: 12px; color: var(--text-faint); }
+
+/* Mobile: dock as a bottom sheet */
+@media (max-width: 560px) {
+    .ljm-appear-panel {
+        left: 0; top: auto; bottom: 0;
+        transform: translateY(100%);
+        width: 100%; max-width: 100%;
+        max-height: 88vh;
+        border-radius: 22px 22px 0 0;
+        border-bottom: none;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    }
+    #ljmAppearOverlay.open .ljm-appear-panel { transform: translateY(0); }
+    .ljm-appear-grip {
+        display: block; width: 40px; height: 4px; border-radius: 999px;
+        background: var(--border-strong); margin: -6px auto 12px;
+    }
+    .ljm-appear-swatches { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 380px) {
+    .ljm-appear-swatches { grid-template-columns: repeat(3, 1fr); }
 }

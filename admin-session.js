@@ -120,7 +120,7 @@
                 font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
                 font-size: 13px;
                 box-shadow: 0 2px 12px rgba(20, 15, 8, 0.5);
-                border-bottom: 1px solid rgba(80, 70, 229, 0.3);
+                border-bottom: 1px solid rgba(61, 96, 121, 0.3);
             }
             #ljmAdminBar a {
                 color: #c7c2e8;
@@ -133,12 +133,12 @@
                 white-space: nowrap;
             }
             #ljmAdminBar a:hover {
-                background: rgba(80, 70, 229, 0.2);
+                background: rgba(61, 96, 121, 0.2);
                 color: #fff;
             }
             #ljmAdminBar a.ab-active {
-                background: rgba(80, 70, 229, 0.25);
-                color: #A79FFF;
+                background: rgba(61, 96, 121, 0.25);
+                color: #A9C7DB;
                 font-weight: 600;
             }
             .ab-left {
@@ -152,7 +152,7 @@
             .ab-left::-webkit-scrollbar { display: none; }
             .ab-brand {
                 font-weight: 700;
-                color: #A79FFF;
+                color: #A9C7DB;
                 font-size: 13px;
                 margin-right: 8px;
                 white-space: nowrap;

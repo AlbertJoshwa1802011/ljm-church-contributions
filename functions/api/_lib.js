@@ -38,6 +38,32 @@ export async function verifyGoogleToken(token, env) {
   }
 }
 
+// Resolve the CURRENT caller's identity for member (non-admin) self-service
+// endpoints — i.e. "who is signed in?", not "is this an admin?". Unlike
+// requireAuth, it never checks roles/permissions, so any signed-in member passes.
+//
+// Token sources (in order): "Authorization: Bearer <token>" header, then ?token=.
+//  - Google ID token (three dot-segments) → verified identity ({ verified: true }).
+//  - Plain email string → legacy fallback, only when ALLOW_LEGACY_EMAIL_TOKEN="true",
+//    and always { verified: false } (an email string is not proof of identity).
+// Returns { email, verified }; email is null when there is no usable credential.
+export async function resolveViewer(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  let raw = request.headers.get("Authorization") || "";
+  if (raw.toLowerCase().startsWith("bearer ")) raw = raw.slice(7);
+  raw = (raw || url.searchParams.get("token") || "").trim();
+  if (!raw) return { email: null, verified: false };
+  if (raw.split(".").length === 3) {
+    const identity = await verifyGoogleToken(raw, env);
+    return identity ? { email: identity.email, verified: true } : { email: null, verified: false };
+  }
+  if (raw.includes("@") && env.ALLOW_LEGACY_EMAIL_TOKEN === "true") {
+    return { email: raw.toLowerCase(), verified: false };
+  }
+  return { email: null, verified: false };
+}
+
 // Resolve the permission scopes for an email.
 // Hardcoded super admins get the wildcard '*' (bootstrap safety, matches roles.js behavior).
 export async function getPermissions(email, db) {
