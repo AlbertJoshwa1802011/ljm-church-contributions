@@ -89,10 +89,10 @@ CREATE TABLE IF NOT EXISTS member_roles (
 );
 
 -- Seed Default Roles
-INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_subscriptions","manage_members","manage_content"]');
+INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_subscriptions","manage_members","manage_content","manage_events"]');
 INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('editor', '["edit_purchases","edit_wishlist"]');
 -- Keep existing super_admin rows in sync with the scope list above (idempotent)
-UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_subscriptions","manage_members","manage_content"]' WHERE role_name = 'super_admin';
+UPDATE roles SET permissions = '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_subscriptions","manage_members","manage_content","manage_events"]' WHERE role_name = 'super_admin';
 
 -- Seed Default Super Admins
 INSERT OR IGNORE INTO member_roles (email, role_name) VALUES ('albertjoshrock101@gmail.com', 'super_admin');
@@ -449,3 +449,33 @@ INSERT OR IGNORE INTO bible_verses (version_code, book, chapter, verse, text) VA
 INSERT OR IGNORE INTO bible_verses (version_code, book, chapter, verse, text) VALUES ('KJV', 'Revelation', 3, 20, 'Behold, I stand at the door, and knock: if any man hear my voice, and open the door, I will come in to him, and will sup with him, and he with me.');
 INSERT OR IGNORE INTO bible_verses (version_code, book, chapter, verse, text) VALUES ('KJV', 'Revelation', 21, 4, 'And God shall wipe away all tears from their eyes; and there shall be no more death, neither sorrow, nor crying, neither shall there be any more pain: for the former things are passed away.');
 INSERT OR IGNORE INTO bible_verses (version_code, book, chapter, verse, text) VALUES ('KJV', 'Revelation', 22, 13, 'I am Alpha and Omega, the beginning and the end, the first and the last.');
+
+-- 17. Church events + photo galleries (see migrations/0011_events.sql)
+CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  category TEXT,
+  event_date TEXT,
+  location TEXT,
+  description TEXT,
+  cover_photo TEXT,
+  status TEXT DEFAULT 'draft',       -- 'draft' | 'published'
+  featured INTEGER DEFAULT 0,        -- 1 = pin to top of public listing
+  extra TEXT,                        -- JSON blob for future/optional fields
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_events_status ON events(status);
+CREATE INDEX IF NOT EXISTS idx_events_date   ON events(event_date);
+
+CREATE TABLE IF NOT EXISTS event_photos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL,
+  photo_url TEXT NOT NULL,
+  storage TEXT DEFAULT 'r2',         -- 'r2' | 'base64' | 'external'
+  caption TEXT,
+  sort_order INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_event_photos_event ON event_photos(event_id);

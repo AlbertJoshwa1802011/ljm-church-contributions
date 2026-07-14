@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       migration:
-        description: 'Migration file to apply (0005-0010)'
+        description: 'Migration file to apply (0005-0011)'
         required: true
         default: '0005_purchase_attribution'
         type: choice
@@ -15,6 +15,7 @@ on:
           - 0008_bible_verses
           - 0009_bible_kjv_seed
           - 0010_wishlist_images
+          - 0011_events
 
 jobs:
   deploy_migration:

@@ -1165,6 +1165,39 @@ button.bottom-nav-item {
     border-color: var(--border) !important;
 }
 
+/* events.html ("Events" gallery) — reuses impact's hero/filter/card/modal
+   classes above (already themed); only the genuinely new event-specific
+   pieces (badge, featured ribbon, carousel, thumbnails, extra-details list)
+   need their own rules here. */
+[data-theme="dark"] .event-badge {
+    background: rgba(0, 0, 0, 0.55) !important;
+}
+[data-theme="dark"] .product-card.featured {
+    border-color: var(--accent) !important;
+}
+[data-theme="dark"] .featured-ribbon {
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep)) !important;
+}
+[data-theme="dark"] .event-carousel,
+[data-theme="dark"] .carousel-stage,
+[data-theme="dark"] .carousel-stage img {
+    background: #0c0c10 !important;
+}
+[data-theme="dark"] .carousel-stage .placeholder-big {
+    background: linear-gradient(135deg, var(--bg-soft), var(--surface-2, var(--surface))) !important;
+}
+[data-theme="dark"] .carousel-caption { color: var(--text-faint) !important; }
+[data-theme="dark"] .event-thumb { background: var(--bg-soft) !important; }
+[data-theme="dark"] .event-thumb.active { border-color: var(--accent) !important; }
+[data-theme="dark"] .event-extra { border-top-color: var(--border) !important; }
+[data-theme="dark"] .event-extra-title { color: var(--text-faint) !important; }
+[data-theme="dark"] .event-extra-row {
+    color: var(--text-soft) !important;
+    border-bottom-color: var(--border) !important;
+}
+[data-theme="dark"] .event-extra-row .k { color: var(--text-faint) !important; }
+[data-theme="dark"] .event-extra-row .v { color: var(--text) !important; }
+
 /* script.js renders several bits of text with hardcoded inline `style="color:#..."`
    (trend labels, modal headers, error/empty states) rather than a class — a plain
    CSS class rule can't win against an inline style, so match by substring on the
