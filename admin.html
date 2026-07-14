@@ -120,7 +120,7 @@
         main { flex: 1; padding: 30px 34px 60px; max-width: 1180px; min-width: 0; }
         .page-head {
             position: sticky; top: 0; z-index: 30;
-            margin: -30px -34px 22px; padding: 22px 34px 16px;
+            margin: -30px -34px 22px; padding: 22px 64px 16px 34px;
             background: var(--bg); border-bottom: 1px solid var(--border);
         }
         .page-head h2 { font-size: 26px; }
@@ -135,16 +135,40 @@
             background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius); box-shadow: var(--shadow);
             padding: 20px 22px; margin-bottom: 18px;
+            transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
         }
         .card h3 { font-size: 17px; margin-bottom: 12px; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 14px; margin-bottom: 18px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 18px; }
         .kpi {
+            position: relative; overflow: hidden;
             background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
             padding: 16px 18px; box-shadow: var(--shadow);
+            transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+        }
+        .kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-md, 0 6px 18px rgba(0,0,0,.08)); border-color: var(--border-strong); }
+        .kpi .k-head { display: flex; align-items: center; gap: 9px; }
+        .kpi .k-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+            background: var(--accent-soft); color: var(--accent-deep); font-size: 15px; line-height: 1;
         }
         .kpi .k-label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); }
-        .kpi .k-value { font-family: var(--serif); font-size: 24px; font-weight: 700; margin-top: 5px; }
-        .kpi .k-sub { font-size: 11.5px; color: var(--text-soft); margin-top: 2px; }
+        .kpi .k-value { font-family: var(--serif); font-size: 25px; font-weight: 700; margin-top: 10px; font-variant-numeric: tabular-nums; }
+        .kpi .k-sub { font-size: 11.5px; color: var(--text-soft); margin-top: 3px; }
+        .kpi .k-trend { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; margin-top: 3px; }
+        .kpi .k-trend.up { color: var(--green); }
+        .kpi .k-trend.down { color: var(--red); }
+        .kpi .k-trend.flat { color: var(--text-faint); }
+        /* Primary (headline) KPI — accent-tinted, spans a touch wider visual weight */
+        .kpi.kpi-primary {
+            background: linear-gradient(135deg, var(--accent-soft), var(--surface) 78%);
+            border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+        }
+        .kpi.kpi-primary::after {
+            content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
+        }
+        .kpi.kpi-primary .k-icon { background: var(--accent); color: #fff; }
+        .kpi.kpi-primary .k-value { color: var(--accent-deep); }
         .charts-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; }
         @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
 
@@ -179,9 +203,17 @@
         /* ── Tables ── */
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); padding: 8px 10px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
-        td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-        tr:hover td { background: var(--bg-soft); }
+        th {
+            position: sticky; top: 0; z-index: 1;
+            text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-faint); padding: 9px 10px; background: var(--bg-soft);
+            border-bottom: 1px solid var(--border-strong); white-space: nowrap;
+        }
+        td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; font-variant-numeric: tabular-nums; }
+        tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+        tbody tr:hover td { background: var(--bg-soft); }
+        /* Right-align numeric columns (amounts, counts) */
+        td.num, th.num { text-align: right; }
         .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
         .pill-green { background: var(--green-soft); color: var(--green); }
         .pill-amber { background: var(--amber-soft); color: var(--amber); }
@@ -189,7 +221,8 @@
         .pill-accent { background: var(--accent-soft); color: var(--accent-deep); }
         .pill-grey { background: var(--bg-soft); color: var(--text-soft); }
 
-        .empty { color: var(--text-faint); font-size: 13px; padding: 18px 0; text-align: center; }
+        .empty { color: var(--text-faint); font-size: 13px; padding: 26px 0; text-align: center; line-height: 1.6; }
+        .empty[data-icon]::before { content: attr(data-icon); display: block; font-size: 26px; margin-bottom: 6px; opacity: .7; }
         .skel { display: inline-block; width: 70px; height: 16px; border-radius: 6px; background: linear-gradient(90deg, var(--bg-soft), #eceadf, var(--bg-soft)); background-size: 200% 100%; animation: sh 1.2s infinite; }
         @keyframes sh { to { background-position: -200% 0; } }
 
@@ -295,13 +328,14 @@
             align-items: center;
             gap: 8px;
             padding: 6px 12px;
-            background: var(--bg-soft);
-            border: 1px solid var(--border);
+            background: var(--surface);
+            border: 1px solid var(--border-strong);
             border-radius: 20px;
             cursor: pointer;
             font-weight: 600;
             font-size: 13px;
             color: var(--text);
+            box-shadow: var(--shadow);
             transition: all 0.2s;
         }
         .profile-btn:hover {
@@ -368,7 +402,7 @@
             .profile-name {
                 display: none;
             }
-            .page-head { margin: -18px -16px 22px; padding: 18px 16px 14px; }
+            .page-head { margin: -18px -16px 22px; padding: 18px 56px 14px 16px; }
             #mobileNav {
                 display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
                 background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(12px);
@@ -461,7 +495,7 @@
                 </div>
                 <div class="card">
                     <h3>Recent contributions</h3>
-                    <div class="table-wrap"><table id="recentTable"><thead><tr><th>Member</th><th>Amount</th><th>Fund</th><th>Date</th><th>Category</th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-wrap"><table id="recentTable"><thead><tr><th>Member</th><th class="num">Amount</th><th>Fund</th><th>Date</th><th>Category</th></tr></thead><tbody></tbody></table></div>
                 </div>
             </div>
 
@@ -1196,7 +1230,7 @@
 
         // ═══════════════ Overview ═══════════════
         function loadOverview() {
-            $("kpiGrid").innerHTML = new Array(6).fill('<div class="kpi"><span class="skel"></span><div class="k-value"><span class="skel" style="width:90px;"></span></div></div>').join("");
+            $("kpiGrid").innerHTML = new Array(6).fill('<div class="kpi"><div class="k-head"><span class="skel" style="width:30px;height:30px;border-radius:9px;"></span><span class="skel" style="width:70px;"></span></div><div class="k-value"><span class="skel" style="width:100px;height:22px;"></span></div></div>').join("");
             Promise.all([
                 fetch("/api/contributions?fund=tech-contributions&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
                 fetch("/api/contributions?fund=christmas-fund&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
@@ -1220,15 +1254,20 @@
                 });
                 var spent = (tech.spentOnProducts || 0) + (xmas.spentOnProducts || 0);
                 var avail = (tech.availableBalance || 0) + (xmas.availableBalance || 0);
-                var growth = lastM > 0 ? Math.round(((thisM - lastM) / lastM) * 100) + "%" : (thisM > 0 ? "New" : "—");
+                var growthPct = lastM > 0 ? Math.round(((thisM - lastM) / lastM) * 100) : null;
+                var growthValue = growthPct === null ? (thisM > 0 ? "New" : "—") : Math.abs(growthPct) + "%";
+                var growthTrend = growthPct === null
+                    ? { dir: "flat", text: thisM > 0 ? "first activity" : "no data" }
+                    : { dir: growthPct > 0 ? "up" : growthPct < 0 ? "down" : "flat",
+                        text: (growthPct > 0 ? "up" : growthPct < 0 ? "down" : "flat") + " vs last month" };
 
                 $("kpiGrid").innerHTML =
-                    kpi("Total collected", inr(total), all.length + " contributions") +
-                    kpi("This month", inr(thisM), "vs " + inr(lastM) + " last month") +
-                    kpi("Monthly growth", growth, "") +
-                    kpi("Contributors", Object.keys(names).length, "unique members") +
-                    kpi("Spent on products", inr(spent), "from funds") +
-                    kpi("Available balance", inr(avail), "in hand across funds");
+                    kpi("Total collected", inr(total), all.length + " contributions", { icon: "💰", primary: true }) +
+                    kpi("This month", inr(thisM), "vs " + inr(lastM) + " last month", { icon: "📅" }) +
+                    kpi("Monthly growth", growthValue, "", { icon: "📈", trend: growthTrend }) +
+                    kpi("Contributors", Object.keys(names).length, "unique members", { icon: "🧑‍🤝‍🧑" }) +
+                    kpi("Spent on products", inr(spent), "from funds", { icon: "🛒" }) +
+                    kpi("Available balance", inr(avail), "in hand across funds", { icon: "🏦" });
 
                 renderTrend(all);
                 renderDist(state.fundsCache.length ? state.fundsCache : [
@@ -1239,13 +1278,23 @@
                 all.sort(function (a, b) { return new Date(b.Date) - new Date(a.Date); });
                 var tb = $("recentTable").querySelector("tbody");
                 tb.innerHTML = all.slice(0, 10).map(function (c) {
-                    return "<tr><td><strong>" + esc(c.Member) + "</strong></td><td>" + inr(c.Amount) + "</td><td>" + esc(c._fund) +
+                    return "<tr><td><strong>" + esc(c.Member) + "</strong></td><td class='num'>" + inr(c.Amount) + "</td><td>" + esc(c._fund) +
                         "</td><td>" + esc(String(c.Date).substring(0, 10)) + "</td><td><span class='pill pill-grey'>" + esc(c.Category || "") + "</span></td></tr>";
-                }).join("") || '<tr><td colspan="5" class="empty">No contributions yet.</td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty" data-icon="🕊️">No contributions yet.</td></tr>';
             }).catch(function (e) { $("kpiGrid").innerHTML = '<div class="empty">Failed to load: ' + esc(e.message) + "</div>"; });
         }
-        function kpi(label, value, sub) {
-            return '<div class="kpi"><div class="k-label">' + label + '</div><div class="k-value">' + value + '</div><div class="k-sub">' + esc(sub) + "</div></div>";
+        // opts: { icon, primary, trend: {dir:'up'|'down'|'flat', text:'…'} }
+        function kpi(label, value, sub, opts) {
+            opts = opts || {};
+            var icon = opts.icon ? '<span class="k-icon">' + opts.icon + '</span>' : '';
+            var head = '<div class="k-head">' + icon + '<div class="k-label">' + label + '</div></div>';
+            var body = '<div class="k-value">' + value + '</div>';
+            if (opts.trend) {
+                var arrow = opts.trend.dir === "up" ? "▲" : opts.trend.dir === "down" ? "▼" : "→";
+                body += '<div class="k-trend ' + opts.trend.dir + '">' + arrow + " " + esc(opts.trend.text || "") + "</div>";
+            }
+            if (sub) body += '<div class="k-sub">' + esc(sub) + "</div>";
+            return '<div class="kpi' + (opts.primary ? " kpi-primary" : "") + '">' + head + body + "</div>";
         }
         var trendChart = null, distChart = null;
         function renderTrend(all) {
