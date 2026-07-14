@@ -66,11 +66,10 @@
     --text: #f2ede4;
     --text-soft: #bfb7a8;
     --text-faint: #8a8274;
-    /* Same indigo/violet hue family as the light-mode accent, lightened
-       (not just brightened) so it reads as a cool, refined "shuttle" blue
-       against the dark surface rather than a washed-out or neon tone. */
-    --accent: #8983FF;
-    --accent-deep: #A79FFF;
+    /* Softened indigo blue — less bright/saturated to reduce eye strain
+       on the pitch-black background while keeping it refined and readable. */
+    --accent: #6B63D8;
+    --accent-deep: #7B72E8;
     --accent-soft: rgba(137, 131, 255, 0.16);
     --green: #7fb56a;
     --green-soft: rgba(127,181,106,0.14);
@@ -95,15 +94,8 @@ body {
 }
 
 body::before {
-    content: '' !important;
-    position: fixed !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
-    background: url('motto-banner-2026.jpeg') no-repeat center center fixed !important;
-    background-size: cover !important;
-    opacity: 0.15 !important;
-    z-index: -1 !important;
-    pointer-events: none !important;
+    content: none !important;
+    display: none !important;
 }
 
 h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-title, .insights-title {
@@ -467,15 +459,8 @@ button.bottom-nav-item {
    Everything below only applies when [data-theme="dark"] is set.
    ================================================================== */
 [data-theme="dark"] body::before {
-    content: '' !important;
-    position: fixed !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
-    background: url('motto-banner-2026.jpeg') no-repeat center center fixed !important;
-    background-size: cover !important;
-    opacity: 0.06 !important;
-    z-index: -1 !important;
-    pointer-events: none !important;
+    content: none !important;
+    display: none !important;
 }
 
 [data-theme="dark"] .stat-card,
