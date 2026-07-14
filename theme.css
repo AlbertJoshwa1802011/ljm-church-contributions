@@ -55,15 +55,12 @@
 }
 
 [data-theme="dark"] {
-    /* Warm near-black elevation scale (not pure #000) — softer, more premium
-       than a stark OLED black, and consistent with the site's warm-paper
-       light theme rather than jumping to a cold blue-black. The base is kept
-       deep and inky so the page reads as a rich, premium dark, while the
-       raised surfaces stay lighter to give cards clear elevation/contrast. */
-    --bg: #0d0b07;
-    --bg-soft: #15130d;
-    --surface: #211e17;
-    --surface-2: #2a251e;
+    /* True pitch black base for maximum contrast and premium feel.
+       Cards stand out sharply against the deep black background. */
+    --bg: #000000;
+    --bg-soft: #0a0a0a;
+    --surface: #1a1a1a;
+    --surface-2: #242424;
     --border: #38332a;
     --border-strong: #4a4438;
     --text: #f2ede4;
