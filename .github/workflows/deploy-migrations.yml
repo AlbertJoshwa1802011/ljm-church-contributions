@@ -1,0 +1,49 @@
+name: Deploy Migrations to Production D1
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration:
+        description: 'Migration file to apply (0005-0010)'
+        required: true
+        default: '0005_purchase_attribution'
+        type: choice
+        options:
+          - 0005_purchase_attribution
+          - 0006_families
+          - 0007_sandha_family
+          - 0008_bible_verses
+          - 0009_bible_kjv_seed
+          - 0010_wishlist_images
+
+jobs:
+  deploy_migration:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Wrangler
+        run: npm install -g @cloudflare/wrangler
+
+      - name: Apply Migration - ${{ github.event.inputs.migration }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "Applying migration: migrations/${{ github.event.inputs.migration }}.sql"
+          npx wrangler d1 execute ljm-contributions-db --remote --file=./migrations/${{ github.event.inputs.migration }}.sql
+
+      - name: Verify Migration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "Migration applied successfully!"
+          npx wrangler d1 execute ljm-contributions-db --remote --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name LIMIT 10;"
