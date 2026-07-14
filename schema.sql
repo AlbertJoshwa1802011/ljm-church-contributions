@@ -88,6 +88,16 @@ CREATE TABLE IF NOT EXISTS member_roles (
     FOREIGN KEY(role_name) REFERENCES roles(role_name) ON DELETE CASCADE
 );
 
+-- Per-member appearance preferences (accent-color themes), keyed by verified
+-- Google email so a member's chosen light/dark accent syncs across devices.
+-- See migrations/0011_member_appearance.sql.
+CREATE TABLE IF NOT EXISTS member_preferences (
+    email        TEXT PRIMARY KEY,
+    accent_light TEXT,
+    accent_dark  TEXT,
+    updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Seed Default Roles
 INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('super_admin', '["edit_purchases","edit_wishlist","manage_roles","view_members","manage_funds","delete_funds","view_audit","manage_expenses","manage_subscriptions","manage_members","manage_content","manage_events"]');
 INSERT OR IGNORE INTO roles (role_name, permissions) VALUES ('editor', '["edit_purchases","edit_wishlist"]');

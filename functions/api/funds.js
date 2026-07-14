@@ -3,7 +3,7 @@
 // Legacy funds (tech-contributions, christmas-fund) are seeded with is_system=1 and
 // stay served by /api/contributions unchanged; here they are list-only + goal edits.
 
-import { requireAuth, verifyGoogleToken, audit, json } from "./_lib.js";
+import { requireAuth, resolveViewer, audit, json } from "./_lib.js";
 
 const RESERVED_SLUGS = ["purchases", "api", "admin", "all"];
 
@@ -15,24 +15,6 @@ function slugify(name) {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .substring(0, 60);
-}
-
-// Resolve viewer email (for members-only funds): Bearer Google token, legacy email token, or null.
-async function resolveViewer(context) {
-  const { request, env } = context;
-  const url = new URL(request.url);
-  let raw = request.headers.get("Authorization") || "";
-  if (raw.toLowerCase().startsWith("bearer ")) raw = raw.slice(7);
-  raw = (raw || url.searchParams.get("token") || "").trim();
-  if (!raw) return { email: null, verified: false };
-  if (raw.split(".").length === 3) {
-    const identity = await verifyGoogleToken(raw, env);
-    return identity ? { email: identity.email, verified: true } : { email: null, verified: false };
-  }
-  if (raw.includes("@") && env.ALLOW_LEGACY_EMAIL_TOKEN === "true") {
-    return { email: raw.toLowerCase(), verified: false };
-  }
-  return { email: null, verified: false };
 }
 
 async function getFundBySlug(db, slug) {

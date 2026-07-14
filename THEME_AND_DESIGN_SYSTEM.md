@@ -22,6 +22,19 @@ All colors are CSS custom properties defined once in `theme.css`, and consumed e
 
 Switching `data-theme` on `<html>` (done by `theme.js`) is the *only* thing that needs to happen for a component to re-theme — as long as it's written with `var(--token)` instead of a literal color, it gets dark mode for free.
 
+## User-selectable accent themes (the "Appearance" panel)
+
+The three `--accent*` values above are the *default* (indigo). Members can swap the accent to any of a curated set of palettes, independently for light and dark mode, from the **Appearance** panel (palette button in the header, plus entries in the avatar menu and the mobile "More" sheet). The choice is saved on the device and — when signed in — synced to the member's account so it follows them across devices.
+
+**How it works (no new per-component code):** because the entire app derives from `--accent` / `--accent-deep` / `--accent-soft` (and the `--google-*` aliases point at them), re-theming is just a matter of overriding those three tokens. `theme.js` does this by writing them as **inline styles on `<html>`**, which win over both the `:root` and `[data-theme="dark"]` blocks. So a component written with `var(--accent)` picks up the member's chosen accent for free, in both modes.
+
+Key pieces:
+- **`theme.js`** owns the palette catalog (`PALETTES`), the pre-paint `applyAccent()` (called at load *before* first paint, so there's no color flash), and the `window.LJMTheme` accent API: `getPalettes()`, `getAccent(mode)`, `setAccent(mode, id)`, `resetAccent()`. Selection is stored per mode in `localStorage` (`ljmAccentLight` / `ljmAccentDark`, palette ids, default `indigo`). `applyAccent()` also sets a `data-accent` attribute so canvas consumers (the progress ring in `script.js`) can redraw on an accent-only change.
+- **`appearance.js`** is the panel UI (mode segmented control + swatch grid + live preview) and the account-sync layer. It's device-local first (instant, offline-safe, works signed-out); when signed in it GETs `/api/appearance` on load to rehydrate and PUTs on change.
+- **`functions/api/appearance.js`** + **`member_preferences`** table (`migrations/0011_member_appearance.sql`) store `{ email, accent_light, accent_dark }`, keyed by the **verified** Google email (writes reject unverified/legacy tokens). Identity is resolved with the shared `resolveViewer` in `_lib.js` (member self-service), not `requireAuth` (admin-only).
+
+**Every palette's light and dark triplet is WCAG-AA validated** against the real `--bg`/`--surface` colors (accent-deep text ≥4.5:1 — mostly AAA; white-on-accent button ≥3:1). Palette ids are stored (not raw hex), so the exact colors can be re-tuned in `theme.js` without a data migration. To add a palette, add one entry to `PALETTES` in `theme.js` **and** its id to `PALETTE_IDS` in `functions/api/appearance.js` (the server-side whitelist).
+
 ## Why the dark palette isn't pure black
 
 The dark theme uses a warm near-black elevation scale (`#16140f` → `#1c1a14` → `#232019`) rather than a stark OLED black, echoing the light theme's warm-paper tone instead of jumping to a cold, stark black. This is the same reasoning most platforms' dark-mode guidelines give for avoiding true `#000`: it reads as more premium and is easier on the eyes at night, while still giving cards a visible "step up" in elevation.

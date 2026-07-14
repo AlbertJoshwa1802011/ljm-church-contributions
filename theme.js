@@ -17,6 +17,26 @@
 
     var STORAGE_KEY = "ljmTheme"; // "light" | "dark" — absent = follow system
 
+    // ---- Accent palettes (user-selectable "themes") ----
+    // Each palette carries a WCAG-AA-validated triplet for BOTH light and dark
+    // mode (a = --accent, d = --accent-deep, s = --accent-soft). Because the
+    // whole app derives from these three tokens (and the --google-* aliases in
+    // theme.css point at them), overriding them inline on <html> re-themes
+    // everything. The selection is stored PER MODE — a member can run one accent
+    // in light mode and a different one in dark mode.
+    var PALETTES = {
+        indigo: { name: "Indigo", light: { a: "#5046E5", d: "#3F3BC7", s: "#ECEBFB" }, dark: { a: "#8983FF", d: "#A79FFF", s: "rgba(137,131,255,0.16)" } },
+        violet: { name: "Royal Violet", light: { a: "#6D28D9", d: "#5B21B6", s: "#EDE5FA" }, dark: { a: "#9B7DF0", d: "#C4B5FD", s: "rgba(155,125,240,0.16)" } },
+        ocean: { name: "Ocean Blue", light: { a: "#1D4ED8", d: "#1E40AF", s: "#E4EAFA" }, dark: { a: "#4B90F7", d: "#93C5FD", s: "rgba(75,144,247,0.16)" } },
+        teal: { name: "Teal", light: { a: "#0F766E", d: "#115E59", s: "#E2EFEE" }, dark: { a: "#0FA192", d: "#5EEAD4", s: "rgba(15,161,146,0.16)" } },
+        emerald: { name: "Emerald", light: { a: "#047857", d: "#065F46", s: "#E1EFEB" }, dark: { a: "#10A56C", d: "#6EE7B7", s: "rgba(16,165,108,0.16)" } },
+        coral: { name: "Coral", light: { a: "#B4470F", d: "#8A3609", s: "#F6E9E2" }, dark: { a: "#E0640F", d: "#FBB48A", s: "rgba(224,100,15,0.16)" } },
+        rose: { name: "Rose", light: { a: "#BE185D", d: "#9D174D", s: "#F7E3EC" }, dark: { a: "#F4547A", d: "#FB9DB2", s: "rgba(244,84,122,0.16)" } },
+        graphite: { name: "Graphite", light: { a: "#44546A", d: "#2E3A4C", s: "#E9EAED" }, dark: { a: "#7C8CA4", d: "#CBD5E1", s: "rgba(124,140,164,0.16)" } }
+    };
+    var DEFAULT_ACCENT = "indigo"; // matches the shipped theme.css baseline
+    var ACCENT_KEYS = { light: "ljmAccentLight", dark: "ljmAccentDark" };
+
     function systemPrefersDark() {
         return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
@@ -31,8 +51,35 @@
         return systemPrefersDark() ? "dark" : "light";
     }
 
+    // Stored palette id for a given mode ("light"|"dark"), defaulting to indigo.
+    function getAccentId(mode) {
+        try {
+            var id = localStorage.getItem(ACCENT_KEYS[mode]);
+            if (id && PALETTES[id]) return id;
+        } catch (_) {}
+        return DEFAULT_ACCENT;
+    }
+
+    // Write the three --accent* tokens for `mode`'s chosen palette as inline
+    // styles on <html>. Inline styles win over both the :root and
+    // [data-theme="dark"] blocks in theme.css, so this is what actually recolors
+    // the app. `data-accent` is set so a MutationObserver (e.g. the progress
+    // ring in script.js) can react to accent-only changes.
+    function applyAccent() {
+        var mode = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+        var id = getAccentId(mode);
+        var p = (PALETTES[id] || PALETTES[DEFAULT_ACCENT])[mode];
+        var root = document.documentElement;
+        root.style.setProperty("--accent", p.a);
+        root.style.setProperty("--accent-deep", p.d);
+        root.style.setProperty("--accent-soft", p.s);
+        root.setAttribute("data-accent", id);
+    }
+
     function applyTheme(theme) {
         document.documentElement.setAttribute("data-theme", theme);
+        // The chosen accent differs per mode, so re-apply whenever the mode changes.
+        applyAccent();
     }
 
     // Apply immediately (this script runs before <body> is parsed).
@@ -45,11 +92,20 @@
         });
     }
 
+    function emitChange() {
+        try {
+            window.dispatchEvent(new CustomEvent("ljm:appearancechange", {
+                detail: { theme: effectiveTheme(), accentLight: getAccentId("light"), accentDark: getAccentId("dark") }
+            }));
+        } catch (_) {}
+    }
+
     window.LJMTheme = {
         get: effectiveTheme,
         set: function (theme) {
             try { localStorage.setItem(STORAGE_KEY, theme); } catch (_) {}
             applyTheme(theme);
+            emitChange();
         },
         toggle: function () {
             var next = effectiveTheme() === "dark" ? "light" : "dark";
@@ -59,6 +115,29 @@
         resetToSystem: function () {
             try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
             applyTheme(systemPrefersDark() ? "dark" : "light");
+            emitChange();
+        },
+        // ---- Accent (theme color) API ----
+        getPalettes: function () { return PALETTES; },
+        // Returns the stored palette id for a mode ("light"|"dark").
+        getAccent: function (mode) { return getAccentId(mode === "dark" ? "dark" : "light"); },
+        // Persist + (if it affects the active mode) live-apply an accent choice.
+        // `opts.silent` skips the change event (used when seeding from the server).
+        setAccent: function (mode, id, opts) {
+            mode = mode === "dark" ? "dark" : "light";
+            if (!PALETTES[id]) return false;
+            try { localStorage.setItem(ACCENT_KEYS[mode], id); } catch (_) {}
+            if (effectiveTheme() === mode) applyAccent();
+            if (!(opts && opts.silent)) emitChange();
+            return true;
+        },
+        resetAccent: function () {
+            try {
+                localStorage.removeItem(ACCENT_KEYS.light);
+                localStorage.removeItem(ACCENT_KEYS.dark);
+            } catch (_) {}
+            applyAccent();
+            emitChange();
         }
     };
 

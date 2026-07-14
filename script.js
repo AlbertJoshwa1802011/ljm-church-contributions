@@ -273,7 +273,9 @@ function drawProgressRing(progressPercent) {
 document.addEventListener('DOMContentLoaded', () => {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
-            if (mutation.attributeName === 'data-theme') {
+            // Redraw on a light/dark switch (data-theme) OR an accent-color change
+            // (data-accent, set by theme.js applyAccent) — the ring reads --accent.
+            if (mutation.attributeName === 'data-theme' || mutation.attributeName === 'data-accent') {
                 if (window._currentProgressPercent !== undefined) {
                     drawProgressRing(window._currentProgressPercent);
                 }
