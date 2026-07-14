@@ -322,6 +322,9 @@
             top: 16px;
             right: 16px;
             z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .profile-btn {
             display: flex;
@@ -431,6 +434,86 @@
         #navGroupSheet .ljmh-sheet { transform: translateY(100%); transition: transform .22s cubic-bezier(0.16,1,0.3,1); }
         #navGroupSheet.open .ljmh-sheet { transform: translateY(0); }
         #navGroupSheetTitle { font-family: var(--serif); font-weight: 700; font-size: 15px; color: var(--text); padding: 0 4px 12px; }
+
+        /* ── Search trigger (top-right, next to profile) ── */
+        .search-trigger-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+            border: 1px solid var(--border-strong); background: var(--surface); box-shadow: var(--shadow);
+            font-size: 15px; cursor: pointer; transition: border-color .15s, transform .12s, background .15s;
+        }
+        .search-trigger-btn:hover { border-color: var(--accent); }
+        .search-trigger-btn:active { transform: scale(0.9); }
+
+        /* ── Search sheet — full-screen "app search" cover (Spotlight-style),
+           not a partial bottom sheet: on iPhone, search should feel like its
+           own screen, not a card floating over the current one. ── */
+        #searchSheet { position: fixed; inset: 0; z-index: 13000; }
+        #searchSheet[hidden] { display: none !important; }
+        #searchSheet .ss-panel {
+            position: absolute; inset: 0; background: var(--bg);
+            display: flex; flex-direction: column;
+            transform: translateY(100%); transition: transform .28s cubic-bezier(0.16,1,0.3,1);
+        }
+        #searchSheet.open .ss-panel { transform: translateY(0); }
+        .ss-topbar {
+            flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+            padding: calc(14px + env(safe-area-inset-top)) 16px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .ss-input-wrap {
+            flex: 1; min-width: 0; overflow: hidden; display: flex; align-items: center; gap: 8px;
+            background: var(--bg-soft); border: 1px solid var(--border);
+            border-radius: 999px; padding: 9px 14px;
+        }
+        .ss-input-wrap .ss-icon { font-size: 15px; color: var(--text-faint); flex-shrink: 0; }
+        .ss-input-wrap input {
+            flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+            font: 500 15px var(--sans); color: var(--text);
+        }
+        .ss-input-wrap input::placeholder { color: var(--text-faint); }
+        .ss-clear-btn {
+            border: none; background: var(--border-strong); color: var(--surface);
+            width: 18px; height: 18px; border-radius: 50%; font-size: 11px; line-height: 1;
+            cursor: pointer; flex-shrink: 0; display: none; align-items: center; justify-content: center;
+        }
+        .ss-input-wrap.has-text .ss-clear-btn { display: flex; }
+        .ss-cancel-btn {
+            border: none; background: transparent; color: var(--accent-deep);
+            font: 600 14.5px var(--sans); cursor: pointer; padding: 6px 2px;
+            flex-shrink: 0; white-space: nowrap;
+        }
+        .ss-results {
+            flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+            padding: 6px 12px calc(24px + env(safe-area-inset-bottom));
+        }
+        .ss-group-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-faint); padding: 16px 8px 6px;
+        }
+        .ss-row {
+            display: flex; align-items: center; gap: 12px; width: 100%;
+            padding: 11px 8px; border-radius: 12px; border: none; background: transparent;
+            text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+            transition: background .1s;
+        }
+        .ss-row:active { background: var(--bg-soft); }
+        @media (hover: hover) { .ss-row:hover { background: var(--bg-soft); } }
+        .ss-row .ss-row-icon {
+            display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+            width: 34px; height: 34px; border-radius: 9px; background: var(--accent-soft); font-size: 16px;
+        }
+        .ss-row .ss-row-body { flex: 1; min-width: 0; }
+        .ss-row .ss-row-title { font-size: 14.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ss-row .ss-row-sub { font-size: 12px; color: var(--text-soft); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ss-row .ss-row-chevron { color: var(--text-faint); font-size: 13px; flex-shrink: 0; }
+        .ss-empty { text-align: center; color: var(--text-faint); font-size: 13.5px; padding: 60px 24px; line-height: 1.7; }
+        .ss-empty .ss-empty-icon { font-size: 30px; display: block; margin-bottom: 10px; opacity: .7; }
+        .ss-hint { text-align: center; color: var(--text-faint); font-size: 12.5px; padding: 4px 24px 0; }
+        .ss-hint kbd {
+            font-family: var(--sans); font-size: 11px; font-weight: 600; background: var(--bg-soft);
+            border: 1px solid var(--border-strong); border-radius: 5px; padding: 1px 5px; margin: 0 2px;
+        }
     </style>
 </head>
 <body>
@@ -471,6 +554,7 @@
         <main>
             <!-- Admin Profile Shortcut (Top-Right) -->
             <div class="admin-profile-shortcut" id="adminProfileShortcut">
+                <button type="button" class="search-trigger-btn" id="searchTriggerBtn" title="Search (/)" aria-label="Search">🔍</button>
                 <button class="profile-btn" id="profileBtn" aria-label="Admin profile menu">
                     <span class="profile-avatar" id="profileAvatar">👤</span>
                     <span class="profile-name" id="profileName">Admin</span>
@@ -743,51 +827,6 @@
                 </div>
             </div>
 
-            <!-- EVENTS -->
-            <div class="section" id="section-events">
-                <div class="page-head"><h2>Events</h2><p>Showcase the good works God has done — shown on the public Events page.</p></div>
-                <div class="card">
-                    <h3 id="ev_formTitle">Add event</h3>
-                    <div class="form-grid">
-                        <div><label class="f-label">Title *</label><input class="input" id="ev_title"></div>
-                        <div><label class="f-label">Category</label><input class="input" id="ev_category" placeholder="Outreach, Baptism, Jesus Calls…"></div>
-                        <div><label class="f-label">Event date</label><input class="input" id="ev_date" type="date"></div>
-                        <div><label class="f-label">Location</label><input class="input" id="ev_location"></div>
-                        <div><label class="f-label">Status</label><select class="input" id="ev_status"><option value="draft" selected>Draft</option><option value="published">Published</option></select></div>
-                        <div class="span-all"><label style="display:flex; gap:8px; align-items:center; font-size:12.5px; color:var(--text-soft); cursor:pointer;"><input type="checkbox" id="ev_featured"> Feature on top of the page</label></div>
-                        <div class="span-all"><label class="f-label">Description</label><textarea class="input" id="ev_description" rows="3"></textarea></div>
-                        <div class="span-all">
-                            <label class="f-label">Additional details</label>
-                            <div id="ev_extraRows"></div>
-                            <button type="button" class="mini-btn" id="ev_addExtraBtn">＋ Add detail</button>
-                        </div>
-                        <div class="span-all">
-                            <label class="f-label">Cover photo</label>
-                            <input class="input" id="ev_coverFile" type="file" accept="image/*">
-                            <div id="ev_coverPreviewContainer" style="display:none; margin-top:8px;">
-                                <img id="ev_coverPreview" style="max-width:200px; max-height:200px; border-radius:8px; object-fit:cover;">
-                            </div>
-                        </div>
-                        <div class="span-all">
-                            <label class="f-label">Photos</label>
-                            <input class="input" id="ev_photoFiles" type="file" accept="image/*" multiple>
-                            <div id="ev_photoPreviews" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
-                        </div>
-                    </div>
-                    <div class="btn-row">
-                        <button class="btn btn-primary" id="ev_saveBtn">Save event</button>
-                        <button class="btn btn-outline" id="ev_clearBtn">Clear</button>
-                        <span class="msg" id="ev_msg"></span>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3>Events (<span id="ev_count">–</span>)</h3>
-                    <div class="table-wrap"><table id="ev_table"><thead><tr>
-                        <th>Title</th><th>Category</th><th>Date</th><th>Status</th><th>Photos</th><th></th>
-                    </tr></thead><tbody id="ev_tbody"></tbody></table></div>
-                </div>
-            </div>
-
             <!-- ABOUT PAGE -->
             <div class="section" id="section-about">
                 <div class="page-head"><h2>About page</h2><p>Fully editable — everything below is exactly what believers see on the public About page. Changes go live as soon as you save.</p></div>
@@ -1002,6 +1041,22 @@
                 <div class="ljmh-sheet-grid" id="navGroupSheetGrid"></div>
             </div>
         </div>
+
+        <!-- Full-screen search — pages jump instantly (client-side, from NAV_GROUPS);
+             members/funds/families/purchases/wishlist come from /api/search, debounced. -->
+        <div id="searchSheet" hidden role="dialog" aria-label="Search">
+            <div class="ss-panel">
+                <div class="ss-topbar">
+                    <div class="ss-input-wrap" id="ssInputWrap">
+                        <span class="ss-icon">🔍</span>
+                        <input type="text" id="ssInput" placeholder="Search pages, members, funds…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+                        <button type="button" class="ss-clear-btn" id="ssClearBtn" aria-label="Clear">✕</button>
+                    </div>
+                    <button type="button" class="ss-cancel-btn" id="ssCancelBtn">Cancel</button>
+                </div>
+                <div class="ss-results" id="ssResults"></div>
+            </div>
+        </div>
     </div>
 
     <script src="admin-session.js"></script>
@@ -1024,19 +1079,12 @@
             editingPurchaseId: null,
             editingWishlistId: null,
             wishlistImageUrl: null,
-            eventsCache: [],
-            editingEventId: null,
-            eventExtraRows: [],
-            eventCoverDataUrl: null,
-            eventNewPhotos: [],
-            eventExistingPhotos: [],
-            eventRemovePhotoIds: [],
             loaded: {}
         };
         var PERMISSION_SCOPES = [
             "edit_purchases", "edit_wishlist", "view_members", "manage_members",
             "manage_roles", "manage_funds", "delete_funds", "view_audit", "manage_expenses",
-            "manage_subscriptions", "manage_content", "manage_events"
+            "manage_subscriptions", "manage_content"
         ];
         // Two-level nav: a handful of top-level groups, each expanding to its
         // pages — replaces the old flat 13-item list that had to be rendered
@@ -1060,7 +1108,6 @@
                 ["families", "👨‍👩‍👧‍👦", "Families"]
             ] },
             { id: "content", icon: "📋", label: "Content", items: [
-                ["events", "🎉", "Events"],
                 ["wishlist", "📋", "Wishlist"],
                 ["verses", "📖", "Verses"],
                 ["about", "📰", "About page"]
@@ -1115,27 +1162,6 @@
         function parseJwtEmail(token) {
             try { return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))); }
             catch (_) { return null; }
-        }
-
-        // Admin console's own identity reader — mirrors header.js's shape
-        // ({ name, email, picture }) but reads from THIS page's token
-        // (sessionStorage[TOKEN_KEY]), which is either a Google JWT or, in
-        // dev mode, a raw email string. header.js defines a same-named
-        // helper but keeps it private to its own closure and isn't loaded
-        // on this page, so admin.html needs its own copy.
-        function readStoredIdentity() {
-            var token = sessionStorage.getItem(TOKEN_KEY);
-            if (!token) return null;
-            if (token.indexOf(".") > -1) {
-                var payload = parseJwtEmail(token);
-                if (!payload || !payload.email) return null;
-                return {
-                    name: payload.name || (payload.email || "").split("@")[0],
-                    email: (payload.email || "").toLowerCase(),
-                    picture: payload.picture || ""
-                };
-            }
-            return { name: "Dev Admin", email: token.toLowerCase(), picture: "" };
         }
 
         function unlock(email, name) {
@@ -1289,6 +1315,118 @@
             sheet.classList.remove("open");
             document.documentElement.style.overflow = "";
             setTimeout(function () { sheet.hidden = true; }, 220);
+        }
+
+        // ═══════════════ Search sheet ═══════════════
+        // Category metadata: icon + which section to land on + (optional) the
+        // filter input each section already has, so a record result doesn't just
+        // open the section but pre-filters straight to the thing you searched for.
+        var SEARCH_CATS = {
+            members: { icon: "👤", label: "Members", section: "members", filterInput: "memberSearch", title: function (r) { return r.name; }, sub: function (r) { return r.email || r.phone || ""; } },
+            families: { icon: "👨‍👩‍👧‍👦", label: "Families", section: "families", filterInput: "fam_search", title: function (r) { return r.name; }, sub: function (r) { return r.phone || r.email || ""; } },
+            funds: { icon: "🏛️", label: "Funds", section: "funds", filterInput: null, title: function (r) { return r.name; }, sub: function (r) { return r.description || r.slug || ""; } },
+            purchases: { icon: "🛍️", label: "Purchases", section: "purchases", filterInput: null, title: function (r) { return r.name; }, sub: function (r) { return inr(r.amount) + " · " + (r.fund || ""); } },
+            wishlist: { icon: "📋", label: "Wishlist", section: "wishlist", filterInput: null, title: function (r) { return r.name; }, sub: function (r) { return inr(r.cost) + (r.priority ? " · " + r.priority + " priority" : ""); } }
+        };
+        var searchDebounce = null, searchSeq = 0;
+        function openSearchSheet() {
+            var sheet = $("searchSheet");
+            sheet.hidden = false;
+            requestAnimationFrame(function () { sheet.classList.add("open"); });
+            document.documentElement.style.overflow = "hidden";
+            renderSearchResults(null); // show the empty "start typing" prompt
+            setTimeout(function () { $("ssInput").focus(); }, 150); // after the slide-up transition starts
+        }
+        function closeSearchSheet() {
+            var sheet = $("searchSheet");
+            if (!sheet || sheet.hidden) return;
+            sheet.classList.remove("open");
+            document.documentElement.style.overflow = "";
+            setTimeout(function () { sheet.hidden = true; }, 280);
+            $("ssInput").value = "";
+            $("ssInputWrap").classList.remove("has-text");
+        }
+        function pagesMatching(q) {
+            q = q.toLowerCase();
+            return NAV.filter(function (n) { return n[2].toLowerCase().includes(q); })
+                .map(function (n) { return { key: n[0], icon: n[1], label: n[2] }; });
+        }
+        function goToSearchResult(cat, record) {
+            closeSearchSheet();
+            var meta = SEARCH_CATS[cat];
+            if (meta.filterInput) {
+                var input = $(meta.filterInput);
+                if (input) { input.value = meta.title(record); input.dispatchEvent(new Event("input", { bubbles: true })); }
+            }
+            openSection(meta.section);
+        }
+        function renderSearchResults(query) {
+            var box = $("ssResults");
+            if (!query) {
+                box.innerHTML = '<div class="ss-empty"><span class="ss-empty-icon">🔎</span>Search pages, members, funds, families, purchases &amp; wishlist.</div>';
+                return;
+            }
+            var pageHits = pagesMatching(query);
+            var pagesHtml = pageHits.length ? '<div class="ss-group-label">Pages</div>' + pageHits.map(function (p) {
+                return '<button type="button" class="ss-row" data-page="' + p.key + '"><span class="ss-row-icon">' + p.icon + '</span>' +
+                    '<span class="ss-row-body"><div class="ss-row-title">' + esc(p.label) + '</div></span><span class="ss-row-chevron">›</span></button>';
+            }).join("") : "";
+            box.innerHTML = pagesHtml || '<div class="ss-empty"><span class="ss-empty-icon">⏳</span>Searching…</div>';
+            box.querySelectorAll("[data-page]").forEach(function (b) {
+                b.onclick = function () { closeSearchSheet(); openSection(b.dataset.page); };
+            });
+
+            var seq = ++searchSeq;
+            api("/api/search?q=" + encodeURIComponent(query)).then(function (d) {
+                if (seq !== searchSeq) return; // a newer keystroke already superseded this request
+                var results = (d && d.results) || {};
+                var groupsHtml = Object.keys(SEARCH_CATS).map(function (cat) {
+                    var rows = results[cat];
+                    if (!rows || !rows.length) return "";
+                    var meta = SEARCH_CATS[cat];
+                    return '<div class="ss-group-label">' + meta.label + '</div>' + rows.map(function (r) {
+                        return '<button type="button" class="ss-row" data-cat="' + cat + '" data-id="' + esc(String(r.id)) + '">' +
+                            '<span class="ss-row-icon">' + meta.icon + '</span><span class="ss-row-body">' +
+                            '<div class="ss-row-title">' + esc(meta.title(r)) + '</div>' +
+                            '<div class="ss-row-sub">' + esc(meta.sub(r)) + '</div></span><span class="ss-row-chevron">›</span></button>';
+                    }).join("");
+                }).join("");
+                var everything = pagesHtml + groupsHtml;
+                box.innerHTML = everything || '<div class="ss-empty"><span class="ss-empty-icon">🕊️</span>No matches for "' + esc(query) + '".</div>';
+                box.querySelectorAll("[data-page]").forEach(function (b) {
+                    b.onclick = function () { closeSearchSheet(); openSection(b.dataset.page); };
+                });
+                box.querySelectorAll("[data-cat]").forEach(function (b) {
+                    b.onclick = function () {
+                        var cat = b.dataset.cat;
+                        var record = (results[cat] || []).find(function (r) { return String(r.id) === b.dataset.id; });
+                        if (record) goToSearchResult(cat, record);
+                    };
+                });
+            }).catch(function () {
+                if (seq !== searchSeq) return;
+                if (!pagesHtml) box.innerHTML = '<div class="ss-empty"><span class="ss-empty-icon">⚠️</span>Search is unavailable right now.</div>';
+            });
+        }
+        function wireSearchSheet() {
+            $("searchTriggerBtn").onclick = openSearchSheet;
+            $("ssCancelBtn").onclick = closeSearchSheet;
+            $("ssClearBtn").onclick = function () { $("ssInput").value = ""; $("ssInput").dispatchEvent(new Event("input")); $("ssInput").focus(); };
+            $("ssInput").oninput = function () {
+                var v = $("ssInput").value;
+                $("ssInputWrap").classList.toggle("has-text", !!v);
+                clearTimeout(searchDebounce);
+                if (v.trim().length < 2) { renderSearchResults(null); return; }
+                searchDebounce = setTimeout(function () { renderSearchResults(v.trim()); }, 220);
+            };
+            document.addEventListener("keydown", function (e) {
+                var sheet = $("searchSheet");
+                if (!sheet.hidden) { if (e.key === "Escape") closeSearchSheet(); return; }
+                // "/" opens search, unless the user is already typing in a field
+                if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
+                    e.preventDefault(); openSearchSheet();
+                }
+            });
         }
         function openSection(name) {
             state.currentSection = name;
@@ -2129,218 +2267,6 @@
             }).catch(function (e) { setMsg("w_msg", e.message, "err"); });
         }
 
-        // ═══════════════ Events ═══════════════
-        function compressImage(file, maxDim, quality) {
-            maxDim = maxDim || 1600; quality = quality || 0.82;
-            return new Promise(function (resolve, reject) {
-                var reader = new FileReader();
-                reader.onerror = function () { reject(new Error("Failed to read image file")); };
-                reader.onload = function (e) {
-                    var img = new Image();
-                    img.onerror = function () { reject(new Error("Failed to load image")); };
-                    img.onload = function () {
-                        var w = img.width, h = img.height;
-                        if (w > maxDim || h > maxDim) {
-                            if (w >= h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
-                            else { w = Math.round(w * (maxDim / h)); h = maxDim; }
-                        }
-                        var canvas = document.createElement("canvas");
-                        canvas.width = w; canvas.height = h;
-                        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL("image/jpeg", quality));
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-        function addExtraRow(label, value) {
-            state.eventExtraRows.push({ label: label || "", value: value || "" });
-            renderExtraRows();
-        }
-        function renderExtraRows() {
-            var host = $("ev_extraRows");
-            host.innerHTML = state.eventExtraRows.map(function (row, i) {
-                return '<div data-i="' + i + '" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">' +
-                    '<input class="input" placeholder="Label (e.g. Volunteers)" value="' + esc(row.label) + '" data-f="label">' +
-                    '<input class="input" placeholder="Value (e.g. 24)" value="' + esc(row.value) + '" data-f="value">' +
-                    '<button type="button" class="mini-btn danger" data-remove-extra title="Remove">✕</button>' +
-                    "</div>";
-            }).join("");
-            host.querySelectorAll("[data-i]").forEach(function (row) {
-                var i = Number(row.dataset.i);
-                row.querySelectorAll("[data-f]").forEach(function (field) {
-                    field.oninput = function () { state.eventExtraRows[i][field.dataset.f] = field.value; };
-                });
-                row.querySelector("[data-remove-extra]").onclick = function () {
-                    state.eventExtraRows.splice(i, 1);
-                    renderExtraRows();
-                };
-            });
-        }
-        function collectExtra() {
-            var out = {};
-            state.eventExtraRows.forEach(function (row) {
-                var label = (row.label || "").trim();
-                if (label) out[label] = row.value;
-            });
-            return out;
-        }
-        function renderEventPhotoPreviews() {
-            var host = $("ev_photoPreviews");
-            var html = "";
-            state.eventExistingPhotos.forEach(function (p, i) {
-                html += '<div data-existing="' + i + '" style="width:120px;">' +
-                    '<img src="' + p.photoUrl + '" style="width:120px; height:90px; object-fit:cover; border-radius:6px;">' +
-                    '<input class="input" style="margin-top:4px; font-size:11px; padding:4px 6px;" placeholder="Caption" value="' + esc(p.caption || "") + '" data-existing-caption="' + i + '">' +
-                    '<button type="button" class="mini-btn danger" style="width:100%; margin-top:4px;" data-remove-existing="' + i + '">✕ Remove</button>' +
-                    "</div>";
-            });
-            state.eventNewPhotos.forEach(function (p, i) {
-                html += '<div data-new="' + i + '" style="width:120px;">' +
-                    '<img src="' + p.dataUrl + '" style="width:120px; height:90px; object-fit:cover; border-radius:6px;">' +
-                    '<input class="input" style="margin-top:4px; font-size:11px; padding:4px 6px;" placeholder="Caption" value="' + esc(p.caption || "") + '" data-new-caption="' + i + '">' +
-                    '<button type="button" class="mini-btn danger" style="width:100%; margin-top:4px;" data-remove-new="' + i + '">✕ Remove</button>' +
-                    "</div>";
-            });
-            host.innerHTML = html;
-            host.querySelectorAll("[data-existing-caption]").forEach(function (inp) {
-                inp.oninput = function () { state.eventExistingPhotos[Number(inp.dataset.existingCaption)].caption = inp.value; };
-            });
-            host.querySelectorAll("[data-new-caption]").forEach(function (inp) {
-                inp.oninput = function () { state.eventNewPhotos[Number(inp.dataset.newCaption)].caption = inp.value; };
-            });
-            host.querySelectorAll("[data-remove-existing]").forEach(function (btn) {
-                btn.onclick = function () {
-                    var i = Number(btn.dataset.removeExisting);
-                    var removed = state.eventExistingPhotos.splice(i, 1)[0];
-                    if (removed && removed.id != null) state.eventRemovePhotoIds.push(removed.id);
-                    renderEventPhotoPreviews();
-                };
-            });
-            host.querySelectorAll("[data-remove-new]").forEach(function (btn) {
-                btn.onclick = function () {
-                    state.eventNewPhotos.splice(Number(btn.dataset.removeNew), 1);
-                    renderEventPhotoPreviews();
-                };
-            });
-        }
-        function loadEvents() {
-            fetchEvents();
-        }
-        function fetchEvents() {
-            api("/api/events?all=1&_t=" + Date.now()).then(function (d) {
-                state.eventsCache = d.events || [];
-                $("ev_count").textContent = state.eventsCache.length;
-                var statusPill = { published: "pill-green", draft: "pill-amber" };
-                var tb = $("ev_tbody");
-                tb.innerHTML = state.eventsCache.map(function (ev) {
-                    return "<tr><td><strong>" + esc(ev.title) + "</strong>" + (ev.featured ? " <span class='pill pill-accent'>featured</span>" : "") + "</td>" +
-                        "<td>" + (ev.category ? "<span class='pill pill-grey'>" + esc(ev.category) + "</span>" : "–") + "</td>" +
-                        "<td>" + esc((ev.eventDate || "").substring(0, 10) || "–") + "</td>" +
-                        "<td><span class='pill " + (statusPill[ev.status] || "pill-grey") + "'>" + esc(ev.status || "draft") + "</span></td>" +
-                        "<td>" + (ev.photoCount || 0) + "</td>" +
-                        '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + ev.id + '">Edit</button> ' +
-                        '<button class="mini-btn danger" data-act="del" data-id="' + ev.id + '">Delete</button></td></tr>';
-                }).join("") || '<tr><td colspan="6" class="empty">No events yet — add the first one above.</td></tr>';
-                tb.querySelectorAll(".mini-btn").forEach(function (b) {
-                    b.onclick = function () { b.dataset.act === "edit" ? editEvent(Number(b.dataset.id)) : deleteEvent(Number(b.dataset.id)); };
-                });
-            }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
-        }
-        function editEvent(id) {
-            api("/api/events?id=" + id + "&_t=" + Date.now()).then(function (d) {
-                var ev = d.event;
-                if (!ev) { setMsg("ev_msg", "Event not found", "err"); return; }
-                state.editingEventId = id;
-                $("ev_formTitle").textContent = "Edit event — #" + id;
-                $("ev_title").value = ev.title || "";
-                $("ev_category").value = ev.category || "";
-                $("ev_date").value = (ev.eventDate || "").substring(0, 10);
-                $("ev_location").value = ev.location || "";
-                $("ev_description").value = ev.description || "";
-                $("ev_status").value = ev.status || "draft";
-                $("ev_featured").checked = !!ev.featured;
-
-                state.eventExtraRows = Object.keys(ev.extra || {}).map(function (k) { return { label: k, value: ev.extra[k] }; });
-                renderExtraRows();
-
-                state.eventCoverDataUrl = null;
-                $("ev_coverFile").value = "";
-                if (ev.coverPhoto) {
-                    $("ev_coverPreview").src = ev.coverPhoto;
-                    $("ev_coverPreviewContainer").style.display = "block";
-                } else {
-                    $("ev_coverPreviewContainer").style.display = "none";
-                }
-
-                $("ev_photoFiles").value = "";
-                state.eventNewPhotos = [];
-                state.eventRemovePhotoIds = [];
-                state.eventExistingPhotos = (d.photos || []).map(function (p) {
-                    return { id: p.id, photoUrl: p.photoUrl, caption: p.caption || "" };
-                });
-                renderEventPhotoPreviews();
-
-                window.scrollTo({ top: 0, behavior: "smooth" });
-            }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
-        }
-        function deleteEvent(id) {
-            if (!confirm("Delete this event? This cannot be undone.")) return;
-            api("/api/events?id=" + id, { method: "DELETE" })
-                .then(function (d) { setMsg("ev_msg", d.message, d.success ? "ok" : "err"); if (d.success) fetchEvents(); })
-                .catch(function (e) { setMsg("ev_msg", e.message, "err"); });
-        }
-        function clearEventForm() {
-            state.editingEventId = null;
-            $("ev_formTitle").textContent = "Add event";
-            ["ev_title", "ev_category", "ev_date", "ev_location", "ev_description"].forEach(function (id) { $(id).value = ""; });
-            $("ev_status").value = "draft";
-            $("ev_featured").checked = false;
-            $("ev_coverFile").value = "";
-            $("ev_coverPreviewContainer").style.display = "none";
-            $("ev_photoFiles").value = "";
-            state.eventCoverDataUrl = null;
-            state.eventNewPhotos = [];
-            state.eventExistingPhotos = [];
-            state.eventRemovePhotoIds = [];
-            state.eventExtraRows = [];
-            renderExtraRows();
-            renderEventPhotoPreviews();
-        }
-        function saveEvent() {
-            var title = $("ev_title").value.trim();
-            if (!title) { setMsg("ev_msg", "Title is required", "err"); return; }
-            var payload = {
-                title: title,
-                category: $("ev_category").value.trim(),
-                eventDate: $("ev_date").value,
-                location: $("ev_location").value.trim(),
-                description: $("ev_description").value.trim(),
-                status: $("ev_status").value,
-                featured: $("ev_featured").checked,
-                extra: collectExtra()
-            };
-            var req;
-            if (state.editingEventId) {
-                payload.id = state.editingEventId;
-                if (state.eventCoverDataUrl) payload.coverPhoto = state.eventCoverDataUrl;
-                payload.addPhotos = state.eventNewPhotos;
-                payload.removePhotoIds = state.eventRemovePhotoIds;
-                req = api("/api/events", { method: "PUT", body: JSON.stringify(payload) });
-            } else {
-                payload.coverPhoto = state.eventCoverDataUrl || null;
-                payload.photos = state.eventNewPhotos;
-                req = api("/api/events", { method: "POST", body: JSON.stringify(payload) });
-            }
-            $("ev_saveBtn").disabled = true;
-            req.then(function (d) {
-                $("ev_saveBtn").disabled = false;
-                setMsg("ev_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) { clearEventForm(); fetchEvents(); }
-            }).catch(function (e) { $("ev_saveBtn").disabled = false; setMsg("ev_msg", e.message, "err"); });
-        }
-
         // ═══════════════ Roles ═══════════════
         function loadRoles() {
             $("r_perms").innerHTML = PERMISSION_SCOPES.map(function (p) {
@@ -2718,7 +2644,6 @@
             families: loadFamilies,
             contributions: loadContributions, purchases: loadPurchases,
             sandha: loadSubscriptions, expenses: loadExpenses, wishlist: loadWishlist,
-            events: loadEvents,
             roles: loadRoles, audit: loadAudit,
             verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {}
         };
@@ -2798,23 +2723,13 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            // initGate() renders the Google Sign-In button — it must run,
-            // and must run first. Previously it ran last in this handler,
-            // so a throw in any earlier init call (buildNav/wireThemeToggle/
-            // initProfileMenu) aborted the whole handler and silently left
-            // the auth gate with no button and no error (this is exactly
-            // how the login button went missing). Each call below is now
-            // independently try/catch-wrapped so one failure can't cascade
-            // and block the others — same pattern as the Analytics tab's
-            // lazy-render chain.
-            try { initGate(); } catch (e) { console.error("initGate failed:", e); }
-            try { buildNav(); } catch (e) { console.error("buildNav failed:", e); }
-            try { wireThemeToggle(); } catch (e) { console.error("wireThemeToggle failed:", e); }
-            try { initProfileMenu(); } catch (e) { console.error("initProfileMenu failed:", e); }
-            try {
-                $("navGroupSheet").querySelector(".ljmh-sheet-backdrop").addEventListener("click", closeGroupSheet);
-            } catch (e) { console.error(e); }
+            buildNav();
+            wireThemeToggle();
+            initProfileMenu();
+            $("navGroupSheet").querySelector(".ljmh-sheet-backdrop").addEventListener("click", closeGroupSheet);
             document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeGroupSheet(); });
+            wireSearchSheet();
+            initGate();
             $("f_saveBtn").onclick = saveFund;
             $("f_clearBtn").onclick = clearFundForm;
             $("f_archiveBtn").onclick = function () {
@@ -2856,26 +2771,6 @@
                     reader.readAsDataURL(file);
                 }
             };
-            $("ev_saveBtn").onclick = saveEvent; $("ev_clearBtn").onclick = clearEventForm;
-            $("ev_addExtraBtn").onclick = function () { addExtraRow(); };
-            $("ev_coverFile").onchange = function () {
-                var file = this.files[0];
-                if (!file) return;
-                compressImage(file, 1600, 0.82).then(function (dataUrl) {
-                    state.eventCoverDataUrl = dataUrl;
-                    $("ev_coverPreview").src = dataUrl;
-                    $("ev_coverPreviewContainer").style.display = "block";
-                }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
-            };
-            $("ev_photoFiles").onchange = function () {
-                var files = Array.prototype.slice.call(this.files || []);
-                if (!files.length) return;
-                Promise.all(files.map(function (f) { return compressImage(f, 1600, 0.82); })).then(function (dataUrls) {
-                    dataUrls.forEach(function (dataUrl) { state.eventNewPhotos.push({ dataUrl: dataUrl, caption: "" }); });
-                    renderEventPhotoPreviews();
-                    $("ev_photoFiles").value = "";
-                }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
-            };
             $("r_saveBtn").onclick = saveRole; $("r_linkBtn").onclick = linkEmail;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };
@@ -2892,7 +2787,7 @@
             $("ab_addMissionBtn").onclick = function () { state.aboutContent.missionCards.push({ icon: "✨", title: "", body: "" }); renderMissionRows(); };
             $("ab_addVerseBtn").onclick = function () { state.aboutContent.verses.push({ text: "", ref: "" }); renderVerseRows(); };
             $("ab_addConnectBtn").onclick = function () { state.aboutContent.connectLinks.push({ icon: "🔗", label: "", url: "" }); renderConnectRows(); };
-            $("sub_saveAmount").onclick = saveSubscriptionsAmount;
+            $("sub_saveAmount").onclick = saveSandhaAmount;
             $("sub_addBtn").onclick = addBeliever;
             $("sub_month").onchange = fetchSubscriptions;
             $("sub_search").oninput = renderSubscriptionsTable;
