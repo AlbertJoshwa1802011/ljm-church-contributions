@@ -776,6 +776,70 @@ function renderGivingInsights(contributions, goalAmount) {
 }
 
 // --------------------
+// Category Pie Chart (contribution breakdown by category)
+function renderCategoryPie(contributions) {
+    const canvas = document.getElementById('categoryPieChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (!contributions || contributions.length === 0) return;
+
+    const categoryMap = {};
+    contributions.forEach(c => {
+        const category = (c.Category || 'Uncategorized').trim() || 'Uncategorized';
+        categoryMap[category] = (categoryMap[category] || 0) + (Number(c.Amount) || 0);
+    });
+
+    const sorted = Object.entries(categoryMap).sort((a, b) => b[1] - a[1]);
+    const labels = sorted.map(([name]) => name);
+    const data = sorted.map(([, amt]) => amt);
+
+    const colors = [
+        '#d97757', '#c05f3f', '#f093fb', '#4facfe',
+        '#43e97b', '#fa709a', '#fee140', '#30cfd0',
+        '#a8edea'
+    ];
+
+    const ctx = canvas.getContext('2d');
+    if (window._categoryPieChart && typeof window._categoryPieChart.destroy === 'function') {
+        window._categoryPieChart.destroy();
+    }
+
+    window._categoryPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 700, easing: 'easeOutQuart' },
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 12, family: 'Inter' }, padding: 16 } },
+                title: {
+                    display: true,
+                    text: '📊 Contribution Share by Category',
+                    font: { size: 16, weight: 'bold', family: 'Inter' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total > 0 ? Math.round((context.raw / total) * 100) : 0;
+                            return ` ${context.label}: ₹${Number(context.raw).toLocaleString('en-IN')} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// --------------------
 // Distribution Pie Chart (shares with percentage)
 function renderDistributionPie(contributions) {
     const canvas = document.getElementById('distributionPieChart');
@@ -1201,10 +1265,13 @@ function initTabs() {
                 chartsRendered = true;
                 setTimeout(() => {
                     const contributions = window._currentContributions || [];
-                    renderCategoryPie(contributions);
-                    renderDistributionPie(contributions);
-                    renderSourceChart(contributions);
-                    renderEnhancedStats(contributions);
+                    [renderCategoryPie, renderDistributionPie, renderSourceChart, renderEnhancedStats].forEach(renderFn => {
+                        try {
+                            renderFn(contributions);
+                        } catch (err) {
+                            console.error(`Analytics chart render failed (${renderFn.name}):`, err);
+                        }
+                    });
                 }, 50);
             }
         });

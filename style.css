@@ -2321,13 +2321,18 @@ footer {
 .charts .chart-card {
     width: 95%;
     max-width: 900px;
+    position: relative;
 }
-#distributionChartCard {
+#categoryChartCard,
+#distributionChartCard,
+#sourceChartCard {
     min-height: 280px;
 }
 
 @media (max-width: 768px) {
-    #distributionChartCard { min-height: 260px; }
+    #categoryChartCard,
+    #distributionChartCard,
+    #sourceChartCard { min-height: 260px; }
 }
 
 /* ===== About page ===== */
