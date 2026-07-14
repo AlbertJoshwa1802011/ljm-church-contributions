@@ -1064,6 +1064,27 @@
             catch (_) { return null; }
         }
 
+        // Admin console's own identity reader — mirrors header.js's shape
+        // ({ name, email, picture }) but reads from THIS page's token
+        // (sessionStorage[TOKEN_KEY]), which is either a Google JWT or, in
+        // dev mode, a raw email string. header.js defines a same-named
+        // helper but keeps it private to its own closure and isn't loaded
+        // on this page, so admin.html needs its own copy.
+        function readStoredIdentity() {
+            var token = sessionStorage.getItem(TOKEN_KEY);
+            if (!token) return null;
+            if (token.indexOf(".") > -1) {
+                var payload = parseJwtEmail(token);
+                if (!payload || !payload.email) return null;
+                return {
+                    name: payload.name || (payload.email || "").split("@")[0],
+                    email: (payload.email || "").toLowerCase(),
+                    picture: payload.picture || ""
+                };
+            }
+            return { name: "Dev Admin", email: token.toLowerCase(), picture: "" };
+        }
+
         function unlock(email, name) {
             state.email = email;
             $("authGate").style.display = "none";
@@ -2511,12 +2532,23 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            buildNav();
-            wireThemeToggle();
-            initProfileMenu();
-            $("navGroupSheet").querySelector(".ljmh-sheet-backdrop").addEventListener("click", closeGroupSheet);
+            // initGate() renders the Google Sign-In button — it must run,
+            // and must run first. Previously it ran last in this handler,
+            // so a throw in any earlier init call (buildNav/wireThemeToggle/
+            // initProfileMenu) aborted the whole handler and silently left
+            // the auth gate with no button and no error (this is exactly
+            // how the login button went missing). Each call below is now
+            // independently try/catch-wrapped so one failure can't cascade
+            // and block the others — same pattern as the Analytics tab's
+            // lazy-render chain.
+            try { initGate(); } catch (e) { console.error("initGate failed:", e); }
+            try { buildNav(); } catch (e) { console.error("buildNav failed:", e); }
+            try { wireThemeToggle(); } catch (e) { console.error("wireThemeToggle failed:", e); }
+            try { initProfileMenu(); } catch (e) { console.error("initProfileMenu failed:", e); }
+            try {
+                $("navGroupSheet").querySelector(".ljmh-sheet-backdrop").addEventListener("click", closeGroupSheet);
+            } catch (e) { console.error(e); }
             document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeGroupSheet(); });
-            initGate();
             $("f_saveBtn").onclick = saveFund;
             $("f_clearBtn").onclick = clearFundForm;
             $("f_archiveBtn").onclick = function () {
@@ -2574,7 +2606,7 @@
             $("ab_addMissionBtn").onclick = function () { state.aboutContent.missionCards.push({ icon: "✨", title: "", body: "" }); renderMissionRows(); };
             $("ab_addVerseBtn").onclick = function () { state.aboutContent.verses.push({ text: "", ref: "" }); renderVerseRows(); };
             $("ab_addConnectBtn").onclick = function () { state.aboutContent.connectLinks.push({ icon: "🔗", label: "", url: "" }); renderConnectRows(); };
-            $("sub_saveAmount").onclick = saveSandhaAmount;
+            $("sub_saveAmount").onclick = saveSubscriptionsAmount;
             $("sub_addBtn").onclick = addBeliever;
             $("sub_month").onchange = fetchSubscriptions;
             $("sub_search").oninput = renderSubscriptionsTable;
