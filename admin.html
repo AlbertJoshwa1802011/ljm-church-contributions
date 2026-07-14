@@ -1164,6 +1164,21 @@
             catch (_) { return null; }
         }
 
+        function readStoredIdentity() {
+            var token = sessionStorage.getItem(TOKEN_KEY);
+            if (!token) return null;
+            if (token.indexOf(".") > -1) {
+                var payload = parseJwtEmail(token);
+                if (!payload || !payload.email) return null;
+                return {
+                    name: payload.name || (payload.email || "").split("@")[0],
+                    email: (payload.email || "").toLowerCase(),
+                    picture: payload.picture || ""
+                };
+            }
+            return { name: "Dev Admin", email: token.toLowerCase(), picture: "" };
+        }
+
         function unlock(email, name) {
             state.email = email;
             $("authGate").style.display = "none";
@@ -2723,13 +2738,15 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            buildNav();
-            wireThemeToggle();
-            initProfileMenu();
-            $("navGroupSheet").querySelector(".ljmh-sheet-backdrop").addEventListener("click", closeGroupSheet);
+            try { initGate(); } catch (e) { console.error("initGate failed:", e); }
+            try { buildNav(); } catch (e) { console.error("buildNav failed:", e); }
+            try { wireThemeToggle(); } catch (e) { console.error("wireThemeToggle failed:", e); }
+            try { initProfileMenu(); } catch (e) { console.error("initProfileMenu failed:", e); }
+            try { wireSearchSheet(); } catch (e) { console.error("wireSearchSheet failed:", e); }
+            try {
+                $("navGroupSheet").querySelector(".ljmh-sheet-backdrop").addEventListener("click", closeGroupSheet);
+            } catch (e) { console.error(e); }
             document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeGroupSheet(); });
-            wireSearchSheet();
-            initGate();
             $("f_saveBtn").onclick = saveFund;
             $("f_clearBtn").onclick = clearFundForm;
             $("f_archiveBtn").onclick = function () {
@@ -2787,7 +2804,7 @@
             $("ab_addMissionBtn").onclick = function () { state.aboutContent.missionCards.push({ icon: "✨", title: "", body: "" }); renderMissionRows(); };
             $("ab_addVerseBtn").onclick = function () { state.aboutContent.verses.push({ text: "", ref: "" }); renderVerseRows(); };
             $("ab_addConnectBtn").onclick = function () { state.aboutContent.connectLinks.push({ icon: "🔗", label: "", url: "" }); renderConnectRows(); };
-            $("sub_saveAmount").onclick = saveSandhaAmount;
+            $("sub_saveAmount").onclick = saveSubscriptionsAmount;
             $("sub_addBtn").onclick = addBeliever;
             $("sub_month").onchange = fetchSubscriptions;
             $("sub_search").oninput = renderSubscriptionsTable;
