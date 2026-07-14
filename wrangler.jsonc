@@ -13,6 +13,12 @@
     }
   ],
 
+  // R2 bucket for event photo galleries. Until this is bound (see EVENTS_SETUP.md),
+  // functions/api/events.js falls back to storing photos as base64 data URLs in D1.
+  "r2_buckets": [
+    { "binding": "EVENT_PHOTOS", "bucket_name": "ljm-event-photos" }
+  ],
+
   "vars": {
     "ALLOW_LEGACY_EMAIL_TOKEN": "true"
   }

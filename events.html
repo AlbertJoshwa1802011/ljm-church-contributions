@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Events · LJM Church</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<style>
+    /* ===== Page-specific tweaks (kept here so style.css stays untouched) ===== */
+    .impact-hero {
+        text-align: center;
+        padding: 40px 20px 20px;
+        background: linear-gradient(135deg, rgba(217, 119, 87, 0.08), rgba(192, 95, 63, 0.08));
+        border-radius: 20px;
+        margin-bottom: 30px;
+    }
+    .impact-hero .hero-icon { font-size: 48px; }
+    .impact-hero h1 {
+        font-size: 32px;
+        font-weight: 800;
+        color: #2c3e50;
+        margin: 10px 0 6px;
+        background: linear-gradient(135deg, var(--accent, #d97757), var(--accent-deep, #c05f3f));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .impact-hero p.hero-sub {
+        color: #555;
+        font-size: 16px;
+        max-width: 680px;
+        margin: 6px auto 20px;
+        line-height: 1.5;
+    }
+    .impact-totals {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+    .impact-total-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px 22px;
+        min-width: 160px;
+        text-align: center;
+        box-shadow: 0 4px 14px rgba(217, 119, 87, 0.14);
+        border: 1px solid rgba(217, 119, 87, 0.1);
+    }
+    .impact-total-card .label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #888;
+    }
+    .impact-total-card .value {
+        font-size: 22px;
+        font-weight: 800;
+        margin-top: 4px;
+        background: linear-gradient(135deg, var(--accent, #d97757), var(--accent-deep, #c05f3f));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Filter tabs */
+    .impact-filter {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 20px 0 30px;
+    }
+    .filter-chip {
+        padding: 10px 20px;
+        border-radius: 999px;
+        border: 2px solid #e0e4f2;
+        background: #fff;
+        color: #555;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .filter-chip:hover { border-color: var(--accent, #d97757); color: var(--accent, #d97757); }
+    .filter-chip.active {
+        background: linear-gradient(135deg, var(--accent, #d97757), var(--accent-deep, #c05f3f));
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 6px 14px rgba(217, 119, 87, 0.3);
+    }
+
+    /* Event grid */
+    .impact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .product-card {
+        position: relative;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(217, 119, 87, 0.08);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.25s, box-shadow 0.25s;
+        cursor: pointer;
+    }
+    .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 32px rgba(217, 119, 87, 0.18);
+    }
+    .product-card.featured {
+        border-color: var(--accent, #d97757);
+        box-shadow: 0 8px 24px rgba(217, 119, 87, 0.22);
+    }
+    .featured-ribbon {
+        position: absolute;
+        top: 12px;
+        left: -6px;
+        z-index: 2;
+        background: linear-gradient(135deg, var(--accent, #d97757), var(--accent-deep, #c05f3f));
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        padding: 4px 12px 4px 14px;
+        border-radius: 0 999px 999px 0;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+    .product-photo-wrap { position: relative; }
+    .product-photo {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #f8f6f0, #fbeee8);
+        display: block;
+    }
+    .product-photo.placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 56px;
+        color: #aab4d8;
+    }
+    .event-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
+        background: rgba(15, 20, 40, 0.62);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+        backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .product-body { padding: 16px 18px 18px; }
+    .product-body h3 {
+        font-size: 17px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0 0 6px;
+        line-height: 1.3;
+    }
+    .product-fund-tag {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft, #fbeee8);
+        color: var(--accent-deep, #c05f3f);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        margin-bottom: 8px;
+    }
+    .product-meta {
+        font-size: 12px;
+        color: #888;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .product-meta span:first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .product-desc {
+        font-size: 13px;
+        color: #666;
+        margin-top: 10px;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Empty state */
+    .impact-empty {
+        text-align: center;
+        padding: 60px 20px;
+        color: #777;
+    }
+    .impact-empty .empty-icon { font-size: 54px; }
+    .impact-empty h3 { margin: 12px 0 6px; color: #2c3e50; }
+
+    /* Detail modal */
+    .impact-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 20px;
+    }
+    .impact-modal.open { display: flex; }
+    .impact-modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 20, 40, 0.68);
+        backdrop-filter: blur(4px);
+    }
+    .impact-modal-card {
+        position: relative;
+        max-width: 640px;
+        width: 100%;
+        background: #fff;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .impact-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 20;
+    }
+    .impact-modal-body { padding: 20px 24px 24px; }
+    .impact-modal-body h2 { margin: 0 0 4px; color: #2c3e50; font-size: 22px; font-weight: 800; }
+    .impact-modal-body .meta-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 14px;
+    }
+    .impact-modal-body p.desc {
+        color: #444;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    /* ---- Carousel ---- */
+    .event-carousel {
+        position: relative;
+        width: 100%;
+        background: #0c0c10;
+    }
+    .carousel-stage {
+        position: relative;
+        width: 100%;
+        min-height: 220px;
+        max-height: 420px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .carousel-stage img {
+        width: 100%;
+        max-height: 420px;
+        object-fit: contain;
+        display: block;
+        background: #0c0c10;
+    }
+    .carousel-stage .placeholder-big {
+        width: 100%;
+        height: 260px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 72px;
+        background: linear-gradient(135deg, #23201a, #2b2620);
+    }
+    .carousel-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(0, 0, 0, 0.45);
+        color: #fff;
+        font-size: 26px;
+        line-height: 1;
+        cursor: pointer;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+    .carousel-nav:hover { background: rgba(0, 0, 0, 0.65); }
+    .carousel-nav.prev { left: 10px; }
+    .carousel-nav.next { right: 10px; }
+    .carousel-nav[hidden] { display: none; }
+    .carousel-count {
+        position: absolute;
+        bottom: 10px;
+        right: 12px;
+        background: rgba(0, 0, 0, 0.55);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+        z-index: 5;
+    }
+    .carousel-caption {
+        padding: 8px 24px 0;
+        font-size: 12.5px;
+        color: #888;
+        font-style: italic;
+        min-height: 18px;
+    }
+    .event-thumbs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 12px 24px 4px;
+        scrollbar-width: thin;
+    }
+    .event-thumb {
+        flex: 0 0 auto;
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 2px solid transparent;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 0.2s, border-color 0.2s;
+        background: #eee;
+    }
+    .event-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .event-thumb.active {
+        opacity: 1;
+        border-color: var(--accent, #d97757);
+    }
+    .event-thumb:hover { opacity: 1; }
+
+    /* Additional details list */
+    .event-extra {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .event-extra-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #999;
+        margin-bottom: 8px;
+    }
+    .event-extra-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 13px;
+        padding: 5px 0;
+        color: #444;
+        border-bottom: 1px dashed rgba(0,0,0,0.06);
+    }
+    .event-extra-row:last-child { border-bottom: none; }
+    .event-extra-row .k { color: #888; font-weight: 600; }
+    .event-extra-row .v { text-align: right; font-weight: 600; color: #2c3e50; }
+
+    @media (max-width: 600px) {
+        .impact-hero h1 { font-size: 24px; }
+        .impact-total-card { min-width: 130px; padding: 10px 14px; }
+        .impact-total-card .value { font-size: 18px; }
+        .carousel-stage { min-height: 180px; max-height: 300px; }
+        .carousel-stage img { max-height: 300px; }
+        .carousel-nav { width: 40px; height: 40px; font-size: 22px; }
+        .event-thumb { width: 50px; height: 50px; }
+    }
+</style>
+<link rel="stylesheet" href="theme.css">
+<script src="theme.js"></script>
+<script src="header.js"></script>
+</head>
+<body>
+
+<header class="navbar">
+    <div class="logo">LJM Church Contributions</div>
+    <nav>
+        <a href="funds.html">Funds</a>
+        <a href="members.html">Members</a>
+        <a href="events.html" class="active">Events</a>
+        <a href="impact.html">What We Bought</a>
+        <a href="about.html">About</a>
+    </nav>
+</header>
+
+<main class="container">
+
+    <!-- Hero -->
+    <section class="impact-hero">
+        <div class="hero-icon">🎉</div>
+        <h1>Our Events</h1>
+        <p class="hero-sub">
+            The good works God has done through Light of Jesus Ministry — every event, every photo, in one place.
+        </p>
+
+        <div class="impact-totals">
+            <div class="impact-total-card">
+                <div class="label">Total Events</div>
+                <div class="value" id="totalEvents">–</div>
+            </div>
+            <div class="impact-total-card">
+                <div class="label">Photos Shared</div>
+                <div class="value" id="photosShared">–</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filter tabs -->
+    <section class="impact-filter" id="eventsFilter">
+        <button class="filter-chip active" data-category="all">All</button>
+    </section>
+
+    <!-- Event grid -->
+    <section class="impact-grid" id="eventsGrid">
+        <div class="skeleton-card" style="height: 250px; border-radius: 20px; background: var(--google-surface); border: 1px solid var(--google-border); box-shadow: var(--shadow-sm); opacity: 0.6; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;">
+            <div style="width: 50%; height: 20px; background: #e0e0e0; border-radius: 4px; animation: pulse 1.5s infinite alternate;"></div>
+            <div style="width: 80%; height: 14px; background: #f0f0f0; border-radius: 4px; animation: pulse 1.5s infinite alternate;"></div>
+        </div>
+        <div class="skeleton-card" style="height: 250px; border-radius: 20px; background: var(--google-surface); border: 1px solid var(--google-border); box-shadow: var(--shadow-sm); opacity: 0.6; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;">
+            <div style="width: 50%; height: 20px; background: #e0e0e0; border-radius: 4px; animation: pulse 1.5s infinite alternate;"></div>
+            <div style="width: 80%; height: 14px; background: #f0f0f0; border-radius: 4px; animation: pulse 1.5s infinite alternate;"></div>
+        </div>
+        <div class="skeleton-card" style="height: 250px; border-radius: 20px; background: var(--google-surface); border: 1px solid var(--google-border); box-shadow: var(--shadow-sm); opacity: 0.6; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;">
+            <div style="width: 50%; height: 20px; background: #e0e0e0; border-radius: 4px; animation: pulse 1.5s infinite alternate;"></div>
+            <div style="width: 80%; height: 14px; background: #f0f0f0; border-radius: 4px; animation: pulse 1.5s infinite alternate;"></div>
+        </div>
+    </section>
+
+    <!-- Empty / loading state -->
+    <div id="eventsEmpty" class="impact-empty" style="display: none;">
+        <div class="empty-icon">📅</div>
+        <h3>No events yet</h3>
+        <p>We're preparing to share the moments God is writing through this ministry. Check back soon for photos and stories from our events.</p>
+    </div>
+
+</main>
+
+<!-- Detail Modal -->
+<div id="eventModal" class="impact-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="impact-modal-backdrop" id="eventModalBackdrop"></div>
+    <div class="impact-modal-card" id="eventModalCard">
+        <button class="impact-modal-close" id="eventModalClose" aria-label="Close">×</button>
+
+        <div class="event-carousel" id="eventCarousel">
+            <div class="carousel-stage" id="eventCarouselStage">
+                <img id="eventCarouselImg" alt="">
+                <div class="carousel-count" id="eventCarouselCount"></div>
+            </div>
+            <button type="button" class="carousel-nav prev" id="eventPrev" aria-label="Previous photo">‹</button>
+            <button type="button" class="carousel-nav next" id="eventNext" aria-label="Next photo">›</button>
+        </div>
+        <div class="carousel-caption" id="eventCarouselCaption"></div>
+        <div class="event-thumbs" id="eventThumbs"></div>
+
+        <div class="impact-modal-body">
+            <span class="product-fund-tag" id="eventModalCategory"></span>
+            <h2 id="eventModalTitle"></h2>
+            <div class="meta-row">
+                <span id="eventModalDate"></span>
+                <span id="eventModalLocation"></span>
+            </div>
+            <p class="desc" id="eventModalDesc"></p>
+
+            <div class="event-extra" id="eventModalExtra" style="display:none;">
+                <div class="event-extra-title">Additional Details</div>
+                <div id="eventModalExtraList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="premium-footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <div class="footer-logo">🙏 LJM Church</div>
+            <div class="footer-tagline">Giving with faith, transparency & purpose</div>
+        </div>
+        <div class="footer-right">
+            <a href="https://www.instagram.com/lightofjesusministry/" target="_blank" class="footer-icon">
+                📸 <span>Instagram</span>
+            </a>
+            <a href="https://www.youtube.com/@lightofjesusministrycbe" target="_blank" class="footer-icon">
+                ▶️ <span>YouTube</span>
+            </a>
+            <a href="https://maps.app.goo.gl/weEebFuJnuj34d7h6" target="_blank" class="footer-icon">
+                📍 <span>Location</span>
+            </a>
+        </div>
+    </div>
+    <div class="footer-bottom">© 2026 · LJM Church · Light of Jesus Ministry · Built with ❤️</div>
+</footer>
+
+<script src="admin-session.js"></script>
+<script src="portal-telemetry.js"></script>
+<script src="events.js"></script>
+</body>
+</html>
