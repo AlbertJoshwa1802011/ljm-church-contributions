@@ -48,7 +48,7 @@ async function resolveMember(db, { existingMemberId, name, email, phone }, targe
 }
 
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { env, request } = context;
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
@@ -56,12 +56,38 @@ export async function onRequestGet(context) {
   if (!auth.ok) return auth.response;
 
   try {
-    const familiesQuery = await db.prepare(
-      `SELECT id, family_name AS familyName, head_member_id AS headMemberId, address,
-              primary_phone AS primaryPhone, primary_email AS primaryEmail, notes, status,
-              created_by AS createdBy, created_at AS createdAt
-       FROM families WHERE status != 'archived' ORDER BY family_name ASC`
-    ).all();
+    const url = new URL(request.url);
+    // Search matches family name or any member's name — kept server-side so a
+    // 1000-family church still gets a small, fast payload instead of shipping
+    // every family to the browser on every keystroke.
+    const search = (url.searchParams.get("search") || "").trim();
+    // Pagination is opt-in (only kicks in when ?limit= is passed) so existing
+    // callers that want "everything" keep working unchanged.
+    const limitParam = Number(url.searchParams.get("limit"));
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 500) : null;
+    const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+
+    let where = "f.status != 'archived'";
+    const params = [];
+    if (search) {
+      where += ` AND (f.family_name LIKE ? OR EXISTS (SELECT 1 FROM members mm WHERE mm.family_id = f.id AND mm.name LIKE ?))`;
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    const countRow = await db.prepare(`SELECT COUNT(*) AS n FROM families f WHERE ${where}`).bind(...params).first();
+    const total = (countRow && countRow.n) || 0;
+
+    let listSql = `SELECT f.id, f.family_name AS familyName, f.head_member_id AS headMemberId, f.address,
+              f.primary_phone AS primaryPhone, f.primary_email AS primaryEmail, f.notes, f.status,
+              f.created_by AS createdBy, f.created_at AS createdAt
+       FROM families f WHERE ${where} ORDER BY f.family_name COLLATE NOCASE ASC`;
+    const listParams = params.slice();
+    if (limit) {
+      listSql += ` LIMIT ? OFFSET ?`;
+      listParams.push(limit, (page - 1) * limit);
+    }
+    const familiesQuery = await db.prepare(listSql).bind(...listParams).all();
+    const familyRows = familiesQuery.results || [];
 
     const membersQuery = await db.prepare(
       `SELECT id, name, email, phone, is_verified AS isVerified, family_id AS familyId,
@@ -76,7 +102,7 @@ export async function onRequestGet(context) {
       (byFamily[m.familyId] = byFamily[m.familyId] || []).push(m);
     });
 
-    const families = (familiesQuery.results || []).map(f => {
+    const families = familyRows.map(f => {
       const members = byFamily[f.id] || [];
       const head = members.find(m => m.id === f.headMemberId);
       return {
@@ -89,7 +115,9 @@ export async function onRequestGet(context) {
 
     const unassignedMembers = allMembers.filter(m => !m.familyId);
 
-    return json({ success: true, families, unassignedMembers, count: families.length }, 200, { "Cache-Control": "no-store" });
+    return json({
+      success: true, families, unassignedMembers, count: families.length, total, page, limit
+    }, 200, { "Cache-Control": "no-store" });
   } catch (err) {
     return json({ success: false, message: err.message || String(err) }, 500);
   }

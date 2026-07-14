@@ -121,3 +121,49 @@ test("subscriptions: personal history reflects the family's payments once groupe
   assert.equal(personal.paidMonths.length, 1);
   assert.equal(personal.paidMonths[0].month, "2026-01");
 });
+
+test("subscriptions: month view search filters families by family name or member name", async () => {
+  const db = freshDb();
+  await families.onRequestPost(makeContext({
+    db, body: { familyName: "Verghese Family", members: [{ name: "Abraham Verghese", relation: "Head" }] }
+  }));
+  await families.onRequestPost(makeContext({
+    db, body: { familyName: "Thomas Family", members: [{ name: "John Thomas", relation: "Head" }] }
+  }));
+
+  const byFamilyName = await readJson(await subscriptions.onRequestGet(makeContext({
+    db, url: "https://test.local/api/subscriptions?month=2026-07&search=Verghese"
+  })));
+  assert.equal(byFamilyName.families.pending.length, 1);
+  assert.equal(byFamilyName.families.pending[0].familyName, "Verghese Family");
+
+  const byMemberName = await readJson(await subscriptions.onRequestGet(makeContext({
+    db, url: "https://test.local/api/subscriptions?month=2026-07&search=John%20Thomas"
+  })));
+  assert.equal(byMemberName.families.pending.length, 1);
+  assert.equal(byMemberName.families.pending[0].familyName, "Thomas Family");
+});
+
+test("subscriptions: year grid returns one row per family with all 12 months", async () => {
+  const db = freshDb();
+  await setSubscriptionsAmount(db, 50);
+  const createRes = await readJson(await families.onRequestPost(makeContext({
+    db, body: { familyName: "Grid Family", members: [{ name: "Grid Head", relation: "Head" }] }
+  })));
+  const familyId = createRes.id;
+
+  await subscriptions.onRequestPost(makeContext({ db, body: { action: "mark_paid", familyId, month: "2026-02" } }));
+  await subscriptions.onRequestPost(makeContext({ db, body: { action: "mark_paid", familyId, month: "2026-05" } }));
+
+  const grid = await readJson(await subscriptions.onRequestGet(makeContext({ db, url: "https://test.local/api/subscriptions?year=2026" })));
+  assert.equal(grid.success, true, grid.message);
+  assert.equal(grid.months.length, 12);
+  assert.equal(grid.families.length, 1);
+  const fam = grid.families[0];
+  assert.equal(fam.familyName, "Grid Family");
+  assert.equal(fam.months["2026-02"].paid, true);
+  assert.equal(fam.months["2026-02"].amount, 50);
+  assert.equal(fam.months["2026-05"].paid, true);
+  assert.equal(fam.months["2026-01"].paid, false);
+  assert.equal(grid.totalCollected, 100);
+});

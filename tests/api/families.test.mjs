@@ -111,6 +111,38 @@ test("families: cannot steal a member who already belongs to another family", as
   assert.equal(familiesRow.n, 0);
 });
 
+test("families: search filters by family name or member name, pagination is opt-in", async () => {
+  const db = freshDb();
+  await families.onRequestPost(makeContext({
+    db, body: { familyName: "Verghese Family", members: [{ name: "Abraham Verghese", relation: "Head" }] }
+  }));
+  await families.onRequestPost(makeContext({
+    db, body: { familyName: "Thomas Family", members: [{ name: "John Thomas", relation: "Head" }] }
+  }));
+
+  const all = await readJson(await families.onRequestGet(makeContext({ db })));
+  assert.equal(all.families.length, 2, "no search/limit params must still return everything");
+
+  const byName = await readJson(await families.onRequestGet(makeContext({
+    db, url: "https://test.local/api/families?search=Verghese"
+  })));
+  assert.equal(byName.families.length, 1);
+  assert.equal(byName.families[0].familyName, "Verghese Family");
+  assert.equal(byName.total, 1);
+
+  const byMember = await readJson(await families.onRequestGet(makeContext({
+    db, url: "https://test.local/api/families?search=John%20Thomas"
+  })));
+  assert.equal(byMember.families.length, 1);
+  assert.equal(byMember.families[0].familyName, "Thomas Family");
+
+  const paged = await readJson(await families.onRequestGet(makeContext({
+    db, url: "https://test.local/api/families?limit=1&page=2"
+  })));
+  assert.equal(paged.families.length, 1);
+  assert.equal(paged.total, 2);
+});
+
 test("families: rejects request without manage_members permission", async () => {
   const db = freshDb();
   const res = await families.onRequestPost(makeContext({

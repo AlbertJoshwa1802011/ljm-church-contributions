@@ -42,6 +42,7 @@ export async function onRequestGet(context) {
 
   const url = new URL(request.url);
   const memberName = (url.searchParams.get("member") || "").trim();
+  const search = (url.searchParams.get("search") || "").trim();
 
   try {
     // ── Personal history: months this member (or their family) paid in the requested year ──
@@ -77,6 +78,59 @@ export async function onRequestGet(context) {
       }, 200, corsHeaders({ "Cache-Control": "no-store" }));
     }
 
+    // ── Year grid: every family × all 12 months of a year, one query — the
+    // "complete year data" admin view. Ungrouped individuals aren't part of
+    // this grid (they're billed/tracked per-month only, see above). ──
+    const yearParam = (url.searchParams.get("year") || "").trim();
+    if (yearParam && /^\d{4}$/.test(yearParam) && !url.searchParams.get("month")) {
+      const amount = await getSubscriptionsAmount(db);
+
+      let where = "f.status != 'archived'";
+      const params = [];
+      if (search) {
+        where += ` AND (f.family_name LIKE ? OR EXISTS (SELECT 1 FROM members mm WHERE mm.family_id = f.id AND mm.name LIKE ?))`;
+        params.push(`%${search}%`, `%${search}%`);
+      }
+
+      const familiesQ = await db.prepare(
+        `SELECT f.id, f.family_name AS familyName, f.head_member_id AS headMemberId,
+                hm.name AS headMemberName, COUNT(m.id) AS memberCount
+         FROM families f
+         LEFT JOIN members hm ON hm.id = f.head_member_id
+         LEFT JOIN members m ON m.family_id = f.id
+         WHERE ${where}
+         GROUP BY f.id
+         ORDER BY f.family_name COLLATE NOCASE`
+      ).bind(...params).all();
+      const familyRows = familiesQ.results || [];
+
+      const paymentsQ = await db.prepare(
+        `SELECT family_id AS familyId, month, amount, paid_on AS paidOn, method
+         FROM sandha_family_payments WHERE month LIKE ?`
+      ).bind(`${yearParam}-%`).all();
+      const paymentsByFamily = {};
+      (paymentsQ.results || []).forEach(p => {
+        (paymentsByFamily[p.familyId] = paymentsByFamily[p.familyId] || {})[p.month] = p;
+      });
+
+      const monthKeys = Array.from({ length: 12 }, (_, i) => `${yearParam}-${String(i + 1).padStart(2, "0")}`);
+      const families = familyRows.map(f => {
+        const paidByFamily = paymentsByFamily[f.id] || {};
+        const months = {};
+        monthKeys.forEach(mk => {
+          const p = paidByFamily[mk];
+          months[mk] = p ? { paid: true, amount: p.amount, paidOn: p.paidOn, method: p.method } : { paid: false };
+        });
+        return { id: f.id, familyName: f.familyName, headMemberId: f.headMemberId, headMemberName: f.headMemberName, memberCount: f.memberCount, months };
+      });
+
+      const totalCollected = (paymentsQ.results || []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+
+      return json({
+        success: true, year: yearParam, amount, months: monthKeys, families, totalCollected
+      }, 200, corsHeaders({ "Cache-Control": "no-store" }));
+    }
+
     // ── Month view: paid + pending for every ungrouped member, and every family ──
     let month = (url.searchParams.get("month") || currentMonth()).trim();
     if (!MONTH_RE.test(month)) month = currentMonth();
@@ -101,17 +155,28 @@ export async function onRequestGet(context) {
     ).bind(month).all();
     const pending = pendingQ.results || [];
 
-    // Families: paid vs pending for the month.
+    // Families: paid vs pending for the month. Head name + member count come
+    // from joins rather than per-row correlated subqueries so this stays fast
+    // as the family count grows into the hundreds/thousands.
+    let famWhere = "f.status != 'archived'";
+    const famParams = [month];
+    if (search) {
+      famWhere += ` AND (f.family_name LIKE ? OR EXISTS (SELECT 1 FROM members mm WHERE mm.family_id = f.id AND mm.name LIKE ?))`;
+      famParams.push(`%${search}%`, `%${search}%`);
+    }
     const familiesQ = await db.prepare(
       `SELECT f.id, f.family_name AS familyName, f.head_member_id AS headMemberId,
-              (SELECT name FROM members WHERE id = f.head_member_id) AS headMemberName,
-              (SELECT COUNT(*) FROM members WHERE family_id = f.id) AS memberCount,
+              hm.name AS headMemberName,
+              COUNT(m.id) AS memberCount,
               sfp.amount, sfp.paid_on AS paidOn, sfp.method
        FROM families f
+       LEFT JOIN members hm ON hm.id = f.head_member_id
+       LEFT JOIN members m ON m.family_id = f.id
        LEFT JOIN sandha_family_payments sfp ON sfp.family_id = f.id AND sfp.month = ?
-       WHERE f.status != 'archived'
+       WHERE ${famWhere}
+       GROUP BY f.id
        ORDER BY f.family_name COLLATE NOCASE`
-    ).bind(month).all();
+    ).bind(...famParams).all();
     const allFamilies = familiesQ.results || [];
     const familiesPaid = allFamilies.filter(f => f.paidOn != null || f.method != null || f.amount != null);
     const familiesPending = allFamilies.filter(f => !(f.paidOn != null || f.method != null || f.amount != null))

@@ -202,6 +202,8 @@ CREATE TABLE IF NOT EXISTS families (
 );
 CREATE INDEX IF NOT EXISTS idx_families_status ON families(status);
 CREATE INDEX IF NOT EXISTS idx_members_family ON members(family_id);
+-- Fast family-name search/sort at scale (see migrations/0012_families_search_index.sql)
+CREATE INDEX IF NOT EXISTS idx_families_name ON families(family_name COLLATE NOCASE);
 
 -- 15. Per-family Subscriptions payments (see migrations/0007_sandha_family.sql)
 CREATE TABLE IF NOT EXISTS sandha_family_payments (

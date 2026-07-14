@@ -74,14 +74,6 @@
 
     function initial(name) { return (name || "?").trim().charAt(0).toUpperCase(); }
 
-    function personCard(p, paid) {
-        return '<div class="subscriptions-person' + (paid ? " is-paid" : "") + '">' +
-            '<span class="sp-avatar">' + esc(initial(p.name)) + "</span>" +
-            '<span class="sp-name">' + esc(p.name) + "</span>" +
-            (paid ? '<span class="sp-meta">' + esc(p.paidOn || "") + "</span>" : "") +
-        "</div>";
-    }
-
     function familyCard(f, paid) {
         return '<div class="subscriptions-person' + (paid ? " is-paid" : "") + '">' +
             '<span class="sp-avatar">👪</span>' +
@@ -151,21 +143,22 @@
                 (d.amount ? '<div class="subscriptions-kpi"><div class="sk-value">' + inr(d.amount) + '</div><div class="sk-label">Subscriptions amount</div></div>' : "") +
                 '<div class="subscriptions-progress"><div class="subscriptions-progress-fill" style="width:' + pct + '%"></div></div>';
 
-            document.getElementById("paidCount").textContent = "(" + t.paidCount + ")";
-            document.getElementById("pendingCount").textContent = "(" + t.pendingCount + ")";
-
+            // Public view shows the created family list only — individual believers
+            // not yet grouped into a family are tracked internally by admins but
+            // aren't listed here as separate "members".
             var famPaid = (d.families && d.families.paid) || [];
             var famPending = (d.families && d.families.pending) || [];
 
-            var paidHtml = famPaid.map(function (f) { return familyCard(f, true); }).join("") +
-                (d.paid || []).map(function (p) { return personCard(p, true); }).join("");
+            var paidHtml = famPaid.map(function (f) { return familyCard(f, true); }).join("");
             document.getElementById("paidGrid").innerHTML = paidHtml ||
                 '<div class="subscriptions-loading">No payments recorded for this month yet.</div>';
 
-            var pendingHtml = famPending.map(function (f) { return familyCard(f, false); }).join("") +
-                (d.pending || []).map(function (p) { return personCard(p, false); }).join("");
+            var pendingHtml = famPending.map(function (f) { return familyCard(f, false); }).join("");
             document.getElementById("pendingGrid").innerHTML = pendingHtml ||
                 '<div class="subscriptions-loading">Everyone has paid — praise God! 🎉</div>';
+
+            document.getElementById("paidCount").textContent = "(" + famPaid.length + ")";
+            document.getElementById("pendingCount").textContent = "(" + famPending.length + ")";
 
             renderPersonal(d);
         }).catch(function (e) {

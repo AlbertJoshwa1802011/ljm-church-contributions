@@ -284,6 +284,31 @@
         .family-member-item:last-child { border-bottom: none; }
         .family-member-item .fm-name { font-weight: 600; flex: 1 1 140px; min-width: 0; }
 
+        /* Family tree — head/spouse/parent on top, children below, connected
+           by a simple vertical line (an org-chart, not the flat list it replaced). */
+        .family-tree { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .tree-tier { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: 100%; }
+        .tree-tier-other { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+        .tree-connector { width: 2px; height: 16px; background: var(--border-strong); }
+        .tree-node {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            border: 1px solid var(--border); border-radius: 10px; background: var(--bg-soft);
+            padding: 10px 14px; min-width: 130px; text-align: center;
+        }
+        .tree-node-empty { color: var(--text-faint); font-size: 12px; font-style: italic; border-style: dashed; }
+        .tree-node .fm-name { font-weight: 600; font-size: 13px; }
+        .tree-node-dob { font-size: 11px; color: var(--text-faint); }
+        .tree-node-actions { display: flex; gap: 6px; margin-top: 4px; }
+
+        /* ── Highlighted search inputs (fast retrieval is the whole point) ── */
+        .search-highlight {
+            border-color: var(--accent) !important;
+            background: var(--accent-soft) !important;
+            font-weight: 600;
+        }
+        .search-highlight:focus { box-shadow: 0 0 0 4px rgba(80, 70, 229, 0.22) !important; }
+        .search-highlight::placeholder { color: var(--accent-deep); opacity: .75; font-weight: 500; }
+
         /* ── Wishlist ── */
         .wishlist-card-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
         .wishlist-item-card {
@@ -578,7 +603,7 @@
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
                         <h3 style="margin:0;">All families (<span id="fam_count">–</span>)</h3>
-                        <input class="input" id="fam_search" placeholder="Search family or member…" style="max-width:220px;">
+                        <input class="input search-highlight" id="fam_search" placeholder="🔍 Search family or member…" style="max-width:220px;">
                     </div>
                     <div id="fam_list"><div class="empty">Loading…</div></div>
                 </div>
@@ -668,7 +693,7 @@
                         <h3 style="margin:0;">Subscriptions status — <span id="sub_monthLabel"></span></h3>
                         <div style="display:flex; gap:8px; align-items:center;">
                             <input class="input" id="sub_month" type="month" style="max-width:170px;">
-                            <input class="input" id="sub_search" placeholder="Search family or believer…" style="max-width:200px;">
+                            <input class="input search-highlight" id="sub_search" placeholder="🔍 Search family or believer…" style="max-width:220px;">
                         </div>
                     </div>
                     <h4 style="font-size:13px; color:var(--text-soft); margin:0 0 8px;">Families</h4>
@@ -680,6 +705,20 @@
                         <th>Member</th><th>Status</th><th>Paid on</th><th>Amount</th><th></th>
                     </tr></thead><tbody></tbody></table></div>
                     <div class="btn-row"><span class="msg" id="sub_msg"></span></div>
+                </div>
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+                        <h3 style="margin:0;">Full year at a glance</h3>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input class="input" id="sub_year" type="number" min="2000" max="2100" style="max-width:110px;" placeholder="Year">
+                            <button class="btn btn-outline" id="sub_yearBtn">View year</button>
+                        </div>
+                    </div>
+                    <p class="msg" style="margin-bottom:10px;">Every family, every month of the chosen year, in one table — use the search box above to jump straight to a family. ✓ = paid, — = pending.</p>
+                    <div class="table-wrap"><table id="sub_yearTable"><thead><tr>
+                        <th>Family</th><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+                        <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th><th>Collected</th>
+                    </tr></thead><tbody><tr><td colspan="14" class="empty">Choose a year and click "View year".</td></tr></tbody></table></div>
                 </div>
             </div>
 
@@ -1017,6 +1056,8 @@
             email: "",
             fundsCache: [],
             membersCache: [],
+            familiesCache: [],
+            familiesTotal: 0,
             purchasesCache: [],
             wishlistCache: [],
             auditOffset: 0,
@@ -1087,6 +1128,14 @@
             });
         }
         function inr(n) { return "₹" + Number(n || 0).toLocaleString("en-IN"); }
+        function debounce(fn, ms) {
+            var t;
+            return function () {
+                var args = arguments, ctx = this;
+                clearTimeout(t);
+                t = setTimeout(function () { fn.apply(ctx, args); }, ms);
+            };
+        }
         function setMsg(id, text, cls) {
             var el = $(id); if (!el) return;
             el.textContent = text || "";
@@ -1622,22 +1671,51 @@
         }
         function loadFamilies() {
             if (!$("fam_memberRows").children.length) addFamMemberRow();
-            api("/api/families?_t=" + Date.now()).then(function (d) {
+            // Search runs server-side (indexed on family_name, plus a member-name
+            // match) so this stays fast even with 1000+ families — the browser
+            // only ever renders the families that actually match.
+            var search = ($("fam_search").value || "").trim();
+            var url = "/api/families?_t=" + Date.now() + (search ? "&search=" + encodeURIComponent(search) : "");
+            api(url).then(function (d) {
                 if (!d.success) { $("fam_list").innerHTML = '<div class="empty">' + esc(d.message || "No access") + "</div>"; return; }
                 state.familiesCache = d.families || [];
+                state.familiesTotal = d.total != null ? d.total : state.familiesCache.length;
                 state.unassignedCache = d.unassignedMembers || [];
                 renderFamilies();
                 renderUnassigned();
             }).catch(function (e) { $("fam_list").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
         }
+        // A family renders as a small tree — head/spouse/parent on top, children
+        // below, connected by a simple vertical line (see .family-tree in style.css).
+        function familyTreeNodeHtml(f, m) {
+            return '<div class="tree-node">' +
+                '<span class="fm-name">' + esc(m.name) + (m.id === f.headMemberId ? ' <span class="pill pill-accent">Head</span>' : "") + "</span>" +
+                '<span class="pill pill-grey">' + esc(m.relation || "Other") + "</span>" +
+                (m.dateOfBirth ? '<span class="tree-node-dob">🎂 ' + esc(m.dateOfBirth) + "</span>" : "") +
+                '<div class="tree-node-actions">' +
+                    '<button class="mini-btn" data-act="sethead" data-family="' + f.id + '" data-member="' + m.id + '"' + (m.id === f.headMemberId ? " disabled" : "") + '>Make head</button>' +
+                    '<button class="mini-btn danger" data-act="removemember" data-member="' + m.id + '">Remove</button>' +
+                "</div></div>";
+        }
+        function familyTreeHtml(f) {
+            var members = f.members || [];
+            if (!members.length) return '<div class="empty" style="padding:8px 0;">No members yet.</div>';
+            var top = members.filter(function (m) { return ["Head", "Spouse", "Parent"].indexOf(m.relation) > -1; });
+            var bottom = members.filter(function (m) { return m.relation === "Child"; });
+            var placed = top.concat(bottom);
+            var other = members.filter(function (m) { return placed.indexOf(m) === -1; });
+
+            var html = '<div class="family-tree">';
+            html += '<div class="tree-tier tree-tier-top">' + (top.length ? top.map(function (m) { return familyTreeNodeHtml(f, m); }).join("") : '<div class="tree-node tree-node-empty">No head/spouse set</div>') + "</div>";
+            if (bottom.length) html += '<div class="tree-connector"></div><div class="tree-tier tree-tier-bottom">' + bottom.map(function (m) { return familyTreeNodeHtml(f, m); }).join("") + "</div>";
+            if (other.length) html += '<div class="tree-tier tree-tier-other">' + other.map(function (m) { return familyTreeNodeHtml(f, m); }).join("") + "</div>";
+            html += "</div>";
+            return html;
+        }
         function renderFamilies() {
-            var q = ($("fam_search").value || "").toLowerCase();
-            var families = (state.familiesCache || []).filter(function (f) {
-                if (!q) return true;
-                if ((f.familyName || "").toLowerCase().indexOf(q) > -1) return true;
-                return (f.members || []).some(function (m) { return (m.name || "").toLowerCase().indexOf(q) > -1; });
-            });
-            $("fam_count").textContent = (state.familiesCache || []).length;
+            var families = state.familiesCache || [];
+            var searchActive = !!($("fam_search").value || "").trim();
+            $("fam_count").textContent = searchActive ? (families.length + " match / " + state.familiesTotal) : families.length;
             var header = '<div class="family-list-header">' +
                         '<span>Family Name</span>' +
                         '<span>Members</span>' +
@@ -1647,15 +1725,7 @@
                         '</div>';
 
             $("fam_list").innerHTML = header + families.map(function (f) {
-                var membersHtml = (f.members || []).map(function (m) {
-                    return '<div class="family-member-item">' +
-                        '<span class="fm-name">' + esc(m.name) + (m.id === f.headMemberId ? ' <span class="pill pill-accent">Head</span>' : "") + "</span>" +
-                        '<span class="pill pill-grey">' + esc(m.relation || "Other") + "</span>" +
-                        (m.dateOfBirth ? '<span style="font-size:11px;color:var(--text-faint);">🎂 ' + esc(m.dateOfBirth) + "</span>" : "") +
-                        '<button class="mini-btn" data-act="sethead" data-family="' + f.id + '" data-member="' + m.id + '"' + (m.id === f.headMemberId ? " disabled" : "") + '>Make head</button>' +
-                        '<button class="mini-btn danger" data-act="removemember" data-member="' + m.id + '">Remove</button>' +
-                        "</div>";
-                }).join("") || '<div class="empty" style="padding:8px 0;">No members yet.</div>';
+                var membersHtml = familyTreeHtml(f);
 
                 return '<div class="family-card" data-family-id="' + f.id + '">' +
                     '<div class="family-card-head" data-toggle>' +
@@ -1843,6 +1913,7 @@
         // ═══════════════ Subscriptions ═══════════════
         function loadSubscriptions() {
             if (!$("sub_month").value) $("sub_month").value = new Date().toISOString().substring(0, 7);
+            if (!$("sub_year").value) $("sub_year").value = new Date().getFullYear();
             fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
                 .then(function (r) { return r.json(); })
                 .then(function (d) { $("sub_amount").value = (d.settings && d.settings.sandha_amount) || 0; });
@@ -1851,7 +1922,10 @@
         function fetchSubscriptions() {
             var month = $("sub_month").value || new Date().toISOString().substring(0, 7);
             $("sub_monthLabel").textContent = month;
-            api("/api/subscriptions?month=" + month + "&_t=" + Date.now()).then(function (d) {
+            // Family search runs server-side (indexed) so this stays fast at 1000+ families.
+            var search = ($("sub_search").value || "").trim();
+            var url = "/api/subscriptions?month=" + month + "&_t=" + Date.now() + (search ? "&search=" + encodeURIComponent(search) : "");
+            api(url).then(function (d) {
                 if (!d.success) { setMsg("sub_msg", d.message || "Failed to load", "err"); return; }
                 state.subscriptionsCache = d;
                 var t = d.totals || {};
@@ -1868,14 +1942,14 @@
         function renderSubscriptionsFamiliesTable() {
             var d = state.subscriptionsCache;
             if (!d) return;
-            var q = ($("sub_search").value || "").toLowerCase();
             var month = d.month;
             var fam = d.families || { paid: [], pending: [] };
+            // Search already applied server-side (see fetchSubscriptions) — the
+            // families here are exactly the matches, no client re-filtering needed.
             var rows = [];
             (fam.paid || []).forEach(function (f) { rows.push({ id: f.id, familyName: f.familyName, headMemberName: f.headMemberName, memberCount: f.memberCount, paid: true, paidOn: f.paidOn, amount: f.amount }); });
             (fam.pending || []).forEach(function (f) { rows.push({ id: f.id, familyName: f.familyName, headMemberName: f.headMemberName, memberCount: f.memberCount, paid: false }); });
             rows.sort(function (a, b) { return a.familyName.localeCompare(b.familyName); });
-            rows = rows.filter(function (r) { return !q || r.familyName.toLowerCase().indexOf(q) > -1 || (r.headMemberName || "").toLowerCase().indexOf(q) > -1; });
 
             var tb = $("sub_famTable").querySelector("tbody");
             tb.innerHTML = rows.map(function (r) {
@@ -1935,6 +2009,36 @@
                         .catch(function (e) { b.disabled = false; setMsg("sub_msg", e.message, "err"); });
                 };
             });
+        }
+        function fetchSubscriptionsYear() {
+            var year = Number($("sub_year").value) || new Date().getFullYear();
+            $("sub_year").value = year;
+            var search = ($("sub_search").value || "").trim();
+            var tb = $("sub_yearTable").querySelector("tbody");
+            tb.innerHTML = '<tr><td colspan="14" class="empty">Loading…</td></tr>';
+            var url = "/api/subscriptions?year=" + year + "&_t=" + Date.now() + (search ? "&search=" + encodeURIComponent(search) : "");
+            api(url).then(function (d) {
+                if (!d.success) { tb.innerHTML = '<tr><td colspan="14" class="empty">' + esc(d.message || "Failed to load") + "</td></tr>"; return; }
+                state.subscriptionsYearCache = d;
+                renderSubscriptionsYearTable();
+            }).catch(function (e) { tb.innerHTML = '<tr><td colspan="14" class="empty">' + esc(e.message) + "</td></tr>"; });
+        }
+        function renderSubscriptionsYearTable() {
+            var d = state.subscriptionsYearCache;
+            if (!d) return;
+            var tb = $("sub_yearTable").querySelector("tbody");
+            tb.innerHTML = (d.families || []).map(function (f) {
+                var collected = 0;
+                var monthCells = (d.months || []).map(function (mk) {
+                    var m = f.months[mk] || { paid: false };
+                    if (m.paid) collected += Number(m.amount) || 0;
+                    return '<td title="' + esc(mk + (m.paid ? " · paid " + (m.paidOn || "") : " · pending")) + '">' +
+                        (m.paid ? '<span class="pill pill-green">✓</span>' : '<span class="pill pill-grey">—</span>') + "</td>";
+                }).join("");
+                return "<tr><td><strong>" + esc(f.familyName) + "</strong>" +
+                    (f.headMemberName ? '<div style="font-size:11px;color:var(--text-faint);">' + esc(f.headMemberName) + "</div>" : "") + "</td>" +
+                    monthCells + "<td>" + inr(collected) + "</td></tr>";
+            }).join("") || '<tr><td colspan="14" class="empty">No families match.</td></tr>';
         }
         function saveSubscriptionsAmount() {
             var v = String(Number($("sub_amount").value) || 0);
@@ -2841,7 +2945,7 @@
             $("memberSearch").oninput = renderMembers;
             $("fam_saveBtn").onclick = saveFamily; $("fam_clearBtn").onclick = clearFamilyForm;
             $("fam_addRowBtn").onclick = addFamMemberRow;
-            $("fam_search").oninput = renderFamilies;
+            $("fam_search").oninput = debounce(loadFamilies, 250);
             $("p_saveBtn").onclick = savePurchase; $("p_clearBtn").onclick = clearPurchaseForm;
             $("x_saveBtn").onclick = saveExpense; $("x_clearBtn").onclick = clearExpenseForm;
             $("w_saveBtn").onclick = saveWishlist; $("w_clearBtn").onclick = clearWishlistForm;
@@ -2895,7 +2999,8 @@
             $("sub_saveAmount").onclick = saveSubscriptionsAmount;
             $("sub_addBtn").onclick = addBeliever;
             $("sub_month").onchange = fetchSubscriptions;
-            $("sub_search").oninput = renderSubscriptionsTable;
+            $("sub_search").oninput = debounce(function () { fetchSubscriptions(); if (state.subscriptionsYearCache) fetchSubscriptionsYear(); }, 250);
+            $("sub_yearBtn").onclick = fetchSubscriptionsYear;
             $("st_runBtn").onclick = runSelfTest;
             $("logoutLink").onclick = function () {
                 sessionStorage.removeItem(TOKEN_KEY);
