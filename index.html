@@ -453,30 +453,61 @@ window.addEventListener('load', () => {
         const container = document.getElementById('googleSignInBtn');
         if (container) {
             container.innerHTML = '<button class="premium-login-btn" onclick="mockLogin()"><span class="btn-icon">🔐</span> Church Login (Dev)</button>';
+            container.style.opacity = '1';
         }
         return;
     }
 
-    google.accounts.id.initialize({
-        client_id: '915064946962-eohgis92a3jmfk3fi7hkh8uc21971clo.apps.googleusercontent.com',
-        callback: handleCredentialResponse,
-        use_fedcm_for_prompt: false
-    });
-
+    // The GIS script (accounts.google.com/gsi/client) is loaded async, so
+    // `google` is often NOT ready yet when this `load` handler fires. Calling
+    // google.accounts.id.* directly would throw a ReferenceError and silently
+    // abort — leaving the sign-in button stuck at opacity:0 (invisible). Poll
+    // until GIS is available (same pattern as admin.html's waitGis), then
+    // render. Each render is wrapped so one failure can't block the rest.
     const btnContainer = document.getElementById('googleSignInBtn');
-    google.accounts.id.renderButton(
-        btnContainer,
-        { theme: 'filled_black', size: 'medium', shape: 'pill', text: 'signin', width: 160 }
-    );
-    setTimeout(() => { btnContainer.style.opacity = '1'; }, 300);
+    let gisTries = 0;
+    (function waitGis() {
+        if (window.google && google.accounts && google.accounts.id) {
+            try {
+                google.accounts.id.initialize({
+                    client_id: '915064946962-eohgis92a3jmfk3fi7hkh8uc21971clo.apps.googleusercontent.com',
+                    callback: handleCredentialResponse,
+                    use_fedcm_for_prompt: false
+                });
+            } catch (e) { console.error('GIS initialize failed:', e); }
 
-    const cardBtnContainer = document.getElementById('googleCardSignInBtn');
-    if (cardBtnContainer) {
-        google.accounts.id.renderButton(
-            cardBtnContainer,
-            { theme: 'outline', size: 'large', shape: 'pill', text: 'signin_with', width: 240 }
-        );
-    }
+            try {
+                if (btnContainer) {
+                    google.accounts.id.renderButton(
+                        btnContainer,
+                        { theme: 'filled_black', size: 'medium', shape: 'pill', text: 'signin', width: 160 }
+                    );
+                }
+            } catch (e) { console.error('Sign-in button render failed:', e); }
+
+            try {
+                const cardBtnContainer = document.getElementById('googleCardSignInBtn');
+                if (cardBtnContainer) {
+                    google.accounts.id.renderButton(
+                        cardBtnContainer,
+                        { theme: 'outline', size: 'large', shape: 'pill', text: 'signin_with', width: 240 }
+                    );
+                }
+            } catch (e) { console.error('Card sign-in button render failed:', e); }
+
+            if (btnContainer) btnContainer.style.opacity = '1';
+        } else if (gisTries++ < 40) {
+            setTimeout(waitGis, 250);
+        } else {
+            // GIS never loaded (blocked/offline). Reveal the container with a
+            // retry hint so the login control is never invisibly missing.
+            if (btnContainer) {
+                btnContainer.innerHTML = '<button class="premium-login-btn" onclick="window.location.reload()"><span class="btn-icon">🔐</span> Login — tap to retry</button>';
+                btnContainer.style.opacity = '1';
+            }
+            console.error('Google Sign-In failed to load after multiple attempts.');
+        }
+    })();
 
     LJMAdmin.readSession().then(s => {
         if (s) onIdentityVerified({ success: true, email: s.email, name: s.name, isAdmin: true });
