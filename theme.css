@@ -16,9 +16,9 @@
     --text: #1f1e1a;
     --text-soft: #6e6a5e;
     --text-faint: #a09a8a;
-    --accent: #d97757;
-    --accent-deep: #c05f3f;
-    --accent-soft: #fbeee8;
+    --accent: #5046E5;
+    --accent-deep: #3F3BC7;
+    --accent-soft: #ECEBFB;
     --green: #5f8d4e;
     --green-soft: #eef4ea;
     --red: #b3452f;
@@ -67,11 +67,12 @@
     --text: #f2ede4;
     --text-soft: #bfb7a8;
     --text-faint: #8a8274;
-    /* Same hue family as the light-mode terracotta, desaturated/darkened
-       one notch so it reads as refined rather than a neon warning color. */
-    --accent: #e2825f;
-    --accent-deep: #f0a37e;
-    --accent-soft: rgba(226,130,95,0.14);
+    /* Same indigo/violet hue family as the light-mode accent, lightened
+       (not just brightened) so it reads as a cool, refined "shuttle" blue
+       against the dark surface rather than a washed-out or neon tone. */
+    --accent: #8983FF;
+    --accent-deep: #A79FFF;
+    --accent-soft: rgba(137, 131, 255, 0.16);
     --green: #7fb56a;
     --green-soft: rgba(127,181,106,0.14);
     --red: #e0705c;
@@ -539,7 +540,7 @@ button.bottom-nav-item {
 }
 
 [data-theme="dark"] .verse-card {
-    background: linear-gradient(135deg, rgba(226,145,106,0.10), rgba(226,145,106,0.04)) !important;
+    background: linear-gradient(135deg, rgba(137, 131, 255,0.10), rgba(137, 131, 255,0.04)) !important;
     border-color: var(--border) !important;
 }
 [data-theme="dark"] .verse-text { color: var(--text) !important; }
@@ -1010,7 +1011,7 @@ button.bottom-nav-item {
 .activity-row:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift, 0 8px 24px rgba(0,0,0,0.08)); }
 .activity-avatar {
     width: 40px; height: 40px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent, #d97757), var(--accent-deep, #c05f3f));
+    background: linear-gradient(135deg, var(--accent, #5046E5), var(--accent-deep, #3F3BC7));
     color: #fff; font-weight: 700; font-size: 16px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
