@@ -110,8 +110,8 @@
                 left: 0;
                 right: 0;
                 z-index: 99999;
-                background: linear-gradient(135deg, #1a1712, #332c1e);
-                color: #f0e9dc;
+                background: linear-gradient(135deg, #171429, #2b2350);
+                color: #efeaff;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -120,10 +120,10 @@
                 font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
                 font-size: 13px;
                 box-shadow: 0 2px 12px rgba(20, 15, 8, 0.5);
-                border-bottom: 1px solid rgba(217, 119, 87, 0.3);
+                border-bottom: 1px solid rgba(80, 70, 229, 0.3);
             }
             #ljmAdminBar a {
-                color: #e8c4b0;
+                color: #c7c2e8;
                 text-decoration: none;
                 padding: 6px 12px;
                 border-radius: 6px;
@@ -133,12 +133,12 @@
                 white-space: nowrap;
             }
             #ljmAdminBar a:hover {
-                background: rgba(217, 119, 87, 0.2);
+                background: rgba(80, 70, 229, 0.2);
                 color: #fff;
             }
             #ljmAdminBar a.ab-active {
-                background: rgba(217, 119, 87, 0.25);
-                color: #f0a37e;
+                background: rgba(80, 70, 229, 0.25);
+                color: #A79FFF;
                 font-weight: 600;
             }
             .ab-left {
@@ -152,7 +152,7 @@
             .ab-left::-webkit-scrollbar { display: none; }
             .ab-brand {
                 font-weight: 700;
-                color: #f0a37e;
+                color: #A79FFF;
                 font-size: 13px;
                 margin-right: 8px;
                 white-space: nowrap;
@@ -175,7 +175,7 @@
             .ab-timer.danger { color: #ef4444; font-weight: 600; }
             .ab-user {
                 font-size: 11px;
-                color: #d4c4a8;
+                color: #b6b0d9;
                 max-width: 140px;
                 overflow: hidden;
                 text-overflow: ellipsis;

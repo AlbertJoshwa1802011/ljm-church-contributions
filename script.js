@@ -255,7 +255,7 @@ function drawProgressRing(progressPercent) {
     ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
     
     // Read computed accent color from theme.css
-    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#d97757';
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#5046E5';
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = strokeWidth;
     ctx.lineCap = 'round';
@@ -356,13 +356,13 @@ function initInsightModal() {
                     `<p><strong>Spent on Products</strong> = money used from this fund to purchase items for the church.</p>` +
                     `<p>Total spent from fund: <strong>₹${spent.toLocaleString('en-IN')}</strong> on <strong>${productsCount}</strong> item${productsCount !== 1 ? 's' : ''}.</p>` +
                     `<p>Only the <em>fund contribution</em> portion is counted here — external donations (from family, personal top-ups) do NOT reduce the fund balance.</p>` +
-                    `<p><a href="impact.html" style="color:var(--accent, #d97757); font-weight:700;">View all purchases →</a></p>`;
+                    `<p><a href="impact.html" style="color:var(--accent, #5046E5); font-weight:700;">View all purchases →</a></p>`;
             case 'balance':
                 return summaryLine +
                     `<p><strong>Available Balance</strong> = Total Collected − Spent on Products.</p>` +
                     `<p>Formula: <code>₹${Number(total).toLocaleString('en-IN')} − ₹${spent.toLocaleString('en-IN')} = ₹${availableBalance.toLocaleString('en-IN')}</code></p>` +
                     `<p>This is the money currently in hand that can be used for future purchases or church needs.</p>` +
-                    `<p><a href="impact.html" style="color:var(--accent, #d97757); font-weight:700;">See what we bought →</a></p>`;
+                    `<p><a href="impact.html" style="color:var(--accent, #5046E5); font-weight:700;">See what we bought →</a></p>`;
             default: return '<p>No details available.</p>';
         }
     }
@@ -491,7 +491,7 @@ function renderGoalDonut(collected, goal) {
             labels: ['Collected', 'Remaining'],
             datasets: [{
                 data: [collected, remaining],
-                backgroundColor: ['#d97757', 'rgba(217, 119, 87, 0.12)'],
+                backgroundColor: ['#5046E5', 'rgba(80, 70, 229, 0.12)'],
                 borderWidth: 0,
                 cutout: '75%'
             }]
@@ -523,7 +523,7 @@ function renderGoalDonut(collected, goal) {
                 c.textBaseline = 'middle';
 
                 c.font = 'bold 26px Inter, sans-serif';
-                c.fillStyle = '#d97757';
+                c.fillStyle = '#5046E5';
                 c.fillText(Math.round(percent) + '%', centerX, centerY - 8);
 
                 c.font = '11px Inter, sans-serif';
@@ -801,7 +801,7 @@ function renderDistributionPie(contributions) {
     }
 
     const colors = [
-        '#d97757', '#c05f3f', '#f093fb', '#4facfe',
+        '#5046E5', '#3F3BC7', '#f093fb', '#4facfe',
         '#43e97b', '#fa709a', '#fee140', '#30cfd0',
         '#a8edea'
     ];
@@ -837,7 +837,7 @@ function renderDistributionPie(contributions) {
                     backgroundColor: 'rgba(255, 255, 255, 0.95)',
                     titleColor: '#333',
                     bodyColor: '#666',
-                    borderColor: '#d97757',
+                    borderColor: '#5046E5',
                     borderWidth: 1,
                     padding: 12,
                     displayColors: true,
@@ -1003,7 +1003,7 @@ function renderSourceChart(contributions) {
             labels: ['Online / UPI', 'Manual (Cash/GPay)'],
             datasets: [{
                 data: [sources.Online, sources.Manual],
-                backgroundColor: ['#d97757', '#f1c40f'],
+                backgroundColor: ['#5046E5', '#f1c40f'],
                 borderWidth: 2,
                 borderColor: '#fff'
             }]
@@ -1270,11 +1270,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const style = document.createElement("style");
         style.innerHTML = `
             #startupLoader { position: fixed !important; z-index: 999999 !important; }
-            .loader-symbol { position: relative; width:100px; height:100px; display:flex; justify-content:center; align-items:center; font-size:32px; font-weight:bold; color:var(--accent, #d97757); animation:loaderPulse 1.5s infinite alternate; z-index:1; }
-            .loader-symbol .halo { position:absolute; width:120px; height:120px; border:4px solid var(--accent, #d97757); border-radius:50%; animation:loaderRotate 2s linear infinite; box-shadow: 0 0 20px rgba(217, 119, 87, 0.5); z-index:0; }
+            .loader-symbol { position: relative; width:100px; height:100px; display:flex; justify-content:center; align-items:center; font-size:32px; font-weight:bold; color:var(--accent, #5046E5); animation:loaderPulse 1.5s infinite alternate; z-index:1; }
+            .loader-symbol .halo { position:absolute; width:120px; height:120px; border:4px solid var(--accent, #5046E5); border-radius:50%; animation:loaderRotate 2s linear infinite; box-shadow: 0 0 20px rgba(80, 70, 229, 0.5); z-index:0; }
             .loader-text { margin-top:80px; color:#fff; font-size:18px; font-weight:500; text-align:center; z-index:2; position:relative; }
             @keyframes loaderRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            @keyframes loaderPulse { 0% { transform: scale(1); text-shadow:0 0 10px rgba(217, 119, 87, 0.8); } 100% { transform: scale(1.2); text-shadow:0 0 20px rgba(217, 119, 87, 1); } }
+            @keyframes loaderPulse { 0% { transform: scale(1); text-shadow:0 0 10px rgba(80, 70, 229, 0.8); } 100% { transform: scale(1.2); text-shadow:0 0 20px rgba(80, 70, 229, 1); } }
         `;
         document.head.appendChild(style);
         console.log("[LOADER] Showing loader — no cached data");
@@ -1606,8 +1606,8 @@ async function initDashboard(dynamicFund) {
             const spentSub = document.getElementById("spentSubdetail");
             if (spentSub) {
                 spentSub.innerHTML = productsCount > 0
-                    ? `${productsCount} ${productsCount === 1 ? "item" : "items"} bought · <a href="impact.html" style="color:var(--accent, #d97757); font-weight:700;">See details →</a>`
-                    : `<a href="impact.html" style="color:var(--accent, #d97757); font-weight:700;">Nothing bought yet — see all →</a>`;
+                    ? `${productsCount} ${productsCount === 1 ? "item" : "items"} bought · <a href="impact.html" style="color:var(--accent, #5046E5); font-weight:700;">See details →</a>`
+                    : `<a href="impact.html" style="color:var(--accent, #5046E5); font-weight:700;">Nothing bought yet — see all →</a>`;
             }
 
             const balanceEl = document.getElementById("balanceAmount");
@@ -1651,12 +1651,12 @@ async function initDashboard(dynamicFund) {
                 progressBar.style.width = progressPercent + "%";
                 progressBar.innerText = Math.round(progressPercent) + "%";
                 if (progressPercent < 50) {
-                    progressBar.style.background = 'linear-gradient(90deg, #d97757, #c05f3f)';
+                    progressBar.style.background = 'linear-gradient(90deg, #5046E5, #3F3BC7)';
                 } else if (progressPercent < 80) {
-                    progressBar.style.background = 'linear-gradient(90deg, #c05f3f, #d97757)';
+                    progressBar.style.background = 'linear-gradient(90deg, #3F3BC7, #5046E5)';
                 } else if (progressPercent < 100) {
-                    progressBar.style.background = 'linear-gradient(90deg, #d97757, #b98a2e)';
-                    progressBar.style.boxShadow = '0 0 15px rgba(217, 119, 87, 0.5)';
+                    progressBar.style.background = 'linear-gradient(90deg, #5046E5, #b98a2e)';
+                    progressBar.style.boxShadow = '0 0 15px rgba(80, 70, 229, 0.5)';
                 } else {
                     progressBar.style.background = 'linear-gradient(90deg, #48bb78, #38a169)';
                     progressBar.style.boxShadow = '0 0 20px rgba(72, 187, 120, 0.7)';
@@ -1942,8 +1942,8 @@ async function initChristmasFundDashboard() {
             const spentSub = document.getElementById("spentSubdetail");
             if (spentSub) {
                 spentSub.innerHTML = productsCount > 0
-                    ? `${productsCount} ${productsCount === 1 ? "item" : "items"} bought · <a href="impact.html" style="color:var(--accent, #d97757); font-weight:700;">See details →</a>`
-                    : `<a href="impact.html" style="color:var(--accent, #d97757); font-weight:700;">Nothing bought yet — see all →</a>`;
+                    ? `${productsCount} ${productsCount === 1 ? "item" : "items"} bought · <a href="impact.html" style="color:var(--accent, #5046E5); font-weight:700;">See details →</a>`
+                    : `<a href="impact.html" style="color:var(--accent, #5046E5); font-weight:700;">Nothing bought yet — see all →</a>`;
             }
 
             const balanceEl = document.getElementById("balanceAmount");
@@ -2154,7 +2154,7 @@ function openContributorDetailModal(memberName, allData) {
             <div class="insight-metric-grid">
                 <div class="metric-item">
                     <span class="label">Total Given</span>
-                    <span class="value" style="color:var(--accent, #d97757);font-size:24px;">₹${total.toLocaleString('en-IN')}</span>
+                    <span class="value" style="color:var(--accent, #5046E5);font-size:24px;">₹${total.toLocaleString('en-IN')}</span>
                 </div>
                 <div class="metric-item">
                     <span class="label">Total Entries</span>
@@ -2296,13 +2296,13 @@ function renderEnhancedStats(contributions) {
             datasets: [{
                 label: 'Monthly Contributions (₹)',
                 data: amounts,
-                borderColor: '#d97757',
-                backgroundColor: 'rgba(217, 119, 87, 0.1)',
+                borderColor: '#5046E5',
+                backgroundColor: 'rgba(80, 70, 229, 0.1)',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 5,
-                pointBackgroundColor: '#c05f3f',
+                pointBackgroundColor: '#3F3BC7',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2
             }]
@@ -2336,8 +2336,8 @@ function renderEnhancedStats(contributions) {
                 {
                     label: 'Total contributors (by end of month)',
                     data: contributorCounts,
-                    backgroundColor: 'rgba(217, 119, 87, 0.7)',
-                    borderColor: '#d97757',
+                    backgroundColor: 'rgba(80, 70, 229, 0.7)',
+                    borderColor: '#5046E5',
                     borderWidth: 2
                 },
                 {
