@@ -57,11 +57,13 @@
 [data-theme="dark"] {
     /* Warm near-black elevation scale (not pure #000) — softer, more premium
        than a stark OLED black, and consistent with the site's warm-paper
-       light theme rather than jumping to a cold blue-black. */
-    --bg: #16140f;
-    --bg-soft: #1c1a14;
-    --surface: #232019;
-    --surface-2: #2b2620;
+       light theme rather than jumping to a cold blue-black. The base is kept
+       deep and inky so the page reads as a rich, premium dark, while the
+       raised surfaces stay lighter to give cards clear elevation/contrast. */
+    --bg: #0d0b07;
+    --bg-soft: #15130d;
+    --surface: #211e17;
+    --surface-2: #2a251e;
     --border: #38332a;
     --border-strong: #4a4438;
     --text: #f2ede4;
@@ -474,7 +476,7 @@ button.bottom-nav-item {
     width: 100% !important; height: 100% !important;
     background: url('motto-banner-2026.jpeg') no-repeat center center fixed !important;
     background-size: cover !important;
-    opacity: 0.12 !important;
+    opacity: 0.06 !important;
     z-index: -1 !important;
     pointer-events: none !important;
 }
