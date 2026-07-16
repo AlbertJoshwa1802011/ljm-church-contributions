@@ -47,3 +47,23 @@ When touching `script.js`:
   with an explicit bounded height (see `#categoryChartCard` /
   `#distributionChartCard` / `#sourceChartCard` in `style.css`) — otherwise
   the canvas can render at an unstable/unbounded size.
+
+## Milestone workflow (vibe-coding process) — follow strictly
+
+For any **major milestone / feature**, plan through these **six documents in
+order, one at a time** — each builds on the previous — and **do not begin
+implementation until all six exist and are approved**:
+
+1. **Product Requirement Document (PRD)** — what we build, why we build it, and
+   what it solves.
+2. **Technical Requirement Document (TRD)** — the tech stack, tools, and APIs.
+3. **App Flow** — every screen and the navigation between the screens the user
+   takes across the app.
+4. **UI/UX Design & Spec Sheet** — look, color, and feel; component styles and
+   the design language.
+5. **Backend Schema** — the database, the relationships between tables, and the
+   API calls.
+6. **Implementation Plan** — broken into phases, executed one phase at a time.
+
+The current milestone's documents and live status tracker live in
+`docs/milestone-v2/` — start at `docs/milestone-v2/README.md`.
