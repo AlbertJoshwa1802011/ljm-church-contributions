@@ -32,34 +32,31 @@ exist and are approved.**
 | 2 | [`02-TRD.md`](./02-TRD.md) | **Technical Requirements** — tech stack, tools, APIs | ✅ **Done** |
 | 3 | [`03-app-flow.md`](./03-app-flow.md) | **App Flow** — every screen and the navigation between them | ✅ **Done** |
 | 4 | [`04-uiux-design-spec.md`](./04-uiux-design-spec.md) | **UI/UX Design & Spec** — look, color, feel, components, design language | ✅ **Done** |
-| 5 | [`05-backend-schema.md`](./05-backend-schema.md) | **Backend Schema** — database, table relationships, API calls | ⬜ Pending |
-| 6 | [`06-implementation-plan.md`](./06-implementation-plan.md) | **Implementation Plan** — phased build, executed one phase at a time | ⬜ Pending |
+| 5 | [`05-backend-schema.md`](./05-backend-schema.md) | **Backend Schema** — database, table relationships, API calls | ✅ **Done** |
+| 6 | [`06-implementation-plan.md`](./06-implementation-plan.md) | **Implementation Plan** — phased build, executed one phase at a time | ✅ **Done** |
+
+**Supporting:** [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) — the zero-breakage
+guarantee + regression test net (applies to all phases).
 
 ---
 
-## 👉 Next up for the next agent
+## 👉 Next up — the owner's approval, then Phase 0
 
-**Docs 1–4 (PRD, TRD, App Flow, UI/UX Spec) are complete.** The next step is to
-produce **`05-backend-schema.md` (Backend Schema)** — the database tables,
-relationships, and API calls that back the screens.
+**All six planning documents are complete**, plus the safety net. The plan is ready
+for review. On approval, the next agent begins **implementation, one phase at a time**,
+from [`06-implementation-plan.md`](./06-implementation-plan.md) — starting at
+**Phase 0 → Phase 1** — keeping `npm test` green throughout.
 
-When writing `05-backend-schema.md`:
-- Read `02-TRD.md` (§4 frozen giving path, §5 additive-only migrations, §6 endpoint
-  list), `03-app-flow.md` (§8 screen→endpoint map), and `04-uiux-design-spec.md`
-  (bilingual `*_en`/`*_ta` content). The schema must be **additive-only** — new tables
-  via migrations `0012+`, `CREATE TABLE IF NOT EXISTS`, nullable `church_id`; the
-  existing `contributions`/`members`/`funds`/etc. tables are **untouched**.
-- Define: `churches`, `promises`, `testimonies`, `prayer_requests`,
-  `contact_messages`, `blog_posts`, `programs` — columns, relationships, indexes,
-  and the request/response shape of each new `functions/api/*` endpoint.
-- When done, flip this table's row 5 to ✅ and update this "Next up" section to point
-  at `06-implementation-plan.md`.
-
-Then finish `06-implementation-plan.md`. **No code until step 6 is approved.**
+Before coding any phase:
+- Read [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) (the zero-breakage rules + test
+  net) and [`05-backend-schema.md`](./05-backend-schema.md) (additive tables + API
+  contracts).
+- Ship each phase behind the feature flag with its own tests; extend
+  `schema-contract.test.mjs` for each new table; do not touch the frozen giving path.
 
 > **Non-negotiable throughout:** we have **real, live contribution data**. Nothing in
-> this milestone may alter the giving path or its data — see `02-TRD.md` §4 (giving
-> path frozen) and §5 (additive-only, feature-flagged rollout).
+> this milestone may alter the giving path or its data — enforced by the regression
+> suite (82 tests, and growing per phase) that must stay green.
 
 ---
 
