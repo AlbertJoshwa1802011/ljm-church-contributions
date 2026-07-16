@@ -269,7 +269,10 @@ graph TD
 During build, the **existing pages remain the live site**. The new Home and public
 flow are reachable behind the `new_home_enabled` feature flag (TRD §5). When every
 screen above is ready and approved, flipping the flag makes the new experience the
-default — with a one-flag rollback that never touches contribution data.
+default — with a one-flag rollback that never touches contribution data. Every screen
+that touches existing endpoints is covered by the regression net in
+[`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md), so a navigation/wiring change can't
+silently break giving or data.
 
 ---
 

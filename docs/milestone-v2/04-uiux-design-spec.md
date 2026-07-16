@@ -156,7 +156,9 @@ construction.
 ### Giving modal (reuse)
 - Reuse the existing contribution modal, now fully tokenized in `payment-modal.css`
   (header band, month toggle pills, inputs, amount chips, submit) — it already follows
-  light/dark. **No backend or flow change** — restyle entry points only.
+  light/dark. **No backend or flow change** — restyle entry points only. The modal
+  must keep calling the **same** Razorpay checkout + endpoints (the giving path is
+  frozen; TRD §4 and [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md)).
 
 ### Feedback & states
 - **Badges/pills** — status (published/pending, paid/unpaid, live) via semantic tokens.

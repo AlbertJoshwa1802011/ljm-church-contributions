@@ -81,8 +81,17 @@ must call the **same endpoints with the same request/response shapes**:
 - Environment secrets stay as-is: `GOOGLE_CLIENT_ID`, `RAZORPAY_WEBHOOK_SECRET`,
   `GOOGLE_SHEETS_WEBAPP_URL`, `ADMIN_API_TOKEN`, `ALLOW_LEGACY_EMAIL_TOKEN`.
 
-**Regression guard:** add a test asserting the webhook still inserts once per
-`proof_id` and rejects bad signatures, so future changes can't silently regress it.
+**Regression guard — now in place.** A characterization test net was added that
+locks in the current behavior of the giving path and the other critical,
+previously-untested handlers (suite: **46 → 82 tests**), including:
+`tests/api/webhook.test.mjs` (signature verify, paise→₹, fund normalization, member
+auto-add, **idempotency**), `tests/api/contributions.test.mjs`,
+`tests/api/funds.test.mjs`, `tests/api/members.test.mjs`,
+`tests/api/expenses.test.mjs`, `tests/api/auth.test.mjs`, `tests/api/logs.test.mjs`,
+and `tests/regression/schema-contract.test.mjs` (a tripwire for any migration that
+drops a critical table/column or the `proof_id UNIQUE` constraint). The net is
+**mutation-proven** to catch real regressions. Full strategy and per-feature test
+rules: [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md).
 
 ---
 
@@ -104,10 +113,13 @@ never ship half-built over the working site. Rules:
 3. **New routes, not rewrites.** New UI ships as **new pages/components and new
    `functions/api/*` files**. Existing endpoints keep their exact contracts so the
    current front-end never breaks mid-migration.
-4. **Tests stay green.** `npm test` must pass on every push (enforced by `test.yml`);
-   new endpoints add `tests/api/*` tests using the existing `mock-d1` harness; new
-   `script.js` function calls follow the repo's "grep-the-definition + per-call
-   try/catch" rule from `CLAUDE.md`.
+4. **Tests stay green (merge gate).** `npm test` must pass on every push (enforced by
+   `test.yml`); the regression net above is the baseline. Every new endpoint ships
+   **with its own tests** using the existing `mock-d1` harness, and extends
+   `schema-contract.test.mjs` for any new critical table; new `script.js` function
+   calls follow the repo's "grep-the-definition + per-call try/catch" rule from
+   `CLAUDE.md`. A red suite blocks the change. See
+   [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) §3–§4.
 5. **Rollback plan.** UI issues → flip the feature flag off (data untouched). Code
    issues → revert the commit and let Pages redeploy. Because new tables are isolated,
    backing a feature out never touches contribution data.

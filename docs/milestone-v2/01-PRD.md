@@ -26,6 +26,15 @@ giving + Google Sign-In + admin console) but wrap it in a **completely new app f
 and flow**. Giving becomes one module inside a much larger ministry experience whose
 primary job is to **build trust**.
 
+> ### 🔒 P0 guardrail — zero breakage of existing functionality
+> The ministry has **real, live contribution data** today. The **highest-priority
+> requirement** of this milestone, above every feature below, is that **no new work
+> breaks any existing functionality** — especially the giving/money path. This is
+> enforced by an additive-only design, a feature-flagged rollout, and a **regression
+> test net that must stay green** (see
+> [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) and TRD §4–§5). A feature that risks
+> a regression is not shippable, no matter how valuable.
+
 ---
 
 ## 2. Why we're building it (problem statement)
@@ -62,6 +71,8 @@ analytics, and an admin console. It serves the internal financial workflow well,
 daily, inviting them into worship and prayer, and earning their trust.*
 
 **Goals for this milestone:**
+0. **Protect what works (P0).** Ship every new capability with **zero regression** to
+   existing giving, members, funds, admin, and data — proven by a green test net.
 1. **Worldwide availability** — a public ministry presence anyone can find and
    understand, on any device, like Jesus Calls.
 2. **A single trusted home for "what's happening at church"** — events, programs,
@@ -91,6 +102,8 @@ firm them up.
 - **Live worship:** viewers of the Sunday live podcast; clicks on the daily morning
   prayer link.
 - **Trust/retention:** return-visit rate; time on inspirational content.
+- **Stability (P0):** **zero regressions** to existing features — measured by the
+  regression test suite staying green on every change (`npm test`).
 
 ---
 
@@ -287,6 +300,8 @@ The inspirational front door, like Jesus Calls' homepage.
   and admin console.
 - Any new third-party dependency (email, livestream) must fit the Cloudflare Pages
   Functions runtime and be justified in the TRD.
+- **Zero-breakage is a hard constraint, not a goal** — enforced by the regression
+  test net and pre-merge checklist in [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md).
 
 ---
 

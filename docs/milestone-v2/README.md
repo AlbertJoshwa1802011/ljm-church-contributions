@@ -11,6 +11,13 @@ We **extend the existing backend** (Cloudflare Pages + D1 + Razorpay + Google
 Sign-In) but deliver a **completely new app feel and flow**. India-first,
 global-ready. Bilingual: **English + Tamil**.
 
+> ### 🔒 Read first: [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md)
+> We have **real, live contribution data**. The overriding rule is **zero breakage of
+> existing functionality**. A regression **test net is already in place and passing
+> (82 tests)** and is a merge gate — the giving/money path is frozen, schema changes
+> are additive-only, and the new UI ships behind a feature flag. Every phase must keep
+> the suite green.
+
 ---
 
 ## The 6-document milestone workflow (strict order)
