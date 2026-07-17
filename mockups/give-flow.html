@@ -99,14 +99,26 @@
 
 <header class="site-header">
   <div class="wrap">
-    <a class="brand" href="home.html"><span class="brand-mark">✝</span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <a class="brand" href="home.html"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
     <nav class="primary-nav">
       <a href="home.html">Home</a>
       <a href="#">About</a>
       <a href="our-giving.html">Our Giving</a>
       <a href="#">Events</a>
     </nav>
-    <div class="header-actions"><a href="#" class="btn btn-primary btn-sm">Give</a></div>
+    <div class="header-actions">
+      <div class="auth-slot">
+        <a href="#" class="signin-btn" id="signinBtn"><span class="g">G</span> Sign in</a>
+        <div class="user-chip" id="userChip">
+          <span class="user-avatar" id="userAvatar">PS</span>
+          <span class="user-meta">
+            <span class="nm" id="userName">Priya Samuel</span>
+            <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
+          </span>
+        </div>
+      </div>
+      <a href="#" class="btn btn-primary btn-sm">Give</a>
+    </div>
   </div>
 </header>
 
@@ -134,18 +146,19 @@
   <div class="give-card">
     <div class="give-card-head">
       <div class="eyebrow">Tech Fund</div>
-      <h2>Sunday Livestream Upgrade</h2>
+      <h2>Media, Sound &amp; Livestream</h2>
     </div>
     <div class="give-card-body">
 
       <div class="field-group">
         <label>What are you giving toward?</label>
         <div class="cause-grid">
-          <div class="cause-opt active"><b>💻 Tech Fund</b><span>77% to goal</span></div>
-          <div class="cause-opt"><b>🎄 Christmas Fund</b><span>52% to goal</span></div>
-          <div class="cause-opt"><b>🤍 General Offering</b><span>No fixed goal</span></div>
-          <div class="cause-opt"><b>🏗️ Building Fund</b><span>18% to goal</span></div>
+          <div class="cause-opt active"><b>💻 Tech Fund</b><span>62% to goal</span></div>
+          <div class="cause-opt"><b>🎄 Christmas Fund</b><span>78% to goal</span></div>
+          <div class="cause-opt"><b>🤍 General Offering</b><span>Coming soon*</span></div>
+          <div class="cause-opt"><b>🏗️ Building Fund</b><span>Coming soon*</span></div>
         </div>
+        <p style="font-size:.68rem;color:var(--text-faint);margin-top:8px">*Illustrative — today only Tech Fund and Christmas Fund exist live; more causes are part of this redesign's proposal.</p>
       </div>
 
       <div class="field-group">
@@ -154,11 +167,11 @@
           <button class="active">Existing Member</button>
           <button>New Member</button>
         </div>
-        <div style="margin-top:12px"><select><option>Abraham Varghese</option><option>Grace Thomas</option><option>Sam Mathew</option></select></div>
+        <div style="margin-top:12px"><select><option>Priya Samuel</option><option>Hepsi</option><option>Muthukumar</option></select></div>
       </div>
 
       <div class="status-preview visible">
-        <div class="t">Abraham Varghese · 2026 Giving Progress</div>
+        <div class="t">Priya Samuel · 2026 Giving Progress (illustrative member)</div>
         <div class="month-pills">
           <div class="month-pill paid">Jan</div><div class="month-pill paid">Feb</div><div class="month-pill paid">Mar</div>
           <div class="month-pill">Apr</div><div class="month-pill paid">May</div><div class="month-pill paid">Jun</div>
@@ -207,11 +220,11 @@
 
   <div class="receipt-card" id="state-confirmed" style="display:none">
     <div class="receipt-icon ok">✓</div>
-    <h3>Thank you, Abraham!</h3>
+    <h3>Thank you, Priya!</h3>
     <p class="msg">Your gift has been received and recorded. A copy of this receipt has been sent to your email.</p>
     <div class="receipt-table">
       <div class="receipt-row"><span>Amount</span><span class="tabular">₹1,000</span></div>
-      <div class="receipt-row"><span>Fund</span><span>Tech Fund — Livestream Upgrade</span></div>
+      <div class="receipt-row"><span>Fund</span><span>Tech Fund — Media, Sound &amp; Livestream</span></div>
       <div class="receipt-row"><span>For month</span><span>July 2026</span></div>
       <div class="receipt-row"><span>Date &amp; time</span><span>17 Jul 2026, 6:42 PM</span></div>
       <div class="receipt-row"><span>Payment ID</span><span class="tabular">pay_QW3f9XmN2kLd</span></div>
@@ -238,6 +251,11 @@
   <div class="wrap"><div class="footer-bottom"><span>© 2026 Light of Jesus Ministry</span><a href="home.html" style="font-weight:700;color:var(--accent)">← Back to Home</a></div></div>
 </footer>
 
+<div class="viewer-toggle" role="group" aria-label="Preview signed-in state (demo only)">
+  <button data-viewer="guest" class="active">Guest</button>
+  <button data-viewer="member">Member</button>
+  <button data-viewer="admin">Admin</button>
+</div>
 <div class="theme-toggle" role="group" aria-label="Preview theme">
   <button id="btn-light" class="active">☀ Light</button>
   <button id="btn-dark">● Dark</button>
@@ -279,6 +297,22 @@
       c.classList.add('active');
     });
   });
+</script>
+<script>
+  (function () {
+    var buttons = document.querySelectorAll('.viewer-toggle button');
+    var signinBtn = document.getElementById('signinBtn');
+    var userChip = document.getElementById('userChip');
+    var adminLink = document.getElementById('adminLink');
+    function setViewer(state) {
+      buttons.forEach(function (b) { b.classList.toggle('active', b.dataset.viewer === state); });
+      signinBtn.classList.toggle('off', state !== 'guest');
+      userChip.classList.toggle('on', state !== 'guest');
+      adminLink.classList.toggle('on', state === 'admin');
+    }
+    buttons.forEach(function (b) { b.addEventListener('click', function () { setViewer(b.dataset.viewer); }); });
+    setViewer('guest');
+  })();
 </script>
 </body>
 </html>

@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Events & Photos — Light of Jesus Ministry (design preview)</title>
+<link rel="stylesheet" href="mock-shared.css" />
+<style>
+  .page-hero { padding: 56px 0 32px; text-align: center; background: var(--bg-soft); border-bottom: 1px solid var(--border); }
+  .page-hero h1 { font-size: 2.1rem; }
+  .page-hero p { max-width: 56ch; margin: 12px auto 0; font-size: 1rem; }
+
+  .filters { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 30px; }
+
+  /* Placeholder photo tiles — no real event photos exist yet (confirmed via
+     the live /api/events endpoint returning zero events), so these are
+     clearly-systematic gradient placeholders, not fabricated photography. */
+  .photo-tile {
+    position: relative; border-radius: var(--radius-sm); overflow: hidden;
+    display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.92);
+    font-size: 1.3rem; aspect-ratio: 4/3;
+  }
+  .photo-tile::after { content: "📷"; opacity: .55; }
+  .photo-tile.p1 { background: linear-gradient(150deg, var(--accent), var(--accent-deep)); }
+  .photo-tile.p2 { background: linear-gradient(150deg, var(--gold), #8a6a2e); }
+  .photo-tile.p3 { background: linear-gradient(150deg, var(--info), #2c5a6c); }
+  .photo-tile.p4 { background: linear-gradient(150deg, var(--green), #3f6b34); }
+  .photo-tile.p5 { background: linear-gradient(150deg, var(--accent-deep), #1c2e3a); }
+  .photo-tile.p6 { background: linear-gradient(150deg, #b0673f, #7a4327); }
+
+  .event-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .event-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .event-cover { aspect-ratio: 16/9; }
+  .event-cover::after { font-size: 1.8rem; }
+  .event-info { padding: 16px 18px 18px; }
+  .event-tags { display: flex; gap: 6px; margin-bottom: 9px; flex-wrap: wrap; }
+  .event-tags .badge { font-size: .66rem; }
+  .event-info h3 { font-size: 1rem; }
+  .event-info .when { font-size: .78rem; color: var(--text-faint); margin-top: 4px; }
+  .thumb-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 13px; }
+  .thumb-strip .photo-tile { aspect-ratio: 1/1; font-size: .8rem; border-radius: 7px; }
+  .thumb-strip .more-tile { display: flex; align-items: center; justify-content: center; background: var(--bg-soft); color: var(--text-soft); font-size: .74rem; font-weight: 700; border-radius: 7px; }
+  .event-link { display: block; margin-top: 13px; font-size: .82rem; font-weight: 700; color: var(--accent); }
+
+  @media (max-width: 980px) { .event-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 640px) { .event-grid { grid-template-columns: 1fr; } }
+
+  /* Featured full-gallery section */
+  .gallery-head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .gallery-head h2 { font-size: 1.5rem; }
+  .gallery-head p { font-size: .86rem; margin-top: 6px; }
+  .full-gallery-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .full-gallery-grid .photo-tile { border-radius: 10px; font-size: .95rem; }
+  @media (max-width: 980px) { .full-gallery-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 640px) { .full-gallery-grid { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+
+<div class="mock-banner">🎨 Design preview — <b>Events &amp; Photos</b> · temp placeholder photos (0 real events exist in production yet) · new page</div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="home.html"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <nav class="primary-nav">
+      <a href="home.html">Home</a>
+      <a href="#">About</a>
+      <a href="#">Watch &amp; Listen</a>
+      <a href="#" class="current">Events</a>
+      <a href="#">Blog</a>
+      <a href="our-giving.html">Our Giving</a>
+    </nav>
+    <div class="header-actions">
+      <div class="church-switch"><span class="active">All</span><span>Church of Light</span><span>City Worship</span></div>
+      <div class="lang-toggle">EN / த</div>
+      <div class="auth-slot">
+        <a href="#" class="signin-btn" id="signinBtn"><span class="g">G</span> Sign in</a>
+        <div class="user-chip" id="userChip">
+          <span class="user-avatar" id="userAvatar">PS</span>
+          <span class="user-meta">
+            <span class="nm" id="userName">Priya Samuel</span>
+            <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
+          </span>
+        </div>
+      </div>
+      <a href="give-flow.html" class="btn btn-primary btn-sm">Give</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="wrap">
+    <div class="eyebrow">🎁 Sharing Every Moment</div>
+    <h1 style="margin-top:8px">Events &amp; Photos</h1>
+    <p>Every gathering, outreach, and celebration across both churches — shared here like a gift, so everyone can see what God is doing among us, wherever they are.</p>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="filters">
+      <div class="chip-row">
+        <span class="chip active">All Events</span>
+        <span class="chip">Church of Light</span>
+        <span class="chip">City Worship Center</span>
+        <span class="chip">Outreach</span>
+        <span class="chip">Worship</span>
+        <span class="chip">Youth</span>
+      </div>
+      <span style="font-size:.8rem;color:var(--text-faint)">8 events · 96 photos</span>
+    </div>
+
+    <div class="event-grid">
+
+      <div class="event-card">
+        <div class="photo-tile p1 event-cover"></div>
+        <div class="event-info">
+          <div class="event-tags"><span class="badge badge-gold">Worship</span><span class="badge badge-info">Church of Light</span></div>
+          <h3>Christmas Carol Night 2025</h3>
+          <div class="when">24 Dec 2025 · 24 photos</div>
+          <div class="thumb-strip">
+            <div class="photo-tile p2"></div><div class="photo-tile p3"></div><div class="photo-tile p4"></div>
+            <div class="more-tile">+21</div>
+          </div>
+          <a href="#full-gallery" class="event-link">View full gallery →</a>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="photo-tile p3 event-cover"></div>
+        <div class="event-info">
+          <div class="event-tags"><span class="badge badge-green">Youth</span><span class="badge badge-info">City Worship Center</span></div>
+          <h3>Youth Camp — Faith Retreat 2026</h3>
+          <div class="when">10–12 Jan 2026 · 18 photos</div>
+          <div class="thumb-strip">
+            <div class="photo-tile p5"></div><div class="photo-tile p1"></div><div class="photo-tile p6"></div>
+            <div class="more-tile">+15</div>
+          </div>
+          <a href="#" class="event-link">View full gallery →</a>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="photo-tile p2 event-cover"></div>
+        <div class="event-info">
+          <div class="event-tags"><span class="badge badge-gold">Worship</span><span class="badge badge-info">Church of Light</span></div>
+          <h3>Baptism Sunday</h3>
+          <div class="when">15 Feb 2026 · 12 photos</div>
+          <div class="thumb-strip">
+            <div class="photo-tile p4"></div><div class="photo-tile p6"></div><div class="photo-tile p3"></div>
+            <div class="more-tile">+9</div>
+          </div>
+          <a href="#" class="event-link">View full gallery →</a>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="photo-tile p4 event-cover"></div>
+        <div class="event-info">
+          <div class="event-tags"><span class="badge badge-green">Outreach</span><span class="badge badge-info">Both Churches</span></div>
+          <h3>Community Food Distribution</h3>
+          <div class="when">8 Mar 2026 · 15 photos</div>
+          <div class="thumb-strip">
+            <div class="photo-tile p1"></div><div class="photo-tile p5"></div><div class="photo-tile p2"></div>
+            <div class="more-tile">+12</div>
+          </div>
+          <a href="#" class="event-link">View full gallery →</a>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="photo-tile p5 event-cover"></div>
+        <div class="event-info">
+          <div class="event-tags"><span class="badge badge-gold">Worship</span><span class="badge badge-info">Both Churches</span></div>
+          <h3>Good Friday Service</h3>
+          <div class="when">3 Apr 2026 · 9 photos</div>
+          <div class="thumb-strip">
+            <div class="photo-tile p3"></div><div class="photo-tile p2"></div><div class="photo-tile p6"></div>
+            <div class="more-tile">+6</div>
+          </div>
+          <a href="#" class="event-link">View full gallery →</a>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="photo-tile p6 event-cover"></div>
+        <div class="event-info">
+          <div class="event-tags"><span class="badge badge-green">Youth</span><span class="badge badge-info">City Worship Center</span></div>
+          <h3>Vacation Bible School — Kids Camp</h3>
+          <div class="when">12–16 May 2026 · 10 photos</div>
+          <div class="thumb-strip">
+            <div class="photo-tile p2"></div><div class="photo-tile p4"></div><div class="photo-tile p1"></div>
+            <div class="more-tile">+7</div>
+          </div>
+          <a href="#" class="event-link">View full gallery →</a>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="photo-tile p1 event-cover"></div>
+        <div class="event-info">
+          <div class="event-tags"><span class="badge badge-gold">Worship</span><span class="badge badge-info">Church of Light</span></div>
+          <h3>New Year Prayer Night</h3>
+          <div class="when">31 Dec 2025 · 8 photos</div>
+          <div class="thumb-strip">
+            <div class="photo-tile p6"></div><div class="photo-tile p3"></div><div class="photo-tile p5"></div>
+            <div class="more-tile">+5</div>
+          </div>
+          <a href="#" class="event-link">View full gallery →</a>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="photo-tile p3 event-cover"></div>
+        <div class="event-info">
+          <div class="event-tags"><span class="badge badge-info">City Worship Center</span></div>
+          <h3>City Worship Center — Dedication Service</h3>
+          <div class="when">21 Jun 2026 · 20 photos</div>
+          <div class="thumb-strip">
+            <div class="photo-tile p4"></div><div class="photo-tile p1"></div><div class="photo-tile p2"></div>
+            <div class="more-tile">+17</div>
+          </div>
+          <a href="#" class="event-link">View full gallery →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED FULL GALLERY — demonstrates the "see it clearly" browsable view -->
+<section class="tight" id="full-gallery">
+  <div class="wrap">
+    <div class="gallery-head">
+      <div>
+        <div class="eyebrow gold">Featured Gallery</div>
+        <h2>Christmas Carol Night 2025</h2>
+        <p>24 Dec 2025 · Church of Light · 24 photos</p>
+      </div>
+      <a href="#" class="btn btn-secondary btn-sm">← Back to all events</a>
+    </div>
+    <div class="full-gallery-grid">
+      <div class="photo-tile p1"></div><div class="photo-tile p2"></div><div class="photo-tile p3"></div>
+      <div class="photo-tile p4"></div><div class="photo-tile p5"></div><div class="photo-tile p6"></div>
+      <div class="photo-tile p2"></div><div class="photo-tile p3"></div><div class="photo-tile p4"></div>
+      <div class="photo-tile p5"></div><div class="photo-tile p6"></div><div class="photo-tile p1"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-bottom">
+      <span>© 2026 Light of Jesus Ministry — photos shown are temporary placeholders pending real event photography.</span>
+      <a href="home.html" style="font-weight:700;color:var(--accent)">← Back to Home</a>
+    </div>
+  </div>
+</footer>
+
+<div class="viewer-toggle" role="group" aria-label="Preview signed-in state (demo only)">
+  <button data-viewer="guest" class="active">Guest</button>
+  <button data-viewer="member">Member</button>
+  <button data-viewer="admin">Admin</button>
+</div>
+<div class="theme-toggle" role="group" aria-label="Preview theme">
+  <button id="btn-light" class="active">☀ Light</button>
+  <button id="btn-dark">● Dark</button>
+</div>
+<script>
+  var root = document.documentElement;
+  var L = document.getElementById('btn-light'), D = document.getElementById('btn-dark');
+  function setTheme(t) { root.setAttribute('data-theme', t); L.classList.toggle('active', t==='light'); D.classList.toggle('active', t==='dark'); }
+  L.addEventListener('click', function () { setTheme('light'); });
+  D.addEventListener('click', function () { setTheme('dark'); });
+</script>
+<script>
+  (function () {
+    var buttons = document.querySelectorAll('.viewer-toggle button');
+    var signinBtn = document.getElementById('signinBtn');
+    var userChip = document.getElementById('userChip');
+    var adminLink = document.getElementById('adminLink');
+    function setViewer(state) {
+      buttons.forEach(function (b) { b.classList.toggle('active', b.dataset.viewer === state); });
+      signinBtn.classList.toggle('off', state !== 'guest');
+      userChip.classList.toggle('on', state !== 'guest');
+      adminLink.classList.toggle('on', state === 'admin');
+    }
+    buttons.forEach(function (b) { b.addEventListener('click', function () { setViewer(b.dataset.viewer); }); });
+    setViewer('guest');
+  })();
+</script>
+</body>
+</html>
