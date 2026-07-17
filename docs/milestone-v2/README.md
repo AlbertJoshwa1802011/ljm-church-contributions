@@ -38,14 +38,26 @@ exist and are approved.**
 **Supporting:** [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) — the zero-breakage
 guarantee + regression test net (applies to all phases).
 
+**Round 1 UI/UX mockups (awaiting owner review):**
+[`07-ui-mockups-review.md`](./07-ui-mockups-review.md) — static HTML previews of the
+redesigned Home, Our Giving (the full stats report), and Give flow +
+confirmation, in [`mockups/`](../../mockups/). User-facing pages only, nothing wired
+to real data, admin console untouched. **Contains one structural decision that needs
+the owner's sign-off before implementation planning continues** — see §3 of that doc.
+
 ---
 
-## 👉 Next up — the owner's approval, then Phase 0
+## 👉 Next up — owner review of the mockups (`07-ui-mockups-review.md`)
 
-**All six planning documents are complete**, plus the safety net. The plan is ready
-for review. On approval, the next agent begins **implementation, one phase at a time**,
-from [`06-implementation-plan.md`](./06-implementation-plan.md) — starting at
-**Phase 0 → Phase 1** — keeping `npm test` green throughout.
+**All six planning documents are complete**, plus the safety net and a first round of
+UI/UX mockups. **Do not proceed to implementation** (Phase 0 of
+[`06-implementation-plan.md`](./06-implementation-plan.md)) **until the owner has
+reviewed `07-ui-mockups-review.md`** and confirmed the Home/Our-Giving split and the
+Give-flow confirmation proposal. If the structure changes, update `03-app-flow.md`
+and `06-implementation-plan.md` to match before writing any production code.
+
+Once approved, implementation begins **one phase at a time**, keeping `npm test`
+green throughout.
 
 Before coding any phase:
 - Read [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) (the zero-breakage rules + test

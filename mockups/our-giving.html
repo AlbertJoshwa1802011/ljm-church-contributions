@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Our Giving — Light of Jesus Ministry (design preview)</title>
+<link rel="stylesheet" href="mock-shared.css" />
+<style>
+  .page-hero { padding: 56px 0 36px; border-bottom: 1px solid var(--border); background: var(--bg-soft); }
+  .page-hero h1 { font-size: 2.1rem; }
+  .page-hero p.lede { font-size: 1rem; margin-top: 12px; max-width: 62ch; }
+  .fund-switch { margin-top: 26px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+  .fund-meta { font-size: .82rem; color: var(--text-faint); }
+
+  /* KPI row */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .kpi-tile {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 20px 18px; box-shadow: var(--shadow); cursor: pointer; transition: box-shadow .15s ease, transform .15s ease;
+    position: relative;
+  }
+  .kpi-tile:hover { box-shadow: var(--shadow-lift); transform: translateY(-2px); }
+  .kpi-tile .ic { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .95rem; margin-bottom: 12px; }
+  .kpi-tile .lbl { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-faint); }
+  .kpi-tile .val { font-family: var(--serif); font-size: 1.5rem; font-weight: 700; margin-top: 5px; }
+  .kpi-tile .sub { font-size: .74rem; color: var(--text-faint); margin-top: 4px; }
+  .kpi-tile .hint { position: absolute; top: 14px; right: 14px; font-size: .68rem; color: var(--text-faint); opacity: 0; transition: opacity .15s ease; }
+  .kpi-tile:hover .hint { opacity: 1; }
+  .ic-collected { background: var(--accent-soft); color: var(--accent-deep); }
+  .ic-spent { background: var(--amber-soft); color: var(--amber); }
+  .ic-available { background: var(--green-soft); color: var(--green); }
+  .ic-remaining { background: var(--info-soft); color: var(--info); }
+  .ic-contrib { background: var(--gold-soft); color: var(--gold); }
+  @media (max-width: 980px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 620px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Goal story */
+  .goal-story { display: grid; grid-template-columns: .8fr 1.2fr; gap: 32px; align-items: start; }
+  .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+  .donut {
+    width: 190px; height: 190px; border-radius: 50%;
+    background: conic-gradient(var(--accent) 0% 77%, var(--bg-soft) 77% 100%);
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .donut::after { content: ""; position: absolute; inset: 20px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+  .donut-center { position: relative; z-index: 1; text-align: center; }
+  .donut-center b { font-family: var(--serif); font-size: 1.9rem; display: block; }
+  .donut-center span { font-size: .74rem; color: var(--text-faint); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .milestones { display: flex; gap: 8px; }
+  .milestone { flex: 1; text-align: center; padding: 10px 4px; border-radius: var(--radius-sm); font-size: .72rem; font-weight: 700; }
+  .milestone.done { background: var(--green-soft); color: var(--green); }
+  .milestone.pending { background: var(--bg-soft); color: var(--text-faint); }
+
+  .pace-card h3 { font-size: 1.08rem; }
+  .pace-headline { font-family: var(--serif); font-size: 1.12rem; font-style: italic; margin-top: 10px; color: var(--text); line-height: 1.5; }
+  .pace-months { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .pace-month-row { display: flex; align-items: center; gap: 12px; }
+  .pace-month-label { width: 90px; font-size: .8rem; font-weight: 600; color: var(--text-soft); flex-shrink: 0; }
+  .pace-month-bar { flex: 1; height: 10px; border-radius: 999px; background: var(--bg-soft); overflow: hidden; }
+  .pace-month-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+  .pace-month-amt { width: 76px; text-align: right; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
+
+  /* Activity + contributors */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .panel-head h3 { font-size: 1.05rem; }
+  .panel-head a { font-size: .8rem; font-weight: 700; color: var(--accent); }
+  .activity-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .activity-row:last-child { border-bottom: none; }
+  .activity-main { flex: 1; min-width: 0; }
+  .activity-main b { font-size: .88rem; display: block; }
+  .activity-main span { font-size: .74rem; color: var(--text-faint); }
+  .activity-amt { font-weight: 700; font-size: .88rem; flex-shrink: 0; }
+
+  .top-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .top-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; text-align: center; }
+  .top-card .medal { font-size: 1.3rem; }
+  .top-card .name { font-size: .82rem; font-weight: 700; margin-top: 6px; }
+  .top-card .amt { font-family: var(--serif); font-size: 1.15rem; margin-top: 3px; }
+  .top-card .entries { font-size: .7rem; color: var(--text-faint); margin-top: 2px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .goal-story { grid-template-columns: 1fr; } }
+
+  /* Insights row */
+  .insights-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .insight-chip { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; }
+  .insight-chip .ic { font-size: 1.1rem; }
+  .insight-chip .val { font-family: var(--serif); font-size: 1.25rem; font-weight: 700; margin-top: 8px; }
+  .insight-chip .lbl { font-size: .74rem; font-weight: 700; color: var(--text-soft); margin-top: 2px; }
+  .insight-chip .det { font-size: .72rem; color: var(--text-faint); margin-top: 4px; }
+  @media (max-width: 980px) { .insights-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 620px) { .insights-row { grid-template-columns: 1fr 1fr; } }
+
+  /* Charts */
+  .charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .chart-card h4 { font-size: .92rem; margin-bottom: 16px; }
+  .pie-legend { display: flex; flex-direction: column; gap: 7px; margin-top: 16px; }
+  .pie-legend-row { display: flex; align-items: center; gap: 8px; font-size: .78rem; }
+  .pie-legend-row .sw { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+  .pie-legend-row .lg-lbl { flex: 1; color: var(--text-soft); }
+  .pie-legend-row .lg-val { font-weight: 700; }
+  .pie-cat { width: 130px; height: 130px; margin: 0 auto; border-radius: 50%;
+    background: conic-gradient(var(--accent) 0% 44%, var(--accent-deep) 44% 68%, var(--gold) 68% 84%, var(--info) 84% 94%, var(--text-faint) 94% 100%); }
+  .pie-mem { width: 130px; height: 130px; margin: 0 auto; border-radius: 50%;
+    background: conic-gradient(var(--accent) 0% 18%, var(--gold) 18% 32%, var(--green) 32% 44%, var(--info) 44% 54%, var(--amber) 54% 63%, var(--text-faint) 63% 100%); }
+  .pie-src { width: 130px; height: 130px; margin: 0 auto; border-radius: 50%; position: relative;
+    background: conic-gradient(var(--accent) 0% 82%, var(--amber) 82% 100%); }
+  .pie-src::after { content: ""; position: absolute; inset: 24px; border-radius: 50%; background: var(--surface); }
+
+  .enhanced-card { grid-column: 1 / -1; }
+  .enhanced-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  .enhanced-mini .m { background: var(--bg-soft); border-radius: var(--radius-sm); padding: 14px 16px; }
+  .enhanced-mini .m .v { font-family: var(--serif); font-size: 1.3rem; font-weight: 700; }
+  .enhanced-mini .m .l { font-size: .74rem; color: var(--text-faint); margin-top: 2px; }
+  .bars { display: flex; align-items: flex-end; gap: 8px; height: 110px; padding-top: 10px; }
+  .bars .b { flex: 1; background: var(--accent); border-radius: 5px 5px 0 0; position: relative; }
+  .bars .b span { position: absolute; bottom: -20px; left: 0; right: 0; text-align: center; font-size: .66rem; color: var(--text-faint); }
+  @media (max-width: 980px) { .charts-grid { grid-template-columns: 1fr 1fr; } .enhanced-card { grid-column: 1 / -1; } }
+  @media (max-width: 640px) { .charts-grid { grid-template-columns: 1fr; } .enhanced-mini { grid-template-columns: 1fr; } }
+
+  /* Wishlist */
+  .wishlist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .wish-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--red); border-radius: var(--radius-sm); padding: 16px; }
+  .wish-card.med { border-left-color: var(--amber); }
+  .wish-card.low { border-left-color: var(--green); }
+  .wish-card h4 { font-size: .92rem; }
+  .wish-card .cost { font-family: var(--serif); font-weight: 700; margin-top: 6px; }
+  .wish-card p { font-size: .78rem; margin-top: 6px; }
+  @media (max-width: 760px) { .wishlist-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="mock-banner">🎨 Design preview — <b>Our Giving</b> (the full stats report, promoted off Home) · static, no live data · part 2 of 3</div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="home.html"><span class="brand-mark">✝</span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <nav class="primary-nav">
+      <a href="home.html">Home</a>
+      <a href="#">About</a>
+      <a href="#">Promises</a>
+      <a href="#">Testimonies</a>
+      <a href="#" class="current">Our Giving</a>
+      <a href="#">Watch &amp; Listen</a>
+      <a href="#">Events</a>
+      <a href="#">Blog</a>
+    </nav>
+    <div class="header-actions">
+      <div class="church-switch"><span class="active">All</span><span>Church of Light</span><span>City Worship</span></div>
+      <div class="lang-toggle">EN / த</div>
+      <a href="give-flow.html" class="btn btn-primary btn-sm">Give</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="wrap">
+    <div class="eyebrow">Transparency Report</div>
+    <h1 style="margin-top:10px">Our Giving</h1>
+    <p class="lede">Every gift given here is tracked openly — what's collected, what it's spent on, and who's given, updated the moment a gift is received. This is the same ledger our pastor and team see.</p>
+    <div class="fund-switch">
+      <div class="chip-row">
+        <span class="chip active">💻 Tech Fund</span>
+        <span class="chip">🎄 Christmas Fund</span>
+        <span class="chip">+ 3 more funds</span>
+      </div>
+      <span class="fund-meta">Sunday Livestream Upgrade · updated moments ago</span>
+    </div>
+  </div>
+</section>
+
+<!-- KPI ROW ============================================================ -->
+<section class="tight">
+  <div class="wrap">
+    <div class="kpi-row">
+      <div class="kpi-tile"><span class="hint">tap to see how</span>
+        <div class="ic ic-collected">💰</div>
+        <div class="lbl">Collected</div>
+        <div class="val tabular">₹38,450</div>
+        <div class="sub">▲ 12% vs last month</div>
+      </div>
+      <div class="kpi-tile"><span class="hint">tap to see how</span>
+        <div class="ic ic-spent">🧾</div>
+        <div class="lbl">Spent</div>
+        <div class="val tabular">₹24,250</div>
+        <div class="sub">7 items bought · see Impact →</div>
+      </div>
+      <div class="kpi-tile"><span class="hint">tap to see how</span>
+        <div class="ic ic-available">✅</div>
+        <div class="lbl">Available</div>
+        <div class="val tabular">₹14,200</div>
+        <div class="sub">Collected − Spent</div>
+      </div>
+      <div class="kpi-tile"><span class="hint">tap to see how</span>
+        <div class="ic ic-remaining">🎯</div>
+        <div class="lbl">Remaining to Goal</div>
+        <div class="val tabular">₹11,550</div>
+        <div class="sub">of ₹50,000 goal</div>
+      </div>
+      <div class="kpi-tile"><span class="hint">tap to see how</span>
+        <div class="ic ic-contrib">🙌</div>
+        <div class="lbl">Contributions</div>
+        <div class="val tabular">96</div>
+        <div class="sub">Avg ₹401 · 58 unique givers</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GOAL STORY ========================================================== -->
+<section class="tight">
+  <div class="wrap">
+    <div class="section-head" style="margin-bottom:28px">
+      <div class="eyebrow">Progress</div>
+      <h2 style="font-size:1.5rem">Toward the goal</h2>
+    </div>
+    <div class="goal-story">
+      <div class="card donut-wrap">
+        <div class="donut"><div class="donut-center"><b>77%</b><span>of Goal</span></div></div>
+        <div class="milestones">
+          <div class="milestone done">✓ 25%</div>
+          <div class="milestone done">✓ 50%</div>
+          <div class="milestone done">✓ 75%</div>
+          <div class="milestone pending">100%</div>
+        </div>
+      </div>
+      <div class="card pace-card">
+        <h3>Giving pace</h3>
+        <p class="pace-headline">At the current pace of ₹6,408/month, we'll reach the goal by <b>September 2026</b> — about 2 months away.</p>
+        <div class="pace-months">
+          <div class="pace-month-row"><span class="pace-month-label">May 2026</span><div class="pace-month-bar"><div class="pace-month-fill" style="width:58%"></div></div><span class="pace-month-amt tabular">₹9,200</span></div>
+          <div class="pace-month-row"><span class="pace-month-label">Jun 2026</span><div class="pace-month-bar"><div class="pace-month-fill" style="width:41%"></div></div><span class="pace-month-amt tabular">₹6,500</span></div>
+          <div class="pace-month-row"><span class="pace-month-label">Jul 2026</span><div class="pace-month-bar"><div class="pace-month-fill" style="width:100%"></div></div><span class="pace-month-amt tabular">₹15,900</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ACTIVITY + TOP CONTRIBUTORS ========================================= -->
+<section class="tight">
+  <div class="wrap">
+    <div class="two-col">
+      <div class="card">
+        <div class="panel-head"><h3>Recent Activity</h3><a href="#">View all →</a></div>
+        <div class="activity-row"><span class="avatar">GT</span><div class="activity-main"><b>Grace Thomas</b><span>💳 Online · 2 hours ago</span></div><span class="activity-amt tabular">₹1,000</span></div>
+        <div class="activity-row"><span class="avatar">SM</span><div class="activity-main"><b>Sam Mathew</b><span>💵 Direct Cash · Yesterday</span></div><span class="activity-amt tabular">₹500</span></div>
+        <div class="activity-row"><span class="avatar">AV</span><div class="activity-main"><b>Abraham Varghese</b><span>💳 Online · 2 days ago</span></div><span class="activity-amt tabular">₹2,000</span></div>
+        <div class="activity-row"><span class="avatar">RJ</span><div class="activity-main"><b>Reeba John</b><span>💳 Online · 3 days ago</span></div><span class="activity-amt tabular">₹500</span></div>
+        <div class="activity-row"><span class="avatar">PK</span><div class="activity-main"><b>Philip Koshy</b><span>💵 Direct Cash · 4 days ago</span></div><span class="activity-amt tabular">₹1,500</span></div>
+      </div>
+
+      <div class="card">
+        <div class="panel-head"><h3>Top Contributors</h3><a href="#">See A–Z directory →</a></div>
+        <div class="top-grid">
+          <div class="top-card"><div class="medal">🥇</div><div class="name">Abraham Varghese</div><div class="amt tabular">₹6,200</div><div class="entries">8 gifts</div></div>
+          <div class="top-card"><div class="medal">🥈</div><div class="name">Grace Thomas</div><div class="amt tabular">₹4,800</div><div class="entries">6 gifts</div></div>
+          <div class="top-card"><div class="medal">🥉</div><div class="name">Sam Mathew</div><div class="amt tabular">₹3,150</div><div class="entries">5 gifts</div></div>
+          <div class="top-card"><div class="medal">⭐</div><div class="name">Reeba John</div><div class="amt tabular">₹2,900</div><div class="entries">4 gifts</div></div>
+          <div class="top-card"><div class="medal">⭐</div><div class="name">Philip Koshy</div><div class="amt tabular">₹2,400</div><div class="entries">3 gifts</div></div>
+          <div class="top-card"><div class="medal">⭐</div><div class="name">Anu Chacko</div><div class="amt tabular">₹1,900</div><div class="entries">3 gifts</div></div>
+        </div>
+        <div style="margin-top:14px"><input type="text" placeholder="Search all 58 contributors…" style="width:100%;padding:10px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-soft);font-family:var(--sans);font-size:.85rem;color:var(--text)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GIVING INSIGHTS ====================================================== -->
+<section class="tight">
+  <div class="wrap">
+    <div class="section-head" style="margin-bottom:22px"><div class="eyebrow">Insights</div><h2 style="font-size:1.5rem">How this fund is growing</h2></div>
+    <div class="insights-row">
+      <div class="insight-chip"><span class="ic">👥</span><div class="val tabular">58</div><div class="lbl">Unique Givers</div><div class="det">₹663 per person</div></div>
+      <div class="insight-chip"><span class="ic">💰</span><div class="val tabular">₹401</div><div class="lbl">Avg Contribution</div><div class="det">across 96 entries</div></div>
+      <div class="insight-chip"><span class="ic">📅</span><div class="val">July</div><div class="lbl">Most Active Month</div><div class="det">▲ 38% vs June</div></div>
+      <div class="insight-chip"><span class="ic">🎯</span><div class="val">~2 mo</div><div class="lbl">Goal Timeline</div><div class="det">at ₹6,408/mo</div></div>
+      <div class="insight-chip"><span class="ic">🔀</span><div class="val tabular">82%</div><div class="lbl">Given Online</div><div class="det">₹31,530 online · ₹6,920 manual</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CHARTS =============================================================== -->
+<section class="tight">
+  <div class="wrap">
+    <div class="charts-grid">
+      <div class="card chart-card">
+        <h4>Share by Category</h4>
+        <div class="pie-cat"></div>
+        <div class="pie-legend">
+          <div class="pie-legend-row"><span class="sw" style="background:var(--accent)"></span><span class="lg-lbl">Online (Verified)</span><span class="lg-val">44%</span></div>
+          <div class="pie-legend-row"><span class="sw" style="background:var(--accent-deep)"></span><span class="lg-lbl">Direct Cash</span><span class="lg-val">24%</span></div>
+          <div class="pie-legend-row"><span class="sw" style="background:var(--gold)"></span><span class="lg-lbl">UPI Transfer</span><span class="lg-val">16%</span></div>
+          <div class="pie-legend-row"><span class="sw" style="background:var(--info)"></span><span class="lg-lbl">Cheque</span><span class="lg-val">10%</span></div>
+        </div>
+      </div>
+      <div class="card chart-card">
+        <h4>Share by Member</h4>
+        <div class="pie-mem"></div>
+        <div class="pie-legend">
+          <div class="pie-legend-row"><span class="sw" style="background:var(--accent)"></span><span class="lg-lbl">Abraham Varghese</span><span class="lg-val">18%</span></div>
+          <div class="pie-legend-row"><span class="sw" style="background:var(--gold)"></span><span class="lg-lbl">Grace Thomas</span><span class="lg-val">14%</span></div>
+          <div class="pie-legend-row"><span class="sw" style="background:var(--text-faint)"></span><span class="lg-lbl">37 others</span><span class="lg-val">37%</span></div>
+        </div>
+      </div>
+      <div class="card chart-card">
+        <h4>Giving Channel</h4>
+        <div class="pie-src"></div>
+        <div class="pie-legend">
+          <div class="pie-legend-row"><span class="sw" style="background:var(--accent)"></span><span class="lg-lbl">Online / UPI</span><span class="lg-val">82%</span></div>
+          <div class="pie-legend-row"><span class="sw" style="background:var(--amber)"></span><span class="lg-lbl">Manual / Cash</span><span class="lg-val">18%</span></div>
+        </div>
+      </div>
+
+      <div class="card chart-card enhanced-card">
+        <h4>Growth over time</h4>
+        <div class="enhanced-mini">
+          <div class="m"><div class="v tabular">58</div><div class="l">Total Contributors</div></div>
+          <div class="m"><div class="v tabular">₹401</div><div class="l">Average Contribution</div></div>
+          <div class="m"><div class="v tabular">₹5,000</div><div class="l">Largest Single Gift</div></div>
+        </div>
+        <div class="bars">
+          <div class="b" style="height:35%"><span>Feb</span></div>
+          <div class="b" style="height:48%"><span>Mar</span></div>
+          <div class="b" style="height:40%"><span>Apr</span></div>
+          <div class="b" style="height:58%"><span>May</span></div>
+          <div class="b" style="height:41%"><span>Jun</span></div>
+          <div class="b" style="height:100%"><span>Jul</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WISHLIST ============================================================= -->
+<section class="tight">
+  <div class="wrap">
+    <div class="section-head" style="margin-bottom:22px"><div class="eyebrow">What We're Saving For</div><h2 style="font-size:1.5rem">Planned Upgrades</h2></div>
+    <div class="wishlist-grid">
+      <div class="wish-card"><span class="badge badge-live" style="background:var(--red-soft);color:var(--red)">High Priority</span><h4 style="margin-top:10px">Professional In-Ear Monitors</h4><div class="cost tabular">₹15,000</div><p>For stage musicians during Sunday worship.</p></div>
+      <div class="wish-card med"><span class="badge" style="background:var(--amber-soft);color:var(--amber)">Medium Priority</span><h4 style="margin-top:10px">HD PTZ Livestream Camera</h4><div class="cost tabular">₹25,000</div><p>Multi-angle streaming for both churches.</p></div>
+      <div class="wish-card low"><span class="badge badge-green">Nice to Have</span><h4 style="margin-top:10px">Choir Robes (30 sets)</h4><div class="cost tabular">₹9,000</div><p>New robes for the Sunday choir.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-bottom">
+      <span>© 2026 Light of Jesus Ministry — every figure on this page reflects the live giving ledger.</span>
+      <a href="home.html" style="font-weight:700;color:var(--accent)">← Back to Home</a>
+    </div>
+  </div>
+</footer>
+
+<div class="theme-toggle" role="group" aria-label="Preview theme">
+  <button id="btn-light" class="active">☀ Light</button>
+  <button id="btn-dark">● Dark</button>
+</div>
+<script>
+  var root = document.documentElement;
+  var L = document.getElementById('btn-light'), D = document.getElementById('btn-dark');
+  function setTheme(t) { root.setAttribute('data-theme', t); L.classList.toggle('active', t==='light'); D.classList.toggle('active', t==='dark'); }
+  L.addEventListener('click', function () { setTheme('light'); });
+  D.addEventListener('click', function () { setTheme('dark'); });
+</script>
+</body>
+</html>
