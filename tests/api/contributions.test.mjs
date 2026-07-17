@@ -65,3 +65,24 @@ test("contributions: an unknown fund falls back to tech-contributions", async ()
   const body = await readJson(await contributions.onRequestGet(ctx(db, "https://test.local/api/contributions?fund=nonsense")));
   assert.equal(body.goalAmount, 50000);
 });
+
+test("contributions: memberEmails/memberPhones/memberStatus dictionaries are populated from the members table", async () => {
+  const db = freshDb();
+  await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Verified Giver','v@x.com','111',1)").run();
+  await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Unverified Giver','u@x.com','222',0)").run();
+
+  const body = await readJson(await contributions.onRequestGet(ctx(db, "https://test.local/api/contributions")));
+  assert.equal(body.memberEmails["Verified Giver"], "v@x.com");
+  assert.equal(body.memberPhones["Verified Giver"], "111");
+  assert.equal(body.memberStatus["Verified Giver"], true);
+  assert.equal(body.memberStatus["Unverified Giver"], false);
+});
+
+test("contributions: falls back to the config table when the funds row/goal is missing (pre-0002 compatibility path)", async () => {
+  const db = freshDb();
+  // Simulate a funds row with no goal (or missing entirely) — config is the fallback source.
+  await db.prepare("DELETE FROM funds WHERE slug = 'tech-contributions'").run();
+
+  const body = await readJson(await contributions.onRequestGet(ctx(db, "https://test.local/api/contributions?fund=tech-contributions")));
+  assert.equal(body.goalAmount, 50000, "should fall back to config.tech_goal_amount");
+});

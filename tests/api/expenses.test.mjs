@@ -60,3 +60,72 @@ test("expenses: DELETE removes an entry", async () => {
   const row = await db.prepare("SELECT id FROM expenses WHERE id=?").bind(created.id).first();
   assert.equal(row, null);
 });
+
+test("expenses: POST (non ?all=1 path) requires manage_expenses permission", async () => {
+  const db = freshDb();
+  const res = await readJson(await expenses.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/expenses", body: { title: "X", amount: 1 }
+  })));
+  assert.equal(res.success, false);
+});
+
+test("expenses: PUT updates an existing entry", async () => {
+  const db = freshDb();
+  const created = await readJson(await add(db, { title: "Original", amount: 100, status: "planned" }));
+  const upd = await readJson(await expenses.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/expenses",
+    body: { id: created.id, title: "Updated", amount: 150, status: "paid" }
+  })));
+  assert.equal(upd.success, true, upd.message);
+
+  const row = await db.prepare("SELECT title, amount, status FROM expenses WHERE id=?").bind(created.id).first();
+  assert.equal(row.title, "Updated");
+  assert.equal(row.amount, 150);
+  assert.equal(row.status, "paid");
+});
+
+test("expenses: PUT on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const res = await readJson(await expenses.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/expenses", body: { id: 999999, title: "X", amount: 1 }
+  })));
+  assert.equal(res.success, false);
+});
+
+test("expenses: PUT requires manage_expenses permission", async () => {
+  const db = freshDb();
+  const created = await readJson(await add(db, { title: "Guarded", amount: 10, status: "paid" }));
+  const res = await readJson(await expenses.onRequestPut(makeContext({
+    db, authToken: null, method: "PUT", url: "https://test.local/api/expenses", body: { id: created.id, title: "Hacked", amount: 1 }
+  })));
+  assert.equal(res.success, false);
+});
+
+test("expenses: DELETE on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const res = await readJson(await expenses.onRequestDelete(makeContext({
+    db, method: "DELETE", url: "https://test.local/api/expenses?id=999999"
+  })));
+  assert.equal(res.success, false);
+});
+
+test("expenses: DELETE requires manage_expenses permission", async () => {
+  const db = freshDb();
+  const created = await readJson(await add(db, { title: "Guarded2", amount: 10, status: "paid" }));
+  const res = await readJson(await expenses.onRequestDelete(makeContext({
+    db, authToken: null, method: "DELETE", url: "https://test.local/api/expenses?id=" + created.id
+  })));
+  assert.equal(res.success, false);
+});
+
+test("expenses: summary.byCategory aggregates paid amounts per category", async () => {
+  const db = freshDb();
+  await add(db, { title: "Rent", amount: 1000, status: "paid", category: "Facilities" });
+  await add(db, { title: "Power", amount: 200, status: "paid", category: "Facilities" });
+  await add(db, { title: "Books", amount: 300, status: "paid", category: "Ministry" });
+  await add(db, { title: "Planned Item", amount: 500, status: "planned", category: "Facilities" });
+
+  const res = await readJson(await expenses.onRequestGet(makeContext({ db, url: "https://test.local/api/expenses?all=1" })));
+  assert.equal(res.summary.byCategory.Facilities, 1200, "only paid amounts count toward byCategory");
+  assert.equal(res.summary.byCategory.Ministry, 300);
+});

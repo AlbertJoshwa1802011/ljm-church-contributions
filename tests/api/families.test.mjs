@@ -118,3 +118,121 @@ test("families: rejects request without manage_members permission", async () => 
   }));
   assert.equal(res.status, 401);
 });
+
+test("families: standalone add_member adds a new person to an existing family", async () => {
+  const db = freshDb();
+  const create = await readJson(await families.onRequestPost(makeContext({
+    db, body: { familyName: "Addable Family", members: [{ name: "Existing Head", relation: "Head" }] }
+  })));
+
+  const add = await readJson(await families.onRequestPost(makeContext({
+    db, body: { action: "add_member", familyId: create.id, name: "New Kid", relation: "Child" }
+  })));
+  assert.equal(add.success, true, add.message);
+
+  const list = await readJson(await families.onRequestGet(makeContext({ db })));
+  const fam = list.families.find(f => f.id === create.id);
+  assert.equal(fam.memberCount, 2);
+});
+
+test("families: add_member on a nonexistent family is a 404", async () => {
+  const db = freshDb();
+  const res = await readJson(await families.onRequestPost(makeContext({
+    db, body: { action: "add_member", familyId: 999999, name: "Nobody" }
+  })));
+  assert.equal(res.success, false);
+});
+
+test("families: set_head rejects a member who isn't part of that family", async () => {
+  const db = freshDb();
+  const famA = await readJson(await families.onRequestPost(makeContext({ db, body: { familyName: "Family A2", members: [{ name: "A2 Head", relation: "Head" }] } })));
+  await families.onRequestPost(makeContext({ db, body: { familyName: "Family B2", members: [{ name: "B2 Head", relation: "Head" }] } }));
+  const bHead = await db.prepare("SELECT id FROM members WHERE name='B2 Head'").first();
+
+  const res = await readJson(await families.onRequestPost(makeContext({
+    db, body: { action: "set_head", familyId: famA.id, memberId: bHead.id }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /not part of this family/);
+});
+
+test("families: remove_member on a member with no family is rejected", async () => {
+  const db = freshDb();
+  const res = await db.prepare("INSERT INTO members (name) VALUES ('No Family Person')").run();
+  const result = await readJson(await families.onRequestPost(makeContext({
+    db, body: { action: "remove_member", memberId: res.meta.last_row_id }
+  })));
+  assert.equal(result.success, false);
+  assert.match(result.message, /not in a family/);
+});
+
+test("families: create rejects an empty familyName", async () => {
+  const db = freshDb();
+  const res = await readJson(await families.onRequestPost(makeContext({ db, body: { familyName: "   " } })));
+  assert.equal(res.success, false);
+});
+
+test("families: GET requires view_members permission", async () => {
+  const db = freshDb();
+  const res = await readJson(await families.onRequestGet(makeContext({ db, authToken: null })));
+  assert.equal(res.success, false);
+});
+
+test("families: PUT edits family-detail fields", async () => {
+  const db = freshDb();
+  const create = await readJson(await families.onRequestPost(makeContext({ db, body: { familyName: "Editable Family" } })));
+  const res = await readJson(await families.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/families",
+    body: { id: create.id, familyName: "Renamed Family", address: "123 Main St" }
+  })));
+  assert.equal(res.success, true, res.message);
+
+  const row = await db.prepare("SELECT family_name, address FROM families WHERE id=?").bind(create.id).first();
+  assert.equal(row.family_name, "Renamed Family");
+  assert.equal(row.address, "123 Main St");
+});
+
+test("families: PUT with a memberId edits the member's relation/DOB within the family", async () => {
+  const db = freshDb();
+  const create = await readJson(await families.onRequestPost(makeContext({
+    db, body: { familyName: "Member Edit Family", members: [{ name: "Kid To Edit", relation: "Child" }] }
+  })));
+  const kid = await db.prepare("SELECT id FROM members WHERE name='Kid To Edit'").first();
+
+  const res = await readJson(await families.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/families",
+    body: { id: create.id, memberId: kid.id, dateOfBirth: "2015-05-05" }
+  })));
+  assert.equal(res.success, true, res.message);
+
+  const row = await db.prepare("SELECT date_of_birth FROM members WHERE id=?").bind(kid.id).first();
+  assert.equal(row.date_of_birth, "2015-05-05");
+});
+
+test("families: PUT on a nonexistent id is a 404, and with no editable fields is a 400", async () => {
+  const db = freshDb();
+  const missing = await readJson(await families.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/families", body: { id: 999999, familyName: "X" }
+  })));
+  assert.equal(missing.success, false);
+
+  const create = await readJson(await families.onRequestPost(makeContext({ db, body: { familyName: "No Fields Family" } })));
+  const noFields = await readJson(await families.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/families", body: { id: create.id }
+  })));
+  assert.equal(noFields.success, false);
+});
+
+test("families: DELETE on a nonexistent id is a 404, and requires manage_members permission", async () => {
+  const db = freshDb();
+  const missing = await readJson(await families.onRequestDelete(makeContext({
+    db, method: "DELETE", url: "https://test.local/api/families?id=999999"
+  })));
+  assert.equal(missing.success, false);
+
+  const create = await readJson(await families.onRequestPost(makeContext({ db, body: { familyName: "Guarded Family" } })));
+  const denied = await readJson(await families.onRequestDelete(makeContext({
+    db, authToken: null, method: "DELETE", url: `https://test.local/api/families?id=${create.id}`
+  })));
+  assert.equal(denied.success, false);
+});

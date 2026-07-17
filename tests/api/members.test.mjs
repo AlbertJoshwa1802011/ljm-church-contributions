@@ -57,3 +57,72 @@ test("members: GET requires view_members permission", async () => {
   })));
   assert.equal(res.success, false);
 });
+
+test("members: POST requires view_members permission", async () => {
+  const db = freshDb();
+  const res = await readJson(await members.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/members", body: { name: "Nope" }
+  })));
+  assert.equal(res.success, false);
+});
+
+test("members: PUT requires view_members permission", async () => {
+  const db = freshDb();
+  const add = await readJson(await members.onRequestPost(makeContext({ db, method: "POST", url: "https://test.local/api/members", body: { name: "Guarded" } })));
+  const res = await readJson(await members.onRequestPut(makeContext({
+    db, authToken: null, method: "PUT", url: "https://test.local/api/members", body: { id: add.id, email: "x@x.com" }
+  })));
+  assert.equal(res.success, false);
+});
+
+test("members: POST requires a name", async () => {
+  const db = freshDb();
+  const res = await readJson(await members.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/members", body: { email: "noname@x.com" }
+  })));
+  assert.equal(res.success, false);
+});
+
+test("members: PUT on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const res = await readJson(await members.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/members", body: { id: 999999, email: "x@x.com" }
+  })));
+  assert.equal(res.success, false);
+});
+
+test("members: PUT with no editable fields is rejected", async () => {
+  const db = freshDb();
+  const add = await readJson(await members.onRequestPost(makeContext({ db, method: "POST", url: "https://test.local/api/members", body: { name: "NoFields" } })));
+  const res = await readJson(await members.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/members", body: { id: add.id }
+  })));
+  assert.equal(res.success, false);
+});
+
+test("members: PUT updates recurringReminders and isVerified", async () => {
+  const db = freshDb();
+  const add = await readJson(await members.onRequestPost(makeContext({ db, method: "POST", url: "https://test.local/api/members", body: { name: "Flaggable" } })));
+
+  const res = await readJson(await members.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/members",
+    body: { id: add.id, recurringReminders: "No", isVerified: true }
+  })));
+  assert.equal(res.success, true, res.message);
+
+  const row = await db.prepare("SELECT recurring_reminders, is_verified FROM members WHERE id = ?").bind(add.id).first();
+  assert.equal(row.recurring_reminders, "No");
+  assert.equal(row.is_verified, 1);
+});
+
+test("members: GET stitches the per-fund contribution breakdown for each member", async () => {
+  const db = freshDb();
+  await db.prepare("INSERT INTO members (name) VALUES ('Multi Fund')").run();
+  await db.prepare("INSERT INTO contributions (member_name, amount, date, category, proof_id, fund) VALUES ('Multi Fund',100,'2026-07-01 10:00:00','Direct Cash','mf1','tech-contributions')").run();
+  await db.prepare("INSERT INTO contributions (member_name, amount, date, category, proof_id, fund) VALUES ('Multi Fund',50,'2026-07-01 10:00:00','Direct Cash','mf2','christmas-fund')").run();
+
+  const res = await readJson(await members.onRequestGet(makeContext({ db, url: "https://test.local/api/members" })));
+  const m = res.members.find(x => x.name === "Multi Fund");
+  assert.equal(m.funds["tech-contributions"].amount, 100);
+  assert.equal(m.funds["christmas-fund"].amount, 50);
+});

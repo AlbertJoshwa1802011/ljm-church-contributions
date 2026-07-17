@@ -2,6 +2,14 @@
 
 Guidance for coding agents working in this repo.
 
+## Required reading before you touch code
+
+Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first — it's the mandatory process
+for this repo (tests required for every endpoint change, the giving/money path
+is frozen, CI blocks a red suite from deploying, additive-only migrations). This
+file covers pitfalls and the milestone-planning ritual; `CONTRIBUTING.md` covers
+the engineering process. Both apply, together.
+
 ## Project shape
 
 - Static site (no build step, no bundler, no TypeScript, no linter) deployed

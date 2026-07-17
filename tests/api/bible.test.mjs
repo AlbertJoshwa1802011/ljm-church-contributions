@@ -109,3 +109,93 @@ test("bible: import adds verses to a translation and can mark it complete", asyn
   const lookupRes = await readJson(await bible.onRequestGet(makeContext({ db, url: "https://test.local/api/bible?action=lookup&version=TOV&book=Genesis&chapter=1&verse=1" })));
   assert.equal(lookupRes.verse.text, "updated text");
 });
+
+test("bible: books for an unseeded version returns an empty array, not an error", async () => {
+  const db = freshDb();
+  const res = await readJson(await bible.onRequestGet(makeContext({ db, url: "https://test.local/api/bible?action=books&version=ZZZ" })));
+  assert.equal(res.success, true);
+  assert.deepEqual(res.books, []);
+});
+
+test("bible: chapters without a book is a 400", async () => {
+  const db = freshDb();
+  const res = await bible.onRequestGet(makeContext({ db, url: "https://test.local/api/bible?action=chapters&version=KJV" }));
+  assert.equal(res.status, 400);
+});
+
+test("bible: verses without book or chapter is a 400", async () => {
+  const db = freshDb();
+  const noBook = await bible.onRequestGet(makeContext({ db, url: "https://test.local/api/bible?action=verses&version=KJV&chapter=1" }));
+  assert.equal(noBook.status, 400);
+  const noChapter = await bible.onRequestGet(makeContext({ db, url: "https://test.local/api/bible?action=verses&version=KJV&book=Genesis" }));
+  assert.equal(noChapter.status, 400);
+});
+
+test("bible: lookup without book, chapter, or verse is a 400", async () => {
+  const db = freshDb();
+  const res = await bible.onRequestGet(makeContext({ db, url: "https://test.local/api/bible?action=lookup&version=KJV&book=Genesis" }));
+  assert.equal(res.status, 400);
+});
+
+test("bible: search with a query under 2 characters is a 400", async () => {
+  const db = freshDb();
+  const res = await bible.onRequestGet(makeContext({ db, url: "https://test.local/api/bible?action=search&version=KJV&q=a" }));
+  assert.equal(res.status, 400);
+});
+
+test("bible: an unknown or missing action is a 400", async () => {
+  const db = freshDb();
+  const missing = await bible.onRequestGet(makeContext({ db, url: "https://test.local/api/bible" }));
+  assert.equal(missing.status, 400);
+  const unknown = await bible.onRequestGet(makeContext({ db, url: "https://test.local/api/bible?action=nonsense" }));
+  assert.equal(unknown.status, 400);
+});
+
+test("bible: POST with an action other than 'import' is a 400", async () => {
+  const db = freshDb();
+  const res = await readJson(await bible.onRequestPost(makeContext({
+    db, body: { action: "delete_everything", versionCode: "TOV", verses: [] }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /Unknown action/);
+});
+
+test("bible: import requires a versionCode and a non-empty verses array", async () => {
+  const db = freshDb();
+  const noVersion = await readJson(await bible.onRequestPost(makeContext({
+    db, body: { action: "import", verses: [{ book: "Genesis", chapter: 1, verse: 1, text: "x" }] }
+  })));
+  assert.equal(noVersion.success, false);
+
+  const noVerses = await readJson(await bible.onRequestPost(makeContext({
+    db, body: { action: "import", versionCode: "TOV", verses: [] }
+  })));
+  assert.equal(noVerses.success, false);
+});
+
+test("bible: import rejects more than 5000 verses in one request", async () => {
+  const db = freshDb();
+  const verses = Array.from({ length: 5001 }, (_, i) => ({ book: "Genesis", chapter: 1, verse: i + 1, text: "x" }));
+  const res = await readJson(await bible.onRequestPost(makeContext({
+    db, body: { action: "import", versionCode: "TOV", verses }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /5000/);
+});
+
+test("bible: import silently skips malformed rows (missing book/chapter/verse/text) without failing the batch", async () => {
+  const db = freshDb();
+  const res = await readJson(await bible.onRequestPost(makeContext({
+    db,
+    body: {
+      action: "import", versionCode: "TOV",
+      verses: [
+        { book: "Genesis", chapter: 1, verse: 1, text: "valid" },
+        { book: "", chapter: 1, verse: 2, text: "missing book" },
+        { book: "Genesis", chapter: 1, verse: 3, text: "" } // missing text
+      ]
+    }
+  })));
+  assert.equal(res.success, true, res.message);
+  assert.match(res.message, /Imported 1 of 3/);
+});

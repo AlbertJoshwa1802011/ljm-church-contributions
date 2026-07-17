@@ -31,8 +31,11 @@
 4. **The new experience ships behind a feature flag** (reusing the `config`/
    `settings.js` pattern, like `force_login`). The current pages stay live until the
    flag is flipped; rollback is one flag (data untouched).
-5. **Green tests are a merge gate.** `npm test` must pass on every push (already
-   enforced by `.github/workflows/test.yml`). A red suite blocks the change.
+5. **Green tests are a deploy gate, not just a check.** `.github/workflows/deploy.yml`
+   runs the suite as a `test` job that the `deploy` job depends on
+   (`needs: test`) — a red suite cannot reach production. This is a repo-wide
+   rule, not scoped to this milestone; full policy in
+   [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) §5.
 
 ---
 
@@ -56,6 +59,14 @@ A characterization test net now locks in the current behavior of the previously
 **The net is proven, not decorative.** Mutation testing confirmed it catches real
 regressions: dropping the paise→₹ conversion fails the webhook test; removing
 `proof_id UNIQUE` fails the schema-contract test.
+
+**This is a starting point, not the finish line.** A full operation-by-operation
+audit found many more gaps beyond this initial net (every operation on
+`events.js`, `roles.js` DELETE, `funds.js`'s visibility gate, and dozens more).
+The complete, prioritized, checkbox-tracked backlog — repo-wide, not scoped to
+this milestone — lives in
+[`../testing/COVERAGE-TRACKER.md`](../testing/COVERAGE-TRACKER.md). That file,
+not this section, is the up-to-date source of truth for "what's tested."
 
 Run it anytime:
 ```bash
@@ -97,3 +108,8 @@ is actually defined, wrap chained render/init calls in their own try/catch, and 
 - [ ] Giving path untouched (or, if unavoidable, extra tests + explicit sign-off).
 
 If any box can't be checked, the change is not ready.
+
+This checklist is mirrored in [`../../.github/pull_request_template.md`](../../.github/pull_request_template.md)
+so it's enforced on every PR, not just remembered by convention. The repo-wide
+(not milestone-scoped) version of this process lives in
+[`../../CONTRIBUTING.md`](../../CONTRIBUTING.md).
