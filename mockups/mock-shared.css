@@ -123,24 +123,24 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---- Header ---- */
 .site-header {
-  position: sticky; top: 0; z-index: 50;
+  position: sticky; top: 0; z-index: 50; overflow: hidden;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
 }
-.site-header .wrap { display: flex; align-items: center; gap: 28px; height: 72px; }
-.brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 700; font-size: 1.15rem; flex-shrink: 0; }
+.site-header .wrap { display: flex; align-items: center; gap: 16px; height: 72px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 700; font-size: 1.05rem; flex-shrink: 0; }
 .brand-mark {
   width: 34px; height: 34px; border-radius: 10px;
   background: linear-gradient(150deg, var(--accent), var(--accent-deep));
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 1rem; flex-shrink: 0;
 }
-.brand small { display: block; font-family: var(--sans); font-weight: 500; font-size: .68rem; color: var(--text-faint); letter-spacing: .03em; }
-.primary-nav { display: flex; gap: 22px; flex: 1; }
-.primary-nav a { font-size: .89rem; font-weight: 500; color: var(--text-soft); white-space: nowrap; }
+.brand small { display: block; font-family: var(--sans); font-weight: 500; font-size: .66rem; color: var(--text-faint); letter-spacing: .02em; }
+.primary-nav { display: flex; gap: 14px; flex: 1; min-width: 0; }
+.primary-nav a { font-size: .83rem; font-weight: 500; color: var(--text-soft); white-space: nowrap; }
 .primary-nav a:hover, .primary-nav a.current { color: var(--accent); }
-.header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .church-switch {
   display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--bg-soft); border: 1px solid var(--border);
   font-size: .74rem; font-weight: 600;
