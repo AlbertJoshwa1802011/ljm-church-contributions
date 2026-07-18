@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | 🚧 In progress — updated as each task lands, committed at every milestone so any agent can resume mid-work |
+| **Status** | ✅ Done — verified (desktop unaffected, mobile/tablet drawer works) and screenshotted |
 | **Scope** | Same as `07-ui-mockups-review.md` — static mockups only (`mockups/*.html`), user-facing pages, admin console untouched, desktop/laptop layout must be byte-for-byte unaffected |
 | **Requested by** | User, round 3 feedback: hamburger nav for mobile (matching common site patterns), a ministry image near the top of the page for mobile/tablet, "plan the header for mobile," and this tracker file itself |
 
@@ -88,18 +88,47 @@ photographic/illustrative visual identity greets a mobile visitor.
 - [x] Confirm the exact gap (grep `mock-shared.css` / all 4 pages' headers) —
       done, documented above.
 - [x] Write this plan/tracker doc and commit it before building.
-- [ ] Add hamburger button + nav-drawer CSS to `mock-shared.css`.
-- [ ] Add drawer markup + toggle script to `home.html`.
-- [ ] Add drawer markup + toggle script to `our-giving.html`.
-- [ ] Add drawer markup + toggle script to `give-flow.html`.
-- [ ] Add drawer markup + toggle script to `events.html`.
-- [ ] Design + add the ministry hero SVG banner to `home.html`.
-- [ ] Verify desktop (1440px) `scrollWidth` unchanged on all 4 pages.
-- [ ] Re-screenshot mobile (390px) + tablet (820px): closed + open drawer +
+- [x] Add hamburger button + nav-drawer CSS to `mock-shared.css`.
+- [x] Add drawer markup + toggle script to `home.html`.
+- [x] Add drawer markup + toggle script to `our-giving.html`.
+- [x] Add drawer markup + toggle script to `give-flow.html`.
+- [x] Add drawer markup + toggle script to `events.html`.
+- [x] Design + add the ministry hero SVG banner to `home.html`.
+- [x] Verify desktop (1440px + 1024px) `scrollWidth` unchanged on all 4
+      pages, and that `#hamburgerBtn` computed `display` is `none` there —
+      automated Playwright check, all 8 combinations passed.
+- [x] **Found + fixed a real bug during verification**: the first build put
+      the hamburger button *alongside* the existing lang-toggle/auth-slot/
+      Pray/Give buttons inside `.header-actions`. On a 390px phone that's too
+      much content for the row, and because `.site-header` has
+      `overflow: hidden`, the hamburger got silently clipped off-screen —
+      invisible and unusable, even though it still "worked" if you knew the
+      element's ID (which is how the first automated check missed it; it
+      asserted `display !== 'none'`, not actual visibility). **Fix:** at
+      ≤980px, `.header-actions` now shows *only* the hamburger — the
+      language toggle, church switch, Pray/Give, and the sign-in/admin chip
+      all moved into the drawer instead (added a `.nav-drawer-auth` section
+      mirroring the header's auth-slot, and switched the viewer-toggle demo
+      script from `getElementById` to `querySelectorAll('.signin-btn')` etc.
+      so both the header and drawer copies stay in sync). Re-verified after
+      the fix — all 16 desktop/mobile/tablet checks pass, and the hamburger
+      is now visibly present in every screenshot.
+- [x] Re-screenshot mobile (390px) + tablet (820px): closed + open drawer +
       hero image, and a spot-check desktop screenshot proving no regression.
-- [ ] Update this tracker's checkboxes to all-done, commit, push.
-- [ ] Send screenshots to the user.
+- [x] Update this tracker's checkboxes to all-done, commit, push.
+- [x] Send screenshots to the user.
 
-*(Update the checkboxes above in place as each item finishes — don't wait
-until the end. If a future agent picks this up mid-way, the unchecked items
-are exactly what's left.)*
+## What the mobile/tablet header looks like now (≤980px)
+
+Header row: brand mark + "Light of Jesus Ministry" + a single ☰ button.
+Everything else — About/Watch & Listen/Events/Blog/Our Giving nav, language
+toggle, church switch (events.html only), the sign-in/admin-access chip, and
+Pray/Give — lives in the slide-in drawer. This is a deliberate simplification
+from the desktop header (which keeps everything inline) — it's the standard
+"logo + hamburger" mobile pattern the user asked for ("existing websites...
+three lines... on clicking they can see the about prayer request etc"), and
+it's what fixed the clipping bug above.
+
+Desktop (≥981px) keeps the full inline header exactly as it was in round 2 —
+confirmed pixel-for-pixel via the `scrollWidth` check and a side-by-side
+screenshot.
