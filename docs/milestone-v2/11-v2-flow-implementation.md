@@ -31,6 +31,61 @@ page request checks that cookie. Nothing about this touches the existing
 sign-in flow used by `index.html` today — it's an entirely new, additional
 one used only by people opting into the beta.
 
+## 1.5 Corrected understanding — real site structure (found while building, not assumed)
+
+Before wiring real pages I checked the actual repo root, and it changed a few
+things I'd gotten wrong in earlier mockup rounds. Recording this here because
+it's exactly the kind of thing a future agent needs to know before touching
+routing:
+
+- **The real site is multi-page, not a single-page dashboard.** Root has
+  `index.html` (the stats dashboard, giving modal via `razorpay-checkout.js`),
+  `about.html`, `events.html` (real, already exists!), `funds.html` (fund
+  picker), `impact.html` ("What We Bought"), `member.html`, `members.html`,
+  `subscriptions.html` — all real, separate pages, not mockup gaps.
+- **`member.html` ("My Contributions") already exists in production.**
+  Round 6's `mockups/my-giving.html` was documented as "no equivalent exists
+  in production today" — **that was wrong.** `member.html` does the same
+  job today: shows one person's total given, gift count, fund breakdown.
+  Correction, not a new feature: the v2 port restyles an existing real page,
+  it doesn't invent backend surface.
+  - How it identifies "who": a `?name=` URL query parameter — **not**
+    signed-in identity. Same trust model as the public contributor-history
+    click-through I built in round 6 (this data is already fully public;
+    the user confirmed that's intentional).
+  - **It reads from legacy Google Apps Script URLs directly**
+    (`member-dashboard.js`'s `API_URL_TECH`/`API_URL_CHRISTMAS`), not the
+    modern D1-backed `/api/contributions`. This is old, pre-migration
+    plumbing still live in production. **Not touching or "fixing" this** —
+    out of scope, flagging only. The v2 port will read from the modern
+    `/api/contributions` instead (consistent with every other v2 page),
+    which is a legitimate modernization, not a functional regression: same
+    real numbers, current source of truth.
+  - **v2 design decision:** after Google sign-in (`/api/auth`, real,
+    unchanged), look up the matched `member.name` from the response, then
+    client-side-filter the real `/api/contributions` rows by that name —
+    exactly what the round-6 modal already does, just for "yourself"
+    instead of "whoever you clicked." **No new backend endpoint needed for
+    My Giving after all** — this removes the "?email= filter, TBD" open
+    item from §7 below.
+- **Giving happens via a modal on `index.html`** (`razorpay-checkout.js`),
+  not a separate page — so `/give-flow.html` is a genuinely new URL in v2,
+  no old-file collision to route around.
+- **`index.html` already covers what the mockups called "Our Giving."**
+  Matches what was already flagged back in round 1 (`07-ui-mockups-review.md`
+  §3) — nothing new here, just confirming it while wiring real routes.
+
+### Revised routing map
+
+| Path | Old flow (unchanged) | New flow (eligible testers only) |
+|---|---|---|
+| `/`, `/index.html` | Today's dashboard + give modal | v2 Home (new welcoming landing page) |
+| `/our-giving.html` | *(doesn't exist old-flow)* | v2 Our Giving (the full stats report) |
+| `/events.html` | Real, existing events page | v2 Events |
+| `/give-flow.html` | *(doesn't exist old-flow — giving is a modal)* | v2 Give Flow (real Razorpay, same as the modal) |
+| `/my-giving.html` | *(doesn't exist old-flow — see `/member.html`)* | v2 My Giving (real data, signed-in, not `?name=`) |
+| everything else (`/about.html`, `/funds.html`, `/impact.html`, `/member.html`, `/members.html`, `/subscriptions.html`, `/admin.html`, all `/api/*`) | unchanged | unchanged — never intercepted, not part of this phase |
+
 ## 2. Architecture
 
 ```

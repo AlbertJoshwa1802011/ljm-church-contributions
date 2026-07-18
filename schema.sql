@@ -489,3 +489,13 @@ CREATE TABLE IF NOT EXISTS event_photos (
   FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_event_photos_event ON event_photos(event_id);
+
+-- 18. Beta-tester allowlist for the flag-gated "v2" flow (see migrations/0012_beta_access.sql)
+CREATE TABLE IF NOT EXISTS beta_testers (
+  email TEXT PRIMARY KEY,
+  added_by TEXT,
+  note TEXT,
+  added_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+INSERT OR IGNORE INTO beta_testers (email, added_by, note)
+VALUES ('albertjoshrock101@gmail.com', 'migration-0012', 'Initial requester, seeded at rollout');
