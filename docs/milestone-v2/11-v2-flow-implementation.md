@@ -318,10 +318,31 @@ otherwise, since it directly matches what you asked for.**
       ₹5,000 — the other member's ₹500 gift stayed out). Receipt download
       dropped from the mockup (no PDF generation exists — out of scope,
       not faked).
-- [ ] **Give Flow** (`/v2/give-flow.html`) — real fund list from
-      `/api/funds`, real Razorpay checkout (identical call), real webhook
-      (untouched), post-payment confirmation = today's real behavior,
-      restyled only (§4).
+- [x] **Give Flow** (`/v2/give-flow.html`) — the highest-risk page, given
+      extra care per §4. **`razorpay-checkout.js` is loaded completely
+      unmodified from its real site-root path** (`<script src="/razorpay-checkout.js">`)
+      — not ported, not rewritten, the literal same file, same live
+      Razorpay key, same `/api/webhook` target, same validation/receipt/
+      reload behavior. `git diff --stat razorpay-checkout.js` confirms
+      zero changes. The new page only supplies matching element IDs/class
+      names (`#rzp-button1`, `#contributionModal`, `.amount-chip`, etc. —
+      same contract `index.html` already provides today) restyled in the
+      v2 design system, plus a small loader that fetches the real
+      `/api/contributions` and sets the same `window._currentContributions`
+      / `_memberEmails` / `_memberPhones` globals + `LJM_DATA_READY` event
+      script.js normally provides — a lighter real data source, not a
+      different one. Cause cards for Tech/Christmas Fund update the URL's
+      `?fund=` param live (`getFundContext()` already reads it fresh).
+      Kept today's real alert()-based post-payment confirmation, restyled
+      classes only, per your explicit answer to the confirmation-UX
+      question — no new backend surface on the payment path.
+      **Verified safely** (Playwright, with real Razorpay/Google network
+      calls explicitly blocked so the test can never reach live payment
+      infrastructure): modal opens via both the main CTA and header Give
+      button, member dropdown + email/phone auto-fill populate from real
+      (mocked) contribution data, amount chips work, a validation failure
+      correctly shows the real `alert()` and never proceeds toward
+      Razorpay, cause-switching updates the URL. Zero console errors.
 - [ ] **Final verification pass** — full test suite green, old-flow manual
       spot check, new-flow manual walkthrough for the allowlisted email,
       confirm a non-allowlisted email never sees `/v2/` content.
