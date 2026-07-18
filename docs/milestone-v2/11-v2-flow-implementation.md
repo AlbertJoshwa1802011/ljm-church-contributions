@@ -296,13 +296,28 @@ otherwise, since it directly matches what you asked for.**
       a realistic mocked multi-event/photo scenario end-to-end with
       Playwright (card count, category filtering, gallery modal all
       correct). No new backend surface; 294/294 unchanged.
-- [ ] **My Giving** (`/v2/my-giving.html`) — real per-signed-in-member
-      contribution history. Needs a small new read: either a `?email=`
-      filter added to `/api/contributions` or client-side filtering of the
-      existing full-fund response (deciding during build, whichever needs
-      less new backend surface — documented here once chosen). Receipt
-      download stays a demo/disabled affordance (no PDF generation exists;
-      out of scope).
+- [x] **My Giving** (`/v2/my-giving.html`) — resolved the "new backend?"
+      question: **no new endpoint needed.** Client-side-filters the same
+      real `/api/contributions` responses (both funds) by the signed-in
+      member's exact name, matching `/api/auth`'s `member.name` field —
+      same approach as the Our Giving contributor modal, just scoped to
+      "yourself" via your own verified identity instead of a clicked name.
+      `auth.js` got one small additive change (a `ljm-auth-ready` window
+      event dispatched whenever sign-in state resolves, from cache or
+      fresh) so this page — and only this page — can react to "who is
+      this" without duplicating auth logic; re-verified Home and Our
+      Giving still work correctly after that change.
+      Three real states, all verified with Playwright (pre-seeded
+      `sessionStorage` + `addInitScript`, not just visual): **signed out**
+      (sign-in gate), **signed in but no linked member record** (honest
+      "couldn't find your giving record" state, matches `/api/auth`'s real
+      `member: null` case), and **signed in + linked** (real gift history
+      across both funds). Correctness-checked the actual privacy-relevant
+      behavior: a same-fund gift from a *different* member is correctly
+      excluded from the signed-in user's total (₹4,500 shown, not
+      ₹5,000 — the other member's ₹500 gift stayed out). Receipt download
+      dropped from the mockup (no PDF generation exists — out of scope,
+      not faked).
 - [ ] **Give Flow** (`/v2/give-flow.html`) — real fund list from
       `/api/funds`, real Razorpay checkout (identical call), real webhook
       (untouched), post-payment confirmation = today's real behavior,

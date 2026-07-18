@@ -19,9 +19,17 @@
     return (name || "?").trim().split(/\s+/).map(function (w) { return w.charAt(0); }).join("").substring(0, 2).toUpperCase();
   }
 
+  // Other page-specific scripts (e.g. my-giving.html, which needs to know
+  // WHO is signed in to filter their real contributions) listen for this
+  // instead of duplicating auth logic.
+  function dispatchAuthEvent(profile) {
+    window.dispatchEvent(new CustomEvent("ljm-auth-ready", { detail: profile }));
+  }
+
   function setSignedOutUI() {
     $all(".signin-btn-slot").forEach(function (el) { el.style.display = ""; });
     $all(".user-chip").forEach(function (el) { el.classList.remove("on"); });
+    dispatchAuthEvent(null);
   }
 
   function setSignedInUI(profile) {
@@ -37,6 +45,7 @@
       el.style.cursor = "pointer";
       el.title = "Click to sign out";
     });
+    dispatchAuthEvent(profile);
   }
 
   function currentProfile() {
@@ -104,8 +113,12 @@
         var payload = JSON.parse(atob(existingToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
         setSignedInUI({ name: payload.name, email: payload.email });
         runAuthHandshake(existingToken);
+      } else {
+        dispatchAuthEvent(null);
       }
-    } catch (_) {}
+    } catch (_) {
+      dispatchAuthEvent(null);
+    }
 
     var tries = 0;
     (function waitGis() {
