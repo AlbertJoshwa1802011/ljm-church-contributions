@@ -109,29 +109,19 @@ button { font-family: inherit; cursor: pointer; }
   font-size: .8rem; text-align: center; padding: 8px 16px; letter-spacing: .02em;
 }
 .mock-banner b { font-weight: 700; }
+/* A single small icon switch, not a labeled pill — sits quietly bottom-right
+   rather than announcing "here's a light/dark option". */
 .theme-toggle {
   position: fixed; bottom: 20px; right: 20px; z-index: 999;
-  display: flex; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 999px; box-shadow: var(--shadow-lift); padding: 4px; gap: 2px;
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lift);
+  cursor: pointer; color: var(--text-soft); padding: 0;
 }
-.theme-toggle button {
-  border: 0; background: transparent; color: var(--text-soft);
-  font-family: var(--sans); font-size: .78rem; font-weight: 600;
-  padding: 8px 14px; border-radius: 999px; transition: all .2s ease;
-}
-.theme-toggle button.active { background: var(--accent); color: #fff; }
-
-.viewer-toggle {
-  position: fixed; bottom: 20px; left: 20px; z-index: 999;
-  display: flex; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 999px; box-shadow: var(--shadow-lift); padding: 4px; gap: 2px;
-}
-.viewer-toggle button {
-  border: 0; background: transparent; color: var(--text-soft);
-  font-family: var(--sans); font-size: .74rem; font-weight: 600;
-  padding: 8px 12px; border-radius: 999px; transition: all .2s ease;
-}
-.viewer-toggle button.active { background: var(--text); color: var(--bg); }
+.theme-toggle svg { width: 19px; height: 19px; }
+.theme-toggle .moon-icon { display: none; }
+:root[data-theme="dark"] .theme-toggle .sun-icon { display: none; }
+:root[data-theme="dark"] .theme-toggle .moon-icon { display: block; }
 
 /* ---- Auth slot (sign-in / signed-in member / signed-in admin) ---- */
 .auth-slot { display: flex; align-items: center; gap: 8px; }
@@ -147,6 +137,7 @@ button { font-family: inherit; cursor: pointer; }
 .user-avatar {
   width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-deep);
   display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .76rem; font-family: var(--sans); flex-shrink: 0;
+  cursor: pointer;
 }
 .user-meta { display: flex; flex-direction: column; line-height: 1.25; }
 .user-meta .nm { font-size: .82rem; font-weight: 700; color: var(--text); }
@@ -282,10 +273,7 @@ body.drawer-open { overflow: hidden; }
   /* Demo-only chrome (not part of the real site) must not collide with the
      real mobile sticky action bar it sits above — move it up to the top on
      small screens instead of stacking at the bottom. */
-  .theme-toggle, .viewer-toggle { bottom: auto; top: 122px; }
-  .theme-toggle { right: 10px; }
-  .viewer-toggle { left: 10px; }
-  .theme-toggle button, .viewer-toggle button { padding: 6px 9px; font-size: .68rem; }
+  .theme-toggle { bottom: auto; top: 122px; right: 10px; width: 36px; height: 36px; }
 }
 
 /* ---- Section rhythm ---- */

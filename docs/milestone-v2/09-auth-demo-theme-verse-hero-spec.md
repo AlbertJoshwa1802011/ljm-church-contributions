@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | 🚧 In progress — commit as each item lands |
+| **Status** | ✅ Done — verified (desktop unaffected, all interactions work) and screenshotted |
 | **Scope** | Same static-mockup rules as `07`/`08` — no backend/API/`script.js` changes, admin console untouched |
 | **Requested by** | User, round 4 feedback (see below) |
 
@@ -134,10 +134,21 @@ whoever has repo/deploy access) achieves the same result without new code.
 ## Task tracker
 
 - [x] Write this doc, commit before building.
-- [ ] Remove viewer-toggle; wire sign-in-click demo (all 4 pages).
-- [ ] Restyle theme toggle to icon switch (all 4 pages).
-- [ ] Add verse auto-rotation to Home's promise card.
-- [ ] Add responsive `<picture>` + SVG fallback + dimension spec (above).
-- [ ] Verify desktop (1440/1024px) unaffected.
-- [ ] Re-screenshot + update this tracker to done + commit + push.
-- [ ] Send screenshots + answers to the user.
+- [x] Remove viewer-toggle; wire sign-in-click demo (all 4 pages) — clicking
+      "Sign in" now flips to signed-in-admin state; clicking the avatar
+      signs back out. Note: since the drawer closes on any link click,
+      tapping "Sign in" inside the mobile drawer closes it and reveals the
+      signed-in state — reopen the drawer to see the avatar/admin pill
+      there too (the mobile header itself only ever shows brand+hamburger
+      per round 3's design, by intent).
+- [x] Restyle theme toggle to icon switch (all 4 pages) — single 42px
+      circular button, sun/moon glyph swaps on click.
+- [x] Add verse auto-rotation to Home's promise card — 4 sample verses,
+      8s interval, fade transition, clickable dot indicators.
+- [x] Add responsive `<picture>` + SVG fallback + dimension spec (above).
+- [x] Verify desktop (1440/1024px) unaffected — automated Playwright check:
+      scrollWidth unchanged, hamburger still hidden, theme-toggle present,
+      on all 4 pages at both widths. Also verified the sign-in/theme-toggle/
+      hero-fallback/verse-rotator interactions all function correctly.
+- [x] Re-screenshot + update this tracker to done + commit + push.
+- [x] Send screenshots + answers to the user.

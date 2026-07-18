@@ -296,21 +296,15 @@
   <div class="wrap"><div class="footer-bottom"><span>© 2026 Light of Jesus Ministry</span><a href="home.html" style="font-weight:700;color:var(--accent)">← Back to Home</a></div></div>
 </footer>
 
-<div class="viewer-toggle" role="group" aria-label="Preview signed-in state (demo only)">
-  <button data-viewer="guest" class="active">Guest</button>
-  <button data-viewer="member">Member</button>
-  <button data-viewer="admin">Admin</button>
-</div>
-<div class="theme-toggle" role="group" aria-label="Preview theme">
-  <button id="btn-light" class="active">☀ Light</button>
-  <button id="btn-dark">● Dark</button>
-</div>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+  <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+</button>
 <script>
   var root = document.documentElement;
-  var L = document.getElementById('btn-light'), D = document.getElementById('btn-dark');
-  function setTheme(t) { root.setAttribute('data-theme', t); L.classList.toggle('active', t==='light'); D.classList.toggle('active', t==='dark'); }
-  L.addEventListener('click', function () { setTheme('light'); });
-  D.addEventListener('click', function () { setTheme('dark'); });
+  document.getElementById('themeToggle').addEventListener('click', function () {
+    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
 
   // Demo-only view switching
   var tf = document.getElementById('tab-form'), tc = document.getElementById('tab-confirm');
@@ -345,18 +339,18 @@
 </script>
 <script>
   (function () {
-    var buttons = document.querySelectorAll('.viewer-toggle button');
     var signinEls = document.querySelectorAll('.signin-btn');
     var userChipEls = document.querySelectorAll('.user-chip');
     var adminLinkEls = document.querySelectorAll('.admin-link');
-    function setViewer(state) {
-      buttons.forEach(function (b) { b.classList.toggle('active', b.dataset.viewer === state); });
-      signinEls.forEach(function (el) { el.classList.toggle('off', state !== 'guest'); });
-      userChipEls.forEach(function (el) { el.classList.toggle('on', state !== 'guest'); });
-      adminLinkEls.forEach(function (el) { el.classList.toggle('on', state === 'admin'); });
+    var avatarEls = document.querySelectorAll('.user-avatar');
+    function setSignedIn(signedIn) {
+      signinEls.forEach(function (el) { el.classList.toggle('off', signedIn); });
+      userChipEls.forEach(function (el) { el.classList.toggle('on', signedIn); });
+      adminLinkEls.forEach(function (el) { el.classList.toggle('on', signedIn); });
     }
-    buttons.forEach(function (b) { b.addEventListener('click', function () { setViewer(b.dataset.viewer); }); });
-    setViewer('guest');
+    signinEls.forEach(function (el) { el.addEventListener('click', function (e) { e.preventDefault(); setSignedIn(true); }); });
+    avatarEls.forEach(function (el) { el.setAttribute('title', 'Click to sign out (demo)'); el.addEventListener('click', function () { setSignedIn(false); }); });
+    setSignedIn(false);
   })();
 </script>
 </body>

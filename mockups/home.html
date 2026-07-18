@@ -8,14 +8,21 @@
 <style>
   /* ---- Home-page-specific composition ---- */
   .hero-banner { position: relative; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--bg-soft); }
-  .hero-banner svg { display: block; width: 100%; height: clamp(150px, 24vw, 230px); }
+  .hero-banner svg, .hero-banner picture, .hero-banner img {
+    display: block; width: 100%; height: clamp(150px, 24vw, 230px);
+    object-fit: cover; object-position: center;
+  }
+  /* Real photo (once supplied) takes over automatically; the illustrated
+     SVG is only shown if the photo file for this breakpoint is missing —
+     see docs/milestone-v2/09-auth-demo-theme-verse-hero-spec.md §5. */
+  .hero-banner svg { display: none; }
   .hero-banner-cap {
     position: absolute; left: 0; right: 0; bottom: 12px; text-align: center;
     font-family: var(--sans); font-weight: 700; font-size: .72rem; letter-spacing: .05em; text-transform: uppercase;
     color: #fff; text-shadow: 0 1px 5px rgba(0,0,0,.4);
   }
-  @media (max-width: 980px) { .hero-banner svg { height: clamp(200px, 42vw, 300px); } }
-  @media (max-width: 640px) { .hero-banner svg { height: 230px; } .hero-banner-cap { font-size: .68rem; } }
+  @media (max-width: 980px) { .hero-banner svg, .hero-banner picture, .hero-banner img { height: clamp(200px, 42vw, 300px); } }
+  @media (max-width: 640px) { .hero-banner svg, .hero-banner picture, .hero-banner img { height: 230px; } .hero-banner-cap { font-size: .68rem; } }
 
   .hero {
     padding: 76px 0 60px;
@@ -48,6 +55,14 @@
   .promise-share { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-faint); background: var(--bg-soft); font-size: .85rem; }
   .promise-text { font-family: var(--serif); font-style: italic; font-size: 1.32rem; line-height: 1.48; color: var(--text); }
   .promise-ref { margin-top: 16px; font-family: var(--sans); font-weight: 700; font-size: .86rem; color: var(--accent); }
+  .promise-rotator { transition: opacity .35s ease; min-height: 128px; }
+  .promise-rotator.fading { opacity: 0; }
+  .promise-dots { display: flex; gap: 6px; margin-top: 16px; }
+  .promise-dots button {
+    width: 6px; height: 6px; padding: 0; border: 0; border-radius: 50%;
+    background: var(--border-strong); cursor: pointer; transition: background .2s ease, transform .2s ease;
+  }
+  .promise-dots button.active { background: var(--gold); transform: scale(1.4); }
   .promise-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
   .promise-mini { background: var(--bg-soft); border-radius: var(--radius-sm); padding: 13px 15px; }
   .promise-mini .lbl { font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-faint); }
@@ -199,7 +214,18 @@
      illustration in the same spirit as the events.html placeholder tiles),
      shown at the very top so mobile/tablet visitors see it first. ========= -->
 <section class="hero-banner">
-  <svg viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of two church buildings under a radiant sky, representing Church of Light and City Worship Center">
+  <!-- Real photo slot: three breakpoint-specific crops, sized per
+       docs/milestone-v2/09-auth-demo-theme-verse-hero-spec.md §5
+       (desktop 2400x460, tablet 1600x600, mobile 1200x460). Files don't
+       exist yet, so this 404s today and the illustrated SVG below takes
+       over via onerror — drop the three files in and it goes live with no
+       code changes. -->
+  <picture>
+    <source media="(max-width: 640px)" srcset="assets/hero/hero-mobile.jpg">
+    <source media="(max-width: 980px)" srcset="assets/hero/hero-tablet.jpg">
+    <img src="assets/hero/hero-desktop.jpg" alt="Light of Jesus Ministry — Church of Light and City Worship Center" id="heroPhoto" onerror="this.closest('picture').style.display='none'; document.getElementById('heroFallback').style.display='block';">
+  </picture>
+  <svg id="heroFallback" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of two church buildings under a radiant sky, representing Church of Light and City Worship Center">
     <defs>
       <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="var(--gold-soft)"/>
@@ -266,11 +292,14 @@
 
     <div class="promise-card">
       <div class="promise-top">
-        <span class="promise-date">Today's Promise · 17 July</span>
+        <span class="promise-date" id="promiseDate">Today's Promise · 17 July</span>
         <span class="promise-share">↗</span>
       </div>
-      <p class="promise-text">"Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee."</p>
-      <p class="promise-ref">Isaiah 41:10</p>
+      <div class="promise-rotator" id="promiseRotator">
+        <p class="promise-text" id="promiseText">"Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee."</p>
+        <p class="promise-ref" id="promiseRef">Isaiah 41:10</p>
+      </div>
+      <div class="promise-dots" id="promiseDots" role="group" aria-label="Featured verses"></div>
       <div class="promise-strip">
         <div class="promise-mini">
           <div class="lbl">This Month</div>
@@ -405,40 +434,79 @@
   <a href="give-flow.html" class="btn btn-primary">Give</a>
 </div>
 
-<div class="viewer-toggle" role="group" aria-label="Preview signed-in state (demo only)">
-  <button data-viewer="guest" class="active">Guest</button>
-  <button data-viewer="member">Member</button>
-  <button data-viewer="admin">Admin</button>
-</div>
-<div class="theme-toggle" role="group" aria-label="Preview theme">
-  <button id="btn-light" class="active">☀ Light</button>
-  <button id="btn-dark">● Dark</button>
-</div>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+  <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+</button>
 <script>
-  var root = document.documentElement;
-  var L = document.getElementById('btn-light'), D = document.getElementById('btn-dark');
-  function setTheme(t) {
-    root.setAttribute('data-theme', t);
-    L.classList.toggle('active', t === 'light');
-    D.classList.toggle('active', t === 'dark');
-  }
-  L.addEventListener('click', function () { setTheme('light'); });
-  D.addEventListener('click', function () { setTheme('dark'); });
+  (function () {
+    var root = document.documentElement;
+    var toggle = document.getElementById('themeToggle');
+    toggle.addEventListener('click', function () {
+      root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+  })();
 </script>
 <script>
   (function () {
-    var buttons = document.querySelectorAll('.viewer-toggle button');
+    // Sign-in demo: clicking "Sign in" simulates completing Google OAuth and
+    // shows whatever the account's real role is (here, admin) — there is no
+    // manual role picker in the real product, so the preview shouldn't have one.
     var signinEls = document.querySelectorAll('.signin-btn');
     var userChipEls = document.querySelectorAll('.user-chip');
     var adminLinkEls = document.querySelectorAll('.admin-link');
-    function setViewer(state) {
-      buttons.forEach(function (b) { b.classList.toggle('active', b.dataset.viewer === state); });
-      signinEls.forEach(function (el) { el.classList.toggle('off', state !== 'guest'); });
-      userChipEls.forEach(function (el) { el.classList.toggle('on', state !== 'guest'); });
-      adminLinkEls.forEach(function (el) { el.classList.toggle('on', state === 'admin'); });
+    var avatarEls = document.querySelectorAll('.user-avatar');
+    function setSignedIn(signedIn) {
+      signinEls.forEach(function (el) { el.classList.toggle('off', signedIn); });
+      userChipEls.forEach(function (el) { el.classList.toggle('on', signedIn); });
+      adminLinkEls.forEach(function (el) { el.classList.toggle('on', signedIn); });
     }
-    buttons.forEach(function (b) { b.addEventListener('click', function () { setViewer(b.dataset.viewer); }); });
-    setViewer('guest');
+    signinEls.forEach(function (el) { el.addEventListener('click', function (e) { e.preventDefault(); setSignedIn(true); }); });
+    avatarEls.forEach(function (el) { el.setAttribute('title', 'Click to sign out (demo)'); el.addEventListener('click', function () { setSignedIn(false); }); });
+    setSignedIn(false);
+  })();
+</script>
+<script>
+  (function () {
+    // Proposed feature — auto-advancing promise/verse rotation. Sample data
+    // only; a real build would source this from functions/api/bible.js
+    // (lookup/search actions already exist) plus a curated reference list —
+    // see docs/milestone-v2/09-auth-demo-theme-verse-hero-spec.md §3.
+    var verses = [
+      { date: "Today's Promise · 17 July", text: '"Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee."', ref: "Isaiah 41:10" },
+      { date: "Today's Promise · 17 July", text: '"The Lord is my shepherd; I shall not want."', ref: "Psalm 23:1" },
+      { date: "Today's Promise · 17 July", text: '"For I know the plans I have for you, plans to prosper you and not to harm you, plans to give you hope and a future."', ref: "Jeremiah 29:11" },
+      { date: "Today's Promise · 17 July", text: '"I can do all things through Christ which strengtheneth me."', ref: "Philippians 4:13" }
+    ];
+    var rotator = document.getElementById('promiseRotator');
+    var dateEl = document.getElementById('promiseDate');
+    var textEl = document.getElementById('promiseText');
+    var refEl = document.getElementById('promiseRef');
+    var dotsEl = document.getElementById('promiseDots');
+    var idx = 0, timer;
+
+    verses.forEach(function (_, i) {
+      var b = document.createElement('button');
+      b.className = i === 0 ? 'active' : '';
+      b.setAttribute('aria-label', 'Show verse ' + (i + 1));
+      b.addEventListener('click', function () { show(i); restart(); });
+      dotsEl.appendChild(b);
+    });
+
+    function show(i) {
+      idx = i;
+      rotator.classList.add('fading');
+      setTimeout(function () {
+        dateEl.textContent = verses[idx].date;
+        textEl.textContent = verses[idx].text;
+        refEl.textContent = verses[idx].ref;
+        Array.prototype.forEach.call(dotsEl.children, function (d, di) { d.classList.toggle('active', di === idx); });
+        rotator.classList.remove('fading');
+      }, 350);
+    }
+    function next() { show((idx + 1) % verses.length); }
+    function restart() { clearInterval(timer); timer = setInterval(next, 8000); }
+    restart();
   })();
 </script>
 </body>
