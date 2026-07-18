@@ -235,13 +235,35 @@ otherwise, since it directly matches what you asked for.**
       (next tasks below build them), so right now an activated cookie
       would 404 — activation/allowlist/middleware are correct and tested
       in isolation, but there's nothing to route *to* yet.
-- [ ] **Home** (`/v2/index.html`) — real sign-in (reuses `/api/auth`), real
-      Giving-at-a-Glance teaser sourced from `/api/contributions`, real
-      Month/Year promise mini-cards from `settings.js`'s verse config,
-      "Today's Promise" itself: **no real per-day source exists** — ships
-      as a small fixed/curated set (same honesty pattern as the mockup)
-      until you decide on a real content source; hamburger drawer, hero
-      image slot — all as already designed in `mockups/home.html`, now real.
+- [x] **Home** (`/v2/index.html` + `/v2/auth.js` + `/v2/shared.css`) — real
+      sign-in via the exact same GIS client ID + `/api/auth` handshake as
+      the old flow, sharing the same `sessionStorage.ljmUserIdToken` /
+      `ljmAuthProfile` keys (a session started on the old flow carries over
+      to `/v2` and back — real interop, not a parallel auth system). Real
+      Giving-at-a-Glance teaser computed from `/api/contributions` (same
+      formula as `contributions.js` itself: collected = sum of
+      `contributions[].Amount`, available = `availableBalance` field,
+      goal = `goalAmount` field — no numbers invented). Real Month/Year
+      verse mini-cards from `/api/settings` (mirrors `member.html`'s
+      existing real pattern exactly — hides gracefully if the pastor
+      hasn't set them). Real "What's Happening" section from
+      `/api/events` — production has zero published events today, so this
+      correctly renders an honest empty state, not a fabricated "LIVE NOW"
+      card. Hamburger drawer, hero `<picture>` slot, theme toggle — as
+      designed, verified no console errors and zero horizontal overflow at
+      1440px and 390px.
+      **Content removed, not carried forward as fabricated:** the
+      mockup's testimony card ("Ruth Mathew...") was an invented example
+      for design review — shipping a fake named endorsement on the real
+      site would be dishonest content, so it's removed here rather than
+      "kept for now." **Needs your input before public launch:** a real
+      testimonial (if you want one), and the footer's service-time details
+      — I don't have a verified real source for exact service times, so
+      double-check those before this goes out to the public (currently
+      only reachable by allowlisted testers, so low-risk for now, flagging
+      so it doesn't slip through silently). "Today's Promise" itself still
+      has no real per-day source — ships as the same small curated
+      fixed set as the mockup, pending your decision from §3.
 - [ ] **Our Giving** (`/v2/our-giving.html`) — full stats wired to
       `/api/contributions`/`/api/funds`/`/api/purchases`, contributor
       Giving-History modal driven by **real per-contribution rows** (no
