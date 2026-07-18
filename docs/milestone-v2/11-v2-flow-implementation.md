@@ -264,11 +264,23 @@ otherwise, since it directly matches what you asked for.**
       so it doesn't slip through silently). "Today's Promise" itself still
       has no real per-day source — ships as the same small curated
       fixed set as the mockup, pending your decision from §3.
-- [ ] **Our Giving** (`/v2/our-giving.html`) — full stats wired to
-      `/api/contributions`/`/api/funds`/`/api/purchases`, contributor
-      Giving-History modal driven by **real per-contribution rows** (no
-      more reconstructed/illustrative itemization — the real data has real
-      dates, this was only a mockup limitation).
+- [x] **Our Giving** (`/v2/our-giving.html`) — every section computed live
+      from `/api/contributions` (KPI row, goal donut + milestones, giving
+      pace + ETA, recent activity, top contributors, insights row, 3
+      conic-gradient charts, growth-over-time bars) plus a real
+      `/api/wishlist` fetch (renders real items if any exist, an honest
+      "nothing right now" state if not — no fabricated example items).
+      Fund switch (Tech/Christmas chips) re-fetches and re-renders live.
+      The contributor Giving-History modal is a real upgrade over the
+      mockup: it now filters the actual fetched contribution rows by name,
+      so every date/amount/method shown is **real**, not the
+      total-preserving reconstruction the mockup had to use.
+      **Verified with realistic mocked API responses** (Playwright route
+      interception, not just visual): collected total, goal %, and a
+      contributor's modal total/count/rows all matched hand-computed
+      expected values exactly. No new backend surface — pure frontend
+      consuming existing endpoints, so no new tests needed (294/294 still
+      green, unchanged).
 - [ ] **Events** (`/v2/events.html`) — wired to `/api/events`; today that's
       genuinely zero events in production, so the page will legitimately
       show an empty state rather than the mockup's placeholder gallery —
