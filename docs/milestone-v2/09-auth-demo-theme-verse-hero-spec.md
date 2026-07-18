@@ -131,6 +131,31 @@ its own tests before shipping per `CONTRIBUTING.md`. For now, dropping the
 three files directly into the deployed site's `assets/hero/` folder (by
 whoever has repo/deploy access) achieves the same result without new code.
 
+## Round 5 — mobile theme-toggle position (user follow-up)
+
+User feedback: "computer and tab view is good... mobile view alone we have
+the dark mode light mode at irrelative position." Confirmed — on phones the
+floating icon sat at `top:122px; right:10px`, unattached to any element,
+overlapping the hero illustration with no visual relationship to it. Desktop
+and tablet were untouched (already confirmed good) and stay exactly as they
+were: the floating icon bottom-right.
+
+**Fix:** below 640px only, the floating icon is hidden entirely and an
+identical icon button now lives inside the hamburger drawer, next to the
+language toggle (own row on Give Flow, which has no language toggle).
+
+**A second, pre-existing bug found while fixing this:** the drawer's
+language-toggle chip (and, on Events, the church-switch) turned out to have
+been **invisible inside the drawer at both mobile and tablet width since
+round 3** — a blanket `@media (max-width: 980px) { .lang-toggle { display:
+none } }` rule (written to hide the *header's* copy once nav moves into the
+drawer) was also hiding the drawer's own copy of the same class, since CSS
+class selectors don't care which container an element is in. Nobody had
+zoomed into that exact row in a screenshot closely enough to notice the text
+was missing. Fixed with a scoped override: `.nav-drawer .lang-toggle,
+.nav-drawer .church-switch { display: ... }` restores them specifically
+inside the drawer while leaving the header-hiding rule intact.
+
 ## Task tracker
 
 - [x] Write this doc, commit before building.

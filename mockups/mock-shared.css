@@ -122,6 +122,12 @@ button { font-family: inherit; cursor: pointer; }
 .theme-toggle .moon-icon { display: none; }
 :root[data-theme="dark"] .theme-toggle .sun-icon { display: none; }
 :root[data-theme="dark"] .theme-toggle .moon-icon { display: block; }
+/* On phones the floating fixed icon had nothing to visually anchor to —
+   it just sat on top of whatever content scrolled underneath it. Below
+   640px it moves inside the nav drawer instead, next to the language
+   toggle; tablet/desktop keep the floating icon unchanged. */
+.nav-drawer .theme-toggle { position: static; width: 38px; height: 38px; display: none; margin-left: auto; }
+@media (max-width: 640px) { .nav-drawer .theme-toggle { display: flex; } }
 
 /* ---- Auth slot (sign-in / signed-in member / signed-in admin) ---- */
 .auth-slot { display: flex; align-items: center; gap: 8px; }
@@ -186,6 +192,12 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: 999px; padding: 6px 12px; letter-spacing: .02em;
 }
 @media (max-width: 980px) { .primary-nav, .church-switch, .lang-toggle { display: none; } }
+/* The header copies of church-switch/lang-toggle are meant to disappear
+   below 980px (they move into the drawer) — but that blanket rule was also
+   silently hiding the *drawer's own* copies of the same classes. Put them
+   back for anything nested inside .nav-drawer. */
+.nav-drawer .lang-toggle { display: block; }
+.nav-drawer .church-switch { display: flex; }
 
 /* ---- Mobile/tablet nav: hamburger + slide-in drawer (≤980px only) ----
    The button only renders below 980px, and the drawer/backdrop are
@@ -273,7 +285,7 @@ body.drawer-open { overflow: hidden; }
   /* Demo-only chrome (not part of the real site) must not collide with the
      real mobile sticky action bar it sits above — move it up to the top on
      small screens instead of stacking at the bottom. */
-  .theme-toggle { bottom: auto; top: 122px; right: 10px; width: 36px; height: 36px; }
+  .theme-toggle { display: none; }
 }
 
 /* ---- Section rhythm ---- */
