@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>My Giving — Light of Jesus Ministry (design preview)</title>
+<link rel="stylesheet" href="mock-shared.css" />
+<style>
+  /* ---- My Giving page-specific composition ---- */
+  .mg-hero {
+    padding: 44px 0 34px; border-bottom: 1px solid var(--border);
+    background: radial-gradient(900px 400px at 12% -20%, var(--accent-soft), transparent 60%), var(--bg);
+  }
+  .mg-hero .wrap { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .mg-avatar {
+    width: 62px; height: 62px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-deep);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.3rem; font-family: var(--sans); flex-shrink: 0;
+  }
+  .mg-hero h1 { font-size: 1.7rem; }
+  .mg-hero p { font-size: .88rem; color: var(--text-soft); margin-top: 4px; }
+  .mg-hero .btn { margin-left: auto; }
+
+  .mg-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .mg-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 24px 26px; }
+  .mg-stat-card .lbl { font-size: .74rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-faint); }
+  .mg-stat-card .val { font-family: var(--serif); font-size: 2rem; font-weight: 700; margin-top: 8px; }
+  .mg-stat-card .sub { font-size: .78rem; color: var(--text-soft); margin-top: 6px; }
+  @media (max-width: 640px) { .mg-stats { grid-template-columns: 1fr; } }
+
+  .mg-history { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .mg-history-head { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+  .mg-history-head h3 { font-size: 1.05rem; }
+  .mg-row { display: flex; align-items: center; gap: 14px; padding: 14px 24px; border-bottom: 1px solid var(--border); }
+  .mg-row:last-child { border-bottom: none; }
+  .mg-row .fund-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .mg-row .main { flex: 1; min-width: 0; }
+  .mg-row .main b { font-size: .88rem; display: block; }
+  .mg-row .main span { font-size: .76rem; color: var(--text-faint); }
+  .mg-row .amt { font-weight: 700; font-size: .92rem; flex-shrink: 0; }
+  .mg-row .receipt-btn {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg-soft); color: var(--text-soft); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .mg-row .receipt-btn:hover { background: var(--accent-soft); color: var(--accent-deep); }
+
+  .mg-empty-note { font-size: .78rem; color: var(--text-faint); padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-soft); }
+  .mg-cta-band { background: var(--bg-soft); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 40px 0; text-align: center; }
+  .mg-cta-band h2 { font-size: 1.4rem; }
+  .mg-cta-band p { font-size: .9rem; color: var(--text-soft); margin: 10px auto 20px; max-width: 46ch; }
+
+  @media (max-width: 640px) { .mg-hero .btn { margin-left: 0; width: 100%; } }
+</style>
+</head>
+<body>
+
+<div class="mock-banner">🎨 Design preview — <b>My Giving</b> (proposed — no equivalent exists in production today) · static, no live data</div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="home.html"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <nav class="primary-nav">
+      <a href="home.html">Home</a>
+      <a href="#">About</a>
+      <a href="#">Watch &amp; Listen</a>
+      <a href="events.html">Events</a>
+      <a href="#">Blog</a>
+      <a href="our-giving.html">Our Giving</a>
+    </nav>
+    <div class="header-actions">
+      <div class="lang-toggle">EN / த</div>
+      <div class="auth-slot">
+        <a href="#" class="signin-btn off" id="signinBtn"><span class="g">G</span> Sign in</a>
+        <div class="user-chip on" id="userChip">
+          <span class="user-avatar">PS</span>
+          <span class="user-meta">
+            <span class="nm">Priya Samuel</span>
+            <a href="/admin.html" class="admin-link on" id="adminLink">⚡ Admin Access</a>
+          </span>
+        </div>
+      </div>
+      <a href="give-flow.html" class="btn btn-primary btn-sm">Give</a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="nav-drawer-head">
+    <a class="brand" href="home.html"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry</a>
+    <button class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">✕</button>
+  </div>
+  <nav>
+    <a href="home.html">Home</a>
+    <a href="#">About</a>
+    <a href="#">Watch &amp; Listen</a>
+    <a href="events.html">Events</a>
+    <a href="#">Blog</a>
+    <a href="our-giving.html">Our Giving</a>
+  </nav>
+  <div class="nav-drawer-section nav-drawer-auth">
+    <a href="#" class="signin-btn off"><span class="g">G</span> Sign in</a>
+    <div class="user-chip on">
+      <span class="user-avatar">PS</span>
+      <span class="user-meta">
+        <span class="nm">Priya Samuel</span>
+        <a href="/admin.html" class="admin-link on">⚡ Admin Access</a>
+      </span>
+    </div>
+  </div>
+  <div class="nav-drawer-section">
+    <div class="lang-toggle">EN / த</div>
+    <button class="theme-toggle" aria-label="Toggle light/dark theme">
+      <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+    </button>
+  </div>
+  <div class="nav-drawer-actions">
+    <a href="give-flow.html" class="btn btn-primary btn-sm">Give</a>
+  </div>
+</div>
+
+<!-- MY GIVING — personal dashboard, only meaningful when signed in. This
+     mockup shows it permanently "signed in" as the demo persona (Priya
+     Samuel) since there's no real auth here; on the other 4 pages this is
+     reachable only from the header's signed-in user-chip. -->
+<section class="mg-hero">
+  <div class="wrap">
+    <span class="mg-avatar">PS</span>
+    <div>
+      <h1>Welcome back, Priya.</h1>
+      <p>Member since March 2025 · Church of Light</p>
+    </div>
+    <a href="give-flow.html" class="btn btn-primary">Give Again</a>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="mg-stats">
+      <div class="mg-stat-card">
+        <div class="lbl">All-Time Total</div>
+        <div class="val tabular">₹18,200</div>
+        <div class="sub">Across 14 gifts since March 2025</div>
+      </div>
+      <div class="mg-stat-card">
+        <div class="lbl">This Year</div>
+        <div class="val tabular">₹6,400</div>
+        <div class="sub">5 gifts in 2026 so far</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight" style="padding-top:0">
+  <div class="wrap">
+    <div class="mg-history">
+      <div class="mg-history-head">
+        <h3>Your Giving History</h3>
+        <span style="font-size:.78rem;color:var(--text-faint)">14 gifts</span>
+      </div>
+      <div class="mg-row"><span class="fund-dot"></span><div class="main"><b>₹1,500</b><span>Tech Fund · Online · 12 Jul 2026</span></div><span class="amt">Receipt</span><button class="receipt-btn" aria-label="Download receipt" title="Download receipt (demo)">⬇</button></div>
+      <div class="mg-row"><span class="fund-dot"></span><div class="main"><b>₹2,000</b><span>Tech Fund · Online · 4 Jun 2026</span></div><span class="amt">Receipt</span><button class="receipt-btn" aria-label="Download receipt" title="Download receipt (demo)">⬇</button></div>
+      <div class="mg-row"><span class="fund-dot"></span><div class="main"><b>₹1,000</b><span>Christmas Fund · Manual · 22 Dec 2025</span></div><span class="amt">Receipt</span><button class="receipt-btn" aria-label="Download receipt" title="Download receipt (demo)">⬇</button></div>
+      <div class="mg-row"><span class="fund-dot"></span><div class="main"><b>₹2,900</b><span>Tech Fund · Online · 3 Nov 2025</span></div><span class="amt">Receipt</span><button class="receipt-btn" aria-label="Download receipt" title="Download receipt (demo)">⬇</button></div>
+      <div class="mg-row"><span class="fund-dot"></span><div class="main"><b>₹1,200</b><span>Tech Fund · Online · 15 Sep 2025</span></div><span class="amt">Receipt</span><button class="receipt-btn" aria-label="Download receipt" title="Download receipt (demo)">⬇</button></div>
+      <div class="mg-empty-note">Showing your 5 most recent gifts — the full 14-gift history scrolls below in the real build. Amounts here are demo data for our fictional preview persona, not a real contributor's ledger.</div>
+    </div>
+  </div>
+</section>
+
+<section class="mg-cta-band">
+  <div class="wrap">
+    <h2>Keep the light shining.</h2>
+    <p>Every gift — big or small — helps both churches serve Coimbatore and beyond.</p>
+    <a href="give-flow.html" class="btn btn-primary">Give Now</a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-bottom">
+      <span>© 2026 Light of Jesus Ministry — this page is a proposed feature; no equivalent exists in production today.</span>
+      <a href="home.html" style="font-weight:700;color:var(--accent)">← Back to Home</a>
+    </div>
+  </div>
+</footer>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+  <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+</button>
+<script>
+  (function () {
+    var root = document.documentElement;
+    document.querySelectorAll('.theme-toggle').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('hamburgerBtn');
+    var drawer = document.getElementById('navDrawer');
+    var backdrop = document.getElementById('navDrawerBackdrop');
+    var closeBtn = document.getElementById('navDrawerClose');
+    function openDrawer() { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('drawer-open'); btn.setAttribute('aria-expanded', 'true'); }
+    function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('drawer-open'); btn.setAttribute('aria-expanded', 'false'); }
+    btn.addEventListener('click', openDrawer);
+    closeBtn.addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+    Array.prototype.forEach.call(drawer.querySelectorAll('a'), function (a) { a.addEventListener('click', closeDrawer); });
+  })();
+</script>
+</body>
+</html>

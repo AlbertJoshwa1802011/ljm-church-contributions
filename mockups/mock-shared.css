@@ -152,6 +152,10 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--gold); background: var(--gold-soft); padding: 3px 9px; border-radius: 999px; margin-top: 2px; width: fit-content;
 }
 .admin-link.on { display: flex; }
+/* Visible whenever the user-chip itself is visible (i.e. whenever signed
+   in) — no separate on/off state needed since the parent .user-chip.on
+   already gates visibility for everything inside .user-meta. */
+.mygiving-link { display: block; font-size: .72rem; font-weight: 600; color: var(--accent); margin-top: 2px; }
 @media (max-width: 640px) { .user-meta { display: none; } }
 
 /* Auth slot repeated inside the nav drawer (header copy is hidden ≤980px) —

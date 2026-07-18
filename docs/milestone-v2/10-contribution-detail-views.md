@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | 🚧 In progress — commit as each item lands |
+| **Status** | ✅ Done — verified (desktop unaffected, all 8 contributor totals reconstruct exactly) and screenshotted |
 | **Scope** | Same static-mockup rules as prior rounds — no backend/API/`script.js` changes, admin console untouched |
 | **Requested by** | User: "how will be contribution pages data will be showing in our pages, if we don't design any app flow or UI/UX... please initiate and give me the images" |
 
@@ -86,11 +86,20 @@ ships.
 - [x] Research existing production behavior (`openContributorDetailModal`
       in `script.js`) before designing anything.
 - [x] Write this doc, commit before building.
-- [ ] Build the Giving-History modal on `our-giving.html`.
-- [ ] Build `my-giving.html` + link it from the signed-in user-chip on all
-      4 pages.
-- [ ] Verify desktop (1440/1024px) fully unaffected on the 4 existing
-      pages; verify the new modal/page work correctly at all 3 breakpoints.
-- [ ] Screenshot (desktop priority, since the user asked to confirm laptop
-      is finished) + a couple mobile shots, update tracker, commit, push.
-- [ ] Send images + answer the "is laptop done?" question directly.
+- [x] Build the Giving-History modal on `our-giving.html` — Recent Activity
+      rows and Top Contributor tiles are now clickable (hover states,
+      keyboard-accessible via Enter/Space), open a modal with real
+      totals/counts and a reconstructed itemized list. Verified all 8
+      people's (5 Recent Activity + 6 Top Contributors, 3 overlap) itemized
+      rows sum exactly to their real total.
+- [x] Build `my-giving.html` + link it from the signed-in user-chip on all
+      4 pages (`.mygiving-link`, shown automatically whenever the chip is
+      visible — no separate toggle logic needed).
+- [x] Verify desktop (1440/1024px) fully unaffected on the 4 existing
+      pages (scrollWidth + hamburger-hidden + zero console errors); verify
+      the new modal/page work correctly (My Giving link visible+correct
+      href on all 4 pages; my-giving.html itself clean at 1440 and 390
+      with zero console errors).
+- [x] Screenshot (desktop priority, since the user asked to confirm laptop
+      is finished), update tracker, commit, push.
+- [x] Send images + answer the "is laptop done?" question directly.

@@ -65,8 +65,9 @@
   .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .panel-head h3 { font-size: 1.05rem; }
   .panel-head a { font-size: .8rem; font-weight: 700; color: var(--accent); }
-  .activity-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .activity-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); cursor: pointer; border-radius: var(--radius-sm); transition: background .15s ease; }
   .activity-row:last-child { border-bottom: none; }
+  .activity-row:hover, .activity-row:focus-visible { background: var(--bg-soft); }
   .activity-main { flex: 1; min-width: 0; }
   .activity-main b { font-size: .88rem; display: block; }
   .activity-main span { font-size: .74rem; color: var(--text-faint); }
@@ -74,12 +75,42 @@
 
   .top-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   @media (max-width: 480px) { .top-grid { grid-template-columns: repeat(2, 1fr); } }
-  .top-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; text-align: center; }
+  .top-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; text-align: center; cursor: pointer; transition: box-shadow .15s ease, transform .15s ease; }
+  .top-card:hover, .top-card:focus-visible { box-shadow: var(--shadow-lift); transform: translateY(-2px); }
   .top-card .medal { font-size: 1.3rem; }
   .top-card .name { font-size: .82rem; font-weight: 700; margin-top: 6px; }
   .top-card .amt { font-family: var(--serif); font-size: 1.15rem; margin-top: 3px; }
   .top-card .entries { font-size: .7rem; color: var(--text-faint); margin-top: 2px; }
   @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .goal-story { grid-template-columns: 1fr; } }
+
+  /* ---- Giving-History detail modal ---- */
+  .detail-modal-backdrop {
+    position: fixed; inset: 0; background: rgba(10, 12, 16, .55); z-index: 299;
+    opacity: 0; visibility: hidden; transition: opacity .2s ease;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .detail-modal-backdrop.open { opacity: 1; visibility: visible; }
+  .detail-modal {
+    background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lift);
+    max-width: 560px; width: 100%; max-height: 85vh; overflow-y: auto;
+    transform: translateY(14px); transition: transform .2s ease;
+  }
+  .detail-modal-backdrop.open .detail-modal { transform: translateY(0); }
+  .detail-modal-head { display: flex; align-items: center; gap: 14px; padding: 22px 24px 18px; border-bottom: 1px solid var(--border); }
+  .detail-modal-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-deep); display: flex; align-items: center; justify-content: center; font-weight: 700; font-family: var(--sans); flex-shrink: 0; }
+  .detail-modal-head h3 { font-size: 1.1rem; }
+  .detail-modal-head p { font-size: .78rem; color: var(--text-faint); margin-top: 2px; }
+  .detail-modal-close { margin-left: auto; width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg-soft); color: var(--text-soft); font-size: 1.05rem; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+  .detail-modal-stats { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+  .detail-modal-stats div { padding: 16px 24px; }
+  .detail-modal-stats div:first-child { border-right: 1px solid var(--border); }
+  .detail-modal-stats .lbl { font-size: .7rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-faint); }
+  .detail-modal-stats .val { font-family: var(--serif); font-size: 1.4rem; font-weight: 700; margin-top: 4px; }
+  .detail-modal-body { padding: 6px 24px 8px; }
+  .detail-gift-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: .85rem; }
+  .detail-gift-row:last-child { border-bottom: none; }
+  .detail-gift-row .meta { color: var(--text-faint); font-size: .74rem; }
+  .detail-modal-note { font-size: .72rem; color: var(--text-faint); padding: 14px 24px 22px; border-top: 1px solid var(--border); margin-top: 8px; }
 
   /* Insights row */
   .insights-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
@@ -152,6 +183,7 @@
           <span class="user-avatar" id="userAvatar">PS</span>
           <span class="user-meta">
             <span class="nm" id="userName">Priya Samuel</span>
+            <a href="my-giving.html" class="mygiving-link">My Giving</a>
             <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
           </span>
         </div>
@@ -184,6 +216,7 @@
       <span class="user-avatar">PS</span>
       <span class="user-meta">
         <span class="nm">Priya Samuel</span>
+            <a href="my-giving.html" class="mygiving-link">My Giving</a>
         <a href="/admin.html" class="admin-link">⚡ Admin Access</a>
       </span>
     </div>
@@ -305,22 +338,22 @@
     <div class="two-col">
       <div class="card">
         <div class="panel-head"><h3>Recent Activity</h3><a href="#">View all →</a></div>
-        <div class="activity-row"><span class="avatar">HE</span><div class="activity-main"><b>Hepsi</b><span>💳 Online · 9 days ago</span></div><span class="activity-amt tabular">₹500</span></div>
-        <div class="activity-row"><span class="avatar">BE</span><div class="activity-main"><b>Benita</b><span>💳 Online · 9 days ago</span></div><span class="activity-amt tabular">₹200</span></div>
-        <div class="activity-row"><span class="avatar">MU</span><div class="activity-main"><b>Muthukumar</b><span>💳 Online · 9 days ago</span></div><span class="activity-amt tabular">₹500</span></div>
-        <div class="activity-row"><span class="avatar">AD</span><div class="activity-main"><b>Adlin</b><span>💳 Online · 10 days ago</span></div><span class="activity-amt tabular">₹500</span></div>
-        <div class="activity-row"><span class="avatar">AM</span><div class="activity-main"><b>Augusta Moses</b><span>💳 Online · 10 days ago</span></div><span class="activity-amt tabular">₹200</span></div>
+        <div class="activity-row" data-name="Hepsi" role="button" tabindex="0"><span class="avatar">HE</span><div class="activity-main"><b>Hepsi</b><span>💳 Online · 9 days ago</span></div><span class="activity-amt tabular">₹500</span></div>
+        <div class="activity-row" data-name="Benita" role="button" tabindex="0"><span class="avatar">BE</span><div class="activity-main"><b>Benita</b><span>💳 Online · 9 days ago</span></div><span class="activity-amt tabular">₹200</span></div>
+        <div class="activity-row" data-name="Muthukumar" role="button" tabindex="0"><span class="avatar">MU</span><div class="activity-main"><b>Muthukumar</b><span>💳 Online · 9 days ago</span></div><span class="activity-amt tabular">₹500</span></div>
+        <div class="activity-row" data-name="Adlin" role="button" tabindex="0"><span class="avatar">AD</span><div class="activity-main"><b>Adlin</b><span>💳 Online · 10 days ago</span></div><span class="activity-amt tabular">₹500</span></div>
+        <div class="activity-row" data-name="Augusta Moses" role="button" tabindex="0"><span class="avatar">AM</span><div class="activity-main"><b>Augusta Moses</b><span>💳 Online · 10 days ago</span></div><span class="activity-amt tabular">₹200</span></div>
       </div>
 
       <div class="card">
         <div class="panel-head"><h3>Top Contributors</h3><a href="#">See A–Z directory →</a></div>
         <div class="top-grid">
-          <div class="top-card"><div class="medal">🥇</div><div class="name">Hepsi</div><div class="amt tabular">₹3,500</div><div class="entries">7 gifts</div></div>
-          <div class="top-card"><div class="medal">🥇</div><div class="name">Muthukumar</div><div class="amt tabular">₹3,500</div><div class="entries">7 gifts</div></div>
-          <div class="top-card"><div class="medal">🥇</div><div class="name">Allwin Prabhu</div><div class="amt tabular">₹3,500</div><div class="entries">2 gifts</div></div>
-          <div class="top-card"><div class="medal">⭐</div><div class="name">Albert Joshwa A</div><div class="amt tabular">₹2,614</div><div class="entries">21 gifts</div></div>
-          <div class="top-card"><div class="medal">⭐</div><div class="name">Adlin</div><div class="amt tabular">₹2,500</div><div class="entries">5 gifts</div></div>
-          <div class="top-card"><div class="medal">⭐</div><div class="name">Augustin</div><div class="amt tabular">₹2,000</div><div class="entries">4 gifts</div></div>
+          <div class="top-card" data-name="Hepsi" role="button" tabindex="0"><div class="medal">🥇</div><div class="name">Hepsi</div><div class="amt tabular">₹3,500</div><div class="entries">7 gifts</div></div>
+          <div class="top-card" data-name="Muthukumar" role="button" tabindex="0"><div class="medal">🥇</div><div class="name">Muthukumar</div><div class="amt tabular">₹3,500</div><div class="entries">7 gifts</div></div>
+          <div class="top-card" data-name="Allwin Prabhu" role="button" tabindex="0"><div class="medal">🥇</div><div class="name">Allwin Prabhu</div><div class="amt tabular">₹3,500</div><div class="entries">2 gifts</div></div>
+          <div class="top-card" data-name="Albert Joshwa A" role="button" tabindex="0"><div class="medal">⭐</div><div class="name">Albert Joshwa A</div><div class="amt tabular">₹2,614</div><div class="entries">21 gifts</div></div>
+          <div class="top-card" data-name="Adlin" role="button" tabindex="0"><div class="medal">⭐</div><div class="name">Adlin</div><div class="amt tabular">₹2,500</div><div class="entries">5 gifts</div></div>
+          <div class="top-card" data-name="Augustin" role="button" tabindex="0"><div class="medal">⭐</div><div class="name">Augustin</div><div class="amt tabular">₹2,000</div><div class="entries">4 gifts</div></div>
         </div>
         <div style="margin-top:14px"><input type="text" placeholder="Search all 18 contributors…" style="width:100%;padding:10px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-soft);font-family:var(--sans);font-size:.85rem;color:var(--text)"></div>
       </div>
@@ -446,6 +479,94 @@
     signinEls.forEach(function (el) { el.addEventListener('click', function (e) { e.preventDefault(); setSignedIn(true); }); });
     avatarEls.forEach(function (el) { el.setAttribute('title', 'Click to sign out (demo)'); el.addEventListener('click', function () { setSignedIn(false); }); });
     setSignedIn(false);
+  })();
+</script>
+
+<!-- GIVING-HISTORY DETAIL MODAL — redesign of the real openContributorDetailModal()
+     already live in script.js today (see docs/milestone-v2/10-contribution-detail-views.md).
+     Totals/counts below are the real, verified round-2 figures; the itemized
+     per-gift rows are a reconstruction that sums exactly to those real totals,
+     not the literal ledger (flagged in the modal's own footer note). -->
+<div class="detail-modal-backdrop" id="detailModalBackdrop">
+  <div class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailModalName">
+    <div class="detail-modal-head">
+      <span class="detail-modal-avatar" id="detailModalAvatar">HE</span>
+      <div>
+        <h3 id="detailModalName">Giving History</h3>
+        <p>Tech Fund — Media, Sound &amp; Livestream</p>
+      </div>
+      <button class="detail-modal-close" id="detailModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="detail-modal-stats">
+      <div><div class="lbl">Total Given</div><div class="val" id="detailModalTotal">₹0</div></div>
+      <div><div class="lbl">Total Gifts</div><div class="val" id="detailModalCount">0</div></div>
+    </div>
+    <div class="detail-modal-body" id="detailModalBody"></div>
+    <div class="detail-modal-note">This giving activity is shown publicly as part of our transparency report. Individual gift dates/amounts above are a representative reconstruction from the real total and gift count — not the literal ledger.</div>
+  </div>
+</div>
+<script>
+  (function () {
+    var DATA = {
+      'Hepsi': { total: 3500, count: 7, known: { amount: 500, daysAgo: 9, method: 'Online' } },
+      'Muthukumar': { total: 3500, count: 7, known: { amount: 500, daysAgo: 9, method: 'Online' } },
+      'Allwin Prabhu': { total: 3500, count: 2, known: null },
+      'Albert Joshwa A': { total: 2614, count: 21, known: null },
+      'Adlin': { total: 2500, count: 5, known: { amount: 500, daysAgo: 10, method: 'Online' } },
+      'Augustin': { total: 2000, count: 4, known: null },
+      'Benita': { total: 200, count: 1, known: { amount: 200, daysAgo: 9, method: 'Online' } },
+      'Augusta Moses': { total: 200, count: 1, known: { amount: 200, daysAgo: 10, method: 'Online' } }
+    };
+
+    function splitGifts(total, count, known) {
+      var entries = [];
+      var remaining = total, remainingCount = count;
+      if (known) { entries.push(known); remaining -= known.amount; remainingCount -= 1; }
+      for (var i = 0; i < remainingCount; i++) {
+        var isLast = i === remainingCount - 1;
+        var amt = isLast ? remaining : Math.max(100, Math.round((remaining / (remainingCount - i)) / 50) * 50);
+        amt = Math.min(amt, remaining);
+        remaining -= amt;
+        entries.push({ amount: amt, daysAgo: 20 + i * 25, method: (i % 2 === 0) ? 'Online' : 'Manual' });
+      }
+      entries.sort(function (a, b) { return a.daysAgo - b.daysAgo; });
+      return entries;
+    }
+
+    function initials(name) {
+      return name.split(' ').map(function (w) { return w.charAt(0); }).join('').substring(0, 2).toUpperCase();
+    }
+
+    var backdrop = document.getElementById('detailModalBackdrop');
+    var closeBtn = document.getElementById('detailModalClose');
+
+    function openDetail(name) {
+      var rec = DATA[name];
+      if (!rec) return;
+      document.getElementById('detailModalAvatar').textContent = initials(name);
+      document.getElementById('detailModalName').textContent = name;
+      document.getElementById('detailModalTotal').textContent = '₹' + rec.total.toLocaleString('en-IN');
+      document.getElementById('detailModalCount').textContent = rec.count;
+      var gifts = splitGifts(rec.total, rec.count, rec.known);
+      var body = document.getElementById('detailModalBody');
+      body.innerHTML = gifts.map(function (g) {
+        return '<div class="detail-gift-row"><span>' + g.daysAgo + ' days ago<span class="meta"> · ' + g.method + '</span></span><b>₹' + g.amount.toLocaleString('en-IN') + '</b></div>';
+      }).join('');
+      backdrop.classList.add('open');
+      document.body.classList.add('drawer-open');
+    }
+    function closeDetail() {
+      backdrop.classList.remove('open');
+      document.body.classList.remove('drawer-open');
+    }
+
+    document.querySelectorAll('.activity-row, .top-card').forEach(function (el) {
+      el.addEventListener('click', function () { openDetail(el.dataset.name); });
+      el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(el.dataset.name); } });
+    });
+    closeBtn.addEventListener('click', closeDetail);
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeDetail(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDetail(); });
   })();
 </script>
 </body>
