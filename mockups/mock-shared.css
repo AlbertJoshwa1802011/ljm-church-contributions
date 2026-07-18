@@ -157,6 +157,14 @@ button { font-family: inherit; cursor: pointer; }
 .admin-link.on { display: flex; }
 @media (max-width: 640px) { .user-meta { display: none; } }
 
+/* Auth slot repeated inside the nav drawer (header copy is hidden ≤980px) —
+   keep name + admin pill visible here even on small phones since the
+   drawer itself has plenty of width. */
+.nav-drawer-auth { padding-bottom: 4px; }
+.nav-drawer-auth .signin-btn { width: 100%; justify-content: center; padding: 10px 14px; }
+.nav-drawer-auth .user-chip { width: 100%; }
+.nav-drawer-auth .user-meta { display: flex; }
+
 /* ---- Header ---- */
 .site-header {
   position: sticky; top: 0; z-index: 50; overflow: hidden;
@@ -187,6 +195,61 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: 999px; padding: 6px 12px; letter-spacing: .02em;
 }
 @media (max-width: 980px) { .primary-nav, .church-switch, .lang-toggle { display: none; } }
+
+/* ---- Mobile/tablet nav: hamburger + slide-in drawer (≤980px only) ----
+   The button only renders below 980px, and the drawer/backdrop are
+   position:fixed + hidden unless .open — nothing here can shift desktop
+   layout at any width. */
+.hamburger-btn {
+  display: none; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  flex-shrink: 0; cursor: pointer; padding: 0;
+}
+.hamburger-btn svg { width: 19px; height: 19px; }
+@media (max-width: 980px) { .hamburger-btn { display: flex; } }
+/* Below 980px the header keeps only the brand + hamburger — everything else
+   (sign-in/admin chip, language, church switch, Pray/Give) moves into the
+   drawer so the header never has to squeeze more than two items into a
+   narrow viewport. */
+@media (max-width: 980px) { .header-actions > *:not(.hamburger-btn) { display: none; } }
+
+.nav-drawer-backdrop {
+  position: fixed; inset: 0; background: rgba(10, 12, 16, .5);
+  z-index: 199; opacity: 0; visibility: hidden; transition: opacity .22s ease;
+}
+.nav-drawer-backdrop.open { opacity: 1; visibility: visible; }
+
+.nav-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 84vw);
+  background: var(--surface); border-left: 1px solid var(--border);
+  z-index: 200; box-shadow: var(--shadow-lift);
+  transform: translateX(100%); transition: transform .26s ease;
+  display: flex; flex-direction: column;
+  padding: 18px 20px calc(18px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+.nav-drawer.open { transform: translateX(0); }
+.nav-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.nav-drawer-head .brand { font-size: .92rem; }
+.nav-drawer-close {
+  width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--bg-soft); color: var(--text-soft); font-size: 1.05rem;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+}
+.nav-drawer nav { display: flex; flex-direction: column; }
+.nav-drawer nav a {
+  padding: 13px 4px; font-size: 1rem; font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.nav-drawer nav a.current { color: var(--accent); }
+.nav-drawer-section {
+  margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+}
+.nav-drawer-actions { display: flex; gap: 10px; margin-top: 20px; }
+.nav-drawer-actions .btn { flex: 1; }
+body.drawer-open { overflow: hidden; }
 
 /* ---- Buttons ---- */
 .btn {

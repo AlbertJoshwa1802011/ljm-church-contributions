@@ -118,9 +118,54 @@
         </div>
       </div>
       <a href="#" class="btn btn-primary btn-sm">Give</a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
     </div>
   </div>
 </header>
+
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="nav-drawer-head">
+    <a class="brand" href="home.html"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry</a>
+    <button class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">✕</button>
+  </div>
+  <nav>
+    <a href="home.html">Home</a>
+    <a href="#">About</a>
+    <a href="our-giving.html">Our Giving</a>
+    <a href="#">Events</a>
+  </nav>
+  <div class="nav-drawer-section nav-drawer-auth">
+    <a href="#" class="signin-btn"><span class="g">G</span> Sign in</a>
+    <div class="user-chip">
+      <span class="user-avatar">PS</span>
+      <span class="user-meta">
+        <span class="nm">Priya Samuel</span>
+        <a href="/admin.html" class="admin-link">⚡ Admin Access</a>
+      </span>
+    </div>
+  </div>
+  <div class="nav-drawer-actions">
+    <a href="#" class="btn btn-primary btn-sm">Give</a>
+  </div>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('hamburgerBtn');
+  var drawer = document.getElementById('navDrawer');
+  var backdrop = document.getElementById('navDrawerBackdrop');
+  var closeBtn = document.getElementById('navDrawerClose');
+  function openDrawer() { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('drawer-open'); btn.setAttribute('aria-expanded', 'true'); }
+  function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('drawer-open'); btn.setAttribute('aria-expanded', 'false'); }
+  btn.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+  Array.prototype.forEach.call(drawer.querySelectorAll('a'), function (a) { a.addEventListener('click', closeDrawer); });
+})();
+</script>
 
 <section class="page-hero">
   <div class="wrap">
@@ -301,14 +346,14 @@
 <script>
   (function () {
     var buttons = document.querySelectorAll('.viewer-toggle button');
-    var signinBtn = document.getElementById('signinBtn');
-    var userChip = document.getElementById('userChip');
-    var adminLink = document.getElementById('adminLink');
+    var signinEls = document.querySelectorAll('.signin-btn');
+    var userChipEls = document.querySelectorAll('.user-chip');
+    var adminLinkEls = document.querySelectorAll('.admin-link');
     function setViewer(state) {
       buttons.forEach(function (b) { b.classList.toggle('active', b.dataset.viewer === state); });
-      signinBtn.classList.toggle('off', state !== 'guest');
-      userChip.classList.toggle('on', state !== 'guest');
-      adminLink.classList.toggle('on', state === 'admin');
+      signinEls.forEach(function (el) { el.classList.toggle('off', state !== 'guest'); });
+      userChipEls.forEach(function (el) { el.classList.toggle('on', state !== 'guest'); });
+      adminLinkEls.forEach(function (el) { el.classList.toggle('on', state === 'admin'); });
     }
     buttons.forEach(function (b) { b.addEventListener('click', function () { setViewer(b.dataset.viewer); }); });
     setViewer('guest');
