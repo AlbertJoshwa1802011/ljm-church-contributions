@@ -281,10 +281,21 @@ otherwise, since it directly matches what you asked for.**
       expected values exactly. No new backend surface — pure frontend
       consuming existing endpoints, so no new tests needed (294/294 still
       green, unchanged).
-- [ ] **Events** (`/v2/events.html`) — wired to `/api/events`; today that's
-      genuinely zero events in production, so the page will legitimately
-      show an empty state rather than the mockup's placeholder gallery —
-      confirm that empty state looks intentional, not broken.
+- [x] **Events** (`/v2/events.html`) — wired to `/api/events`. Production
+      has zero published events today, verified the empty state renders
+      intentionally (not broken) rather than the mockup's 8-event
+      placeholder gallery. Category filter chips are now built from
+      whatever categories actually exist in the real data (not the
+      mockup's hardcoded Outreach/Worship/Youth guesses). Dropped the
+      mockup's church-switch filter — the real `events` table has no
+      church field to filter by (only `location`, free text), so keeping
+      it would have been decorative, not functional. "View full gallery"
+      now opens a real modal fetching that event's actual photos via
+      `/api/events?id=X`, replacing the mockup's fabricated "Christmas
+      Carol Night" example section. Verified both the real empty state and
+      a realistic mocked multi-event/photo scenario end-to-end with
+      Playwright (card count, category filtering, gallery modal all
+      correct). No new backend surface; 294/294 unchanged.
 - [ ] **My Giving** (`/v2/my-giving.html`) — real per-signed-in-member
       contribution history. Needs a small new read: either a `?email=`
       filter added to `/api/contributions` or client-side filtering of the
