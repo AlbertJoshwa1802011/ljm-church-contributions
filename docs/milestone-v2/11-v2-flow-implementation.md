@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | 🚧 In progress — this is the live audit trail; update checkboxes as work lands, commit every meaningful step. **If you are a new agent picking this up, read this whole doc before touching anything.** |
+| **Status** | ✅ **Done** — all 5 pages built, tested, and verified end-to-end in the real Cloudflare Pages Functions runtime. Only §9 (user action items below) remains before this can actually go live for the seeded tester. |
 | **Scope** | This is **real implementation**, not a mockup — touches `functions/api/*`, adds new files, and (with explicit user sign-off) adds one small new admin-console panel. The existing `index.html`/`script.js`/`admin.html`/every existing `functions/api/*.js` file must remain **byte-for-byte unmodified** except the one explicitly-approved admin addition (§6). |
 | **Requested by** | User, verbatim: "dont touch the existing code let it be as it is... but build a flow switch... based on Feature key from admin console... allowing the new flow only for the specific user alone... on public until stabilised we have the old flow... once tested we can make the default flow as new flow." Confirmed via question: routing = email-based, allowlist = signed-in email list (admin-managed), scope = all pages at once (with continuous audit), Give Flow keeps today's real post-payment behavior (no new confirmation backend yet). |
 
@@ -343,9 +343,43 @@ otherwise, since it directly matches what you asked for.**
       (mocked) contribution data, amount chips work, a validation failure
       correctly shows the real `alert()` and never proceeds toward
       Razorpay, cause-switching updates the URL. Zero console errors.
-- [ ] **Final verification pass** — full test suite green, old-flow manual
-      spot check, new-flow manual walkthrough for the allowlisted email,
-      confirm a non-allowlisted email never sees `/v2/` content.
+- [x] **Final verification pass** — beyond the per-page Playwright checks
+      above, ran a true end-to-end pass in the **real Cloudflare Pages
+      Functions runtime** via `wrangler pages dev` (not just the Node test
+      harness) against a real local D1:
+      - Applied `schema.sql` to a real local D1 and inserted one real
+        contribution row.
+      - Confirmed **without** the beta cookie: `/` serves the real old
+        `LJM Church` dashboard, `/events.html` serves the real old Events
+        page, `/admin.html` is always the real admin console — all
+        completely unmodified.
+      - Confirmed **with** a real signed beta cookie: all 5 v2 paths
+        (`/`, `/our-giving.html`, `/events.html`, `/give-flow.html`,
+        `/my-giving.html`) route to the new build, **`/admin.html` still
+        does not** (proves the ROUTE_MAP allowlist, not just "any
+        signed-in cookie", gates access).
+      - Confirmed a forged/tampered cookie value is rejected and falls
+        back to the old flow (signature verification actually enforced
+        by the real runtime, not just my Node unit tests).
+      - **The real number (₹777) I inserted into local D1 rendered
+        correctly on the real, middleware-routed `/our-giving.html`** —
+        genuine proof the whole chain (middleware → v2 page → real
+        `/api/contributions` → real D1) works together, not just each
+        piece in isolation.
+      - One incidental, harmless finding from real-runtime testing (not a
+        bug): Cloudflare Pages' local dev serves `.html` requests with a
+        308 to the extensionless clean URL by default, and unmatched
+        paths fall back to serving the old `index.html` with a 200
+        (Cloudflare Pages' standard SPA-style fallback) rather than a
+        404 — so a non-beta visitor manually typing `/our-giving.html`
+        sees the normal old homepage, not an error. No content leak, no
+        broken page — just noting the actual behavior differs slightly
+        from "404" as originally assumed in §1.5's routing map.
+      - Full existing test suite: **294/294 green**, unchanged.
+      - `git diff --stat` across every commit in this phase: only
+        `admin.html` (pre-approved, §6) and `schema.sql` (additive-only
+        mirror of the migration) touched among *existing* files —
+        everything else is new.
 
 ## 8. Testing requirements (per `CONTRIBUTING.md`)
 
