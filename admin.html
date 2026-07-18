@@ -908,6 +908,27 @@
                 </div>
             </div>
 
+            <!-- BETA ACCESS -->
+            <div class="section" id="section-beta">
+                <div class="page-head"><h2>Beta Access</h2><p>Emails allowed to preview the new site redesign before it's the default for everyone. See <code>docs/milestone-v2/11-v2-flow-implementation.md</code>.</p></div>
+                <div class="card">
+                    <h3>Add a tester</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Google email *</label><input class="input" id="bt_email" type="email" placeholder="user@gmail.com"></div>
+                        <div><label class="f-label">Note</label><input class="input" id="bt_note" placeholder="e.g. pastor's phone"></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="bt_addBtn">Add tester</button>
+                        <span class="msg" id="bt_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Current testers</h3>
+                    <p style="font-size:13px;color:var(--text-soft);margin:-4px 0 10px;">Anyone on this list can sign in at <code>/beta-login.html</code> and see the new flow for 24 hours. Removing someone here stops new activations immediately; an already-active session stays on the new flow until it expires.</p>
+                    <div class="table-wrap"><table id="bt_table"><thead><tr><th>Email</th><th>Note</th><th>Added</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
             <!-- AUDIT -->
             <div class="section" id="section-audit">
                 <div class="page-head"><h2>Audit log</h2><p>Every admin operation and visitor view event, newest first.</p></div>
@@ -1116,6 +1137,7 @@
                 ["roles", "🛡️", "Roles"],
                 ["audit", "🧾", "Audit log"],
                 ["settings", "⚙️", "Settings"],
+                ["beta", "🚦", "Beta Access"],
                 ["selftest", "🧪", "Self-test"]
             ] }
         ];
@@ -2337,6 +2359,38 @@
                 .catch(function (e) { setMsg("r_linkMsg", e.message, "err"); });
         }
 
+        // ═══════════════ Beta Access ═══════════════
+        function loadBeta() { fetchBetaTesters(); }
+        function fetchBetaTesters() {
+            api("/api/beta-testers").then(function (d) {
+                if (!d.success) { setMsg("bt_msg", d.message || "No access", "err"); return; }
+                var tb = $("bt_table").querySelector("tbody");
+                var testers = d.testers || [];
+                tb.innerHTML = testers.map(function (t) {
+                    return "<tr><td>" + esc(t.email) + "</td><td style='color:var(--text-soft)'>" + esc(t.note || "") + "</td>" +
+                        "<td style='color:var(--text-soft)'>" + esc(t.added_at || "") + "</td>" +
+                        '<td><button class="mini-btn danger" data-email="' + esc(t.email) + '">Remove</button></td></tr>';
+                }).join("") || '<tr><td colspan="4" class="empty">No beta testers yet.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Remove " + b.dataset.email + " from beta access?")) return;
+                        api("/api/beta-testers", { method: "POST", body: JSON.stringify({ action: "remove", email: b.dataset.email }) })
+                            .then(function (d2) { setMsg("bt_msg", d2.message, d2.success ? "ok" : "err"); fetchBetaTesters(); });
+                    };
+                });
+            }).catch(function (e) { setMsg("bt_msg", e.message, "err"); });
+        }
+        function addBetaTester() {
+            var email = $("bt_email").value.trim(), note = $("bt_note").value.trim();
+            if (!email) { setMsg("bt_msg", "Email required", "err"); return; }
+            api("/api/beta-testers", { method: "POST", body: JSON.stringify({ action: "add", email: email, note: note }) })
+                .then(function (d) {
+                    setMsg("bt_msg", d.message, d.success ? "ok" : "err");
+                    if (d.success) { $("bt_email").value = ""; $("bt_note").value = ""; fetchBetaTesters(); }
+                })
+                .catch(function (e) { setMsg("bt_msg", e.message, "err"); });
+        }
+
         // ═══════════════ Audit log ═══════════════
         function loadAudit() { state.auditOffset = 0; fetchAudit(); }
         function fetchAudit() {
@@ -2659,7 +2713,7 @@
             families: loadFamilies,
             contributions: loadContributions, purchases: loadPurchases,
             sandha: loadSubscriptions, expenses: loadExpenses, wishlist: loadWishlist,
-            roles: loadRoles, audit: loadAudit,
+            roles: loadRoles, audit: loadAudit, beta: loadBeta,
             verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {}
         };
 
@@ -2789,6 +2843,7 @@
                 }
             };
             $("r_saveBtn").onclick = saveRole; $("r_linkBtn").onclick = linkEmail;
+            $("bt_addBtn").onclick = addBetaTester;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };
             $("a_nextBtn").onclick = function () { state.auditOffset += 50; fetchAudit(); };

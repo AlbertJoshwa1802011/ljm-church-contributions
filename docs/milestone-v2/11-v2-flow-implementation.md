@@ -213,11 +213,28 @@ otherwise, since it directly matches what you asked for.**
 
 ## 7. Page-by-page build tracker
 
-- [ ] **Foundation** — migration, `beta-testers` table, `beta-activate.js`,
-      `beta-testers.js` (admin CRUD), `_middleware.js`, `/beta-login.html`,
-      tests for both new endpoints, admin panel. *Verify old flow untouched,
-      verify albertjoshrock101@gmail.com (pre-seeded) can activate and reach
-      `/v2/` while an arbitrary other email cannot.*
+- [x] **Foundation** — migration (`0012_beta_access.sql`, mirrored into
+      `schema.sql` for tests), `beta_testers` table, `_beta.js` (HMAC
+      cookie sign/verify, mirrors `webhook.js`'s Web Crypto pattern),
+      `beta-activate.js`, `beta-testers.js` (admin CRUD, reuses the
+      existing `manage_roles` permission — no new permission scope
+      needed), `functions/_middleware.js` (routing, per the revised map in
+      §1.5), `/beta-login.html` (new standalone sign-in entry point, reuses
+      the real Google Client ID + the same defensive "poll until GIS
+      loads" pattern `index.html` already uses), one new "Beta Access"
+      admin-console panel (`admin.html`, same nav/section/loader pattern
+      as the existing Roles panel — zero redesign, one more entry in the
+      current look). **47 new tests** (7 `_beta.js` unit, 7
+      `beta-activate.js`, 9 `beta-testers.js`, 14 `_middleware.js` route
+      cases + edge cases), the allowlist gate mutation-tested and
+      confirmed load-bearing. `git diff --stat` confirms the *only*
+      existing file touched is `admin.html`, additive-only (56 insertions,
+      1 deletion — the single-line nav-array edit), exactly matching §6's
+      pre-approved scope. **294/294 tests green.**
+      **Not yet functional end-to-end**: `/v2/*.html` don't exist yet
+      (next tasks below build them), so right now an activated cookie
+      would 404 — activation/allowlist/middleware are correct and tested
+      in isolation, but there's nothing to route *to* yet.
 - [ ] **Home** (`/v2/index.html`) — real sign-in (reuses `/api/auth`), real
       Giving-at-a-Glance teaser sourced from `/api/contributions`, real
       Month/Year promise mini-cards from `settings.js`'s verse config,
