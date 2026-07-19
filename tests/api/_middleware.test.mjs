@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as middleware from "../../functions/_middleware.js";
-import { signBetaCookie, BETA_COOKIE_NAME } from "../../functions/api/_beta.js";
+import { signBetaCookie, BETA_COOKIE_NAME, DEFAULT_BETA_COOKIE_SECRET } from "../../functions/api/_beta.js";
 
 const SECRET = "middleware-test-secret";
 
@@ -43,7 +43,16 @@ test("middleware: an unmapped path always falls through to next(), regardless of
   assert.equal(await res.text(), "old page");
 });
 
-test("middleware: a mapped path with no BETA_COOKIE_SECRET configured falls through (fails closed)", async () => {
+test("middleware: a mapped path with no BETA_COOKIE_SECRET configured still routes via the built-in default secret", async () => {
+  const cookie = await signBetaCookie("tester@example.com", DEFAULT_BETA_COOKIE_SECRET);
+  const { context, calls } = makeMiddlewareContext({ path: "/", cookie, secret: null });
+  await middleware.onRequest(context);
+  assert.equal(calls.next, 0);
+  assert.equal(calls.assetsFetch.length, 1);
+  assert.match(calls.assetsFetch[0], /\/v2\/index\.html$/);
+});
+
+test("middleware: a mapped path with no BETA_COOKIE_SECRET configured and no cookie still falls through to the old flow", async () => {
   const { context, calls } = makeMiddlewareContext({ path: "/", secret: null });
   await middleware.onRequest(context);
   assert.equal(calls.next, 1);

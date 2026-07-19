@@ -5,7 +5,7 @@
 // completely unmodified. This file is the ONLY thing that makes that
 // decision; index.html/script.js/every other existing file is untouched.
 
-import { verifyBetaCookie, parseCookies, BETA_COOKIE_NAME } from "./api/_beta.js";
+import { verifyBetaCookie, parseCookies, BETA_COOKIE_NAME, DEFAULT_BETA_COOKIE_SECRET } from "./api/_beta.js";
 
 // Old path → new build's matching file under /v2/. Only these exact paths
 // are ever intercepted; everything else (all /api/*, /admin.html, every
@@ -24,12 +24,13 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const target = ROUTE_MAP[url.pathname];
 
-  if (!target || !env.BETA_COOKIE_SECRET) {
+  if (!target) {
     return next();
   }
 
+  const secret = env.BETA_COOKIE_SECRET || DEFAULT_BETA_COOKIE_SECRET;
   const cookies = parseCookies(request.headers.get("Cookie"));
-  const email = await verifyBetaCookie(cookies[BETA_COOKIE_NAME], env.BETA_COOKIE_SECRET);
+  const email = await verifyBetaCookie(cookies[BETA_COOKIE_NAME], secret);
 
   if (!email) {
     return next(); // not an active beta session — old flow, unmodified

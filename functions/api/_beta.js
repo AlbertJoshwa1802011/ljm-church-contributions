@@ -5,6 +5,16 @@
 export const BETA_COOKIE_NAME = "ljm_beta";
 export const BETA_COOKIE_MAX_AGE_SECONDS = 24 * 60 * 60; // 24h
 
+// Built-in fallback so beta access works with zero Cloudflare dashboard
+// configuration — used only when env.BETA_COOKIE_SECRET isn't set. This
+// cookie never grants any real permission by itself (admin actions, roles,
+// and personal data are all separately permission-checked at the API layer
+// regardless of which UI shell requested them); it only decides which
+// front-end a signed-in, allowlisted browser sees. Given that low blast
+// radius, a repo-visible default is an acceptable tradeoff to remove setup
+// friction. Set a real env.BETA_COOKIE_SECRET to override this.
+export const DEFAULT_BETA_COOKIE_SECRET = "sRGnITmbI5I__r3Kux4CsWfZ5GTnQOFqDMMBUkpwStY";
+
 function b64urlEncode(bytes) {
   let str = "";
   for (const b of bytes) str += String.fromCharCode(b);

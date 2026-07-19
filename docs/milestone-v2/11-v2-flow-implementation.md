@@ -139,9 +139,25 @@ routing:
   it expires). Given this is a 1–2 person internal test, that's an
   acceptable trade — flagging it so it's a visible decision, not a silent
   one.
-- **If `BETA_COOKIE_SECRET` is not set:** the whole feature fails closed —
-  middleware always serves the old flow, `beta-activate` always fails. Safe
-  default; see §9 for what the user needs to set.
+- **If `BETA_COOKIE_SECRET` is not set:** falls back to a built-in default
+  secret (`DEFAULT_BETA_COOKIE_SECRET` in `functions/api/_beta.js`), so the
+  feature works with **zero Cloudflare dashboard configuration** — no env
+  var needs to be set for beta access to function. This was a deliberate
+  change from the original fail-closed design, made in response to explicit
+  user feedback ("why this key and all, just enable it for me... remove the
+  key check"). **What did *not* change:** the allowlist gating itself —
+  `beta-activate` still requires a valid Google token AND an email present
+  in `beta_testers`, and middleware still requires a validly-signed,
+  unexpired cookie. Only the *configuration step* was removed, not the
+  security check that limits the new flow to specific users. Blast radius of
+  a repo-visible default signing secret is low: the cookie only decides
+  which UI shell a request is routed to, never grants any actual permission
+  — every admin action, role check, and personal-data read is still
+  independently permission-checked at the API layer (`_lib.js`'s
+  `getPermissions`/`requireAuth`) regardless of which flow served the page.
+  Set a real `env.BETA_COOKIE_SECRET` in the Cloudflare dashboard at any
+  time to override the default (e.g. before opening beta access to a wider
+  group) — see §9.
 
 ## 3. What is genuinely new vs. what's being reused
 
@@ -391,11 +407,12 @@ standard as every other endpoint in this repo, no exception for being
 
 ## 9. Things only the user can do (not code)
 
-- **Set the `BETA_COOKIE_SECRET` environment variable/secret** in the
-  Cloudflare Pages project settings (Settings → Environment variables) —
-  I cannot access your Cloudflare dashboard. Any reasonably long random
-  string works; I'll note the exact variable name again once the code
-  lands. Until this is set, the beta feature safely stays off for everyone.
+- **(Optional) Set the `BETA_COOKIE_SECRET` environment variable/secret** in
+  the Cloudflare Pages project settings (Settings → Environment variables) —
+  no longer required to use the feature (see §2's default-secret note); the
+  code ships with a working built-in default. Set a real one later if/when
+  beta access opens beyond one or two people, so the signing secret isn't
+  something anyone with repo read access could derive.
 - **Share the `/beta-login.html` link** with whichever testers you add to
   the allowlist — nothing on the public site links to it yet, by design
   (so the public can't stumble onto a sign-in page for a feature they're

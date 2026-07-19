@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { freshDb } from "../helpers/mock-d1.mjs";
 import * as betaActivate from "../../functions/api/beta-activate.js";
-import { verifyBetaCookie, BETA_COOKIE_NAME } from "../../functions/api/_beta.js";
+import { verifyBetaCookie, BETA_COOKIE_NAME, DEFAULT_BETA_COOKIE_SECRET } from "../../functions/api/_beta.js";
 
 const SECRET = "test-beta-secret";
 
@@ -35,16 +35,24 @@ test("beta-activate: missing DB binding returns 500", async () => {
   assert.equal(res.status, 500);
 });
 
-test("beta-activate: BETA_COOKIE_SECRET not configured fails closed with 503", async () => {
-  const db = freshDb();
-  const res = await betaActivate.onRequestPost({
-    env: { DB: db }, // no BETA_COOKIE_SECRET
-    request: { json: async () => ({ token: "x" }) }
-  });
-  assert.equal(res.status, 503);
-  const body = await readJson(res);
-  assert.equal(body.success, false);
-});
+test("beta-activate: no BETA_COOKIE_SECRET configured still works via the built-in default secret", withGoogleStub(
+  { email: "albertjoshrock101@gmail.com", name: "Seeded Admin" },
+  async () => {
+    const db = freshDb();
+    const res = await betaActivate.onRequestPost({
+      env: { DB: db }, // no BETA_COOKIE_SECRET set — should fall back to the default
+      request: { json: async () => ({ token: "fake" }) }
+    });
+    assert.equal(res.status, 200);
+    const body = await readJson(res);
+    assert.equal(body.success, true);
+
+    const setCookie = res.headers.get("Set-Cookie");
+    const cookieValue = extractCookieValue(setCookie);
+    const verifiedEmail = await verifyBetaCookie(cookieValue, DEFAULT_BETA_COOKIE_SECRET);
+    assert.equal(verifiedEmail, "albertjoshrock101@gmail.com");
+  }
+));
 
 test("beta-activate: missing token returns 400", async () => {
   const db = freshDb();
