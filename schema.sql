@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS contributions (
     email TEXT,
     phone TEXT,
     fund TEXT NOT NULL DEFAULT 'tech-contributions', -- 'tech-contributions' or 'christmas-fund'
+    created_by TEXT, -- admin email who manually logged this row (see migrations/0012_contribution_attribution.sql)
+    updated_by TEXT, -- admin email who last edited this row
+    is_deleted INTEGER NOT NULL DEFAULT 0, -- soft delete: 1 = hidden from public dashboard, kept for admin reconciliation
+    deleted_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -9,7 +9,7 @@ const VALID_PERMISSIONS = [
   "edit_purchases", "edit_wishlist", "manage_roles",
   "view_members", "manage_funds", "delete_funds", "view_audit",
   "manage_expenses", "manage_subscriptions", "manage_members", "manage_content",
-  "manage_events"
+  "manage_events", "edit_contributions"
 ];
 
 // 1. GET: Fetch roles list and email mappings (Admin-only)
