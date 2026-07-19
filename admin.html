@@ -677,13 +677,35 @@
             <div class="section" id="section-contributions">
                 <div class="page-head"><h2>Contributions</h2><p>Full ledger per fund.</p></div>
                 <div class="card">
+                    <h3 id="c_formTitle">Add a contribution</h3>
+                    <p class="msg" style="margin-bottom:10px;">For cash/in-hand gifts that never went through Razorpay — recorded as "Direct Cash" and attributed to your signed-in admin account. Only available for the Tech Fund and Christmas Fund ledgers.</p>
+                    <div class="form-grid">
+                        <div><label class="f-label">Member name *</label><input class="input" id="c_member"></div>
+                        <div><label class="f-label">Amount (₹) *</label><input class="input" id="c_amount" type="number"></div>
+                        <div><label class="f-label">Date *</label><input class="input" id="c_date" type="date"></div>
+                        <div><label class="f-label">Fund *</label><select class="input" id="c_fund">
+                            <option value="tech-contributions">Tech Fund</option>
+                            <option value="christmas-fund">Christmas Fund</option>
+                        </select></div>
+                        <div><label class="f-label">Category</label><input class="input" id="c_category" value="Direct Cash"></div>
+                        <div><label class="f-label">Email</label><input class="input" id="c_email"></div>
+                        <div><label class="f-label">Phone</label><input class="input" id="c_phone"></div>
+                        <div class="span-all"><label class="f-label">Notes</label><textarea class="input" id="c_notes" rows="2"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="c_saveBtn">Save contribution</button>
+                        <button class="btn btn-outline" id="c_clearBtn">Clear</button>
+                        <span class="msg" id="c_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
                     <div class="btn-row" style="margin:0 0 12px;">
                         <select class="input" id="contribFund" style="max-width:240px;"></select>
                         <input class="input" id="contribSearch" placeholder="Filter by member…" style="max-width:240px;">
                         <span class="msg" id="contribMsg"></span>
                     </div>
                     <div class="table-wrap"><table id="contribTable"><thead><tr>
-                        <th>Member</th><th>Amount</th><th>Date</th><th>Category</th><th>Notes</th>
+                        <th>Member</th><th>Amount</th><th>Date</th><th>Category</th><th>Notes</th><th>Added by</th><th></th>
                     </tr></thead><tbody></tbody></table></div>
                 </div>
             </div>
@@ -1077,6 +1099,7 @@
             auditOffset: 0,
             editingFundSlug: null,
             editingPurchaseId: null,
+            editingContributionId: null,
             editingWishlistId: null,
             wishlistImageUrl: null,
             loaded: {}
@@ -1892,29 +1915,77 @@
             sel.innerHTML = options.map(function (f) { return '<option value="' + esc(f.slug) + '">' + esc(f.name) + "</option>"; }).join("");
             sel.onchange = fetchContribTable;
             $("contribSearch").oninput = renderContribTable;
+            if (!$("c_date").value) $("c_date").valueAsDate = new Date();
             fetchContribTable();
         }
         var contribRows = [];
+        var contribIsLegacy = false;
         function fetchContribTable() {
             var slug = $("contribFund").value;
             var tb = $("contribTable").querySelector("tbody");
-            tb.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
-            var isLegacy = slug === "tech-contributions" || slug === "christmas-fund";
-            var url = isLegacy ? "/api/contributions?fund=" + slug : "/api/funds?slug=" + encodeURIComponent(slug);
+            tb.innerHTML = '<tr><td colspan="7" class="empty">Loading…</td></tr>';
+            contribIsLegacy = slug === "tech-contributions" || slug === "christmas-fund";
+            var url = contribIsLegacy ? "/api/contributions?fund=" + slug + "&includeDeleted=1" : "/api/funds?slug=" + encodeURIComponent(slug);
             api(url + "&_t=" + Date.now()).then(function (d) {
                 contribRows = d.contributions || [];
-                setMsg("contribMsg", contribRows.length + " records · total " + inr(contribRows.reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0)));
+                var active = contribRows.filter(function (c) { return !c.IsDeleted; });
+                setMsg("contribMsg", active.length + " records · total " + inr(active.reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0)));
                 renderContribTable();
-            }).catch(function (e) { tb.innerHTML = '<tr><td colspan="5" class="empty">' + esc(e.message) + "</td></tr>"; });
+            }).catch(function (e) { tb.innerHTML = '<tr><td colspan="7" class="empty">' + esc(e.message) + "</td></tr>"; });
         }
         function renderContribTable() {
             var q = ($("contribSearch").value || "").toLowerCase();
             var tb = $("contribTable").querySelector("tbody");
             var rows = contribRows.filter(function (c) { return !q || (c.Member || "").toLowerCase().includes(q); });
             tb.innerHTML = rows.slice(0, 400).map(function (c) {
-                return "<tr><td><strong>" + esc(c.Member) + "</strong></td><td>" + inr(c.Amount) + "</td><td>" + esc(String(c.Date).substring(0, 16)) +
-                    "</td><td><span class='pill pill-grey'>" + esc(c.Category || "") + "</span></td><td style='max-width:340px'>" + esc(c.Notes || "") + "</td></tr>";
-            }).join("") || '<tr><td colspan="5" class="empty">No records.</td></tr>';
+                var deleted = !!c.IsDeleted;
+                var actions = (c.id != null) ?
+                    ('<button class="mini-btn" data-act="edit" data-id="' + esc(c.id) + '"' + (deleted ? " disabled" : "") + '>Edit</button> ' +
+                     '<button class="mini-btn danger" data-act="del" data-id="' + esc(c.id) + '"' + (deleted ? " disabled" : "") + '>Delete</button>') : "";
+                return "<tr" + (deleted ? " style='opacity:.5;text-decoration:line-through;'" : "") + "><td><strong>" + esc(c.Member) + "</strong></td><td>" + inr(c.Amount) + "</td><td>" + esc(String(c.Date).substring(0, 16)) +
+                    "</td><td><span class='pill pill-grey'>" + esc(c.Category || "") + "</span>" + (deleted ? " <span class='pill pill-grey'>Deleted</span>" : "") + "</td><td style='max-width:340px'>" + esc(c.Notes || "") +
+                    "</td><td style='color:var(--text-faint);font-size:12px;'>" + (c.createdBy ? esc(c.createdBy) : (c.ProofID ? "Razorpay" : "—")) + "</td><td style='white-space:nowrap;'>" + actions + "</td></tr>";
+            }).join("") || '<tr><td colspan="7" class="empty">No records.</td></tr>';
+            tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                b.onclick = function () { b.dataset.act === "edit" ? editContribution(b.dataset.id) : deleteContribution(b.dataset.id); };
+            });
+        }
+        function editContribution(id) {
+            var c = contribRows.find(function (x) { return String(x.id) === String(id); });
+            if (!c) return;
+            state.editingContributionId = id;
+            $("c_formTitle").textContent = "Edit contribution #" + id;
+            $("c_member").value = c.Member || ""; $("c_amount").value = c.Amount != null ? c.Amount : "";
+            $("c_date").value = (c.Date || "").substring(0, 10);
+            $("c_fund").value = $("contribFund").value;
+            $("c_category").value = c.Category || "Direct Cash";
+            $("c_email").value = c.Email || ""; $("c_phone").value = c.Phone || ""; $("c_notes").value = c.Notes || "";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function deleteContribution(id) {
+            if (!confirm("Delete contribution #" + id + "? It will be hidden from the public dashboard but kept for reconciliation.")) return;
+            api("/api/contributions?id=" + encodeURIComponent(id), { method: "DELETE" })
+                .then(function (d) { setMsg("c_msg", d.message, d.success ? "ok" : "err"); if (d.success) fetchContribTable(); })
+                .catch(function (e) { setMsg("c_msg", e.message, "err"); });
+        }
+        function clearContributionForm() {
+            state.editingContributionId = null;
+            $("c_formTitle").textContent = "Add a contribution";
+            ["c_member", "c_amount", "c_email", "c_phone", "c_notes"].forEach(function (id) { $(id).value = ""; });
+            $("c_category").value = "Direct Cash"; $("c_date").valueAsDate = new Date();
+        }
+        function saveContribution() {
+            var amount = Number($("c_amount").value) || 0;
+            if (!$("c_member").value.trim() || !amount || !$("c_date").value) { setMsg("c_msg", "Member name, amount and date are required", "err"); return; }
+            var payload = {
+                member_name: $("c_member").value.trim(), amount: amount, date: $("c_date").value,
+                fund: $("c_fund").value, category: $("c_category").value.trim() || "Direct Cash",
+                email: $("c_email").value.trim(), phone: $("c_phone").value.trim(), notes: $("c_notes").value.trim()
+            };
+            if (state.editingContributionId) payload.id = state.editingContributionId;
+            api("/api/contributions", { method: state.editingContributionId ? "PUT" : "POST", body: JSON.stringify(payload) })
+                .then(function (d) { setMsg("c_msg", d.message, d.success ? "ok" : "err"); if (d.success) { clearContributionForm(); fetchContribTable(); } })
+                .catch(function (e) { setMsg("c_msg", e.message, "err"); });
         }
 
         // ═══════════════ Purchases ═══════════════
@@ -2775,6 +2846,7 @@
             $("fam_addRowBtn").onclick = addFamMemberRow;
             $("fam_search").oninput = renderFamilies;
             $("p_saveBtn").onclick = savePurchase; $("p_clearBtn").onclick = clearPurchaseForm;
+            $("c_saveBtn").onclick = saveContribution; $("c_clearBtn").onclick = clearContributionForm;
             $("x_saveBtn").onclick = saveExpense; $("x_clearBtn").onclick = clearExpenseForm;
             $("w_saveBtn").onclick = saveWishlist; $("w_clearBtn").onclick = clearWishlistForm;
             $("w_imageFile").onchange = function () {
