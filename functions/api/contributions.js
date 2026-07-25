@@ -103,13 +103,33 @@ export async function onRequestGet(context) {
       const viewerAuth = await requireAuth(context);
       includeDeleted = viewerAuth.ok;
     }
-    const contributionsQuery = await db.prepare(
-      `SELECT id, member_name AS Member, amount AS Amount, date AS Date, category AS Category, notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID, created_by AS createdBy, updated_by AS updatedBy, is_deleted AS IsDeleted
-       FROM contributions WHERE fund = ?${includeDeleted ? "" : " AND is_deleted = 0"} ORDER BY date DESC`
-    )
-    .bind(fund)
-    .all();
-    const contributions = contributionsQuery.results || [];
+
+    // The created_by/updated_by/is_deleted columns come from migration 0012.
+    // If that migration hasn't been applied to this database yet, selecting or
+    // filtering on those columns throws "no such column" and takes down the
+    // ENTIRE dashboard read (every value renders as 0). Guard against that
+    // schema drift: try the 0012-aware query, and on a missing-column error
+    // fall back to the pre-0012 query so the dashboard keeps working. Rows from
+    // the fallback simply carry no IsDeleted flag (treated as not deleted).
+    let contributions;
+    try {
+      const contributionsQuery = await db.prepare(
+        `SELECT id, member_name AS Member, amount AS Amount, date AS Date, category AS Category, notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID, created_by AS createdBy, updated_by AS updatedBy, is_deleted AS IsDeleted
+         FROM contributions WHERE fund = ?${includeDeleted ? "" : " AND is_deleted = 0"} ORDER BY date DESC`
+      )
+      .bind(fund)
+      .all();
+      contributions = contributionsQuery.results || [];
+    } catch (schemaErr) {
+      if (!/no such column/i.test(schemaErr.message || String(schemaErr))) throw schemaErr;
+      const legacyQuery = await db.prepare(
+        `SELECT id, member_name AS Member, amount AS Amount, date AS Date, category AS Category, notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID
+         FROM contributions WHERE fund = ? ORDER BY date DESC`
+      )
+      .bind(fund)
+      .all();
+      contributions = legacyQuery.results || [];
+    }
 
     // 4. Fetch Member Profiles (emails, phones, verified statuses)
     const membersQuery = await db.prepare(
