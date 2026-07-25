@@ -127,6 +127,44 @@ test("contributions GET with includeDeleted=1 shows soft-deleted rows to an admi
   assert.equal(withFlag.availableBalance, 0, "soft-deleted amount must not count toward the balance even when shown to admins");
 });
 
+test("contributions GET survives a pre-0012 database missing is_deleted (production D1_ERROR regression)", async () => {
+  // Reproduces the real production incident: the code from migration 0012 was
+  // deployed (GET selects/filters on is_deleted) but the migration was never
+  // applied to the remote D1, so every dashboard read threw "no such column:
+  // is_deleted" -> 500 D1_ERROR -> the UI rendered every value as 0.
+  // Rebuild the contributions table in its pre-0012 shape and confirm the GET
+  // now falls back gracefully and returns real numbers.
+  const db = freshDb();
+  db._sqlite.exec(`
+    DROP TABLE contributions;
+    CREATE TABLE contributions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      member_name TEXT NOT NULL,
+      amount REAL NOT NULL,
+      date TEXT NOT NULL,
+      category TEXT,
+      notes TEXT,
+      proof_id TEXT,
+      email TEXT,
+      phone TEXT,
+      fund TEXT NOT NULL DEFAULT 'tech-contributions',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  db._sqlite.exec(
+    "INSERT INTO contributions (member_name, amount, date, category, fund) VALUES ('Legacy Giver', 750, '2026-07-01', 'Direct Cash', 'tech-contributions');"
+  );
+
+  const res = await contributions.onRequestGet(makeContext({
+    db, url: "https://test.local/api/contributions?fund=tech-contributions"
+  }));
+  assert.equal(res.status, 200, "GET must not 500 when the 0012 columns are absent");
+  const body = await readJson(res);
+  const row = body.contributions.find(c => c.Member === "Legacy Giver");
+  assert.ok(row, "contribution rows must still be returned on a pre-0012 database");
+  assert.equal(Number(row.Amount), 750);
+});
+
 test("contributions GET exposes id/createdBy so the admin UI can target rows for edit/delete", async () => {
   const db = freshDb();
   await contributions.onRequestPost(makeContext({
