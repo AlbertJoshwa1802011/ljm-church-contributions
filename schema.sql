@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS contributions (
     email TEXT,
     phone TEXT,
     fund TEXT NOT NULL DEFAULT 'tech-contributions', -- 'tech-contributions' or 'christmas-fund'
+    created_by TEXT, -- admin email who manually logged this row (see migrations/0012_contribution_attribution.sql)
+    updated_by TEXT, -- admin email who last edited this row
+    is_deleted INTEGER NOT NULL DEFAULT 0, -- soft delete: 1 = hidden from public dashboard, kept for admin reconciliation
+    deleted_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -490,7 +494,7 @@ CREATE TABLE IF NOT EXISTS event_photos (
 );
 CREATE INDEX IF NOT EXISTS idx_event_photos_event ON event_photos(event_id);
 
--- 18. Beta-tester allowlist for the flag-gated "v2" flow (see migrations/0012_beta_access.sql)
+-- 18. Beta-tester allowlist for the flag-gated "v2" flow (see migrations/0013_beta_access.sql)
 CREATE TABLE IF NOT EXISTS beta_testers (
   email TEXT PRIMARY KEY,
   added_by TEXT,
@@ -498,4 +502,4 @@ CREATE TABLE IF NOT EXISTS beta_testers (
   added_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 INSERT OR IGNORE INTO beta_testers (email, added_by, note)
-VALUES ('albertjoshrock101@gmail.com', 'migration-0012', 'Initial requester, seeded at rollout');
+VALUES ('albertjoshrock101@gmail.com', 'migration-0013', 'Initial requester, seeded at rollout');

@@ -182,7 +182,7 @@ Reused as-is (zero duplication, just called from new pages):
 Genuinely new:
 - `functions/_middleware.js`, `functions/api/beta-activate.js`,
   `functions/api/beta-testers.js` (admin CRUD for the allowlist).
-- `beta_testers` table (migration `0012_beta_access.sql`).
+- `beta_testers` table (migration `0013_beta_access.sql`).
 - `/v2/*.html` + `/beta-login.html`.
 - One new admin-console panel (§6).
 
@@ -229,7 +229,7 @@ otherwise, since it directly matches what you asked for.**
 
 ## 7. Page-by-page build tracker
 
-- [x] **Foundation** — migration (`0012_beta_access.sql`, mirrored into
+- [x] **Foundation** — migration (`0013_beta_access.sql`, mirrored into
       `schema.sql` for tests), `beta_testers` table, `_beta.js` (HMAC
       cookie sign/verify, mirrors `webhook.js`'s Web Crypto pattern),
       `beta-activate.js`, `beta-testers.js` (admin CRUD, reuses the
