@@ -676,7 +676,7 @@
             <!-- CONTRIBUTIONS -->
             <div class="section" id="section-contributions">
                 <div class="page-head"><h2>Contributions</h2><p>Full ledger per fund.</p></div>
-                <div class="card">
+                <div class="card" id="c_addCard">
                     <h3 id="c_formTitle">Add a contribution</h3>
                     <p class="msg" style="margin-bottom:10px;">For cash/in-hand gifts that never went through Razorpay — recorded as "Direct Cash" and attributed to your signed-in admin account. Only available for the Tech Fund and Christmas Fund ledgers.</p>
                     <div class="form-grid">
@@ -1932,6 +1932,10 @@
 
         // ═══════════════ Contributions ═══════════════
         function loadContributions() {
+            var identity = readStoredIdentity();
+            isContribAdmin = !!(identity && identity.email === "albertjoshrock101@gmail.com");
+            $("c_addCard").style.display = isContribAdmin ? "" : "none";
+
             var sel = $("contribFund");
             var options = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund", name: "Christmas Fund" }];
             sel.innerHTML = options.map(function (f) { return '<option value="' + esc(f.slug) + '">' + esc(f.name) + "</option>"; }).join("");
@@ -1942,6 +1946,9 @@
         }
         var contribRows = [];
         var contribIsLegacy = false;
+        // UI-only gate mirroring the server's MANUAL_ENTRY_ALLOWLIST in functions/api/contributions.js —
+        // hides the add/edit/delete controls from other admins; the server-side check remains authoritative.
+        var isContribAdmin = false;
         function fetchContribTable() {
             var slug = $("contribFund").value;
             var tb = $("contribTable").querySelector("tbody");
@@ -1961,7 +1968,7 @@
             var rows = contribRows.filter(function (c) { return !q || (c.Member || "").toLowerCase().includes(q); });
             tb.innerHTML = rows.slice(0, 400).map(function (c) {
                 var deleted = !!c.IsDeleted;
-                var actions = (c.id != null) ?
+                var actions = (isContribAdmin && c.id != null) ?
                     ('<button class="mini-btn" data-act="edit" data-id="' + esc(c.id) + '"' + (deleted ? " disabled" : "") + '>Edit</button> ' +
                      '<button class="mini-btn danger" data-act="del" data-id="' + esc(c.id) + '"' + (deleted ? " disabled" : "") + '>Delete</button>') : "";
                 return "<tr" + (deleted ? " style='opacity:.5;text-decoration:line-through;'" : "") + "><td><strong>" + esc(c.Member) + "</strong></td><td>" + inr(c.Amount) + "</td><td>" + esc(String(c.Date).substring(0, 16)) +
