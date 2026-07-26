@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Events &amp; Photos — Light of Jesus Ministry</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .page-hero { padding: 56px 0 32px; text-align: center; background: var(--bg-soft); border-bottom: 1px solid var(--border); }
+  .page-hero h1 { font-size: 2.1rem; }
+  .page-hero p { max-width: 56ch; margin: 12px auto 0; font-size: 1rem; }
+
+  .filters { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 30px; }
+  .chip { cursor: pointer; }
+
+  .photo-tile {
+    position: relative; border-radius: var(--radius-sm); overflow: hidden;
+    display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.92);
+    font-size: 1.3rem; aspect-ratio: 4/3; background-size: cover; background-position: center;
+  }
+  .photo-tile.placeholder::after { content: "📷"; opacity: .55; }
+  .photo-tile.pg1 { background-color: var(--accent); background-image: linear-gradient(150deg, var(--accent), var(--accent-deep)); }
+  .photo-tile.pg2 { background-color: var(--gold); background-image: linear-gradient(150deg, var(--gold), #8a6a2e); }
+  .photo-tile.pg3 { background-color: var(--info); background-image: linear-gradient(150deg, var(--info), #2c5a6c); }
+  .photo-tile.pg4 { background-color: var(--green); background-image: linear-gradient(150deg, var(--green), #3f6b34); }
+
+  .event-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .event-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .event-cover { aspect-ratio: 16/9; }
+  .event-info { padding: 16px 18px 18px; }
+  .event-tags { display: flex; gap: 6px; margin-bottom: 9px; flex-wrap: wrap; }
+  .event-tags .badge { font-size: .66rem; }
+  .event-info h3 { font-size: 1rem; }
+  .event-info .when { font-size: .78rem; color: var(--text-faint); margin-top: 4px; }
+  .event-info p.desc { font-size: .82rem; color: var(--text-soft); margin-top: 8px; }
+  .event-link { display: block; margin-top: 13px; font-size: .82rem; font-weight: 700; color: var(--accent); background: none; border: 0; cursor: pointer; padding: 0; text-align: left; }
+
+  @media (max-width: 980px) { .event-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 640px) { .event-grid { grid-template-columns: 1fr; } }
+
+  .empty-state { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 60px 30px; text-align: center; }
+  .empty-state .ic { font-size: 2.4rem; }
+  .empty-state h3 { margin-top: 14px; font-size: 1.2rem; }
+  .empty-state p { margin-top: 8px; color: var(--text-faint); max-width: 46ch; margin-left: auto; margin-right: auto; }
+
+  .gallery-modal-backdrop { position: fixed; inset: 0; background: rgba(10,12,16,.6); z-index: 299; opacity: 0; visibility: hidden; transition: opacity .2s ease; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .gallery-modal-backdrop.open { opacity: 1; visibility: visible; }
+  .gallery-modal { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lift); max-width: 780px; width: 100%; max-height: 85vh; overflow-y: auto; }
+  .gallery-modal-head { display: flex; align-items: center; gap: 14px; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+  .gallery-modal-head h3 { font-size: 1.1rem; flex: 1; }
+  .gallery-modal-close { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg-soft); color: var(--text-soft); font-size: 1.05rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .gallery-modal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 20px 24px 24px; }
+  .gallery-modal-grid .photo-tile { border-radius: 10px; }
+  @media (max-width: 640px) { .gallery-modal-grid { grid-template-columns: repeat(2, 1fr); } }
+  .loading-note { font-size: .85rem; color: var(--text-faint); padding: 20px 0; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <nav class="primary-nav">
+      <a href="/">Home</a>
+      <a href="/about.html">About</a>
+      <a href="#">Watch &amp; Listen</a>
+      <a href="/events.html" class="current">Events</a>
+      <a href="#">Blog</a>
+      <a href="/our-giving.html">Our Giving</a>
+    </nav>
+    <div class="header-actions">
+      <div class="auth-slot">
+        <div id="signinBtn"></div>
+        <div class="user-chip" id="userChip">
+          <span class="user-avatar" id="userAvatar">··</span>
+          <span class="user-meta">
+            <span class="nm" id="userName"></span>
+            <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+            <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
+          </span>
+        </div>
+      </div>
+      <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="nav-drawer-head">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry</a>
+    <button class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">✕</button>
+  </div>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about.html">About</a>
+    <a href="#">Watch &amp; Listen</a>
+    <a href="/events.html" class="current">Events</a>
+    <a href="#">Blog</a>
+    <a href="/our-giving.html">Our Giving</a>
+  </nav>
+  <div class="nav-drawer-section nav-drawer-auth">
+    <div id="signinBtnDrawer"></div>
+    <div class="user-chip" id="userChipDrawer">
+      <span class="user-avatar" id="userAvatarDrawer">··</span>
+      <span class="user-meta">
+        <span class="nm" id="userNameDrawer"></span>
+        <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+        <a href="/admin.html" class="admin-link" id="adminLinkDrawer">⚡ Admin Access</a>
+      </span>
+    </div>
+  </div>
+  <div class="nav-drawer-section">
+    <button class="theme-toggle" aria-label="Toggle light/dark theme">
+      <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+    </button>
+  </div>
+  <div class="nav-drawer-actions">
+    <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+  </div>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('hamburgerBtn');
+  var drawer = document.getElementById('navDrawer');
+  var backdrop = document.getElementById('navDrawerBackdrop');
+  var closeBtn = document.getElementById('navDrawerClose');
+  function openDrawer() { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('drawer-open'); btn.setAttribute('aria-expanded', 'true'); }
+  function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('drawer-open'); btn.setAttribute('aria-expanded', 'false'); }
+  btn.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+  Array.prototype.forEach.call(drawer.querySelectorAll('a'), function (a) { a.addEventListener('click', closeDrawer); });
+})();
+</script>
+
+<section class="page-hero">
+  <div class="wrap">
+    <div class="eyebrow">🎁 Sharing Every Moment</div>
+    <h1 style="margin-top:8px">Events &amp; Photos</h1>
+    <p>Every gathering, outreach, and celebration across both churches — shared here like a gift, so everyone can see what God is doing among us, wherever they are.</p>
+  </div>
+</section>
+
+<section class="tight"><div class="wrap" id="eventsRoot">
+  <div class="loading-note">Loading events…</div>
+</div></section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-bottom">
+      <span>© 2026 Light of Jesus Ministry</span>
+      <a href="/" style="font-weight:700;color:var(--accent)">← Back to Home</a>
+    </div>
+  </div>
+</footer>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+  <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+</button>
+
+<div class="gallery-modal-backdrop" id="galleryModalBackdrop">
+  <div class="gallery-modal">
+    <div class="gallery-modal-head">
+      <h3 id="galleryModalTitle">Gallery</h3>
+      <button class="gallery-modal-close" id="galleryModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="gallery-modal-grid" id="galleryModalGrid"></div>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="auth.js"></script>
+<script>
+  (function () {
+    var root = document.documentElement;
+    document.querySelectorAll('.theme-toggle').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+    });
+  })();
+</script>
+<script>
+(function () {
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  var GRADIENTS = ["pg1", "pg2", "pg3", "pg4"];
+  function tile(coverPhoto, idx, extraClass) {
+    var cls = "photo-tile " + (extraClass || "");
+    if (coverPhoto) return '<div class="' + cls + '" style="background-image:url(\'' + esc(coverPhoto) + '\')"></div>';
+    return '<div class="' + cls + ' placeholder ' + GRADIENTS[idx % GRADIENTS.length] + '"></div>';
+  }
+
+  var allEvents = [];
+  var activeCategory = "All";
+
+  function renderList() {
+    var root = document.getElementById("eventsRoot");
+    var visible = activeCategory === "All" ? allEvents : allEvents.filter(function (e) { return e.category === activeCategory; });
+
+    if (!allEvents.length) {
+      root.innerHTML = '<div class="empty-state"><div class="ic">🎁</div><h3>No events posted yet</h3><p>Once services, outreach, and celebrations are added from the admin console, they\'ll appear here with photos — shared like a gift, for anyone to see.</p></div>';
+      return;
+    }
+
+    var categories = ["All"].concat(Array.from(new Set(allEvents.map(function (e) { return e.category; }).filter(Boolean))));
+    var chips = '<div class="chip-row">' + categories.map(function (c) {
+      return '<span class="chip' + (c === activeCategory ? " active" : "") + '" data-cat="' + esc(c) + '">' + esc(c) + '</span>';
+    }).join("") + '</div>';
+    var totalPhotos = allEvents.reduce(function (s, e) { return s + (e.photoCount || 0); }, 0);
+    var meta = '<span style="font-size:.8rem;color:var(--text-faint)">' + allEvents.length + ' event' + (allEvents.length === 1 ? "" : "s") + ' · ' + totalPhotos + ' photos</span>';
+
+    var cards = visible.map(function (e, i) {
+      var tags = '<div class="event-tags">' + (e.category ? '<span class="badge badge-gold">' + esc(e.category) + '</span>' : "") + (e.location ? '<span class="badge badge-info">' + esc(e.location) + '</span>' : "") + '</div>';
+      var when = esc(e.eventDate || "") + (e.photoCount ? ' · ' + e.photoCount + ' photo' + (e.photoCount === 1 ? "" : "s") : "");
+      return '<div class="event-card">' + tile(e.coverPhoto, i, "event-cover") +
+        '<div class="event-info">' + tags + '<h3>' + esc(e.title) + '</h3><div class="when">' + when + '</div>' +
+        (e.description ? '<p class="desc">' + esc(e.description.slice(0, 110)) + '</p>' : "") +
+        (e.photoCount > 0 ? '<button class="event-link" data-id="' + e.id + '">View full gallery →</button>' : "") +
+        '</div></div>';
+    }).join("");
+
+    root.innerHTML = '<div class="filters">' + chips + meta + '</div><div class="event-grid">' + (cards || '<p style="color:var(--text-faint)">No events in this category yet.</p>') + '</div>';
+
+    root.querySelectorAll(".chip").forEach(function (el) {
+      el.addEventListener("click", function () { activeCategory = el.dataset.cat; renderList(); });
+    });
+    root.querySelectorAll(".event-link").forEach(function (el) {
+      el.addEventListener("click", function () { openGallery(el.dataset.id); });
+    });
+  }
+
+  function openGallery(id) {
+    fetch("/api/events?id=" + encodeURIComponent(id) + "&_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.event) return;
+        document.getElementById("galleryModalTitle").textContent = data.event.title;
+        var photos = data.photos || [];
+        document.getElementById("galleryModalGrid").innerHTML = photos.length
+          ? photos.map(function (p, i) { return tile(p.photoUrl, i); }).join("")
+          : '<p style="color:var(--text-faint);grid-column:1/-1">No photos uploaded for this event yet.</p>';
+        document.getElementById("galleryModalBackdrop").classList.add("open");
+        document.body.classList.add("drawer-open");
+      })
+      .catch(function () {});
+  }
+  document.getElementById("galleryModalClose").addEventListener("click", closeGallery);
+  document.getElementById("galleryModalBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closeGallery(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeGallery(); });
+  function closeGallery() {
+    document.getElementById("galleryModalBackdrop").classList.remove("open");
+    document.body.classList.remove("drawer-open");
+  }
+
+  fetch("/api/events?_t=" + Date.now(), { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      allEvents = (data && data.events) || [];
+      renderList();
+    })
+    .catch(function () {
+      document.getElementById("eventsRoot").innerHTML = '<div class="empty-state"><div class="ic">⚠️</div><h3>Could not load events right now</h3><p>Please try again shortly.</p></div>';
+    });
+})();
+</script>
+</body>
+</html>

@@ -50,6 +50,53 @@ test("wishlist: write operations require edit_wishlist permission", async () => 
   assert.equal(res.status, 401);
 });
 
+test("wishlist: PUT requires edit_wishlist permission", async () => {
+  const db = freshDb();
+  const add = await readJson(await wishlist.onRequestPost(makeContext({ db, body: { name: "Guarded", cost: 100 } })));
+  const res = await wishlist.onRequestPut(makeContext({
+    db, authToken: null, body: { id: add.id, name: "Hacked", cost: 1 }
+  }));
+  assert.equal(res.status, 401);
+});
+
+test("wishlist: DELETE requires edit_wishlist permission", async () => {
+  const db = freshDb();
+  const add = await readJson(await wishlist.onRequestPost(makeContext({ db, body: { name: "Guarded2", cost: 100 } })));
+  const res = await wishlist.onRequestDelete(makeContext({
+    db, authToken: null, url: `https://test.local/api/wishlist?id=${add.id}`
+  }));
+  assert.equal(res.status, 401);
+});
+
+test("wishlist: POST missing name or cost is rejected", async () => {
+  const db = freshDb();
+  const noName = await readJson(await wishlist.onRequestPost(makeContext({ db, body: { cost: 100 } })));
+  assert.ok(noName.error);
+  const noCost = await readJson(await wishlist.onRequestPost(makeContext({ db, body: { name: "X" } })));
+  assert.ok(noCost.error);
+});
+
+test("wishlist: PUT missing id, name, or cost is rejected", async () => {
+  const db = freshDb();
+  const add = await readJson(await wishlist.onRequestPost(makeContext({ db, body: { name: "Y", cost: 100 } })));
+  const noId = await readJson(await wishlist.onRequestPut(makeContext({ db, body: { name: "Y2", cost: 200 } })));
+  assert.ok(noId.error);
+  const noName = await readJson(await wishlist.onRequestPut(makeContext({ db, body: { id: add.id, cost: 200 } })));
+  assert.ok(noName.error);
+});
+
+test("wishlist: DELETE missing id is rejected", async () => {
+  const db = freshDb();
+  const res = await readJson(await wishlist.onRequestDelete(makeContext({ db, url: "https://test.local/api/wishlist" })));
+  assert.ok(res.error);
+});
+
+test("wishlist: GET is public — no authentication required", async () => {
+  const db = freshDb();
+  const res = await wishlist.onRequestGet(makeContext({ db, authToken: null }));
+  assert.equal(res.status, 200);
+});
+
 test("wishlist: image_url is stored and returned", async () => {
   const db = freshDb();
   const imageUrl = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA";

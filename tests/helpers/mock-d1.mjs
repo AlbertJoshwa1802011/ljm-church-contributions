@@ -17,31 +17,49 @@ export function freshDb() {
 }
 
 export function wrapD1(sqlite) {
+  // Real D1's .bind(...) returns a NEW immutable prepared-statement instance
+  // (it does not mutate and return the same object) — this matters for code
+  // like functions/api/migrate.js that calls stmt.bind(...) in a loop and
+  // collects each result for db.batch(...); mutate-in-place would make every
+  // batched statement silently run with only the LAST bound args.
+  function makeStatement(sql, boundArgs) {
+    return {
+      _sql: sql,
+      _args: boundArgs,
+      bind(...args) {
+        return makeStatement(sql, args);
+      },
+      async first() {
+        const stmt = sqlite.prepare(sql);
+        const row = stmt.get(...boundArgs);
+        return row === undefined ? null : row;
+      },
+      async all() {
+        const stmt = sqlite.prepare(sql);
+        return { results: stmt.all(...boundArgs) };
+      },
+      async run() {
+        const stmt = sqlite.prepare(sql);
+        const info = stmt.run(...boundArgs);
+        return { meta: { last_row_id: Number(info.lastInsertRowid), changes: info.changes } };
+      }
+    };
+  }
+
   return {
     _sqlite: sqlite,
     prepare(sql) {
-      let boundArgs = [];
-      const api = {
-        bind(...args) {
-          boundArgs = args;
-          return api;
-        },
-        async first() {
-          const stmt = sqlite.prepare(sql);
-          const row = stmt.get(...boundArgs);
-          return row === undefined ? null : row;
-        },
-        async all() {
-          const stmt = sqlite.prepare(sql);
-          return { results: stmt.all(...boundArgs) };
-        },
-        async run() {
-          const stmt = sqlite.prepare(sql);
-          const info = stmt.run(...boundArgs);
-          return { meta: { last_row_id: Number(info.lastInsertRowid), changes: info.changes } };
-        }
-      };
-      return api;
+      return makeStatement(sql, []);
+    },
+    // Runs each already-bound statement's .run() in sequence and collects
+    // results — good enough for the mock; D1's real .batch() is a single
+    // transaction, which this doesn't need to replicate for these tests.
+    async batch(statements) {
+      const results = [];
+      for (const stmt of statements) {
+        results.push(await stmt.run());
+      }
+      return results;
     }
   };
 }

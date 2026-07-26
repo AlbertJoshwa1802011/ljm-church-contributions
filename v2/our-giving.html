@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Our Giving — Light of Jesus Ministry</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .page-hero { padding: 56px 0 36px; border-bottom: 1px solid var(--border); background: var(--bg-soft); }
+  .page-hero h1 { font-size: 2.1rem; }
+  .page-hero p.lede { font-size: 1rem; margin-top: 12px; max-width: 62ch; }
+  .fund-switch { margin-top: 26px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+  .fund-meta { font-size: .82rem; color: var(--text-faint); }
+  .chip { cursor: pointer; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .kpi-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 20px 18px; box-shadow: var(--shadow); }
+  .kpi-tile .ic { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .95rem; margin-bottom: 12px; }
+  .kpi-tile .lbl { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-faint); }
+  .kpi-tile .val { font-family: var(--serif); font-size: 1.5rem; font-weight: 700; margin-top: 5px; }
+  .kpi-tile .sub { font-size: .74rem; color: var(--text-faint); margin-top: 4px; }
+  .ic-collected { background: var(--accent-soft); color: var(--accent-deep); }
+  .ic-spent { background: var(--amber-soft); color: var(--amber); }
+  .ic-available { background: var(--green-soft); color: var(--green); }
+  .ic-remaining { background: var(--info-soft); color: var(--info); }
+  .ic-contrib { background: var(--gold-soft); color: var(--gold); }
+  @media (max-width: 980px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 620px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+
+  .goal-story { display: grid; grid-template-columns: .8fr 1.2fr; gap: 32px; align-items: start; }
+  .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+  .donut { width: 190px; height: 190px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+  .donut::after { content: ""; position: absolute; inset: 20px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+  .donut-center { position: relative; z-index: 1; text-align: center; }
+  .donut-center b { font-family: var(--serif); font-size: 1.9rem; display: block; }
+  .donut-center span { font-size: .74rem; color: var(--text-faint); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .milestones { display: flex; gap: 8px; }
+  .milestone { flex: 1; text-align: center; padding: 10px 4px; border-radius: var(--radius-sm); font-size: .72rem; font-weight: 700; }
+  .milestone.done { background: var(--green-soft); color: var(--green); }
+  .milestone.pending { background: var(--bg-soft); color: var(--text-faint); }
+
+  .pace-card h3 { font-size: 1.08rem; }
+  .pace-headline { font-family: var(--serif); font-size: 1.12rem; font-style: italic; margin-top: 10px; color: var(--text); line-height: 1.5; }
+  .pace-months { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .pace-month-row { display: flex; align-items: center; gap: 12px; }
+  .pace-month-label { width: 90px; font-size: .8rem; font-weight: 600; color: var(--text-soft); flex-shrink: 0; }
+  .pace-month-bar { flex: 1; height: 10px; border-radius: 999px; background: var(--bg-soft); overflow: hidden; }
+  .pace-month-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+  .pace-month-amt { width: 76px; text-align: right; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .panel-head h3 { font-size: 1.05rem; }
+  .activity-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); cursor: pointer; border-radius: var(--radius-sm); transition: background .15s ease; }
+  .activity-row:last-child { border-bottom: none; }
+  .activity-row:hover, .activity-row:focus-visible { background: var(--bg-soft); }
+  .activity-main { flex: 1; min-width: 0; }
+  .activity-main b { font-size: .88rem; display: block; }
+  .activity-main span { font-size: .74rem; color: var(--text-faint); }
+  .activity-amt { font-weight: 700; font-size: .88rem; flex-shrink: 0; }
+
+  .top-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 480px) { .top-grid { grid-template-columns: repeat(2, 1fr); } }
+  .top-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; text-align: center; cursor: pointer; transition: box-shadow .15s ease, transform .15s ease; }
+  .top-card:hover, .top-card:focus-visible { box-shadow: var(--shadow-lift); transform: translateY(-2px); }
+  .top-card .medal { font-size: 1.3rem; }
+  .top-card .name { font-size: .82rem; font-weight: 700; margin-top: 6px; }
+  .top-card .amt { font-family: var(--serif); font-size: 1.15rem; margin-top: 3px; }
+  .top-card .entries { font-size: .7rem; color: var(--text-faint); margin-top: 2px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .goal-story { grid-template-columns: 1fr; } }
+
+  .detail-modal-backdrop { position: fixed; inset: 0; background: rgba(10, 12, 16, .55); z-index: 299; opacity: 0; visibility: hidden; transition: opacity .2s ease; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .detail-modal-backdrop.open { opacity: 1; visibility: visible; }
+  .detail-modal { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lift); max-width: 560px; width: 100%; max-height: 85vh; overflow-y: auto; transform: translateY(14px); transition: transform .2s ease; }
+  .detail-modal-backdrop.open .detail-modal { transform: translateY(0); }
+  .detail-modal-head { display: flex; align-items: center; gap: 14px; padding: 22px 24px 18px; border-bottom: 1px solid var(--border); }
+  .detail-modal-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-deep); display: flex; align-items: center; justify-content: center; font-weight: 700; font-family: var(--sans); flex-shrink: 0; }
+  .detail-modal-head h3 { font-size: 1.1rem; }
+  .detail-modal-head p { font-size: .78rem; color: var(--text-faint); margin-top: 2px; }
+  .detail-modal-close { margin-left: auto; width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg-soft); color: var(--text-soft); font-size: 1.05rem; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+  .detail-modal-stats { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+  .detail-modal-stats div { padding: 16px 24px; }
+  .detail-modal-stats div:first-child { border-right: 1px solid var(--border); }
+  .detail-modal-stats .lbl { font-size: .7rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-faint); }
+  .detail-modal-stats .val { font-family: var(--serif); font-size: 1.4rem; font-weight: 700; margin-top: 4px; }
+  .detail-modal-body { padding: 6px 24px 8px; max-height: 320px; overflow-y: auto; }
+  .detail-gift-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: .85rem; }
+  .detail-gift-row:last-child { border-bottom: none; }
+  .detail-gift-row .meta { color: var(--text-faint); font-size: .74rem; }
+  .detail-modal-note { font-size: .72rem; color: var(--text-faint); padding: 14px 24px 22px; border-top: 1px solid var(--border); margin-top: 8px; }
+
+  .insights-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .insight-chip { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; }
+  .insight-chip .ic { font-size: 1.1rem; }
+  .insight-chip .val { font-family: var(--serif); font-size: 1.25rem; font-weight: 700; margin-top: 8px; }
+  .insight-chip .lbl { font-size: .74rem; font-weight: 700; color: var(--text-soft); margin-top: 2px; }
+  .insight-chip .det { font-size: .72rem; color: var(--text-faint); margin-top: 4px; }
+  @media (max-width: 980px) { .insights-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 620px) { .insights-row { grid-template-columns: 1fr 1fr; } }
+
+  .charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .chart-card h4 { font-size: .92rem; margin-bottom: 16px; }
+  .pie-legend { display: flex; flex-direction: column; gap: 7px; margin-top: 16px; }
+  .pie-legend-row { display: flex; align-items: center; gap: 8px; font-size: .78rem; }
+  .pie-legend-row .sw { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+  .pie-legend-row .lg-lbl { flex: 1; color: var(--text-soft); }
+  .pie-legend-row .lg-val { font-weight: 700; }
+  .pie { width: 130px; height: 130px; margin: 0 auto; border-radius: 50%; }
+
+  .enhanced-card { grid-column: 1 / -1; }
+  .enhanced-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  .enhanced-mini .m { background: var(--bg-soft); border-radius: var(--radius-sm); padding: 14px 16px; }
+  .enhanced-mini .m .v { font-family: var(--serif); font-size: 1.3rem; font-weight: 700; }
+  .enhanced-mini .m .l { font-size: .74rem; color: var(--text-faint); margin-top: 2px; }
+  .bars { display: flex; align-items: flex-end; gap: 8px; height: 110px; padding-top: 10px; }
+  .bars .b { flex: 1; background: var(--accent); border-radius: 5px 5px 0 0; position: relative; min-height: 2px; }
+  .bars .b span { position: absolute; bottom: -20px; left: 0; right: 0; text-align: center; font-size: .66rem; color: var(--text-faint); }
+  @media (max-width: 980px) { .charts-grid { grid-template-columns: 1fr 1fr; } .enhanced-card { grid-column: 1 / -1; } }
+  @media (max-width: 640px) { .charts-grid { grid-template-columns: 1fr; } .enhanced-mini { grid-template-columns: 1fr; } }
+
+  .wishlist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .wish-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--red); border-radius: var(--radius-sm); padding: 16px; }
+  .wish-card.med { border-left-color: var(--amber); }
+  .wish-card.low { border-left-color: var(--green); }
+  .wish-card h4 { font-size: .92rem; }
+  .wish-card .cost { font-family: var(--serif); font-weight: 700; margin-top: 6px; }
+  .wish-card p { font-size: .78rem; margin-top: 6px; }
+  @media (max-width: 760px) { .wishlist-grid { grid-template-columns: 1fr; } }
+  .loading-note { font-size: .85rem; color: var(--text-faint); padding: 20px 0; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <nav class="primary-nav">
+      <a href="/">Home</a>
+      <a href="/about.html">About</a>
+      <a href="#">Watch &amp; Listen</a>
+      <a href="/events.html">Events</a>
+      <a href="#">Blog</a>
+      <a href="/our-giving.html" class="current">Our Giving</a>
+    </nav>
+    <div class="header-actions">
+      <div class="auth-slot">
+        <div id="signinBtn"></div>
+        <div class="user-chip" id="userChip">
+          <span class="user-avatar" id="userAvatar">··</span>
+          <span class="user-meta">
+            <span class="nm" id="userName"></span>
+            <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+            <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
+          </span>
+        </div>
+      </div>
+      <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="nav-drawer-head">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry</a>
+    <button class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">✕</button>
+  </div>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about.html">About</a>
+    <a href="#">Watch &amp; Listen</a>
+    <a href="/events.html">Events</a>
+    <a href="#">Blog</a>
+    <a href="/our-giving.html" class="current">Our Giving</a>
+  </nav>
+  <div class="nav-drawer-section nav-drawer-auth">
+    <div id="signinBtnDrawer"></div>
+    <div class="user-chip" id="userChipDrawer">
+      <span class="user-avatar" id="userAvatarDrawer">··</span>
+      <span class="user-meta">
+        <span class="nm" id="userNameDrawer"></span>
+        <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+        <a href="/admin.html" class="admin-link" id="adminLinkDrawer">⚡ Admin Access</a>
+      </span>
+    </div>
+  </div>
+  <div class="nav-drawer-section">
+    <button class="theme-toggle" aria-label="Toggle light/dark theme">
+      <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+    </button>
+  </div>
+  <div class="nav-drawer-actions">
+    <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+  </div>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('hamburgerBtn');
+  var drawer = document.getElementById('navDrawer');
+  var backdrop = document.getElementById('navDrawerBackdrop');
+  var closeBtn = document.getElementById('navDrawerClose');
+  function openDrawer() { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('drawer-open'); btn.setAttribute('aria-expanded', 'true'); }
+  function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('drawer-open'); btn.setAttribute('aria-expanded', 'false'); }
+  btn.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+  Array.prototype.forEach.call(drawer.querySelectorAll('a'), function (a) { a.addEventListener('click', closeDrawer); });
+})();
+</script>
+
+<section class="page-hero">
+  <div class="wrap">
+    <div class="eyebrow">Transparency Report</div>
+    <h1 style="margin-top:10px">Our Giving</h1>
+    <p class="lede">Every gift given here is tracked openly — what's collected, what it's spent on, and who's given, updated the moment a gift is received. This is the same ledger our pastor and team see.</p>
+    <div class="fund-switch">
+      <div class="chip-row">
+        <span class="chip" id="fundTechChip">💻 Tech Fund</span>
+        <span class="chip" id="fundChristmasChip">🎄 Christmas Fund</span>
+      </div>
+      <span class="fund-meta" id="fundMeta">Loading live figures…</span>
+    </div>
+  </div>
+</section>
+
+<section class="tight"><div class="wrap" id="reportRoot">
+  <div class="loading-note">Loading the live ledger…</div>
+</div></section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-bottom">
+      <span>© 2026 Light of Jesus Ministry — figures pulled live from the ledger.</span>
+      <a href="/" style="font-weight:700;color:var(--accent)">← Back to Home</a>
+    </div>
+  </div>
+</footer>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+  <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+</button>
+
+<div class="detail-modal-backdrop" id="detailModalBackdrop">
+  <div class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailModalName">
+    <div class="detail-modal-head">
+      <span class="detail-modal-avatar" id="detailModalAvatar">··</span>
+      <div>
+        <h3 id="detailModalName">Giving History</h3>
+        <p id="detailModalFund">Tech Fund</p>
+      </div>
+      <button class="detail-modal-close" id="detailModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="detail-modal-stats">
+      <div><div class="lbl">Total Given</div><div class="val" id="detailModalTotal">₹0</div></div>
+      <div><div class="lbl">Total Gifts</div><div class="val" id="detailModalCount">0</div></div>
+    </div>
+    <div class="detail-modal-body" id="detailModalBody"></div>
+    <div class="detail-modal-note">This giving activity is shown publicly as part of our transparency report — real dates and amounts from the live ledger.</div>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="auth.js"></script>
+<script>
+  (function () {
+    var root = document.documentElement;
+    document.querySelectorAll('.theme-toggle').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+    });
+  })();
+</script>
+<script>
+(function () {
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function inr(n) { return "₹" + (Number(n) || 0).toLocaleString("en-IN"); }
+  function parseDate(s) {
+    if (!s) return null;
+    var d = new Date(String(s).replace(" ", "T"));
+    return isNaN(d) ? null : d;
+  }
+  function initials(name) {
+    return (name || "?").trim().split(/\s+/).map(function (w) { return w.charAt(0); }).join("").substring(0, 2).toUpperCase();
+  }
+  function isOnline(category) { return /verified|online/i.test(category || ""); }
+  function conic(segments) {
+    // segments: [{pct, color}], pct as 0-100, must sum to <=100
+    var acc = 0, parts = [];
+    segments.forEach(function (s) {
+      var start = acc, end = acc + s.pct;
+      parts.push(s.color + " " + start.toFixed(1) + "% " + end.toFixed(1) + "%");
+      acc = end;
+    });
+    if (acc < 100) parts.push("var(--bg-soft) " + acc.toFixed(1) + "% 100%");
+    return "conic-gradient(" + parts.join(", ") + ")";
+  }
+  var PALETTE = ["var(--accent)", "var(--accent-deep)", "var(--gold)", "var(--info)", "var(--green)", "var(--text-faint)"];
+
+  var currentFund = (new URLSearchParams(location.search).get("fund")) || "tech-contributions";
+  var currentPayload = null;
+
+  function monthKey(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
+  function monthLabel(key) {
+    var parts = key.split("-");
+    var d = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+    return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  }
+
+  function render(payload) {
+    currentPayload = payload;
+    var c = payload.contributions || [];
+    var goal = Number(payload.goalAmount) || 0;
+    var spent = Number(payload.spentOnProducts) || 0;
+    var available = Number(payload.availableBalance) || 0;
+    var collected = c.reduce(function (s, x) { return s + (Number(x.Amount) || 0); }, 0);
+    var count = c.length;
+    var uniqueGivers = {};
+    c.forEach(function (x) { uniqueGivers[x.Member || "Anonymous"] = true; });
+    var uniqueCount = Object.keys(uniqueGivers).length;
+    var avg = count ? Math.round(collected / count) : 0;
+    var remaining = Math.max(goal - collected, 0);
+    var pct = goal > 0 ? Math.min(100, Math.round((collected / goal) * 100)) : 0;
+
+    // Monthly grouping
+    var monthMap = {};
+    c.forEach(function (x) {
+      var d = parseDate(x.Date);
+      if (!d) return;
+      var k = monthKey(d);
+      monthMap[k] = (monthMap[k] || 0) + (Number(x.Amount) || 0);
+    });
+    var monthKeys = Object.keys(monthMap).sort();
+    var nowKey = monthKey(new Date());
+    var completedKeys = monthKeys.filter(function (k) { return k !== nowKey; });
+    var paceBasis = completedKeys.length ? completedKeys.slice(-3) : monthKeys;
+    var avgPace = paceBasis.length ? paceBasis.reduce(function (s, k) { return s + monthMap[k]; }, 0) / paceBasis.length : 0;
+    var monthsToGoal = avgPace > 0 ? Math.ceil(remaining / avgPace) : null;
+    var etaLabel = null;
+    if (monthsToGoal != null) {
+      var eta = new Date(); eta.setMonth(eta.getMonth() + monthsToGoal);
+      etaLabel = eta.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    }
+
+    var mostActiveKey = monthKeys.reduce(function (best, k) { return (!best || monthMap[k] > monthMap[best]) ? k : best; }, null);
+    var mostActiveIdx = monthKeys.indexOf(mostActiveKey);
+    var prevKey = mostActiveIdx > 0 ? monthKeys[mostActiveIdx - 1] : null;
+    var vsChange = (prevKey && monthMap[prevKey] > 0) ? Math.round(((monthMap[mostActiveKey] - monthMap[prevKey]) / monthMap[prevKey]) * 100) : null;
+
+    var onlineTotal = c.filter(function (x) { return isOnline(x.Category); }).reduce(function (s, x) { return s + (Number(x.Amount) || 0); }, 0);
+    var onlinePct = collected > 0 ? Math.round((onlineTotal / collected) * 100) : 0;
+
+    // Category breakdown
+    var catMap = {};
+    c.forEach(function (x) {
+      var cat = x.Category || "Uncategorized";
+      catMap[cat] = (catMap[cat] || 0) + (Number(x.Amount) || 0);
+    });
+    var catEntries = Object.keys(catMap).map(function (k) { return { label: k, amount: catMap[k] }; }).sort(function (a, b) { return b.amount - a.amount; });
+
+    // Member breakdown (top 3 + others)
+    var memMap = {};
+    c.forEach(function (x) {
+      var m = x.Member || "Anonymous";
+      memMap[m] = (memMap[m] || 0) + (Number(x.Amount) || 0);
+    });
+    var memEntries = Object.keys(memMap).map(function (k) { return { label: k, amount: memMap[k] }; }).sort(function (a, b) { return b.amount - a.amount; });
+
+    var topContribCount = {};
+    c.forEach(function (x) { var m = x.Member || "Anonymous"; topContribCount[m] = (topContribCount[m] || 0) + 1; });
+    var topContributors = memEntries.slice(0, 6).map(function (e) { return { name: e.label, amount: e.amount, gifts: topContribCount[e.label] || 0 }; });
+
+    var recentActivity = c.slice().sort(function (a, b) {
+      var da = parseDate(a.Date), db = parseDate(b.Date);
+      return (db ? db.getTime() : 0) - (da ? da.getTime() : 0);
+    }).slice(0, 6);
+
+    var largestGift = c.reduce(function (m, x) { return Math.max(m, Number(x.Amount) || 0); }, 0);
+
+    var html = "";
+
+    html += '<div class="kpi-row">' +
+      '<div class="kpi-tile"><div class="ic ic-collected">💰</div><div class="lbl">Collected</div><div class="val tabular">' + inr(collected) + '</div><div class="sub">' + count + ' gifts</div></div>' +
+      '<div class="kpi-tile"><div class="ic ic-spent">🧾</div><div class="lbl">Spent</div><div class="val tabular">' + inr(spent) + '</div><div class="sub">' + (payload.productsBoughtCount || 0) + ' items bought</div></div>' +
+      '<div class="kpi-tile"><div class="ic ic-available">✅</div><div class="lbl">Available</div><div class="val tabular">' + inr(available) + '</div><div class="sub">Collected − Spent</div></div>' +
+      '<div class="kpi-tile"><div class="ic ic-remaining">🎯</div><div class="lbl">Remaining to Goal</div><div class="val tabular">' + inr(remaining) + '</div><div class="sub">of ' + inr(goal) + ' goal</div></div>' +
+      '<div class="kpi-tile"><div class="ic ic-contrib">🙌</div><div class="lbl">Contributions</div><div class="val tabular">' + count + '</div><div class="sub">Avg ' + inr(avg) + ' · ' + uniqueCount + ' unique givers</div></div>' +
+    '</div>';
+
+    html += '<div class="section-head" style="margin:44px 0 28px"><div class="eyebrow">Progress</div><h2 style="font-size:1.5rem">Toward the goal</h2></div>';
+    html += '<div class="goal-story"><div class="card donut-wrap">' +
+      '<div class="donut" style="background:' + conic([{ pct: pct, color: "var(--accent)" }]) + '"><div class="donut-center"><b>' + pct + '%</b><span>of Goal</span></div></div>' +
+      '<div class="milestones">' + [25, 50, 75, 100].map(function (m) {
+        return '<div class="milestone ' + (pct >= m ? "done" : "pending") + '">' + (pct >= m ? "✓ " : "") + m + '%</div>';
+      }).join("") + '</div></div>';
+    html += '<div class="card pace-card"><h3>Giving pace</h3><p class="pace-headline">' +
+      (avgPace > 0 && etaLabel
+        ? 'At the current pace of ' + inr(Math.round(avgPace)) + '/month, we\'ll reach the goal by <b>' + etaLabel + '</b> — about ' + monthsToGoal + ' month' + (monthsToGoal === 1 ? "" : "s") + ' away.'
+        : (pct >= 100 ? 'The goal has been reached — thank you!' : 'Not enough monthly history yet to project a pace.')) +
+      '</p><div class="pace-months">' + monthKeys.slice(-3).map(function (k) {
+        var amt = monthMap[k];
+        var max = Math.max.apply(null, monthKeys.slice(-3).map(function (kk) { return monthMap[kk]; }));
+        var width = max > 0 ? Math.round((amt / max) * 100) : 0;
+        return '<div class="pace-month-row"><span class="pace-month-label">' + monthLabel(k) + '</span><div class="pace-month-bar"><div class="pace-month-fill" style="width:' + width + '%"></div></div><span class="pace-month-amt tabular">' + inr(amt) + (k === nowKey ? "*" : "") + '</span></div>';
+      }).join("") + '</div>' + (monthKeys.indexOf(nowKey) >= 0 ? '<p style="font-size:.7rem;color:var(--text-faint);margin-top:10px">*Month in progress</p>' : '') + '</div></div>';
+
+    html += '<div class="section-head" style="margin:44px 0 0"></div>';
+    html += '<div class="two-col" style="margin-top:28px"><div class="card"><div class="panel-head"><h3>Recent Activity</h3></div>' +
+      (recentActivity.length ? recentActivity.map(function (x) {
+        var d = parseDate(x.Date);
+        var dayStr = d ? d.toLocaleDateString("en-US", { day: "numeric", month: "short" }) : "";
+        var name = x.Member || "Anonymous";
+        return '<div class="activity-row" data-name="' + esc(name) + '" role="button" tabindex="0"><span class="avatar">' + esc(initials(name)) + '</span><div class="activity-main"><b>' + esc(name) + '</b><span>' + (isOnline(x.Category) ? "💳 Online" : "💵 " + esc(x.Category || "Manual")) + ' · ' + dayStr + '</span></div><span class="activity-amt tabular">' + inr(x.Amount) + '</span></div>';
+      }).join("") : '<p style="color:var(--text-faint);font-size:.85rem">No gifts recorded yet for this fund.</p>') +
+      '</div><div class="card"><div class="panel-head"><h3>Top Contributors</h3></div><div class="top-grid">' +
+      topContributors.map(function (t, i) {
+        return '<div class="top-card" data-name="' + esc(t.name) + '" role="button" tabindex="0"><div class="medal">' + (i < 3 ? "🥇" : "⭐") + '</div><div class="name">' + esc(t.name) + '</div><div class="amt tabular">' + inr(t.amount) + '</div><div class="entries">' + t.gifts + ' gift' + (t.gifts === 1 ? "" : "s") + '</div></div>';
+      }).join("") + '</div></div></div>';
+
+    html += '<div class="section-head" style="margin:44px 0 22px"><div class="eyebrow">Insights</div><h2 style="font-size:1.5rem">How this fund is growing</h2></div>';
+    html += '<div class="insights-row">' +
+      '<div class="insight-chip"><span class="ic">👥</span><div class="val tabular">' + uniqueCount + '</div><div class="lbl">Unique Givers</div><div class="det">' + inr(uniqueCount ? Math.round(collected / uniqueCount) : 0) + ' per person</div></div>' +
+      '<div class="insight-chip"><span class="ic">💰</span><div class="val tabular">' + inr(avg) + '</div><div class="lbl">Avg Contribution</div><div class="det">across ' + count + ' entries</div></div>' +
+      '<div class="insight-chip"><span class="ic">📅</span><div class="val">' + (mostActiveKey ? monthLabel(mostActiveKey).split(" ")[0] : "—") + '</div><div class="lbl">Most Active Month</div><div class="det">' + (vsChange != null ? (vsChange >= 0 ? "▲ " + vsChange + "%" : "▼ " + Math.abs(vsChange) + "%") + " vs prior month" : "—") + '</div></div>' +
+      '<div class="insight-chip"><span class="ic">🎯</span><div class="val">' + (monthsToGoal != null ? "~" + monthsToGoal + " mo" : "—") + '</div><div class="lbl">Goal Timeline</div><div class="det">at ' + inr(Math.round(avgPace)) + '/mo</div></div>' +
+      '<div class="insight-chip"><span class="ic">🔀</span><div class="val tabular">' + onlinePct + '%</div><div class="lbl">Given Online</div><div class="det">' + inr(onlineTotal) + ' online · ' + inr(collected - onlineTotal) + ' manual</div></div>' +
+    '</div>';
+
+    // Charts
+    var catTop = catEntries.slice(0, 4);
+    var catSegs = catTop.map(function (e, i) { return { pct: collected > 0 ? (e.amount / collected) * 100 : 0, color: PALETTE[i % PALETTE.length] }; });
+    var memTop3 = memEntries.slice(0, 3);
+    var memOthersAmt = memEntries.slice(3).reduce(function (s, e) { return s + e.amount; }, 0);
+    var memSegs = memTop3.map(function (e, i) { return { pct: collected > 0 ? (e.amount / collected) * 100 : 0, color: PALETTE[i % PALETTE.length] }; });
+    if (memOthersAmt > 0) memSegs.push({ pct: (memOthersAmt / collected) * 100, color: "var(--text-faint)" });
+
+    html += '<div class="section-head" style="margin:44px 0 0"></div><div class="charts-grid" style="margin-top:28px">';
+    html += '<div class="card chart-card"><h4>Share by Category</h4><div class="pie" style="background:' + conic(catSegs) + '"></div><div class="pie-legend">' +
+      catTop.map(function (e, i) { return '<div class="pie-legend-row"><span class="sw" style="background:' + PALETTE[i % PALETTE.length] + '"></span><span class="lg-lbl">' + esc(e.label) + '</span><span class="lg-val">' + (collected > 0 ? Math.round((e.amount / collected) * 100) : 0) + '%</span></div>'; }).join("") +
+      '</div></div>';
+    html += '<div class="card chart-card"><h4>Share by Member</h4><div class="pie" style="background:' + conic(memSegs) + '"></div><div class="pie-legend">' +
+      memTop3.map(function (e, i) { return '<div class="pie-legend-row"><span class="sw" style="background:' + PALETTE[i % PALETTE.length] + '"></span><span class="lg-lbl">' + esc(e.label) + '</span><span class="lg-val">' + (collected > 0 ? Math.round((e.amount / collected) * 100) : 0) + '%</span></div>'; }).join("") +
+      (memOthersAmt > 0 ? '<div class="pie-legend-row"><span class="sw" style="background:var(--text-faint)"></span><span class="lg-lbl">' + (memEntries.length - 3) + ' others</span><span class="lg-val">' + Math.round((memOthersAmt / collected) * 100) + '%</span></div>' : "") +
+      '</div></div>';
+    html += '<div class="card chart-card"><h4>Giving Channel</h4><div class="pie" style="background:' + conic([{ pct: onlinePct, color: "var(--accent)" }, { pct: 100 - onlinePct, color: "var(--amber)" }]) + '"></div><div class="pie-legend">' +
+      '<div class="pie-legend-row"><span class="sw" style="background:var(--accent)"></span><span class="lg-lbl">Online / UPI</span><span class="lg-val">' + onlinePct + '%</span></div>' +
+      '<div class="pie-legend-row"><span class="sw" style="background:var(--amber)"></span><span class="lg-lbl">Manual / Cash</span><span class="lg-val">' + (100 - onlinePct) + '%</span></div>' +
+      '</div></div>';
+
+    var barsKeys = monthKeys.slice(-7);
+    var barsMax = Math.max.apply(null, barsKeys.map(function (k) { return monthMap[k]; }).concat([1]));
+    html += '<div class="card chart-card enhanced-card"><h4>Growth over time</h4><div class="enhanced-mini">' +
+      '<div class="m"><div class="v tabular">' + uniqueCount + '</div><div class="l">Total Contributors</div></div>' +
+      '<div class="m"><div class="v tabular">' + inr(avg) + '</div><div class="l">Average Contribution</div></div>' +
+      '<div class="m"><div class="v tabular">' + inr(largestGift) + '</div><div class="l">Largest Single Gift</div></div>' +
+      '</div><div class="bars">' + (barsKeys.length ? barsKeys.map(function (k) {
+        var h = Math.max(2, Math.round((monthMap[k] / barsMax) * 100));
+        return '<div class="b" style="height:' + h + '%"><span>' + monthLabel(k).split(" ")[0] + (k === nowKey ? "*" : "") + '</span></div>';
+      }).join("") : '<p style="color:var(--text-faint);font-size:.85rem">Not enough history yet.</p>') + '</div></div>';
+    html += '</div>';
+
+    document.getElementById("reportRoot").innerHTML = html;
+
+    document.getElementById("fundMeta").textContent = "Live figures, updated automatically";
+    document.querySelectorAll(".activity-row, .top-card").forEach(function (el) {
+      el.addEventListener("click", function () { openDetail(el.dataset.name); });
+      el.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(el.dataset.name); } });
+    });
+  }
+
+  function openDetail(name) {
+    if (!currentPayload) return;
+    var gifts = (currentPayload.contributions || []).filter(function (x) { return (x.Member || "Anonymous") === name; })
+      .sort(function (a, b) { var da = parseDate(a.Date), db = parseDate(b.Date); return (db ? db.getTime() : 0) - (da ? da.getTime() : 0); });
+    if (!gifts.length) return;
+    var total = gifts.reduce(function (s, g) { return s + (Number(g.Amount) || 0); }, 0);
+    document.getElementById("detailModalAvatar").textContent = initials(name);
+    document.getElementById("detailModalName").textContent = name;
+    document.getElementById("detailModalTotal").textContent = inr(total);
+    document.getElementById("detailModalCount").textContent = gifts.length;
+    document.getElementById("detailModalBody").innerHTML = gifts.map(function (g) {
+      var d = parseDate(g.Date);
+      var dateStr = d ? d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) : "Unknown date";
+      return '<div class="detail-gift-row"><span>' + dateStr + '<span class="meta"> · ' + esc(isOnline(g.Category) ? "Online" : (g.Category || "Manual")) + '</span></span><b>' + inr(g.Amount) + '</b></div>';
+    }).join("");
+    document.getElementById("detailModalBackdrop").classList.add("open");
+    document.body.classList.add("drawer-open");
+  }
+  document.getElementById("detailModalClose").addEventListener("click", closeDetail);
+  document.getElementById("detailModalBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closeDetail(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDetail(); });
+  function closeDetail() {
+    document.getElementById("detailModalBackdrop").classList.remove("open");
+    document.body.classList.remove("drawer-open");
+  }
+
+  function loadFund(fund) {
+    currentFund = fund;
+    document.getElementById("fundTechChip").classList.toggle("active", fund === "tech-contributions");
+    document.getElementById("fundChristmasChip").classList.toggle("active", fund === "christmas-fund");
+    document.getElementById("reportRoot").innerHTML = '<div class="loading-note">Loading the live ledger…</div>';
+    var url = new URL(location.href);
+    url.searchParams.set("fund", fund);
+    history.replaceState(null, "", url);
+    fetch("/api/contributions?fund=" + encodeURIComponent(fund) + "&_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || data.error) {
+          document.getElementById("reportRoot").innerHTML = '<div class="loading-note">Could not load live figures right now — please try again shortly.</div>';
+          return;
+        }
+        render(data);
+      })
+      .catch(function () {
+        document.getElementById("reportRoot").innerHTML = '<div class="loading-note">Could not load live figures right now — please try again shortly.</div>';
+      });
+  }
+
+  document.getElementById("fundTechChip").addEventListener("click", function () { loadFund("tech-contributions"); });
+  document.getElementById("fundChristmasChip").addEventListener("click", function () { loadFund("christmas-fund"); });
+  loadFund(currentFund);
+
+  // Wishlist — real items if the endpoint has any; otherwise an honest
+  // empty state (no fabricated example items).
+  fetch("/api/wishlist?_t=" + Date.now(), { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var items = (data && data.wishlist) || [];
+      var section = document.createElement("section");
+      section.className = "tight";
+      var prioClass = function (p) { p = (p || "").toLowerCase(); return p === "medium" ? "med" : (p === "low" ? "low" : ""); };
+      section.innerHTML = '<div class="wrap"><div class="section-head" style="margin-bottom:22px"><div class="eyebrow">What We\'re Saving For</div><h2 style="font-size:1.5rem">Planned Upgrades</h2></div>' +
+        (items.length
+          ? '<div class="wishlist-grid">' + items.map(function (it) {
+              return '<div class="wish-card ' + prioClass(it.priority) + '"><span class="badge">' + esc(it.priority || "") + ' Priority</span><h4 style="margin-top:10px">' + esc(it.name) + '</h4><div class="cost tabular">' + inr(it.cost) + '</div><p>' + esc(it.notes || "") + '</p></div>';
+            }).join("") + '</div>'
+          : '<p style="color:var(--text-faint);font-size:.9rem">Nothing on the wishlist right now — check back later.</p>') +
+        '</div>';
+      document.querySelector("footer.site-footer").insertAdjacentElement("beforebegin", section);
+    })
+    .catch(function () {});
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,13 @@
 # Testing
 
+> **Tests are mandatory, not a convention.** Every new or changed
+> `functions/api/*.js` endpoint ships with tests in the same change — see
+> [`CONTRIBUTING.md`](./CONTRIBUTING.md) §2. The live, prioritized backlog of
+> known coverage gaps (from previous audits) is tracked in
+> [`docs/testing/COVERAGE-TRACKER.md`](./docs/testing/COVERAGE-TRACKER.md) —
+> check it before starting work in an area, and update it when you close a gap
+> or add a new endpoint.
+
 This project has **two layers of testing**, aimed at two different things:
 
 1. **`node --test` suite** (`tests/`) — fast, offline, runs the real `functions/api/*.js` code against an in-memory SQLite database. This is what you run locally and in CI on every push.

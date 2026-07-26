@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Light of Jesus Ministry</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  /* ---- Home-page-specific composition ---- */
+  .hero-banner { position: relative; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--bg-soft); }
+  .hero-banner svg, .hero-banner picture, .hero-banner img {
+    display: block; width: 100%; height: clamp(150px, 24vw, 230px);
+    object-fit: cover; object-position: center;
+  }
+  /* Real photo (once supplied) takes over automatically; the illustrated
+     SVG is only shown if the photo file for this breakpoint is missing —
+     see docs/milestone-v2/09-auth-demo-theme-verse-hero-spec.md §5. */
+  .hero-banner svg { display: none; }
+  .hero-banner-cap {
+    position: absolute; left: 0; right: 0; bottom: 12px; text-align: center;
+    font-family: var(--sans); font-weight: 700; font-size: .72rem; letter-spacing: .05em; text-transform: uppercase;
+    color: #fff; text-shadow: 0 1px 5px rgba(0,0,0,.4);
+  }
+  @media (max-width: 980px) { .hero-banner svg, .hero-banner picture, .hero-banner img { height: clamp(200px, 42vw, 300px); } }
+  @media (max-width: 640px) { .hero-banner svg, .hero-banner picture, .hero-banner img { height: 230px; } .hero-banner-cap { font-size: .68rem; } }
+
+  .hero {
+    padding: 76px 0 60px;
+    background:
+      radial-gradient(1100px 480px at 84% -10%, var(--accent-soft), transparent 60%),
+      var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; }
+  .hero-copy .eyebrow { margin-bottom: 18px; }
+  .hero-copy h1 { font-size: clamp(2.1rem, 4vw, 3.1rem); line-height: 1.12; letter-spacing: -.01em; }
+  .hero-copy h1 em { font-style: italic; color: var(--accent); }
+  .hero-copy p.lede { font-size: 1.08rem; margin-top: 20px; max-width: 46ch; }
+  .hero-actions { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
+  .hero-churches { display: flex; gap: 22px; margin-top: 38px; }
+  .hero-church { display: flex; align-items: center; gap: 9px; font-size: .82rem; color: var(--text-soft); }
+  .hero-church .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+  .promise-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lift); padding: 34px 32px 28px; position: relative; overflow: hidden;
+  }
+  .promise-card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 4px;
+    background: linear-gradient(90deg, var(--gold), var(--accent));
+  }
+  .promise-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .promise-date { font-size: .74rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--gold); }
+  .promise-share { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-faint); background: var(--bg-soft); font-size: .85rem; }
+  .promise-text { font-family: var(--serif); font-style: italic; font-size: 1.32rem; line-height: 1.48; color: var(--text); }
+  .promise-ref { margin-top: 16px; font-family: var(--sans); font-weight: 700; font-size: .86rem; color: var(--accent); }
+  .promise-rotator { transition: opacity .35s ease; min-height: 128px; }
+  .promise-rotator.fading { opacity: 0; }
+  .promise-dots { display: flex; gap: 6px; margin-top: 16px; }
+  .promise-dots button {
+    width: 6px; height: 6px; padding: 0; border: 0; border-radius: 50%;
+    background: var(--border-strong); cursor: pointer; transition: background .2s ease, transform .2s ease;
+  }
+  .promise-dots button.active { background: var(--gold); transform: scale(1.4); }
+  .promise-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
+  .promise-mini { background: var(--bg-soft); border-radius: var(--radius-sm); padding: 13px 15px; }
+  .promise-mini.hidden { display: none; }
+  .promise-mini .lbl { font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-faint); }
+  .promise-mini .txt { font-family: var(--serif); font-size: .86rem; margin-top: 5px; color: var(--text-soft); font-style: italic; line-height: 1.4; }
+
+  .actions-band { background: var(--bg-soft); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .actions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .action-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 26px; display: flex; flex-direction: column; gap: 12px; transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .action-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+  .action-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+  .action-card.give .action-icon { background: var(--accent-soft); color: var(--accent-deep); }
+  .action-card.pray .action-icon { background: var(--gold-soft); color: var(--gold); }
+  .action-card.connect .action-icon { background: var(--info-soft); color: var(--info); }
+  .action-card h3 { font-size: 1.08rem; }
+  .action-card p { font-size: .88rem; }
+  .action-card .go { margin-top: auto; font-size: .82rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 5px; }
+
+  .glance-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .glance-top { padding: 26px 28px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .glance-top h3 { font-size: 1.2rem; }
+  .glance-top p { font-size: .88rem; margin-top: 6px; max-width: 46ch; }
+  .glance-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 24px; border-top: 1px solid var(--border); }
+  .glance-stat { padding: 20px 24px; border-right: 1px solid var(--border); }
+  .glance-stat:last-child { border-right: none; }
+  .glance-stat .lbl { font-size: .72rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-faint); }
+  .glance-stat .val { font-family: var(--serif); font-size: 1.55rem; font-weight: 700; margin-top: 6px; }
+  .glance-bar-wrap { padding: 0 24px 24px; }
+  .glance-bar { height: 8px; border-radius: 999px; background: var(--bg-soft); overflow: hidden; margin-top: 6px; }
+  .glance-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent-deep)); }
+  .glance-foot { border-top: 1px solid var(--border); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-soft); }
+  .glance-foot a { font-size: .86rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+  @media (max-width: 760px) { .glance-stats { grid-template-columns: 1fr 1fr; } .glance-stat:nth-child(2) { border-right: none; } }
+
+  .events-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .event-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+  .event-photo { height: 130px; background: linear-gradient(140deg, var(--accent-deep), var(--accent)); position: relative; }
+  .event-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .event-date { font-size: .72rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .04em; }
+  .event-body h4 { font-size: 1.02rem; }
+  .event-body p { font-size: .84rem; }
+  .events-empty { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 32px; text-align: center; color: var(--text-faint); font-size: .9rem; }
+
+  @media (max-width: 980px) {
+    .hero .wrap { grid-template-columns: 1fr; }
+    .actions-grid { grid-template-columns: 1fr; }
+    .glance-stats { grid-template-columns: 1fr 1fr; }
+    .events-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <nav class="primary-nav">
+      <a href="/" class="current">Home</a>
+      <a href="/about.html">About</a>
+      <a href="#">Watch &amp; Listen</a>
+      <a href="/events.html">Events</a>
+      <a href="#">Blog</a>
+      <a href="/our-giving.html">Our Giving</a>
+    </nav>
+    <div class="header-actions">
+      <div class="auth-slot">
+        <div id="signinBtn"></div>
+        <div class="user-chip" id="userChip">
+          <span class="user-avatar" id="userAvatar">··</span>
+          <span class="user-meta">
+            <span class="nm" id="userName"></span>
+            <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+            <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
+          </span>
+        </div>
+      </div>
+      <a href="/give-flow.html" class="btn btn-secondary btn-sm">Pray</a>
+      <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="nav-drawer-head">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry</a>
+    <button class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">✕</button>
+  </div>
+  <nav>
+    <a href="/" class="current">Home</a>
+    <a href="/about.html">About</a>
+    <a href="#">Watch &amp; Listen</a>
+    <a href="/events.html">Events</a>
+    <a href="#">Blog</a>
+    <a href="/our-giving.html">Our Giving</a>
+  </nav>
+  <div class="nav-drawer-section nav-drawer-auth">
+    <div id="signinBtnDrawer"></div>
+    <div class="user-chip" id="userChipDrawer">
+      <span class="user-avatar" id="userAvatarDrawer">··</span>
+      <span class="user-meta">
+        <span class="nm" id="userNameDrawer"></span>
+        <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+        <a href="/admin.html" class="admin-link" id="adminLinkDrawer">⚡ Admin Access</a>
+      </span>
+    </div>
+  </div>
+  <div class="nav-drawer-section">
+    <button class="theme-toggle" aria-label="Toggle light/dark theme">
+      <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+    </button>
+  </div>
+  <div class="nav-drawer-actions">
+    <a href="/give-flow.html" class="btn btn-secondary btn-sm">Pray</a>
+    <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+  </div>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('hamburgerBtn');
+  var drawer = document.getElementById('navDrawer');
+  var backdrop = document.getElementById('navDrawerBackdrop');
+  var closeBtn = document.getElementById('navDrawerClose');
+  function openDrawer() { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('drawer-open'); btn.setAttribute('aria-expanded', 'true'); }
+  function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('drawer-open'); btn.setAttribute('aria-expanded', 'false'); }
+  btn.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+  Array.prototype.forEach.call(drawer.querySelectorAll('a'), function (a) { a.addEventListener('click', closeDrawer); });
+})();
+</script>
+
+<section class="hero-banner">
+  <picture>
+    <source media="(max-width: 640px)" srcset="assets/hero/hero-mobile.jpg">
+    <source media="(max-width: 980px)" srcset="assets/hero/hero-tablet.jpg">
+    <img src="assets/hero/hero-desktop.jpg" alt="Light of Jesus Ministry — Church of Light and City Worship Center" id="heroPhoto" onerror="this.closest('picture').style.display='none'; document.getElementById('heroFallback').style.display='block';">
+  </picture>
+  <svg id="heroFallback" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of two church buildings under a radiant sky, representing Church of Light and City Worship Center">
+    <defs>
+      <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--gold-soft)"/>
+        <stop offset="55%" stop-color="var(--accent-soft)"/>
+        <stop offset="100%" stop-color="var(--bg-soft)"/>
+      </linearGradient>
+      <radialGradient id="sunGlow" cx="50%" cy="28%" r="55%">
+        <stop offset="0%" stop-color="var(--gold)" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="var(--gold)" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="1200" height="300" fill="url(#skyGrad)"/>
+    <circle cx="600" cy="86" r="220" fill="url(#sunGlow)"/>
+    <circle cx="600" cy="86" r="42" fill="var(--gold)"/>
+    <g stroke="var(--gold)" stroke-opacity=".35" stroke-width="3">
+      <line x1="600" y1="86" x2="600" y2="-40"/>
+      <line x1="600" y1="86" x2="430" y2="-16"/>
+      <line x1="600" y1="86" x2="770" y2="-16"/>
+      <line x1="600" y1="86" x2="310" y2="56"/>
+      <line x1="600" y1="86" x2="890" y2="56"/>
+    </g>
+    <g fill="var(--accent-deep)">
+      <rect x="315" y="150" width="130" height="130"/>
+      <polygon points="315,150 380,92 445,150"/>
+      <rect x="373" y="58" width="14" height="36"/>
+      <rect x="366" y="46" width="28" height="10"/>
+      <rect x="345" y="195" width="26" height="55" fill="var(--bg-soft)"/>
+      <rect x="389" y="195" width="26" height="55" fill="var(--bg-soft)"/>
+      <rect x="705" y="172" width="155" height="108"/>
+      <rect x="693" y="132" width="179" height="42"/>
+      <rect x="760" y="188" width="30" height="60" fill="var(--bg-soft)"/>
+      <rect x="806" y="200" width="20" height="48" fill="var(--bg-soft)"/>
+      <rect x="734" y="200" width="20" height="48" fill="var(--bg-soft)"/>
+    </g>
+    <g transform="translate(565,108) scale(1.75)">
+      <path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/>
+      <path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/>
+      <path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/>
+      <line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/>
+    </g>
+  </svg>
+  <div class="hero-banner-cap">Church of Light &middot; City Worship Center — Coimbatore</div>
+</section>
+
+<section class="hero tight">
+  <div class="wrap">
+    <div class="hero-copy">
+      <div class="eyebrow">✦ Light of Jesus Ministry</div>
+      <h1>Light for the world,<br><em>hope</em> for today.</h1>
+      <p class="lede">Two churches, one family — Church of Light and City Worship Center. Wherever you're joining from, you're welcome at the table.</p>
+      <div class="hero-actions">
+        <a href="/give-flow.html" class="btn btn-primary">Give Today</a>
+        <a href="#happening" class="btn btn-secondary">Plan a Visit</a>
+      </div>
+      <div class="hero-churches">
+        <div class="hero-church"><span class="dot"></span> Church of Light — Mother Church</div>
+        <div class="hero-church"><span class="dot"></span> City Worship Center</div>
+      </div>
+    </div>
+
+    <div class="promise-card">
+      <div class="promise-top">
+        <span class="promise-date" id="promiseDate">Today's Promise</span>
+        <span class="promise-share">↗</span>
+      </div>
+      <div class="promise-rotator" id="promiseRotator">
+        <p class="promise-text" id="promiseText"></p>
+        <p class="promise-ref" id="promiseRef"></p>
+      </div>
+      <div class="promise-dots" id="promiseDots" role="group" aria-label="Featured verses"></div>
+      <div class="promise-strip">
+        <div class="promise-mini hidden" id="verseMonthCard">
+          <div class="lbl" id="verseMonthLabel">This Month</div>
+          <div class="txt" id="verseMonthText"></div>
+        </div>
+        <div class="promise-mini hidden" id="verseYearCard">
+          <div class="lbl" id="verseYearLabel">This Year</div>
+          <div class="txt" id="verseYearText"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="actions-band tight">
+  <div class="wrap">
+    <div class="actions-grid">
+      <a class="action-card give" href="/give-flow.html">
+        <span class="action-icon">🤍</span>
+        <h3>Give</h3>
+        <p>Support the ministry, a fund, or a cause close to your heart — from anywhere in the world.</p>
+        <span class="go">Give now →</span>
+      </a>
+      <a class="action-card pray" href="#">
+        <span class="action-icon">🕊️</span>
+        <h3>Pray</h3>
+        <p>Send a prayer request, ask for a callback, or reach our prayer team directly.</p>
+        <span class="go">Request prayer →</span>
+      </a>
+      <a class="action-card connect" href="#">
+        <span class="action-icon">📍</span>
+        <h3>Connect</h3>
+        <p>Visit a service, join a program, or get in touch with our team.</p>
+        <span class="go">Get in touch →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Transparency</div>
+      <h2>Giving, at a glance</h2>
+      <p>Every gift is tracked openly. Here's where things stand on the Tech Fund today — the full report, including how every rupee was spent, lives on our Giving page.</p>
+    </div>
+
+    <div class="glance-card" id="glanceCard" style="display:none;">
+      <div class="glance-top">
+        <div>
+          <h3>Tech Fund</h3>
+          <p id="glanceSub"></p>
+        </div>
+      </div>
+      <div class="glance-stats">
+        <div class="glance-stat"><div class="lbl">Collected</div><div class="val tabular" id="glanceCollected">₹0</div></div>
+        <div class="glance-stat"><div class="lbl">Available</div><div class="val tabular" id="glanceAvailable">₹0</div></div>
+        <div class="glance-stat"><div class="lbl">Gifts Given</div><div class="val tabular" id="glanceCount">0</div></div>
+        <div class="glance-stat"><div class="lbl">Goal</div><div class="val tabular" id="glanceGoal">₹0</div></div>
+      </div>
+      <div class="glance-bar-wrap">
+        <div class="glance-bar"><div class="glance-bar-fill" id="glanceBarFill" style="width:0%"></div></div>
+      </div>
+      <div class="glance-foot">
+        <span style="font-size:.82rem;color:var(--text-faint)" id="glanceUpdated">Live figures</span>
+        <a href="/our-giving.html">See the full picture, fund-by-fund →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight" id="happening">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">What's Happening</div>
+      <h2>Upcoming at both churches</h2>
+    </div>
+    <div class="events-grid" id="eventsGrid"></div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="/" style="margin-bottom:10px"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry</a>
+        <p style="font-size:.86rem;margin-top:10px;max-width:32ch">Giving with faith, transparency &amp; purpose — for Coimbatore, and for the world.</p>
+      </div>
+      <div>
+        <h4>Church of Light</h4>
+        <ul><li>Mother Church</li><li>Coimbatore, Tamil Nadu</li></ul>
+      </div>
+      <div>
+        <h4>City Worship Center</h4>
+        <ul><li>Coimbatore, Tamil Nadu</li></ul>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul><li><a href="/give-flow.html">Give</a></li><li><a href="#">Pray</a></li><li><a href="#">Contact</a></li><li><a href="/our-giving.html">Our Giving</a></li></ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Light of Jesus Ministry</span>
+    </div>
+  </div>
+</footer>
+
+<div class="mobile-actions">
+  <a href="#" class="btn btn-secondary">Pray</a>
+  <a href="#" class="btn btn-ghost">Contact</a>
+  <a href="/give-flow.html" class="btn btn-primary">Give</a>
+</div>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+  <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+</button>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="auth.js"></script>
+<script>
+  (function () {
+    var root = document.documentElement;
+    document.querySelectorAll('.theme-toggle').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+    });
+  })();
+</script>
+<script>
+  (function () {
+    // "Today's Promise" — a small curated set (no real per-day source exists
+    // yet, see docs/milestone-v2/11-v2-flow-implementation.md §7 Home).
+    var verses = [
+      { text: '"Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee."', ref: "Isaiah 41:10" },
+      { text: '"The Lord is my shepherd; I shall not want."', ref: "Psalm 23:1" },
+      { text: '"For I know the plans I have for you, plans to prosper you and not to harm you, plans to give you hope and a future."', ref: "Jeremiah 29:11" },
+      { text: '"I can do all things through Christ which strengtheneth me."', ref: "Philippians 4:13" }
+    ];
+    var rotator = document.getElementById('promiseRotator');
+    var textEl = document.getElementById('promiseText');
+    var refEl = document.getElementById('promiseRef');
+    var dotsEl = document.getElementById('promiseDots');
+    var idx = 0, timer;
+
+    verses.forEach(function (_, i) {
+      var b = document.createElement('button');
+      b.className = i === 0 ? 'active' : '';
+      b.setAttribute('aria-label', 'Show verse ' + (i + 1));
+      b.addEventListener('click', function () { show(i); restart(); });
+      dotsEl.appendChild(b);
+    });
+
+    function show(i) {
+      idx = i;
+      rotator.classList.add('fading');
+      setTimeout(function () {
+        textEl.textContent = verses[idx].text;
+        refEl.textContent = verses[idx].ref;
+        Array.prototype.forEach.call(dotsEl.children, function (d, di) { d.classList.toggle('active', di === idx); });
+        rotator.classList.remove('fading');
+      }, 350);
+    }
+    function next() { show((idx + 1) % verses.length); }
+    function restart() { clearInterval(timer); timer = setInterval(next, 8000); }
+    show(0);
+    restart();
+  })();
+</script>
+<script>
+  (function () {
+    // Real pastor-curated Verse of the Month/Year — same /api/settings
+    // content member.html already reads today.
+    fetch("/api/settings?_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var s = (data && data.settings) || {};
+        function fill(cardId, labelId, textId, label, text, ref) {
+          var card = document.getElementById(cardId);
+          if (!text || !text.trim()) { card.classList.add('hidden'); return; }
+          card.classList.remove('hidden');
+          document.getElementById(labelId).textContent = label || "";
+          document.getElementById(textId).textContent = '"' + text.trim() + '"' + (ref && ref.trim() ? " — " + ref.trim() : "");
+        }
+        fill("verseMonthCard", "verseMonthLabel", "verseMonthText", s.verse_month_label || "This Month", s.verse_month_text, s.verse_month_ref);
+        fill("verseYearCard", "verseYearLabel", "verseYearText", s.verse_year_label || "This Year", s.verse_year_text, s.verse_year_ref);
+      })
+      .catch(function () {});
+  })();
+</script>
+<script>
+  (function () {
+    // Real "Giving at a Glance" — /api/contributions is the same source of
+    // truth Our Giving's full report reads from.
+    fetch("/api/contributions?fund=tech-contributions&_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || data.error) return;
+        var contributions = data.contributions || [];
+        var collected = contributions.reduce(function (s, c) { return s + (Number(c.Amount) || 0); }, 0);
+        var goal = Number(data.goalAmount) || 0;
+        var pct = goal > 0 ? Math.min(100, Math.round((collected / goal) * 100)) : 0;
+
+        document.getElementById("glanceCollected").textContent = "₹" + collected.toLocaleString("en-IN");
+        document.getElementById("glanceAvailable").textContent = "₹" + (Number(data.availableBalance) || 0).toLocaleString("en-IN");
+        document.getElementById("glanceCount").textContent = contributions.length;
+        document.getElementById("glanceGoal").textContent = "₹" + goal.toLocaleString("en-IN");
+        document.getElementById("glanceBarFill").style.width = pct + "%";
+        document.getElementById("glanceSub").textContent = pct + "% of the way to goal — supporting media, sound & livestream equipment for both churches.";
+        document.getElementById("glanceUpdated").textContent = "Live figures, updated automatically";
+        document.getElementById("glanceCard").style.display = "";
+      })
+      .catch(function () {});
+  })();
+</script>
+<script>
+  (function () {
+    // Real events — production has none published yet, so this shows a
+    // graceful empty state rather than a fabricated "happening now" card.
+    fetch("/api/events?_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var events = (data && data.events) || [];
+        var grid = document.getElementById("eventsGrid");
+        if (!events.length) {
+          grid.innerHTML = '<div class="events-empty" style="grid-column:1/-1">No upcoming events posted yet — check back soon, or see the full <a href="/events.html">Events page</a>.</div>';
+          return;
+        }
+        function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+        grid.innerHTML = events.slice(0, 3).map(function (e) {
+          return '<div class="event-card"><div class="event-photo"></div><div class="event-body">' +
+            '<div class="event-date">' + esc(e.eventDate || "") + '</div><h4>' + esc(e.title) + '</h4>' +
+            '<p>' + esc((e.description || "").slice(0, 100)) + '</p>' +
+            '<a class="btn btn-secondary btn-sm" style="margin-top:auto" href="/events.html">Learn more →</a></div></div>';
+        }).join("");
+      })
+      .catch(function () {
+        document.getElementById("eventsGrid").innerHTML = '<div class="events-empty" style="grid-column:1/-1">See the full <a href="/events.html">Events page</a>.</div>';
+      });
+  })();
+</script>
+</body>
+</html>

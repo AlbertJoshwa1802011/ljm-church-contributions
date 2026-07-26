@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Give — Light of Jesus Ministry</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .page-hero { padding: 48px 0 8px; text-align: center; }
+  .page-hero h1 { font-size: 2rem; }
+  .page-hero p { max-width: 50ch; margin: 12px auto 0; }
+  .trust-row { display: flex; justify-content: center; gap: 22px; margin-top: 18px; flex-wrap: wrap; }
+  .trust-row span { font-size: .78rem; color: var(--text-faint); display: flex; align-items: center; gap: 6px; }
+
+  .cause-band { max-width: 560px; margin: 30px auto 0; padding: 0 24px; }
+  .cause-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cause-opt { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 13px 14px; cursor: pointer; background: var(--surface); }
+  .cause-opt.active { border-color: var(--accent); background: var(--accent-soft); }
+  .cause-opt.disabled { opacity: .55; cursor: not-allowed; }
+  .cause-opt b { font-size: .86rem; display: block; }
+  .cause-opt span { font-size: .72rem; color: var(--text-faint); }
+
+  .give-shell { max-width: 560px; margin: 30px auto 90px; padding: 0 24px; }
+  .give-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lift); padding: 32px; text-align: center; }
+  .give-card h2 { font-size: 1.3rem; }
+  .give-card p { font-size: .9rem; color: var(--text-soft); margin-top: 8px; }
+  .secure-row { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: .74rem; color: var(--text-faint); margin-top: 20px; }
+
+  /* ---- Real Razorpay modal — razorpay-checkout.js (unmodified, loaded
+     as-is from site root) only toggles these class names; the visual
+     styling here is new, the JS behavior underneath is the same real
+     file used on the live site today. See
+     docs/milestone-v2/11-v2-flow-implementation.md §4. ---- */
+  .insight-modal { position: fixed; inset: 0; z-index: 400; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .insight-modal.insight-modal-visible { display: flex; }
+  .insight-modal-backdrop { position: absolute; inset: 0; background: rgba(10,12,16,.55); }
+  .insight-modal-content { position: relative; background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lift); max-width: 460px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 30px 28px; }
+  .insight-modal-close { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-soft); color: var(--text-soft); font-size: 1.1rem; cursor: pointer; }
+  .contrib-header { text-align: center; margin-bottom: 20px; }
+  .contrib-icon { font-size: 1.6rem; }
+  .contrib-header h2 { font-size: 1.2rem; margin-top: 6px; }
+  .contrib-header p { font-size: .82rem; color: var(--text-faint); margin-top: 4px; }
+  .contrib-toggle-group { display: flex; background: var(--bg-soft); border-radius: 999px; padding: 3px; margin-bottom: 20px; }
+  .contrib-toggle { flex: 1; border: 0; background: transparent; padding: 9px; border-radius: 999px; font-size: .82rem; font-weight: 700; color: var(--text-faint); cursor: pointer; }
+  .contrib-toggle.active { background: var(--surface); color: var(--accent-deep); box-shadow: var(--shadow); }
+  .contrib-field { margin-bottom: 16px; text-align: left; }
+  .contrib-field label { display: block; font-size: .78rem; font-weight: 700; color: var(--text-soft); margin-bottom: 8px; }
+  .contrib-input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-soft); color: var(--text); font-family: var(--sans); font-size: .92rem; }
+  .contrib-input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+  .contrib-amount-wrapper { position: relative; display: flex; align-items: center; }
+  .currency-symbol { position: absolute; left: 14px; font-weight: 700; color: var(--text-faint); }
+  .amount-input { padding-left: 32px; font-size: 1.1rem; font-weight: 700; font-family: var(--serif); }
+  .contrib-chips { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .amount-chip { flex: 1; text-align: center; padding: 9px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-weight: 700; font-size: .82rem; color: var(--text-soft); background: var(--surface); cursor: pointer; min-width: 64px; }
+  .amount-chip.selected { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-deep); }
+  .field-hint { font-size: .72rem; color: var(--text-faint); margin-top: 6px; }
+  .new-member-greeting { font-size: .78rem; color: var(--green); margin-top: 8px; }
+  .payment-status-preview { display: none; background: var(--bg-soft); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px; }
+  .payment-status-preview.visible { display: block; }
+  .status-title { font-size: .76rem; font-weight: 700; color: var(--text-soft); margin-bottom: 10px; }
+  .month-pills { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .month-pill { text-align: center; font-size: .68rem; font-weight: 700; padding: 6px 2px; border-radius: 6px; }
+  .proceed-btn { width: 100%; padding: 14px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; font-family: var(--sans); font-weight: 700; font-size: .95rem; cursor: pointer; margin-top: 6px; box-shadow: var(--shadow); }
+  .proceed-btn:hover { background: var(--accent-deep); }
+  .proceed-btn:disabled { opacity: .6; cursor: not-allowed; }
+  .update-indicator { display: none; align-items: center; gap: 8px; justify-content: center; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lift); border-radius: 999px; padding: 10px 18px; font-size: .8rem; z-index: 500; }
+  .update-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <nav class="primary-nav">
+      <a href="/">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/our-giving.html">Our Giving</a>
+      <a href="/events.html">Events</a>
+    </nav>
+    <div class="header-actions">
+      <div class="auth-slot">
+        <div id="signinBtn"></div>
+        <div class="user-chip" id="userChip">
+          <span class="user-avatar" id="userAvatar">··</span>
+          <span class="user-meta">
+            <span class="nm" id="userName"></span>
+            <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+            <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
+          </span>
+        </div>
+      </div>
+      <a href="#" id="rzp-button1-header" class="btn btn-primary btn-sm">Give</a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="nav-drawer-head">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry</a>
+    <button class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">✕</button>
+  </div>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about.html">About</a>
+    <a href="/our-giving.html">Our Giving</a>
+    <a href="/events.html">Events</a>
+  </nav>
+  <div class="nav-drawer-section nav-drawer-auth">
+    <div id="signinBtnDrawer"></div>
+    <div class="user-chip" id="userChipDrawer">
+      <span class="user-avatar" id="userAvatarDrawer">··</span>
+      <span class="user-meta">
+        <span class="nm" id="userNameDrawer"></span>
+        <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+        <a href="/admin.html" class="admin-link" id="adminLinkDrawer">⚡ Admin Access</a>
+      </span>
+    </div>
+  </div>
+  <div class="nav-drawer-section">
+    <button class="theme-toggle" aria-label="Toggle light/dark theme">
+      <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+    </button>
+  </div>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('hamburgerBtn');
+  var drawer = document.getElementById('navDrawer');
+  var backdrop = document.getElementById('navDrawerBackdrop');
+  var closeBtn = document.getElementById('navDrawerClose');
+  function openDrawer() { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('drawer-open'); btn.setAttribute('aria-expanded', 'true'); }
+  function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('drawer-open'); btn.setAttribute('aria-expanded', 'false'); }
+  btn.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+  Array.prototype.forEach.call(drawer.querySelectorAll('a'), function (a) { a.addEventListener('click', closeDrawer); });
+})();
+</script>
+
+<section class="page-hero">
+  <div class="wrap">
+    <div class="eyebrow">✦ Give</div>
+    <h1 style="margin-top:8px">Support the ministry</h1>
+    <p>Every gift is tracked openly on our <a href="/our-giving.html" style="color:var(--accent);font-weight:700">Our Giving</a> page — the same real checkout the church has used all along, just a fresh look.</p>
+    <div class="trust-row">
+      <span>🔒 Secured by Razorpay</span>
+      <span>📋 Tracked publicly</span>
+      <span>🧾 Emailed receipt</span>
+    </div>
+  </div>
+</section>
+
+<section class="cause-band">
+  <div class="cause-grid" id="causeGrid">
+    <div class="cause-opt active" data-fund="tech-contributions"><b>💻 Tech Fund</b><span>Media, sound &amp; livestream</span></div>
+    <div class="cause-opt" data-fund="christmas-fund"><b>🎄 Christmas Fund</b><span>This season's celebrations</span></div>
+    <div class="cause-opt disabled"><b>General Offering</b><span>Coming soon*</span></div>
+    <div class="cause-opt disabled"><b>Building Fund</b><span>Coming soon*</span></div>
+  </div>
+  <p style="font-size:.72rem;color:var(--text-faint);margin-top:10px;text-align:center">*Illustrative — today only Tech Fund and Christmas Fund exist live.</p>
+</section>
+
+<section class="give-shell">
+  <div class="give-card">
+    <h2>Ready to give?</h2>
+    <p>Tap below to open secure checkout — choose your name, amount, and pay by card, UPI, or net banking.</p>
+    <a href="#" id="rzp-button1" class="btn btn-primary" style="display:none;margin-top:20px;width:100%">Give Now →</a>
+    <div class="secure-row">🔒 256-bit encrypted · Powered by Razorpay</div>
+  </div>
+</section>
+
+<!-- Real Razorpay contribution modal — required IDs/classes match exactly
+     what razorpay-checkout.js (unmodified, loaded below) expects. Visual
+     styling above is new; the payment behavior is the same real file. -->
+<div id="contributionModal" class="insight-modal" role="dialog" aria-modal="true" aria-labelledby="contribModalTitle" aria-hidden="true">
+  <div class="insight-modal-backdrop" id="contribModalBackdrop"></div>
+  <div class="insight-modal-content">
+    <button type="button" class="insight-modal-close" id="contribModalClose" aria-label="Close">×</button>
+    <div class="contrib-header">
+      <span class="contrib-icon">✨</span>
+      <h2 id="contribModalTitle">Make a Contribution</h2>
+      <p>Your support makes a difference.</p>
+    </div>
+    <div class="contrib-body">
+      <div class="contrib-toggle-group">
+        <button type="button" class="contrib-toggle active" id="btnExistingMember">Existing Member</button>
+        <button type="button" class="contrib-toggle" id="btnNewMember">New Member</button>
+      </div>
+      <div class="contrib-field" id="existingMemberField">
+        <label for="existingMemberSelect">Select Member</label>
+        <select id="existingMemberSelect" class="contrib-input">
+          <option value="">Loading members...</option>
+        </select>
+      </div>
+      <div class="contrib-field" id="newMemberField" style="display:none;">
+        <label for="newMemberInput">Full Name</label>
+        <input type="text" id="newMemberInput" class="contrib-input" placeholder="e.g. John Doe">
+        <div class="new-member-greeting">🌟 Welcome! We are thrilled to have you!</div>
+      </div>
+      <div class="contrib-field" id="monthField">
+        <label for="monthSelect">Month for Contribution</label>
+        <select id="monthSelect" class="contrib-input">
+          <option value="">Current Month</option>
+          <option value="January">January</option><option value="February">February</option>
+          <option value="March">March</option><option value="April">April</option>
+          <option value="May">May</option><option value="June">June</option>
+          <option value="July">July</option><option value="August">August</option>
+          <option value="September">September</option><option value="October">October</option>
+          <option value="November">November</option><option value="December">December</option>
+        </select>
+        <div class="field-hint">Select which month you are paying for 📅</div>
+      </div>
+      <div id="paymentStatusPreview" class="payment-status-preview">
+        <div class="status-title"><span>📊 Your 2026 Progress:</span></div>
+        <div class="month-pills" id="monthStatusPills"></div>
+      </div>
+      <div class="contrib-field">
+        <label for="contribAmount">Amount</label>
+        <div class="contrib-amount-wrapper">
+          <span class="currency-symbol">₹</span>
+          <input type="number" id="contribAmount" class="contrib-input amount-input" placeholder="0" min="1">
+        </div>
+        <div class="contrib-chips">
+          <button type="button" class="amount-chip" data-val="500">₹500</button>
+          <button type="button" class="amount-chip" data-val="1000">₹1k</button>
+          <button type="button" class="amount-chip" data-val="2000">₹2k</button>
+          <button type="button" class="amount-chip" data-val="5000">₹5k</button>
+        </div>
+      </div>
+      <div class="contrib-field" style="margin-top:25px">
+        <label for="contribEmail">Email Address <span style="font-weight:normal;color:var(--text-faint);font-size:11px">(for receipt)</span></label>
+        <div class="contrib-amount-wrapper">
+          <span class="currency-symbol" style="font-size:14px">📧</span>
+          <input type="email" id="contribEmail" class="contrib-input amount-input" placeholder="your@email.com" style="padding-left:32px">
+        </div>
+      </div>
+      <div class="contrib-field" style="margin-top:15px">
+        <label for="contribPhone">Mobile Number <span style="font-weight:normal;color:var(--text-faint);font-size:11px">(optional)</span></label>
+        <div class="contrib-amount-wrapper">
+          <span class="currency-symbol" style="font-size:14px">📱</span>
+          <input type="tel" id="contribPhone" class="contrib-input amount-input" placeholder="e.g. 9876543210" style="padding-left:32px">
+        </div>
+      </div>
+      <button type="button" id="proceedToPayBtn" class="proceed-btn">Proceed to Pay</button>
+    </div>
+  </div>
+</div>
+
+<div class="update-indicator" id="updateIndicator"></div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-bottom">
+      <span>© 2026 Light of Jesus Ministry — same real checkout as always, just a fresh look.</span>
+      <a href="/" style="font-weight:700;color:var(--accent)">← Back to Home</a>
+    </div>
+  </div>
+</footer>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+  <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+</button>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="auth.js"></script>
+<script>
+  (function () {
+    var root = document.documentElement;
+    document.querySelectorAll('.theme-toggle').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+    });
+  })();
+</script>
+<script>
+  // The header "Give" button and the cause cards both just open the same
+  // real #rzp-button1 that razorpay-checkout.js (loaded below, unmodified)
+  // already wires up — no separate logic needed.
+  document.getElementById('rzp-button1-header').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('rzp-button1').click();
+  });
+</script>
+<script>
+(function () {
+  // Feeds razorpay-checkout.js's expected globals (window._currentContributions,
+  // _memberEmails, _memberPhones) from the real /api/contributions endpoint,
+  // then fires the same LJM_DATA_READY event script.js normally dispatches —
+  // this is a lighter-weight real data source, not a different one.
+  function currentFund() {
+    return new URLSearchParams(location.search).get("fund") || "tech-contributions";
+  }
+
+  function loadData() {
+    fetch("/api/contributions?fund=" + encodeURIComponent(currentFund()) + "&_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        window._currentContributions = (data && data.contributions) || [];
+        window._memberEmails = (data && data.memberEmails) || {};
+        window._memberPhones = (data && data.memberPhones) || {};
+        document.dispatchEvent(new CustomEvent("LJM_DATA_READY"));
+      })
+      .catch(function () {
+        window._currentContributions = [];
+      });
+  }
+
+  document.querySelectorAll(".cause-opt[data-fund]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      document.querySelectorAll(".cause-opt[data-fund]").forEach(function (o) { o.classList.remove("active"); });
+      el.classList.add("active");
+      var url = new URL(location.href);
+      url.searchParams.set("fund", el.dataset.fund);
+      history.replaceState(null, "", url);
+      loadData();
+    });
+  });
+
+  loadData();
+})();
+</script>
+<!-- The real, unmodified checkout script — same live Razorpay key, same
+     /api/webhook target, same validation/payment/receipt behavior as the
+     current production site. Nothing here is new or different. -->
+<script src="/razorpay-checkout.js"></script>
+</body>
+</html>

@@ -121,3 +121,101 @@ test("subscriptions: personal history reflects the family's payments once groupe
   assert.equal(personal.paidMonths.length, 1);
   assert.equal(personal.paidMonths[0].month, "2026-01");
 });
+
+test("subscriptions: an ungrouped individual can be marked paid and unmarked directly", async () => {
+  const db = freshDb();
+  await setSubscriptionsAmount(db, 50);
+  const res = await db.prepare("INSERT INTO members (name) VALUES ('Ungrouped Believer')").run();
+  const memberId = res.meta.last_row_id;
+
+  const mark = await readJson(await subscriptions.onRequestPost(makeContext({
+    db, body: { action: "mark_paid", memberId, month: "2026-03" }
+  })));
+  assert.equal(mark.success, true, mark.message);
+
+  let view = await readJson(await subscriptions.onRequestGet(makeContext({ db, url: "https://test.local/api/subscriptions?month=2026-03" })));
+  assert.equal(view.paid.length, 1);
+  assert.equal(view.paid[0].name, "Ungrouped Believer");
+
+  const unmark = await readJson(await subscriptions.onRequestPost(makeContext({
+    db, body: { action: "unmark", memberId, month: "2026-03" }
+  })));
+  assert.equal(unmark.success, true, unmark.message);
+
+  view = await readJson(await subscriptions.onRequestGet(makeContext({ db, url: "https://test.local/api/subscriptions?month=2026-03" })));
+  assert.equal(view.paid.length, 0);
+  assert.ok(view.pending.some(p => p.name === "Ungrouped Believer"));
+});
+
+test("subscriptions: an ungrouped individual's personal history is returned without a family", async () => {
+  const db = freshDb();
+  const res = await db.prepare("INSERT INTO members (name) VALUES ('Solo History')").run();
+  const memberId = res.meta.last_row_id;
+  await subscriptions.onRequestPost(makeContext({ db, body: { action: "mark_paid", memberId, month: "2026-02" } }));
+
+  const personal = await readJson(await subscriptions.onRequestGet(makeContext({
+    db, url: "https://test.local/api/subscriptions?member=Solo%20History&year=2026"
+  })));
+  assert.equal(personal.isFamilyBased, false);
+  assert.equal(personal.familyName, null);
+  assert.equal(personal.paidMonths.length, 1);
+});
+
+test("subscriptions: unmarking a month with no record is a 404", async () => {
+  const db = freshDb();
+  const res = await db.prepare("INSERT INTO members (name) VALUES ('Never Paid')").run();
+  const memberId = res.meta.last_row_id;
+  const unmark = await readJson(await subscriptions.onRequestPost(makeContext({
+    db, body: { action: "unmark", memberId, month: "2026-05" }
+  })));
+  assert.equal(unmark.success, false);
+});
+
+test("subscriptions: POST rejects a missing familyId/memberId or a badly formatted month", async () => {
+  const db = freshDb();
+  const noTarget = await readJson(await subscriptions.onRequestPost(makeContext({
+    db, body: { action: "mark_paid", month: "2026-05" }
+  })));
+  assert.equal(noTarget.success, false);
+
+  const res = await db.prepare("INSERT INTO members (name) VALUES ('Bad Month')").run();
+  const badMonth = await readJson(await subscriptions.onRequestPost(makeContext({
+    db, body: { action: "mark_paid", memberId: res.meta.last_row_id, month: "not-a-month" }
+  })));
+  assert.equal(badMonth.success, false);
+});
+
+test("subscriptions: POST on a nonexistent family or member is a 404", async () => {
+  const db = freshDb();
+  const familyRes = await readJson(await subscriptions.onRequestPost(makeContext({
+    db, body: { action: "mark_paid", familyId: 999999, month: "2026-05" }
+  })));
+  assert.equal(familyRes.success, false);
+
+  const memberRes = await readJson(await subscriptions.onRequestPost(makeContext({
+    db, body: { action: "mark_paid", memberId: 999999, month: "2026-05" }
+  })));
+  assert.equal(memberRes.success, false);
+});
+
+test("subscriptions: POST with an unknown action is rejected", async () => {
+  const db = freshDb();
+  const res = await db.prepare("INSERT INTO members (name) VALUES ('Unknown Action Test')").run();
+  const result = await readJson(await subscriptions.onRequestPost(makeContext({
+    db, body: { action: "nonsense", memberId: res.meta.last_row_id, month: "2026-05" }
+  })));
+  assert.equal(result.success, false);
+  assert.match(result.message, /Unknown action/);
+});
+
+test("subscriptions: POST (marking paid/unmarking) requires manage_subscriptions permission; GET stays public", async () => {
+  const db = freshDb();
+  const postRes = await readJson(await subscriptions.onRequestPost(makeContext({
+    db, authToken: null, body: { action: "mark_paid", memberId: 1, month: "2026-05" }
+  })));
+  assert.equal(postRes.success, false);
+
+  // GET is intentionally public — the whole church should see who/which family has paid.
+  const getRes = await subscriptions.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/subscriptions?month=2026-05" }));
+  assert.equal(getRes.status, 200);
+});

@@ -6,7 +6,25 @@ on:
       - main
 
 jobs:
+  # Deploy is gated on this job passing — see CONTRIBUTING.md "CI is a deploy
+  # gate, not a suggestion". Do not remove this job or the deploy job's
+  # `needs: test`; that link is what makes a red suite actually block production.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run test suite
+        run: npm test
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

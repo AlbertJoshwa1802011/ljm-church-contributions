@@ -128,7 +128,7 @@ export async function onRequestPut(context) {
       .bind(userEmail, memberName)
       .run();
 
-    if (result.changes === 0) {
+    if (!result.meta || result.meta.changes === 0) {
       return new Response(JSON.stringify({ error: "Failed to link account. Member may already have an email linked." }), { status: 400 });
     }
 
