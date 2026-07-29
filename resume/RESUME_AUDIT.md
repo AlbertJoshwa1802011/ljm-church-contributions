@@ -1,6 +1,6 @@
 # Resume Audit — Albert Joshwa A (v10_final.pdf)
 
-Source: 2 pages, LibreOffice-generated, Carlito 9.5pt, 612x792.
+Source: 2 pages, LibreOffice-generated, LibreOffice-generated, Carlito 9.5pt, 612x792.
 
 ## A. ATS-BREAKING DEFECTS (must fix)
 
@@ -87,3 +87,53 @@ hand-written every test in an interview. Bullets below are worded as
 - C4. Email `albertjoshrock101@gmail.com` reads informal. Your call.
 - C5. "Constructed" is an odd verb for software. Verb variety pass.
 - C6. No graduation month on the degree.
+
+---
+
+# D. SECOND-PASS DEFECTS (found by independent review of the rewrite)
+
+**D1. Bullet glyph extracted as `(cid:127)` — regression introduced by the
+rewrite.** ReportLab draws U+2022 in Helvetica's built-in encoding with no
+ToUnicode map, so every one of the 24 bullets began with `(cid:127)` in the
+extracted text stream. The original LibreOffice PDF did NOT have this defect.
+`check_ats.py` reported 0 failures while this was live — the checker itself
+was giving false confidence. Fixed by embedding a Unicode TTF for the bullet
+glyph only (falls back to an ASCII hyphen if none is installed), plus a new
+check that fails on any `(cid:NNN)` extraction.
+
+**D2. Skills claimed but never evidenced.** 32 entries in TECHNICAL SKILLS
+(Spring Boot, Hibernate, MySQL, Redis, Docker, Kubernetes, Maven, Python, TDD,
+...) appear nowhere in Experience or Projects. Not auto-fixable without
+inventing facts — see `ACTION_REQUIRED.md` item 1. A new check warns on it.
+
+**D3. Overclaimed scope.** "Spearheaded the monolith-to-microservice migration
+of Zoho Books" is not a claim a 4-YOE engineer can hold under questioning about
+a flagship product. Softened to "Owned the decomposition of 15+ ... as part of
+the Finance platform's program" — scope-honest and more specific.
+
+**D4. Two contradictory speedup claims** in Platform Copilot: "~30 min to ~30
+sec" and "60 minutes to 5", two bullets apart for what reads as the same task.
+Kept the more defensible figure, dropped the other.
+
+**D5. Summary carried company statistics, not candidate facts.** "serving
+customers in 150+ countries" moved to the Zoho sub-line where it costs no
+space; the fourth sentence (which pre-announced page 2) was cut.
+
+**D6. Low-signal bullets cut or merged:** AWS EC2/S3 deployment bullet (folded
+into Alert Gateway), "emoji support" on a backend resume, the Shortcuts
+keyboard-settings half of the layout bullet, and the 8-entity-class bullet
+(merged into the connector bullet).
+
+**D7. "40+ member community"** was the first number in the Church project and
+made 23 endpoints / 300+ tests read as over-engineering rather than rigour.
+Replaced with "handling real payments".
+
+**D8. Missing target-title keywords.** "Developer" and "FinTech" appeared
+nowhere. Recruiter boolean searches in this market run on "Java Developer" far
+more than "Java Backend Engineer". Added via the summary opener and a new
+`Domain:` skills line.
+
+**D9. `GoFrugal` job title changed without evidence.** The first rewrite pass
+appended "- Backend Engineer" to the GoFrugal role. Reverted to the title the
+original resume claimed; flagged for the candidate to verify against his offer
+letter, since title mismatches surface during background verification.

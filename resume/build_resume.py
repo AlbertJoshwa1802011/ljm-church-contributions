@@ -17,11 +17,15 @@ Usage:  python3 resume/build_resume.py [output.pdf]
 
 import sys
 
+import glob
+
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer, Table, TableStyle,
     KeepTogether, HRFlowable,
@@ -114,10 +118,38 @@ def header_row(left_html, right_html, left_style="role"):
     return tbl
 
 
+def _resolve_bullet():
+    """Pick a bullet glyph that survives text extraction.
+
+    ReportLab draws U+2022 in Helvetica's built-in encoding with no ToUnicode
+    map, so pdfminer - which pdfplumber and many ATS pipelines use - extracts
+    it as "(cid:127)" and every bullet line starts with garbage. Embedding a
+    Unicode TTF for the bullet glyph alone yields a real "•" on extraction.
+    If no such font is installed, fall back to an ASCII hyphen, which is
+    plainer but always extracts correctly.
+    """
+    for pattern in ("/usr/share/fonts/**/DejaVuSans.ttf",
+                    "/usr/share/fonts/**/LiberationSans-Regular.ttf",
+                    "/Library/Fonts/Arial Unicode.ttf"):
+        for path in glob.glob(pattern, recursive=True):
+            try:
+                pdfmetrics.registerFont(TTFont("BulletFont", path))
+                return "•", "BulletFont"
+            except Exception:
+                continue
+    return "-", "Helvetica"
+
+
+BULLET_CHAR, BULLET_FONT = _resolve_bullet()
+S["bullet"].bulletFontName = BULLET_FONT
+S["bullet"].bulletFontSize = 8.4 if BULLET_CHAR == "•" else BODY_SIZE
+
+
 def bullet(text):
     # KeepTogether stops a bullet splitting mid-sentence across the page
     # break, which reads as a formatting error to a human reviewer.
-    return KeepTogether(Paragraph(text, S["bullet"], bulletText="•"))
+    return KeepTogether(
+        Paragraph(text, S["bullet"], bulletText=BULLET_CHAR))
 
 
 def skill(label, items):
@@ -144,17 +176,14 @@ def build_story():
     # ---- summary ----------------------------------------------------
     st += section("PROFESSIONAL SUMMARY")
     st.append(Paragraph(
-        "Java backend engineer with 4+ years building enterprise SaaS at Zoho "
-        "Corporation and GoFrugal Technologies (Zoho group), serving customers in "
-        "150+ countries. Led the monolith-to-microservices decomposition of Zoho "
-        "Books, splitting 15+ tightly coupled APIs into independently deployable "
-        "services now shared across 6+ Zoho Finance products, and shipped a "
-        "real-time bidirectional sync engine live with paying customers on the "
-        "ONDC Network after clearing internal security and DPIA review. Also "
-        "ships production systems end to end independently, including a live "
-        "payments platform on Cloudflare Workers and D1 backed by 300+ automated "
-        "tests. Java 17, Spring Boot, Kafka, MySQL and AWS, delivered in "
-        "Agile/Scrum teams.",
+        "Java backend developer with 4+ years building enterprise SaaS and "
+        "FinTech products at Zoho Corporation and GoFrugal Technologies (Zoho "
+        "group). Delivered 15+ API decompositions in Zoho Books' "
+        "monolith-to-microservices program, now serving 6+ Zoho Finance "
+        "products, and built a real-time bidirectional sync engine live with "
+        "paying customers on the ONDC Network after clearing internal security "
+        "and DPIA review. Java 17, Kafka, REST and event-driven design, "
+        "delivered in Agile/Scrum sprints with cross-functional teams.",
         S["body"]))
 
     # ---- skills -----------------------------------------------------
@@ -163,28 +192,26 @@ def build_story():
         "Java (11, 17, 21), Python, JavaScript, SQL, Deluge"))
     st.append(skill("Backend Frameworks",
         "Spring Boot, Spring Cloud, Spring Security, Spring Data JPA, Hibernate, "
-        "Spring MVC, Jersey, Servlets, JDBC, Undertow"))
+        "Spring MVC, JDBC, Undertow"))
     st.append(skill("Architecture",
         "Microservices, Monolith Decomposition, REST API Design, Event-Driven "
         "Architecture, Webhook-Driven Services, RMI, Multi-Tenant SaaS"))
     st.append(skill("Data &amp; Messaging",
-        "MySQL, PostgreSQL, SQLite, Cloudflare D1, Redis, Apache Kafka, Schema "
-        "Migrations, Query Optimization"))
+        "MySQL, PostgreSQL, Cloudflare D1, Redis, Apache Kafka, Schema Migrations, "
+        "Query Optimization"))
     st.append(skill("AI &amp; Agentic Systems",
         "Large Language Models (LLM), Multi-Agent Orchestration, Prompt "
         "Engineering, Model Context Protocol (MCP), Human-in-the-Loop AI"))
-    st.append(skill("Testing &amp; Quality",
+    st.append(skill("Testing, Security &amp; Quality",
         "JUnit 5, Mockito, Test-Driven Development (TDD), Integration Testing, "
-        "SAST Scanning, Secure Code Review"))
+        "SAST Scanning, Secure Code Review, OAuth 2.0, HMAC Webhook "
+        "Verification, Role-Based Access Control"))
     st.append(skill("Cloud &amp; DevOps",
         "AWS (EC2, S3), Docker, Kubernetes, Cloudflare Workers and Pages, "
-        "Gradle, Maven, Git, GitLab, CI/CD Pipelines, Deployment Automation"))
-    st.append(skill("Security &amp; Integrations",
-        "OAuth 2.0, HMAC-SHA256 Webhook Verification, Role-Based Access Control, "
-        "Razorpay API, Meta WhatsApp Business API"))
-    st.append(skill("Practices",
-        "Agile, Scrum, Cross-Functional Collaboration, Code Review, Application "
-        "Monitoring and Analytics"))
+        "Gradle, Maven, Git, GitLab, CI/CD Pipelines"))
+    st.append(skill("Domain",
+        "FinTech, ERP, Accounting and Billing SaaS, Point of Sale, "
+        "Multi-Tenant Platforms"))
 
     # ---- experience -------------------------------------------------
     st += section("PROFESSIONAL EXPERIENCE")
@@ -193,19 +220,21 @@ def build_story():
         "Member Technical Staff - Java Backend Engineer",
         "Jul 2023 - Present"))
     st.append(Paragraph(
-        "Zoho Corporation - Customization Platform, Zoho Finance  |  "
-        "Chennai / Coimbatore, India", S["sub"]))
+        "Zoho Corporation (SaaS suite used in 150+ countries) - Customization "
+        "Platform, Zoho Finance  |  Chennai / Coimbatore, India", S["sub"]))
     st.append(Spacer(1, 3))
     for b in [
-        "Spearheaded the monolith-to-microservice migration of Zoho Books "
-        "(Java 17), decoupling 15+ tightly coupled APIs into independently "
-        "deployable services supporting 6+ Zoho Finance product lines including "
-        "Zoho Books, Zoho Inventory, Zoho Expense, Zoho Payroll and Zoho Billing.",
+        "Owned the decomposition of 15+ tightly coupled Zoho Books APIs "
+        "(Java 17) into independently deployable services as part of the Finance "
+        "platform's monolith-to-microservices program, now supporting 6+ product "
+        "lines including Zoho Books, Inventory, Expense, Payroll and Billing.",
 
         "Engineered a connector-based plug-and-play architecture that resolves "
         "cross-repository dependencies at startup, enabling each of the 6+ "
         "Finance products to build, deploy and release independently without "
-        "coordinated downtime windows.",
+        "coordinated downtime windows; migrated 8+ shared entity classes into a "
+        "common module through a phased rollout across product build cycles to "
+        "avoid regressions.",
 
         "Solved cross-service data dependencies with two complementary "
         "strategies: static metadata injected through HTTP headers at request "
@@ -222,15 +251,9 @@ def build_story():
         "extensible design and complete in 50% less time than the initial "
         "GoFrugal integration.",
 
-        "Migrated 8+ core entity classes into a shared upper-level module "
-        "consumed by 6+ Zoho Finance applications, coordinating a phased rollout "
-        "across multiple product build cycles to avoid regressions.",
-
         "Designed and shipped the System Module Layout Customization feature for "
         "the Vendor and Sales Receipt modules, letting end users reorder and "
-        "restructure field layouts; also owned the cross-product Shortcuts "
-        "framework, integrating with internal configuration services to persist "
-        "per-user keyboard settings across 6+ Finance products.",
+        "restructure field layouts across 6+ Finance products.",
 
         "Independently designed and built the Zoho Finance Developer Console in "
         "under one month, a JavaScript internal tool that unifies Gradle builds, "
@@ -249,11 +272,11 @@ def build_story():
 
     st.append(Spacer(1, 7))
     st.append(header_row(
-        "Member Technical Staff - Backend Engineer",
+        "Member Technical Staff",
         "Jun 2022 - Jul 2023"))
     st.append(Paragraph(
         "GoFrugal Technologies (Zoho group) - Connect Team, Alerts  |  "
-        "Chennai, Tamil Nadu, India  |  Promoted from intern to full-time",
+        "Chennai, Tamil Nadu, India  |  Intern to full-time conversion",
         S["sub"]))
     st.append(Spacer(1, 3))
     for b in [
@@ -263,18 +286,16 @@ def build_story():
 
         "Launched the Alert Gateway microservice on Undertow and Java 17 with "
         "Apache Kafka as the message broker, delivering asynchronous WhatsApp and "
-        "SMS notifications from a single consolidated service.",
+        "SMS notifications from a single consolidated service deployed on AWS "
+        "EC2 and S3.",
 
-        "Built a Facebook template registration UI with emoji support, rich text "
-        "formatting and live preview, enabling business users to create and manage "
-        "WhatsApp notification templates at scale.",
+        "Built a template registration UI with rich text formatting and live "
+        "preview, letting business users create and manage WhatsApp notification "
+        "templates without engineering involvement.",
 
-        "Conducted security analysis across the codebase within Agile sprints, "
-        "remediating 5+ critical vulnerabilities (SQL injection, path traversal, "
-        "XSS) and hardening every module exposing open API endpoints.",
-
-        "Managed application deployment on AWS EC2 and S3, supporting production "
-        "infrastructure for Connect team services.",
+        "Remediated 5+ critical vulnerabilities (SQL injection, path traversal, "
+        "XSS) through security analysis within Agile sprints, hardening every "
+        "module exposing open API endpoints.",
     ]:
         st.append(bullet(b))
 
@@ -291,10 +312,10 @@ def build_story():
         'Cloudflare Pages Functions, D1, Razorpay', S["sub"]))
     st.append(Spacer(1, 3))
     for b in [
-        "Designed and shipped a live contribution management platform for a 40+ "
-        "member community: 23 REST endpoints running as Cloudflare Pages "
-        "Functions over a Cloudflare D1 database of 20 tables, evolved through "
-        "13 additive, backward-compatible migrations with zero production data loss.",
+        "Designed and shipped a live contribution management platform handling "
+        "real payments: 23 REST endpoints running as Cloudflare Pages Functions "
+        "over a Cloudflare D1 database of 20 tables, evolved through 13 "
+        "additive, backward-compatible migrations with zero production data loss.",
 
         "Automated the money path end to end with a Razorpay checkout plus a "
         "webhook receiver that verifies every callback with HMAC-SHA256 signature "
@@ -320,10 +341,9 @@ def build_story():
     st.append(Spacer(1, 3))
     for b in [
         "Architected a two-agent LLM pipeline (Pattern Detector plus Executor) "
-        "that reads Zoho Books activity logs, detects repetitive business patterns "
-        "across 5 categories and auto-generates production-ready workflow "
-        "automations with human-in-the-loop approval, cutting authoring time from "
-        "roughly 30 minutes to about 30 seconds in prototype testing.",
+        "that reads Zoho Books activity logs, detects repetitive business "
+        "patterns across 5 categories and auto-generates production-ready "
+        "workflow automations with human-in-the-loop approval.",
 
         "Designed an enriched prefill JSON schema with a topological dependency "
         "map, enabling cross-agent coordination across 6 automation primitives: "
@@ -336,9 +356,9 @@ def build_story():
         "workflow builds from 60 minutes to 5.",
 
         "Iterated the Executor system prompt across 3 versions against live API "
-        "behaviour, diagnosing and documenting an MCP wrapper defect that silently "
-        "dropped inline action objects, then rewriting the agent around a "
-        "pre-create-then-reference pattern.",
+        "behaviour, diagnosing and documenting an MCP wrapper defect that "
+        "silently dropped inline action objects (error 107027), then rewriting "
+        "the agent around a pre-create-then-reference pattern.",
     ]:
         st.append(bullet(b))
 
@@ -352,9 +372,9 @@ def build_story():
     st.append(Spacer(1, 3))
     st.append(bullet(
         "Developed a 3-platform business management suite comprising a "
-        "voice-assisted Android delivery app, a Vercel-hosted web invoice manager "
-        "and a customer-facing storefront, all synchronising in real time through "
-        "Google Firebase on a multi-tenant database architecture."))
+        "voice-assisted Android delivery app, a Vercel-hosted web invoice "
+        "manager and a customer-facing storefront, all synchronising in real "
+        "time through Google Firebase on a multi-tenant database architecture."))
 
     # ---- education --------------------------------------------------
     st += section("EDUCATION")

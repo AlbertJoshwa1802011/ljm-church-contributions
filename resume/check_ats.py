@@ -38,8 +38,11 @@ def check(path):
         pages = [p.extract_text() or "" for p in pdf.pages]
         meta = pdf.metadata
         n_images = sum(len(p.images) for p in pdf.pages)
-        fonts = {c["fontname"].split("+")[-1] for p in pdf.pages for c in p.chars}
-        min_size = min(round(c["size"], 1) for p in pdf.pages for c in p.chars)
+        # The bullet glyph is deliberately drawn in an embedded Unicode font
+        # at a smaller size; judge typeface and body size on prose only.
+        prose = [c for p in pdf.pages for c in p.chars if c["text"] != "•"]
+        fonts = {c["fontname"].split("+")[-1] for c in prose}
+        min_size = min(round(c["size"], 1) for c in prose)
 
     text = "\n".join(pages)
     lines = [ln.strip() for ln in text.split("\n")]
@@ -133,6 +136,66 @@ def check(path):
     long_bullets = [ln for ln in lines if len(ln) > 165]
     if long_bullets:
         warnings.append("%d very long line(s)" % len(long_bullets))
+
+    # 12. every glyph must map back to a real character. ReportLab drawing
+    # U+2022 in a built-in font with no ToUnicode map extracts as
+    # "(cid:127)", which prefixes every bullet line with garbage.
+    n_cid = len(re.findall(r"\(cid:\d+\)", text))
+    if n_cid:
+        failures.append(
+            "%d unmapped glyph(s) extract as (cid:NNN) - bullet or symbol font "
+            "has no ToUnicode map" % n_cid)
+
+    # 13. a skill claimed in the skills block but never evidenced anywhere
+    # else reads as list-padding to a hiring manager.
+    body = text
+    for marker in ("PROFESSIONAL EXPERIENCE", "WORK EXPERIENCE"):
+        if marker in text:
+            body = text.split(marker, 1)[1]
+            break
+    skills_block = ""
+    if "TECHNICAL SKILLS" in text:
+        skills_block = text.split("TECHNICAL SKILLS", 1)[1].split(
+            "PROFESSIONAL EXPERIENCE")[0]
+    claimed = set()
+    # Split on commas that are not inside parentheses, so "Java (11, 17, 21)"
+    # and "AWS (EC2, S3)" stay whole instead of shattering into "21)" and
+    # "AWS (EC2".
+    for line in skills_block.split("\n"):
+        if ":" not in line:
+            continue
+        # "Domain:" lists market/vertical descriptors, not tools; they have no
+        # reason to reappear as a verb in a bullet.
+        if line.split(":", 1)[0].strip() in ("Domain", "Practices"):
+            continue
+        depth, buf = 0, ""
+        for ch in line.split(":", 1)[1]:
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth = max(0, depth - 1)
+            if ch == "," and depth == 0:
+                claimed.add(buf.strip().rstrip("."))
+                buf = ""
+            else:
+                buf += ch
+        claimed.add(buf.strip().rstrip("."))
+    claimed = {t for t in claimed if len(t) > 2}
+    # Match on the base name, so "Java (11, 17, 21)" is evidenced by "Java 17"
+    # and "AWS (EC2, S3)" by "AWS EC2".
+    low = body.lower()
+    unevidenced = sorted(
+        t for t in claimed if t.split("(")[0].strip().lower() not in low)
+    if unevidenced:
+        warnings.append(
+            "%d skill(s) claimed but never evidenced in experience/projects "
+            "(reads as list-padding): %s"
+            % (len(unevidenced), ", ".join(unevidenced)))
+
+    # 14. a header row whose left cell wraps collides with its date cell
+    for i, ln in enumerate(lines):
+        if DATE_RE.search(ln) and len(ln) > 150:
+            warnings.append("possible header/date collision (line %d)" % (i + 1))
 
     # 12. word count sanity
     words = len(flat.split())
