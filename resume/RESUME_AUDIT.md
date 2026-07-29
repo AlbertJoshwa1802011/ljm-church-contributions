@@ -37,7 +37,7 @@ most recruiter DMS index these.
 **B1. The Church Contribution Portal is drastically undersold — one bullet.**
 The resume describes it as a "Google App Script JSON API backend", which reads
 as script-tier. Verified against the actual repo, it is:
-  - 25 REST endpoints as Cloudflare Pages Functions (Workers runtime)
+  - 23 REST endpoints as Cloudflare Pages Functions (Workers runtime)
   - Cloudflare D1 (SQLite): 20 tables, 505-line schema, 13 additive migrations
   - 304 automated tests, all passing (`node --test`)
   - HMAC-SHA256 Razorpay webhook signature verification (Web Crypto)

@@ -292,7 +292,7 @@ def build_story():
     st.append(Spacer(1, 3))
     for b in [
         "Designed and shipped a live contribution management platform for a 40+ "
-        "member community: 25 REST endpoints running as Cloudflare Pages "
+        "member community: 23 REST endpoints running as Cloudflare Pages "
         "Functions over a Cloudflare D1 database of 20 tables, evolved through "
         "13 additive, backward-compatible migrations with zero production data loss.",
 
@@ -305,10 +305,10 @@ def build_story():
         "shipped a flag-gated v2 rollout behind a signed-cookie beta allowlist, "
         "so new flows reach opted-in users while production stays on the stable path.",
 
-        "Maintain a 300+ case automated test suite that exercises the API handlers "
-        "against a real in-memory SQLite instance, with CI blocking deployment on "
-        "a red suite; migrated the original Google Apps Script backend onto "
-        "Cloudflare with no downtime.",
+        "Hardened the platform with a 300+ case automated test suite that "
+        "exercises the API handlers against a real in-memory SQLite instance, "
+        "with CI blocking deployment on a red suite; migrated the original "
+        "Google Apps Script backend onto Cloudflare with no downtime.",
     ]:
         st.append(bullet(b))
 
