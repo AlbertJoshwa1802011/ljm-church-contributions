@@ -183,6 +183,34 @@
         .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(61, 96, 121,0.14); }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
         .form-grid .span-all { grid-column: 1 / -1; }
+
+        /* ── Member picker (combobox) — typeahead over the member directory,
+           used by the Add-a-contribution form so a gift is attached to a real
+           member row instead of a free-typed name that silently fails to join
+           against members.name. ── */
+        .mp-wrap { position: relative; }
+        .mp-menu {
+            position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; right: 0;
+            max-height: 260px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            background: var(--surface); border: 1px solid var(--border-strong);
+            border-radius: 12px; box-shadow: var(--shadow); padding: 5px;
+        }
+        .mp-menu[hidden] { display: none !important; }
+        .mp-row {
+            display: block; width: 100%; text-align: left; cursor: pointer;
+            border: none; background: transparent; border-radius: 9px;
+            padding: 8px 10px; font: 400 13.5px var(--sans); color: var(--text);
+        }
+        .mp-row:hover, .mp-row.active { background: var(--bg-soft); }
+        .mp-row .mp-name { font-weight: 600; }
+        .mp-row .mp-meta { display: block; font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+        .mp-row.mp-create .mp-name { color: var(--accent-deep); }
+        .mp-empty { padding: 10px; font-size: 12.5px; color: var(--text-faint); }
+        .mp-status { margin-top: 6px; font-size: 12px; min-height: 15px; }
+        .mp-status.linked { color: var(--green); }
+        .mp-status.unlinked { color: var(--amber); }
+        .mp-newform { margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--bg-soft); border: 1px solid var(--border); }
+        .mp-newform[hidden] { display: none !important; }
         .btn {
             display: inline-flex; align-items: center; gap: 7px;
             padding: 9px 18px; border-radius: 999px; cursor: pointer;
@@ -676,11 +704,33 @@
             <!-- CONTRIBUTIONS -->
             <div class="section" id="section-contributions">
                 <div class="page-head"><h2>Contributions</h2><p>Full ledger per fund.</p></div>
-                <div class="card">
+                <div class="card" id="c_addCard">
                     <h3 id="c_formTitle">Add a contribution</h3>
                     <p class="msg" style="margin-bottom:10px;">For cash/in-hand gifts that never went through Razorpay — recorded as "Direct Cash" and attributed to your signed-in admin account. Only available for the Tech Fund and Christmas Fund ledgers.</p>
                     <div class="form-grid">
-                        <div><label class="f-label">Member name *</label><input class="input" id="c_member"></div>
+                        <div class="span-all">
+                            <label class="f-label" for="c_member">Member *</label>
+                            <div class="mp-wrap">
+                                <input class="input" id="c_member" placeholder="Search the member directory by name, email or phone…"
+                                       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                       role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="c_memberMenu">
+                                <div class="mp-menu" id="c_memberMenu" hidden role="listbox" aria-label="Member results"></div>
+                            </div>
+                            <div class="mp-status" id="c_memberStatus"></div>
+                            <div class="mp-newform" id="c_newMemberForm" hidden>
+                                <label class="f-label">New member — they'll be added to the directory, then selected here</label>
+                                <div class="form-grid">
+                                    <div><label class="f-label">Full name *</label><input class="input" id="c_nmName"></div>
+                                    <div><label class="f-label">Email</label><input class="input" id="c_nmEmail" type="email"></div>
+                                    <div><label class="f-label">Phone</label><input class="input" id="c_nmPhone"></div>
+                                </div>
+                                <div class="btn-row">
+                                    <button type="button" class="btn btn-primary" id="c_nmSaveBtn">Create member</button>
+                                    <button type="button" class="btn btn-outline" id="c_nmCancelBtn">Cancel</button>
+                                    <span class="msg" id="c_nmMsg"></span>
+                                </div>
+                            </div>
+                        </div>
                         <div><label class="f-label">Amount (₹) *</label><input class="input" id="c_amount" type="number"></div>
                         <div><label class="f-label">Date *</label><input class="input" id="c_date" type="date"></div>
                         <div><label class="f-label">Fund *</label><select class="input" id="c_fund">
@@ -688,8 +738,8 @@
                             <option value="christmas-fund">Christmas Fund</option>
                         </select></div>
                         <div><label class="f-label">Category</label><input class="input" id="c_category" value="Direct Cash"></div>
-                        <div><label class="f-label">Email</label><input class="input" id="c_email"></div>
-                        <div><label class="f-label">Phone</label><input class="input" id="c_phone"></div>
+                        <div><label class="f-label">Email <span style="font-weight:400;color:var(--text-faint);">(auto-filled from the member)</span></label><input class="input" id="c_email"></div>
+                        <div><label class="f-label">Phone <span style="font-weight:400;color:var(--text-faint);">(auto-filled from the member)</span></label><input class="input" id="c_phone"></div>
                         <div class="span-all"><label class="f-label">Notes</label><textarea class="input" id="c_notes" rows="2"></textarea></div>
                     </div>
                     <div class="btn-row">
@@ -1123,6 +1173,12 @@
             editingContributionId: null,
             editingWishlistId: null,
             wishlistImageUrl: null,
+            // Member-directory cache shared by the Members page and the
+            // Add-a-contribution member picker. membersPromise de-dupes
+            // concurrent loads; membersError records a failed/forbidden fetch
+            // so the picker can degrade to a plain free-text name field.
+            membersPromise: null,
+            membersError: null,
             loaded: {}
         };
         var PERMISSION_SCOPES = [
@@ -1719,14 +1775,35 @@
         }
 
         // ═══════════════ Members ═══════════════
+        // Fetch the directory once and share it. The Members table and the
+        // contribution member picker both need it; /api/members is a single
+        // aggregate query, so re-fetching per keystroke (or per section open)
+        // would be wasteful. Resolves to the member array — or to [] with
+        // state.membersError set, so callers can degrade instead of throwing.
+        function ensureMembersLoaded(force) {
+            if (force) { state.membersPromise = null; state.membersError = null; }
+            if (state.membersPromise) return state.membersPromise;
+            state.membersPromise = api("/api/members").then(function (d) {
+                if (!d.success) throw new Error(d.message || "No access to the member directory");
+                state.membersCache = d.members || [];
+                state.membersError = null;
+                return state.membersCache;
+            }).catch(function (e) {
+                // Cache the failure rather than the promise, so the next call retries.
+                state.membersPromise = null;
+                state.membersError = e.message || String(e);
+                state.membersCache = [];
+                return [];
+            });
+            return state.membersPromise;
+        }
         function loadMembers() {
             var tb = $("membersTable").querySelector("tbody");
             tb.innerHTML = '<tr><td colspan="7" class="empty">Loading…</td></tr>';
-            api("/api/members").then(function (d) {
-                if (!d.success) { tb.innerHTML = '<tr><td colspan="7" class="empty">' + esc(d.message || "No access") + "</td></tr>"; return; }
-                state.membersCache = d.members || [];
+            ensureMembersLoaded(true).then(function () {
+                if (state.membersError) { tb.innerHTML = '<tr><td colspan="7" class="empty">' + esc(state.membersError) + "</td></tr>"; return; }
                 renderMembers();
-            }).catch(function (e) { tb.innerHTML = '<tr><td colspan="7" class="empty">' + esc(e.message) + "</td></tr>"; });
+            });
         }
         function renderMembers() {
             var q = ($("memberSearch").value || "").toLowerCase();
@@ -1932,16 +2009,266 @@
 
         // ═══════════════ Contributions ═══════════════
         function loadContributions() {
+            var identity = readStoredIdentity();
+            isContribAdmin = !!(identity && identity.email === "albertjoshrock101@gmail.com");
+            $("c_addCard").style.display = isContribAdmin ? "" : "none";
+
             var sel = $("contribFund");
             var options = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund", name: "Christmas Fund" }];
             sel.innerHTML = options.map(function (f) { return '<option value="' + esc(f.slug) + '">' + esc(f.name) + "</option>"; }).join("");
             sel.onchange = fetchContribTable;
             $("contribSearch").oninput = renderContribTable;
             if (!$("c_date").value) $("c_date").valueAsDate = new Date();
-            fetchContribTable();
+            // Independent init calls, each in its own try/catch: a failure in the
+            // member picker must not stop the ledger from loading, and vice versa
+            // (see CLAUDE.md — one throw in a chained callback silently aborts
+            // everything queued after it, with no build step to catch it first).
+            try { fetchContribTable(); } catch (e) { console.error("fetchContribTable failed", e); }
+            // Only the allowlisted admin can use the form, so only they need the
+            // member directory — skip the fetch (and its guaranteed 403) otherwise.
+            if (isContribAdmin) {
+                try { primeMemberPicker(); } catch (e) { console.error("primeMemberPicker failed", e); }
+            }
+        }
+
+        // ─────────── Member picker for the Add-a-contribution form ───────────
+        // Free-typing a name into `member_name` is still allowed (that's how every
+        // pre-existing row was written), but an unmatched name never joins against
+        // members.name — so it shows up nowhere in the Members page totals. This
+        // picker makes selecting a real member the default path, auto-fills their
+        // email/phone, and offers inline member creation when there's no match.
+        var mpMatches = [];      // members currently listed in the dropdown
+        var mpActiveIndex = -1;  // keyboard-highlighted row (-1 = none)
+        var mpCreateRowVisible = false;
+        var MP_MAX_ROWS = 8;
+        // Last values this picker auto-filled into c_email/c_phone. Tracked so we
+        // can tell "this is a leftover from the member picked a moment ago" from
+        // "the admin typed this by hand" — the former is safe to replace or drop,
+        // the latter must never be clobbered. Without this, picking Member A then
+        // switching to Member B (who has no email on file) silently leaves A's
+        // email attached to B's contribution.
+        var mpAutofilled = { email: "", phone: "" };
+
+        function isAutofilled(field) {
+            var el = $(field === "email" ? "c_email" : "c_phone");
+            var cur = (el.value || "").trim();
+            return !!cur && cur === mpAutofilled[field];
+        }
+        function applyMemberContact(m) {
+            ["email", "phone"].forEach(function (field) {
+                var el = $(field === "email" ? "c_email" : "c_phone");
+                var cur = (el.value || "").trim();
+                if (cur && !isAutofilled(field)) return; // hand-typed — leave it alone
+                el.value = m[field] || "";
+                mpAutofilled[field] = m[field] || "";
+            });
+        }
+        function resetAutofillTracking() {
+            mpAutofilled = { email: "", phone: "" };
+        }
+
+        function primeMemberPicker() {
+            setMemberPickerStatus("");
+            ensureMembersLoaded().then(function () {
+                if (state.membersError) {
+                    setMemberPickerStatus("Member directory unavailable (" + state.membersError + ") — you can still type a name manually.", "unlinked");
+                } else {
+                    syncMemberPickerStatus();
+                }
+            });
+        }
+        function setMemberPickerStatus(text, cls) {
+            var el = $("c_memberStatus");
+            if (!el) return;
+            el.textContent = text || "";
+            el.className = "mp-status" + (cls ? " " + cls : "");
+        }
+        function findMemberByName(name) {
+            var needle = String(name || "").trim().toLowerCase();
+            if (!needle) return null;
+            return state.membersCache.filter(function (m) {
+                return String(m.name || "").trim().toLowerCase() === needle;
+            })[0] || null;
+        }
+        // Reflect whether what's in the box will actually link to a member row.
+        function syncMemberPickerStatus() {
+            var typed = ($("c_member").value || "").trim();
+            if (!typed) { setMemberPickerStatus(""); return; }
+            var m = findMemberByName(typed);
+            if (m) {
+                var bits = [m.email || "no email on file", m.phone || "no phone on file"];
+                setMemberPickerStatus("✓ Linked to " + m.name + " · " + bits.join(" · "), "linked");
+            } else if (state.membersError) {
+                setMemberPickerStatus("Member directory unavailable — saving '" + typed + "' as a free-text name.", "unlinked");
+            } else {
+                setMemberPickerStatus("⚠ '" + typed + "' isn't in the member directory — this gift won't be linked to a member profile. Pick someone from the list or create them.", "unlinked");
+            }
+        }
+        function memberMatches(query) {
+            var q = String(query || "").trim().toLowerCase();
+            var all = state.membersCache.slice().sort(function (a, b) {
+                return String(a.name || "").localeCompare(String(b.name || ""));
+            });
+            if (!q) return all;
+            return all.filter(function (m) {
+                return String(m.name || "").toLowerCase().indexOf(q) !== -1
+                    || String(m.email || "").toLowerCase().indexOf(q) !== -1
+                    || String(m.phone || "").indexOf(q) !== -1;
+            });
+        }
+        function renderMemberMenu() {
+            var menu = $("c_memberMenu");
+            var typed = ($("c_member").value || "").trim();
+            var all = memberMatches(typed);
+            mpMatches = all.slice(0, MP_MAX_ROWS);
+            // Offer inline creation whenever there's no exact name match to click.
+            mpCreateRowVisible = !!typed && !findMemberByName(typed);
+
+            var html = mpMatches.map(function (m, i) {
+                var meta = [m.email, m.phone].filter(Boolean).join(" · ") || "no contact details on file";
+                return '<button type="button" class="mp-row" role="option" data-mp-index="' + i + '">' +
+                    '<span class="mp-name">' + esc(m.name) + (m.isVerified ? ' <span class="pill pill-green">verified</span>' : "") + "</span>" +
+                    '<span class="mp-meta">' + esc(meta) + " · given " + inr(m.totalAmount) + "</span></button>";
+            }).join("");
+
+            if (all.length > mpMatches.length) {
+                html += '<div class="mp-empty">Showing ' + mpMatches.length + " of " + all.length + " matches — keep typing to narrow.</div>";
+            }
+            if (!all.length && !state.membersError) {
+                html += '<div class="mp-empty">' + (state.membersCache.length ? "No member matches that search." : "The member directory is empty.") + "</div>";
+            }
+            if (state.membersError) {
+                html += '<div class="mp-empty">Member directory unavailable — type the name manually.</div>';
+            }
+            if (mpCreateRowVisible) {
+                html += '<button type="button" class="mp-row mp-create" data-mp-create="1">' +
+                    '<span class="mp-name">➕ Create new member “' + esc(typed) + '”</span>' +
+                    '<span class="mp-meta">Adds them to the directory, then selects them here</span></button>';
+            }
+
+            menu.innerHTML = html;
+            menu.querySelectorAll("[data-mp-index]").forEach(function (b) {
+                b.onmousedown = function (ev) { ev.preventDefault(); }; // keep focus, beat the blur handler
+                b.onclick = function () { selectMember(mpMatches[Number(b.dataset.mpIndex)]); };
+            });
+            var createBtn = menu.querySelector("[data-mp-create]");
+            if (createBtn) {
+                createBtn.onmousedown = function (ev) { ev.preventDefault(); };
+                createBtn.onclick = function () { openNewMemberForm(($("c_member").value || "").trim()); };
+            }
+            mpActiveIndex = -1;
+            highlightMemberRow();
+        }
+        function mpRowButtons() {
+            return Array.prototype.slice.call($("c_memberMenu").querySelectorAll(".mp-row"));
+        }
+        function highlightMemberRow() {
+            mpRowButtons().forEach(function (b, i) { b.classList.toggle("active", i === mpActiveIndex); });
+        }
+        function openMemberMenu() {
+            renderMemberMenu();
+            $("c_memberMenu").hidden = false;
+            $("c_member").setAttribute("aria-expanded", "true");
+        }
+        function closeMemberMenu() {
+            $("c_memberMenu").hidden = true;
+            $("c_member").setAttribute("aria-expanded", "false");
+            mpActiveIndex = -1;
+        }
+        function selectMember(m) {
+            if (!m) return;
+            $("c_member").value = m.name;
+            // The whole point of the picker: pull the member's contact details in
+            // so the admin doesn't retype (or mistype) them. applyMemberContact
+            // replaces a previous member's auto-filled values but preserves
+            // anything the admin typed by hand.
+            applyMemberContact(m);
+            closeMemberMenu();
+            hideNewMemberForm();
+            syncMemberPickerStatus();
+        }
+        function openNewMemberForm(prefillName) {
+            closeMemberMenu();
+            $("c_nmName").value = prefillName || "";
+            // Carry over contact details the admin typed for this gift, but never
+            // the values auto-filled from a *different* member — copying those
+            // onto a brand-new person would write someone else's email/phone into
+            // the directory.
+            $("c_nmEmail").value = isAutofilled("email") ? "" : ($("c_email").value || "").trim();
+            $("c_nmPhone").value = isAutofilled("phone") ? "" : ($("c_phone").value || "").trim();
+            setMsg("c_nmMsg", "");
+            $("c_newMemberForm").hidden = false;
+            $("c_nmName").focus();
+        }
+        function hideNewMemberForm() {
+            $("c_newMemberForm").hidden = true;
+            setMsg("c_nmMsg", "");
+        }
+        function createMemberFromPicker() {
+            var name = ($("c_nmName").value || "").trim();
+            if (!name) { setMsg("c_nmMsg", "Name is required", "err"); return; }
+            var payload = {
+                name: name,
+                email: ($("c_nmEmail").value || "").trim(),
+                phone: ($("c_nmPhone").value || "").trim(),
+                // Their first gift is, in practice, when they joined the ledger.
+                firstJoinDate: $("c_date").value || ""
+            };
+            setMsg("c_nmMsg", "Creating…");
+            api("/api/members", { method: "POST", body: JSON.stringify(payload) })
+                .then(function (d) {
+                    if (!d.success) { setMsg("c_nmMsg", d.message || "Could not create member", "err"); return; }
+                    // Re-read the directory so the new row (with its computed stats)
+                    // is the same shape as every other picker entry.
+                    return ensureMembersLoaded(true).then(function () {
+                        var created = findMemberByName(name);
+                        hideNewMemberForm();
+                        if (created) {
+                            selectMember(created);
+                        } else {
+                            $("c_member").value = name;
+                            syncMemberPickerStatus();
+                        }
+                        setMsg("c_msg", d.message, "ok");
+                        state.loaded.members = false; // Members page re-renders on next open
+                    });
+                })
+                .catch(function (e) { setMsg("c_nmMsg", e.message, "err"); });
+        }
+        function onMemberInputKeydown(ev) {
+            if (ev.key === "Escape") { closeMemberMenu(); return; }
+            if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+                ev.preventDefault();
+                if ($("c_memberMenu").hidden) { openMemberMenu(); return; }
+                var rows = mpRowButtons();
+                if (!rows.length) return;
+                mpActiveIndex = (mpActiveIndex + (ev.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
+                highlightMemberRow();
+                rows[mpActiveIndex].scrollIntoView({ block: "nearest" });
+                return;
+            }
+            if (ev.key === "Enter" && !$("c_memberMenu").hidden && mpActiveIndex >= 0) {
+                ev.preventDefault();
+                mpRowButtons()[mpActiveIndex].click();
+            }
+        }
+        function initMemberPicker() {
+            var input = $("c_member");
+            input.addEventListener("focus", function () { ensureMembersLoaded().then(openMemberMenu); });
+            input.addEventListener("input", function () {
+                if ($("c_memberMenu").hidden) openMemberMenu(); else renderMemberMenu();
+                syncMemberPickerStatus();
+            });
+            input.addEventListener("keydown", onMemberInputKeydown);
+            input.addEventListener("blur", function () { setTimeout(closeMemberMenu, 120); });
+            $("c_nmSaveBtn").onclick = createMemberFromPicker;
+            $("c_nmCancelBtn").onclick = hideNewMemberForm;
         }
         var contribRows = [];
         var contribIsLegacy = false;
+        // UI-only gate mirroring the server's MANUAL_ENTRY_ALLOWLIST in functions/api/contributions.js —
+        // hides the add/edit/delete controls from other admins; the server-side check remains authoritative.
+        var isContribAdmin = false;
         function fetchContribTable() {
             var slug = $("contribFund").value;
             var tb = $("contribTable").querySelector("tbody");
@@ -1961,7 +2288,7 @@
             var rows = contribRows.filter(function (c) { return !q || (c.Member || "").toLowerCase().includes(q); });
             tb.innerHTML = rows.slice(0, 400).map(function (c) {
                 var deleted = !!c.IsDeleted;
-                var actions = (c.id != null) ?
+                var actions = (isContribAdmin && c.id != null) ?
                     ('<button class="mini-btn" data-act="edit" data-id="' + esc(c.id) + '"' + (deleted ? " disabled" : "") + '>Edit</button> ' +
                      '<button class="mini-btn danger" data-act="del" data-id="' + esc(c.id) + '"' + (deleted ? " disabled" : "") + '>Delete</button>') : "";
                 return "<tr" + (deleted ? " style='opacity:.5;text-decoration:line-through;'" : "") + "><td><strong>" + esc(c.Member) + "</strong></td><td>" + inr(c.Amount) + "</td><td>" + esc(String(c.Date).substring(0, 16)) +
@@ -1982,6 +2309,14 @@
             $("c_fund").value = $("contribFund").value;
             $("c_category").value = c.Category || "Direct Cash";
             $("c_email").value = c.Email || ""; $("c_phone").value = c.Phone || ""; $("c_notes").value = c.Notes || "";
+            hideNewMemberForm();
+            closeMemberMenu();
+            // The loaded values are this row's own stored contact details, not
+            // picker output — don't let them be treated as replaceable autofill.
+            resetAutofillTracking();
+            // Tells the admin straight away whether this historic row's name
+            // actually matches a member, which is exactly what an edit often fixes.
+            ensureMembersLoaded().then(syncMemberPickerStatus);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
         function deleteContribution(id) {
@@ -1995,18 +2330,38 @@
             $("c_formTitle").textContent = "Add a contribution";
             ["c_member", "c_amount", "c_email", "c_phone", "c_notes"].forEach(function (id) { $(id).value = ""; });
             $("c_category").value = "Direct Cash"; $("c_date").valueAsDate = new Date();
+            hideNewMemberForm();
+            closeMemberMenu();
+            resetAutofillTracking();
+            setMemberPickerStatus("");
         }
         function saveContribution() {
             var amount = Number($("c_amount").value) || 0;
-            if (!$("c_member").value.trim() || !amount || !$("c_date").value) { setMsg("c_msg", "Member name, amount and date are required", "err"); return; }
+            var memberName = ($("c_member").value || "").trim();
+            if (!memberName || !amount || !$("c_date").value) { setMsg("c_msg", "Member name, amount and date are required", "err"); return; }
+            // Free-typed names still save (that's how the legacy rows were written),
+            // but an unmatched name is almost always a typo, so make it deliberate.
+            // Only ask when the directory actually loaded — never block on a failed fetch.
+            if (!state.membersError && state.membersCache.length && !findMemberByName(memberName)) {
+                if (!confirm("'" + memberName + "' isn't in the member directory.\n\nSaving anyway records the gift, but it won't be linked to a member profile or counted in their totals.\n\nOK = save as a free-text name, Cancel = go back and pick or create the member.")) return;
+            }
             var payload = {
-                member_name: $("c_member").value.trim(), amount: amount, date: $("c_date").value,
+                member_name: memberName, amount: amount, date: $("c_date").value,
                 fund: $("c_fund").value, category: $("c_category").value.trim() || "Direct Cash",
                 email: $("c_email").value.trim(), phone: $("c_phone").value.trim(), notes: $("c_notes").value.trim()
             };
             if (state.editingContributionId) payload.id = state.editingContributionId;
             api("/api/contributions", { method: state.editingContributionId ? "PUT" : "POST", body: JSON.stringify(payload) })
-                .then(function (d) { setMsg("c_msg", d.message, d.success ? "ok" : "err"); if (d.success) { clearContributionForm(); fetchContribTable(); } })
+                .then(function (d) {
+                    setMsg("c_msg", d.message, d.success ? "ok" : "err");
+                    if (!d.success) return;
+                    clearContributionForm();
+                    fetchContribTable();
+                    // Member totals just moved — drop the cache so the picker's
+                    // "given ₹X" and the Members page reflect this gift.
+                    state.membersPromise = null;
+                    state.loaded.members = false;
+                })
                 .catch(function (e) { setMsg("c_msg", e.message, "err"); });
         }
 
@@ -2901,6 +3256,7 @@
             $("fam_search").oninput = renderFamilies;
             $("p_saveBtn").onclick = savePurchase; $("p_clearBtn").onclick = clearPurchaseForm;
             $("c_saveBtn").onclick = saveContribution; $("c_clearBtn").onclick = clearContributionForm;
+            initMemberPicker();
             $("x_saveBtn").onclick = saveExpense; $("x_clearBtn").onclick = clearExpenseForm;
             $("w_saveBtn").onclick = saveWishlist; $("w_clearBtn").onclick = clearWishlistForm;
             $("w_imageFile").onchange = function () {
