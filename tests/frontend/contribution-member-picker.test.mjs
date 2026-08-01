@@ -85,13 +85,16 @@ test("member picker: initMemberPicker() is wired up at init, not just defined", 
 test("member picker: loadContributions() wraps its independent init calls in separate try/catch", () => {
   const start = adminSource.indexOf("function loadContributions()");
   assert.ok(start !== -1, "loadContributions() should still exist in admin.html");
-  const block = adminSource.slice(start, start + 1400);
+  // Window has to cover the whole function body, including the isContribAdmin gate.
+  const block = adminSource.slice(start, adminSource.indexOf("// ─────────── Member picker"));
 
   assert.match(
     block,
     /try\s*{\s*fetchContribTable\(\);\s*}\s*catch/,
     "fetchContribTable() should run in its own try/catch so a picker failure can't stop the ledger loading"
   );
+  // primeMemberPicker() is gated behind isContribAdmin (the form is hidden for
+  // everyone else), but it still needs its own try/catch inside that branch.
   assert.match(
     block,
     /try\s*{\s*primeMemberPicker\(\);\s*}\s*catch/,
@@ -170,6 +173,48 @@ test("member picker: inline member creation posts to /api/members and re-reads t
   assert.match(fn, /api\("\/api\/members",\s*{\s*method:\s*"POST"/, "creating a member should POST to the existing /api/members endpoint rather than a new one");
   assert.match(fn, /ensureMembersLoaded\(true\)/, "after creating a member the directory must be force-refreshed so the new row is selectable");
   assert.match(fn, /selectMember\(created\)/, "a freshly created member should be selected into the form automatically");
+});
+
+// The manual add/edit/delete controls are restricted server-side to a single
+// email (MANUAL_ENTRY_ALLOWLIST in functions/api/contributions.js). This is the
+// matching UI gate — defence in depth only. The server remains the authority:
+// bypassing the hidden UI still gets a 403, so these assertions are about not
+// showing other admins controls that will only fail after they hit submit.
+test("contributions gate: the add form and row actions are hidden for non-allowlisted admins", () => {
+  assert.match(adminSource, /id="c_addCard"/, "the Add-a-contribution card needs an id so it can be hidden");
+
+  const load = adminSource.slice(adminSource.indexOf("function loadContributions()"), adminSource.indexOf("// ─────────── Member picker"));
+  assert.match(load, /isContribAdmin = !!\(identity && identity\.email === "albertjoshrock101@gmail\.com"\)/,
+    "loadContributions() should derive the UI gate from the signed-in identity");
+  assert.match(load, /\$\("c_addCard"\)\.style\.display = isContribAdmin \? "" : "none"/,
+    "the add-contribution card should be hidden for anyone but the allowlisted admin");
+
+  const render = adminSource.slice(adminSource.indexOf("function renderContribTable()"), adminSource.indexOf("function editContribution(id)"));
+  assert.match(render, /var actions = \(isContribAdmin && c\.id != null\)/,
+    "Edit/Delete buttons should only render for the allowlisted admin");
+});
+
+test("contributions gate: the member directory is not fetched for admins who cannot use the form", () => {
+  const load = adminSource.slice(adminSource.indexOf("function loadContributions()"), adminSource.indexOf("// ─────────── Member picker"));
+  assert.match(
+    load,
+    /if \(isContribAdmin\) {\s*try { primeMemberPicker\(\); }/,
+    "priming the picker should be skipped for non-allowlisted admins — the form is hidden, so the fetch is pure waste and would 403"
+  );
+});
+
+test("contributions gate: the server-side allowlist is still the real authorization boundary", () => {
+  const apiSource = readFileSync(path.join(REPO_ROOT, "functions", "api", "contributions.js"), "utf8");
+  assert.match(apiSource, /const MANUAL_ENTRY_ALLOWLIST = \[/, "the server-side allowlist must not be removed in favour of the UI gate");
+  for (const handler of ["onRequestPost", "onRequestPut", "onRequestDelete"]) {
+    const start = apiSource.indexOf(`export async function ${handler}(context)`);
+    assert.ok(start !== -1, `${handler} should exist`);
+    assert.match(
+      apiSource.slice(start, start + 200),
+      /const auth = await requireManualEntryAdmin\(context\);\s*\n\s*if \(!auth\.ok\) return auth\.response;/,
+      `${handler} must still enforce requireManualEntryAdmin — the UI gate is cosmetic and must never become the only check`
+    );
+  }
 });
 
 test("member picker: free-typed names that match no member still save, but only after an explicit confirm", () => {
