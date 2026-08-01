@@ -120,10 +120,17 @@ offline harness and are tracked here so nobody re-discovers them as a surprise:
 - **`events.js` real R2 upload branch** — needs an R2 binding mock in
   `tests/helpers/` (doesn't exist yet). The base64-fallback path (the default in
   local/dev without an R2 binding) IS covered.
-- **`admin.html` inline-script CRUD wiring** and **`razorpay-checkout.js`** — no
-  existing structural-test precedent (unlike `tests/frontend/analytics-charts.test.mjs`'s
-  regex-based pattern for `script.js`). Flagged as a distinct future initiative,
-  not silently ignored. If you pick this up, establish the pattern here first.
+- **`razorpay-checkout.js`** — no structural-test precedent yet (unlike
+  `tests/frontend/analytics-charts.test.mjs`'s regex-based pattern for `script.js`).
+  Flagged as a distinct future initiative, not silently ignored. If you pick this
+  up, follow the `admin.html` pattern described in the row below.
+- **`admin.html` inline-script CRUD wiring** — *partially closed.* The pattern now
+  exists: `tests/frontend/contribution-member-picker.test.mjs` statically parses
+  `admin.html` and asserts (a) every helper a feature calls is defined, (b) every
+  element id the JS reads exists in the markup, (c) the feature is actually wired
+  up at init, and (d) the behavioural invariants that matter, as source-shape
+  assertions. Extend that file's approach for other admin sections. Still open:
+  Funds, Purchases, Expenses, Wishlist, Roles, Families and Events wiring.
 - **Concurrent-duplicate-delivery race** in `webhook.js` (the `UNIQUE|constraint`
   catch branch, as opposed to the pre-check `SELECT`) — architecturally hard to
   trigger in a single-threaded mock-D1 test. The idempotency guarantee itself
