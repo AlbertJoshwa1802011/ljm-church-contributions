@@ -86,6 +86,19 @@
   instead of the intended 400). Fixed to `!result.meta || result.meta.changes === 0`.
   Mutation-tested: reverting the fix makes the new test fail.
 
+## Money-in path — Razorpay webhook (see `docs/runbooks/razorpay-webhook.md`)
+
+Closed alongside the Aug 2026 incident in which no online payment reached D1 for
+~4 weeks (the only Razorpay webhook pointed at Apps Script, never at
+`/api/webhook`). All mutation-tested per `CONTRIBUTING.md` §5.
+
+- [x] `webhook.js` stores the contribution timestamp in **IST**, not UTC — `tests/api/webhook.test.mjs`
+- [x] `webhook.js` real-payment timestamp fixture matches the Sheet/Razorpay display value — `tests/api/webhook.test.mjs`
+- [x] `webhook.js` Sheets forward is **opt-in**: unset or empty `GOOGLE_SHEETS_WEBAPP_URL` makes no outbound request — `tests/api/webhook.test.mjs`
+- [x] `webhook.js` never contacts a `script.google.com` URL baked into the source — `tests/api/webhook.test.mjs`
+- [x] `webhook.js` still forwards the raw body to a configured URL when one is set — `tests/api/webhook.test.mjs`
+- [x] `razorpay-checkout.js` fund label matches the fund for any `?fund=` casing — `tests/frontend/razorpay-fund-label.test.mjs`
+
 ## P2 — cross-cutting (efficient, high-leverage)
 
 - [x] DB-missing-binding guard (`if (!db) return 500`) across all handlers — `tests/regression/db-binding-guard.test.mjs` (parametrized loop)

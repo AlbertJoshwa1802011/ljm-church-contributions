@@ -1,6 +1,12 @@
 // Cloudflare Pages Function: /api/webhook
 // Receives payments from Razorpay, writes them to D1 database, and syncs them to Google Sheets in the background.
 
+// Contribution timestamps are stored in IST to match every other row in the
+// table (see the paymentDate comment below). Workers run in UTC with no tz
+// database, so the offset is applied explicitly. India has no DST, so a fixed
+// offset is correct year-round.
+const IST_OFFSET_SECONDS = 5.5 * 3600;
+
 // Helper: Verify HMAC-SHA256 signature using Web Crypto API
 async function verifyRazorpaySignature(body, signature, secret) {
   if (!signature || !secret) return false;
@@ -76,8 +82,16 @@ export async function onRequestPost(context) {
     const methodStr = payment.method === "upi" ? `upi (${payment.vpa || ""})` : payment.method;
     const notes = `${monthFor ? monthFor + ": " : ""}Online Payment Received | Method: ${methodStr}`;
     
-    // Format payment date to YYYY-MM-DD HH:MM:SS (local UTC/timezone)
-    const paymentDate = new Date(payment.created_at * 1000)
+    // Format payment date to 'YYYY-MM-DD HH:MM:SS' in IST (UTC+05:30).
+    //
+    // This used to store UTC. Every other row in `contributions` is IST — the
+    // Google Sheet writes IST, the Razorpay dashboard displays IST, and the
+    // congregation is in India — so a UTC row rendered 5h30m before the gift
+    // actually happened (a 17:31 payment showing as 12:01 on the portal).
+    // The mismatch went unnoticed because the webhook had never successfully
+    // delivered to this endpoint; the first real delivery would have started
+    // mixing two timezones in one ledger.
+    const paymentDate = new Date((payment.created_at + IST_OFFSET_SECONDS) * 1000)
       .toISOString()
       .replace("T", " ")
       .substring(0, 19);
@@ -127,8 +141,19 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ error: "Database transaction failed", details: dbErr.message }), { status: 500 });
     }
 
-    // 2. Sync to Google Sheets asynchronously in the background
-    const sheetsWebhookUrl = env.GOOGLE_SHEETS_WEBAPP_URL || "https://script.google.com/macros/s/AKfycbzSyqYH-JR_JiJzkAxgxPEH1dPq8XPcQ3eUxtBx7HA76eTfReMlZq8GCPnOidotKkuW/exec";
+    // 2. Optionally mirror the payment to Google Sheets, in the background.
+    //
+    // Opt-in: forwarding happens ONLY when GOOGLE_SHEETS_WEBAPP_URL is set.
+    // This previously fell back to a hardcoded Apps Script deployment when the
+    // variable was unset or empty, which meant (a) the forward could not be
+    // turned off by configuration at all, and (b) the fallback pointed at a
+    // *different, stale* deployment than the one actually serving the sheet —
+    // so payment payloads would have been POSTed to the wrong script.
+    //
+    // Leave this unset when Razorpay delivers to the Apps Script webhook
+    // directly (the current setup): the sheet is already being written on that
+    // path, and forwarding here too would write every gift to it twice.
+    const sheetsWebhookUrl = env.GOOGLE_SHEETS_WEBAPP_URL || "";
     if (sheetsWebhookUrl) {
       context.waitUntil(
         fetch(sheetsWebhookUrl, {

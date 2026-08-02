@@ -12,6 +12,19 @@ function getFundContext() {
     return urlParams.get("fund") || "tech-contributions";
 }
 
+// Mirrors the fund normalisation in functions/api/webhook.js (lowercase, strip
+// whitespace, default to the tech fund) so the label shown on the Razorpay
+// screen always matches the fund the payment is actually recorded against.
+// The ?fund= parameter is not case-normalised — it arrives as "Tech Fund" as
+// often as "tech-contributions" — and a plain `.includes("tech")` test is
+// case-sensitive, so it returned false for "Tech Fund" and every tech-fund
+// payer was shown "Contribution towards Christmas Fund" on the payment screen.
+function fundDisplayName(raw) {
+    const f = String(raw || "").toLowerCase().replace(/\s+/g, "");
+    const isChristmas = f === "christmas" || f === "christmasfund" || f === "christmas-fund";
+    return isChristmas ? "Christmas Fund" : "Tech Fund";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("rzp-button1");
     const modal = document.getElementById("contributionModal");
@@ -349,7 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "amount": amount * 100, 
                 "currency": "INR",
                 "name": "LJM Church",
-                "description": "Contribution towards " + (fundName.includes("tech") ? "Tech Fund" : "Christmas Fund"),
+                "description": "Contribution towards " + fundDisplayName(fundName),
                 "handler": function (response) {
                     paymentInProgress = false;
                     proceedBtn.innerText = originalText;
