@@ -2,6 +2,15 @@
 
 Guidance for coding agents working in this repo.
 
+## The project knowledge base
+
+[`docs/README.md`](./docs/README.md) is the permanent architecture, product,
+and process documentation tree — product vision, system/data/church/fund/
+payment/permission/audit architecture, the engineering constitution
+(`docs/development/AGENT_RULES.md`), ADRs, and operations docs. It
+cross-references this file, `CONTRIBUTING.md`, and `docs/milestone-v2/`
+rather than duplicating them — read it alongside them, not instead of them.
+
 ## Required reading before you touch code
 
 Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first — it's the mandatory process

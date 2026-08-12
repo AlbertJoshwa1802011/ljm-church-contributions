@@ -34,6 +34,11 @@ npm test
 
 See [TESTING.md](TESTING.md) for how the test harness works and the conventions for adding new tests.
 
+## Documentation
+
+- **[docs/README.md](docs/README.md)** — the permanent project knowledge base: product vision, architecture (system, data model, church/fund/payment/permission/audit/notification), the engineering constitution, ADRs, and operations docs. Start here for anything beyond a quick feature lookup.
+- **[docs/milestone-v2/README.md](docs/milestone-v2/README.md)** — the current active milestone: reworking LJM into a full worldwide ministry app.
+
 ## Feature documentation
 
 - **[ADMIN_CONSOLE_GUIDE.md](ADMIN_CONSOLE_GUIDE.md)** — the admin console's navigation structure (grouped sections) and what each one does.
