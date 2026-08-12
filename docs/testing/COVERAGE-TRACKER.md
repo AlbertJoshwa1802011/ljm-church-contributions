@@ -60,6 +60,9 @@
 - [x] `families.js` PUT — family-detail edit mode + member-field edit mode (`body.memberId`) — `tests/api/families.test.mjs`
 - [x] `families.js` PUT nonexistent id → 404, no editable fields → 400 — `tests/api/families.test.mjs`
 - [x] `families.js` DELETE nonexistent family → 404, requires `manage_members` — `tests/api/families.test.mjs`
+- [x] `funds.js` Fund Foundation metadata (hero image upload/base64-fallback/external URL, message length cap, ranking groundwork validation, Razorpay public-key-id format guard) — `tests/api/funds.test.mjs`
+- [x] `funds.js` Fund Foundation metadata is editable on system funds (Tech/Christmas) while identity fields (name/description/visibility/status) stay blocked — `tests/api/funds.test.mjs`
+- [x] `funds.js` PUT `removeHeroImage` clears a fund's hero image — `tests/api/funds.test.mjs`
 - [x] `wishlist.js` PUT/DELETE require `edit_wishlist` — `tests/api/wishlist.test.mjs`
 - [x] `wishlist.js` POST/PUT/DELETE missing-field validation (400s) — `tests/api/wishlist.test.mjs`
 - [x] `wishlist.js` GET is public (no auth required) — `tests/api/wishlist.test.mjs`
@@ -142,8 +145,9 @@ offline harness and are tracked here so nobody re-discovers them as a surprise:
   `admin.html` and asserts (a) every helper a feature calls is defined, (b) every
   element id the JS reads exists in the markup, (c) the feature is actually wired
   up at init, and (d) the behavioural invariants that matter, as source-shape
-  assertions. Extend that file's approach for other admin sections. Still open:
-  Funds, Purchases, Expenses, Wishlist, Roles, Families and Events wiring.
+  assertions. Extend that file's approach for other admin sections. Funds wiring
+  closed (Fund Foundation metadata fields) — `tests/frontend/fund-admin-wiring.test.mjs`.
+  Still open: Purchases, Expenses, Wishlist, Roles, Families and Events wiring.
 - **Concurrent-duplicate-delivery race** in `webhook.js` (the `UNIQUE|constraint`
   catch branch, as opposed to the pre-check `SELECT`) — architecturally hard to
   trigger in a single-threaded mock-D1 test. The idempotency guarantee itself
