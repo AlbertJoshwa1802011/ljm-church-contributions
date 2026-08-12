@@ -11,6 +11,22 @@ payment/permission/audit architecture, the engineering constitution
 cross-references this file, `CONTRIBUTING.md`, and `docs/milestone-v2/`
 rather than duplicating them — read it alongside them, not instead of them.
 
+**If you are an implementation agent about to write code, the two files
+below are mandatory reading before you start — not optional background:**
+
+- [`docs/development/AGENT_RULES.md`](./docs/development/AGENT_RULES.md) —
+  the engineering constitution: architecture/product decisions belong to the
+  project architect, not to an implementation agent mid-task; root-cause
+  fixes over patches; tests must be actually executed and reported with
+  exact commands/results, never assumed; parallel-agent conflict rules; git
+  discipline (no push/force-push/history-rewrite unless explicitly
+  instructed); and the mandatory handoff-report format.
+- [`docs/development/AGENT_HANDOFFS.md`](./docs/development/AGENT_HANDOFFS.md) —
+  the persisted, append-only log of every task's handoff report. Skim recent
+  entries before starting (to see what actually happened lately, not just
+  what a plan doc claims), and append your own entry before finishing —
+  project knowledge must not depend on any one conversation's history.
+
 ## Required reading before you touch code
 
 Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first — it's the mandatory process

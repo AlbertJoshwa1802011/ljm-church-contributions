@@ -28,6 +28,32 @@ for a concrete example of what that costs later); over-building violates
 "no unrelated refactoring" and "don't design for hypothetical future
 requirements" below.
 
+## Roles: architect vs. implementation agent
+
+Architecture and product decisions are owned by the project architect (the
+human, or the session explicitly acting in that capacity) and recorded in
+this `docs/` tree — [`../product/`](../product/), [`../architecture/`](../architecture/),
+and [`../decisions/ADR/`](../decisions/ADR/). An **implementation agent does
+not independently redefine product requirements or architecture** while
+carrying out a task, no matter how reasonable an alternative seems mid-task.
+
+Concretely:
+
+- If a task's instructions conflict with what this `docs/` tree already
+  says, **stop and document the conflict** — don't silently pick whichever
+  side seems more convenient to implement. Record it under "Questions /
+  decisions required from the architect" in the handoff report (see below)
+  and, if it's a genuine fork in the system's design, leave a
+  `DECISION REQUIRED` note in the relevant architecture document.
+- If a requirement is ambiguous, take the safest interpretation consistent
+  with the existing documentation, implement that, and clearly report the
+  ambiguity — don't silently guess and move on as if it were never in
+  question.
+- Discovering that an existing document is wrong or stale is different from
+  disagreeing with it — the former gets corrected (with the correction
+  explained in the commit/handoff), the latter gets escalated as a question,
+  not resolved unilaterally in code.
+
 ## Before touching code
 
 1. Inspect the relevant part of the existing repository — don't assume; this
@@ -69,6 +95,24 @@ test or delete an assertion to get to green, never mock away the actual
 failure being tested for. If a pre-existing unrelated failure exists,
 document it clearly rather than silently working around it.
 
+**Reporting is not optional and is not approximate:**
+
+- Record the **exact command** run (`npm test`, or a scoped
+  `node --test tests/api/funds.test.mjs`, etc.) and the **exact result**
+  (pass/fail counts, or the specific failure) in the handoff report. A
+  paraphrase ("tests pass") without the command and the actual output is not
+  an acceptable substitute.
+- **Never claim a test passed unless it was actually executed in this
+  session.** Don't infer a test would pass from reading the code.
+- **Never claim production verification occurred unless it actually did.**
+  `functions/api/selftest.js` against the real deployment is the only thing
+  that counts as production verification — running the local `node --test`
+  suite is not the same claim and must not be described as if it were.
+- If a test fails: understand the failure, identify the root cause, fix the
+  implementation (not the test) unless the test itself is demonstrably
+  wrong, rerun it, and only then move on. Do not bypass, weaken, or delete a
+  test to make a failure go away.
+
 ## Definition of done
 
 - [ ] Requirement understood, existing implementation inspected
@@ -87,7 +131,8 @@ document it clearly rather than silently working around it.
 - [ ] ADR added if an architectural decision was made — see
       [`../decisions/ADR/`](../decisions/ADR/)
 - [ ] No unrelated behavior broken
-- [ ] Handoff report written (see below)
+- [ ] Handoff report written and appended to
+      [`AGENT_HANDOFFS.md`](./AGENT_HANDOFFS.md) (see below)
 
 ## Documentation is part of the implementation
 
@@ -138,14 +183,33 @@ handoff report. Otherwise, it's follow-up work, not part of this change.
 
 ## Parallel agent development
 
-Multiple agents may work simultaneously on this repo. Keep changes focused;
-avoid unnecessary shared-file edits; re-inspect current repository state
-before assuming a prior session's plan still matches reality (see
-[`../architecture/MIGRATION_PLAN.md`](../architecture/MIGRATION_PLAN.md) for
-a concrete example of a plan drifting from what actually shipped); use
-small, focused commits; document dependencies; clearly report which files
-changed. Decompose tasks so unrelated areas (e.g. fund backend vs. prayer UI)
-touch minimally overlapping files.
+Multiple agents may work simultaneously on this repo. Before starting:
+
+1. **Identify the expected files/directories the task requires**, and
+   confirm that footprint is actually necessary before touching anything
+   outside it. If the honest footprint turns out to be broad (touches
+   shared infrastructure like `_lib.js`, `schema.sql`, or a file several
+   features depend on), **report that shared-file/conflict risk up front,
+   before making the change** — not after, in the handoff.
+2. **Inspect current usage of shared infrastructure before modifying it** —
+   grep for every caller, don't assume a helper's contract from its name.
+3. **Do not assume another agent's prior work is correct without
+   verification.** A previous session's plan or handoff report is a
+   starting point, not ground truth — re-inspect the actual current state
+   of the code and this `docs/` tree (see
+   [`../architecture/MIGRATION_PLAN.md`](../architecture/MIGRATION_PLAN.md)
+   for a concrete example of a documented plan that drifted from what
+   actually shipped).
+4. **Prefer tasks that can be implemented independently** — decompose work
+   so unrelated areas (e.g. fund backend vs. prayer UI) touch minimally
+   overlapping files, so two agents working in parallel don't collide.
+5. If a task conflicts with another architectural change already in flight
+   or already documented, **document the conflict rather than resolving it
+   unilaterally** — see "Roles: architect vs. implementation agent" above.
+
+Keep changes focused; avoid unnecessary shared-file edits; use small,
+focused commits; document dependencies; clearly report which files changed
+in the handoff report.
 
 ## No guessing
 
@@ -159,23 +223,78 @@ several live examples of this marker — see
 [`../architecture/CHURCH_ARCHITECTURE.md`](../architecture/CHURCH_ARCHITECTURE.md) —
 follow the same pattern for anything new you encounter.
 
+## Git discipline
+
+- Do not push, force-push, or rewrite history unless the task explicitly
+  instructs it. Committing locally is normally fine; publishing is a
+  separate, explicit decision.
+- Never skip hooks or bypass CI to land a change faster.
+- Make small, focused commits with clear messages describing *why*, not
+  just *what* — the diff already shows what changed.
+- Before finishing, report `git status` and the relevant commit hash(es) in
+  the handoff report, so the next agent (or the architect) can see exactly
+  what state the branch is in without re-deriving it.
+
 ## Handoff report
 
-Every completed task reports:
+Every completed task produces a handoff report with these fields, and the
+report is **persisted in
+[`AGENT_HANDOFFS.md`](./AGENT_HANDOFFS.md)** — appended as a new dated entry,
+not left only in a chat reply that disappears with the session. Important
+project knowledge must not depend on conversation history.
 
 ```
-## Implementation Summary
+## <date> — <short task title> (<agent/session identifier if known>)
+
+### Status
+COMPLETE | PARTIALLY_COMPLETE | BLOCKED | NOT_STARTED
+
 ### What changed
-### Why
-### Root Cause (if a bug fix)
+
 ### Files changed
-### Tests added
-### Tests executed / result
-### Architecture impact
+
+### Architecture decisions / discoveries
+(anything learned about the system that the docs/ tree didn't already say —
+update the relevant architecture doc in the same change, and note it here too)
+
+### Database changes
+(or "None")
+
+### API changes
+(or "None")
+
+### UI changes
+(or "None")
+
+### Permissions / security changes
+(or "None")
+
+### Tests added / modified
+
+### Tests executed and exact results
+(exact command(s) run, exact pass/fail output — see "Testing" above)
+
 ### Documentation updated
-### Known limitations
-### Follow-up required
+
+### Known limitations / remaining work
+
+### Known risks
+
+### Git status
+(branch, commit hash(es), pushed or not)
+
+### Questions / decisions required from the architect
+(or "None")
+
+### Recommended next step
 ```
+
+Use the same four-value status vocabulary every time
+(`COMPLETE`/`PARTIALLY_COMPLETE`/`BLOCKED`/`NOT_STARTED`) so status is
+scannable across entries without reading each one in full. Do not claim
+`COMPLETE` if tests weren't actually run, if documentation wasn't actually
+updated, or if any part of the task was skipped — use
+`PARTIALLY_COMPLETE` and say exactly what's missing.
 
 ## The final principle
 

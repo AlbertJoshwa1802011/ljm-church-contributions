@@ -39,6 +39,39 @@ guess.
 | [`features/`](./features/) | One-page-per-feature index: status, owner docs, key files |
 | [`operations/`](./operations/) | Logging, monitoring, and troubleshooting the live system |
 
+## Where to document what — a lookup, not a suggestion
+
+If you're not sure where something belongs, use this table before creating a
+new file. Don't create a second document for something that already has a
+home below — extend the existing one.
+
+| I need to record... | It goes in |
+|---|---|
+| A product requirement or its status (live/planned/undecided) | [`product/REQUIREMENTS.md`](./product/REQUIREMENTS.md) (detail) / [`product/PRODUCT_VISION.md`](./product/PRODUCT_VISION.md) (why) |
+| How a subsystem is built, or should be | The matching file in [`architecture/`](./architecture/) — see that directory for the current list (system, data model, church, fund, payment, permission, audit, notification, migration) |
+| An architecture decision and its alternatives | A new file in [`decisions/ADR/`](./decisions/ADR/), using [`decisions/ADR/0000-template.md`](./decisions/ADR/0000-template.md) |
+| What a specific feature does, its status, and its key files | [`features/README.md`](./features/README.md) |
+| A process/engineering rule every agent must follow | [`development/AGENT_RULES.md`](./development/AGENT_RULES.md) — the engineering constitution |
+| How day-to-day development, testing, review, or release actually works | [`development/DEVELOPMENT_WORKFLOW.md`](./development/DEVELOPMENT_WORKFLOW.md), [`development/TESTING_STRATEGY.md`](./development/TESTING_STRATEGY.md), [`development/CODE_REVIEW_RULES.md`](./development/CODE_REVIEW_RULES.md), [`development/RELEASE_PROCESS.md`](./development/RELEASE_PROCESS.md) |
+| Logging, monitoring, or a troubleshooting procedure | [`operations/`](./operations/) |
+| **The current milestone's live implementation status** (which phase is done, what's next) | [`milestone-v2/README.md`](./milestone-v2/README.md) (the active milestone's tracker) and [`testing/COVERAGE-TRACKER.md`](./testing/COVERAGE-TRACKER.md) (test-coverage backlog) |
+| **A completed task's handoff report** (what changed, tests run, discoveries, remaining work) | [`development/AGENT_HANDOFFS.md`](./development/AGENT_HANDOFFS.md) — append a new entry, every time, per [`development/AGENT_RULES.md`](./development/AGENT_RULES.md#handoff-report) |
+
+## Multi-agent development contract
+
+This repository is built by multiple agents, sometimes in parallel, and is
+meant to be understandable without depending on any one conversation's
+history. [`development/AGENT_RULES.md`](./development/AGENT_RULES.md) is the
+binding contract for how that works in practice: architecture/product
+decisions belong to the project architect and are recorded in this tree, not
+redefined mid-task by an implementation agent; every task ends with a
+handoff report appended to
+[`development/AGENT_HANDOFFS.md`](./development/AGENT_HANDOFFS.md); tests
+must be actually executed and reported with exact commands and results,
+never assumed or claimed; and shared-file/conflict risk gets reported before
+a broad change is made, not after. Read that file in full before starting
+implementation work, not just this summary.
+
 ## The one rule that overrides convenience
 
 **Build for the system, not the ticket.** This repo runs LJM's live
