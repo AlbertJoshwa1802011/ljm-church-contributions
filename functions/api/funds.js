@@ -39,16 +39,36 @@ export async function onRequestGet(context) {
         ? "WHERE f.status != 'deleted'"
         : "WHERE f.status = 'active' AND f.visibility = 'public'";
 
-      const query = await db.prepare(
-        `SELECT f.id, f.slug, f.name, f.description, f.goal_amount AS goalAmount,
-                f.status, f.visibility, f.is_system AS isSystem,
-                f.created_by AS createdBy, f.created_at AS createdAt,
-                COALESCE((SELECT SUM(c.amount) FROM contributions c WHERE c.fund = f.slug), 0) AS totalCollected,
-                COALESCE((SELECT SUM(p.fund_contribution) FROM purchases p WHERE p.fund = f.slug AND p.status = 'Active'), 0) AS spentOnProducts,
-                (SELECT COUNT(*) FROM fund_members fm WHERE fm.fund_id = f.id) AS memberCount
-         FROM funds f ${where}
-         ORDER BY f.is_system DESC, f.created_at ASC`
-      ).all();
+      // Soft-deleted contributions (is_deleted, added in migration 0012) must
+      // stay out of totalCollected the same way /api/contributions excludes
+      // them — otherwise a deleted row would still inflate a fund's total.
+      // Older databases without that column fall back to the unfiltered sum
+      // (mirrors the schema-drift guard in functions/api/contributions.js).
+      let query;
+      try {
+        query = await db.prepare(
+          `SELECT f.id, f.slug, f.name, f.description, f.goal_amount AS goalAmount,
+                  f.status, f.visibility, f.is_system AS isSystem,
+                  f.created_by AS createdBy, f.created_at AS createdAt,
+                  COALESCE((SELECT SUM(c.amount) FROM contributions c WHERE c.fund = f.slug AND c.is_deleted = 0), 0) AS totalCollected,
+                  COALESCE((SELECT SUM(p.fund_contribution) FROM purchases p WHERE p.fund = f.slug AND p.status = 'Active'), 0) AS spentOnProducts,
+                  (SELECT COUNT(*) FROM fund_members fm WHERE fm.fund_id = f.id) AS memberCount
+           FROM funds f ${where}
+           ORDER BY f.is_system DESC, f.created_at ASC`
+        ).all();
+      } catch (schemaErr) {
+        if (!/no such column/i.test(schemaErr.message || String(schemaErr))) throw schemaErr;
+        query = await db.prepare(
+          `SELECT f.id, f.slug, f.name, f.description, f.goal_amount AS goalAmount,
+                  f.status, f.visibility, f.is_system AS isSystem,
+                  f.created_by AS createdBy, f.created_at AS createdAt,
+                  COALESCE((SELECT SUM(c.amount) FROM contributions c WHERE c.fund = f.slug), 0) AS totalCollected,
+                  COALESCE((SELECT SUM(p.fund_contribution) FROM purchases p WHERE p.fund = f.slug AND p.status = 'Active'), 0) AS spentOnProducts,
+                  (SELECT COUNT(*) FROM fund_members fm WHERE fm.fund_id = f.id) AS memberCount
+           FROM funds f ${where}
+           ORDER BY f.is_system DESC, f.created_at ASC`
+        ).all();
+      }
 
       const funds = (query.results || []).map(f => ({
         ...f,
@@ -87,11 +107,22 @@ export async function onRequestGet(context) {
       if (!allowed) return json({ error: "This fund is restricted to assigned members. Please sign in." }, 403);
     }
 
-    const contributionsQuery = await db.prepare(
-      `SELECT member_name AS Member, amount AS Amount, date AS Date, category AS Category,
-              notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID
-       FROM contributions WHERE fund = ? ORDER BY date DESC`
-    ).bind(fund.slug).all();
+    // Same is_deleted exclusion + schema-drift fallback as the listing query above.
+    let contributionsQuery;
+    try {
+      contributionsQuery = await db.prepare(
+        `SELECT member_name AS Member, amount AS Amount, date AS Date, category AS Category,
+                notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID
+         FROM contributions WHERE fund = ? AND is_deleted = 0 ORDER BY date DESC`
+      ).bind(fund.slug).all();
+    } catch (schemaErr) {
+      if (!/no such column/i.test(schemaErr.message || String(schemaErr))) throw schemaErr;
+      contributionsQuery = await db.prepare(
+        `SELECT member_name AS Member, amount AS Amount, date AS Date, category AS Category,
+                notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID
+         FROM contributions WHERE fund = ? ORDER BY date DESC`
+      ).bind(fund.slug).all();
+    }
     const contributions = contributionsQuery.results || [];
 
     const membersQuery = await db.prepare("SELECT name, email, phone, is_verified FROM members").all();

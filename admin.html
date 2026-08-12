@@ -1557,18 +1557,27 @@
         }
 
         // ═══════════════ Overview ═══════════════
+        // Fund-agnostic: discovers every registered fund from /api/funds (the
+        // dynamic fund registry — includes system funds like Tech/Christmas
+        // AND any admin-created fund) and pulls each fund's own contribution
+        // list from /api/funds?slug=… . No fund slug is ever hardcoded here —
+        // a newly created fund appears automatically on its next admin login,
+        // no code change required.
         function loadOverview() {
             $("kpiGrid").innerHTML = new Array(6).fill('<div class="kpi"><div class="k-head"><span class="skel" style="width:30px;height:30px;border-radius:9px;"></span><span class="skel" style="width:70px;"></span></div><div class="k-value"><span class="skel" style="width:100px;height:22px;"></span></div></div>').join("");
-            Promise.all([
-                fetch("/api/contributions?fund=tech-contributions&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
-                fetch("/api/contributions?fund=christmas-fund&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
-                api("/api/funds")
-            ]).then(function (res) {
-                var tech = res[0], xmas = res[1], fundsRes = res[2];
-                state.fundsCache = (fundsRes && fundsRes.funds) || [];
+            api("/api/funds").then(function (fundsRes) {
+                var funds = (fundsRes && fundsRes.funds) || [];
+                state.fundsCache = funds;
+                return Promise.all(funds.map(function (f) {
+                    return api("/api/funds?slug=" + encodeURIComponent(f.slug) + "&_t=" + Date.now(), { cache: "no-store" })
+                        .then(function (detail) { return { fund: f, detail: detail || {} }; });
+                })).then(function (perFund) { return { funds: funds, perFund: perFund }; });
+            }).then(function (res) {
+                var funds = res.funds, perFund = res.perFund;
                 var all = [];
-                (tech.contributions || []).forEach(function (c) { c._fund = "Tech Fund"; all.push(c); });
-                (xmas.contributions || []).forEach(function (c) { c._fund = "Christmas Fund"; all.push(c); });
+                perFund.forEach(function (pf) {
+                    (pf.detail.contributions || []).forEach(function (c) { c._fund = pf.fund.name; all.push(c); });
+                });
 
                 var total = all.reduce(function (s, c) { return s + (Number(c.Amount) || 0); }, 0);
                 var names = {}; all.forEach(function (c) { if (c.Member) names[c.Member] = 1; });
@@ -1580,8 +1589,8 @@
                     var lm = cm === 0 ? 11 : cm - 1, ly = cm === 0 ? cy - 1 : cy;
                     if (d.getFullYear() === ly && d.getMonth() === lm) lastM += Number(c.Amount) || 0;
                 });
-                var spent = (tech.spentOnProducts || 0) + (xmas.spentOnProducts || 0);
-                var avail = (tech.availableBalance || 0) + (xmas.availableBalance || 0);
+                var spent = funds.reduce(function (s, f) { return s + (Number(f.spentOnProducts) || 0); }, 0);
+                var avail = funds.reduce(function (s, f) { return s + (Number(f.availableBalance) || 0); }, 0);
                 var growthPct = lastM > 0 ? Math.round(((thisM - lastM) / lastM) * 100) : null;
                 var growthValue = growthPct === null ? (thisM > 0 ? "New" : "—") : Math.abs(growthPct) + "%";
                 var growthTrend = growthPct === null
@@ -1598,10 +1607,7 @@
                     kpi("Available balance", inr(avail), "in hand across funds", { icon: "🏦" });
 
                 renderTrend(all);
-                renderDist(state.fundsCache.length ? state.fundsCache : [
-                    { name: "Tech Fund", totalCollected: (tech.contributions || []).reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0) },
-                    { name: "Christmas Fund", totalCollected: (xmas.contributions || []).reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0) }
-                ]);
+                renderDist(funds);
 
                 all.sort(function (a, b) { return new Date(b.Date) - new Date(a.Date); });
                 var tb = $("recentTable").querySelector("tbody");
