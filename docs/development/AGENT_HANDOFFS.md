@@ -375,4 +375,185 @@ to reconstruct from scratch, as this audit had to).
 
 ---
 
+## 2026-08-13 (round 2) — LJM V2 Integration Audit update: 4th branch added (`claude/agent-rules-quality-gates-mvvkd1`)
+
+**STATUS:** COMPLETE (audit only — no application code, schema, migration, or test changes)
+
+**BRANCH:** `claude/ljm-v2-integration-audit-vsmxj3`
+**COMMIT (base):** `a7cb38353d7b4db36f0930be97f77a774492dabf` (this branch's own prior audit
+commit; base `main` is unchanged at `2ff95980d98de25006c2d04c1a2084ebb1c4ea4f`
+since round 1 — confirmed via `git log --oneline 2ff9598..origin/main` = empty)
+
+**OBJECTIVE:** Same audit as the entry above, re-run to add a 4th known branch
+(`claude/agent-rules-quality-gates-mvvkd1`) to the scope and re-verify the
+prior three are unchanged. No merge performed.
+
+**CURRENT MAIN SHA:** `2ff95980d98de25006c2d04c1a2084ebb1c4ea4f` (unchanged since round 1)
+
+---
+
+### BRANCH AUDIT
+
+Branches 1–3 below are unchanged from the round-1 entry (same SHAs, same
+merge-base, same file lists) — re-verified, not re-described in full; see the
+round-1 entry above for their complete detail. Branch 4 is new to this round.
+
+1. **`claude/fund-foundation-phase-bjoybm`** — SHA `8f3d289`. Unchanged. See round-1 entry.
+2. **`claude/admin-overview-dynamic-funds-quatcl`** — SHA `b183d89`. Unchanged. See round-1 entry.
+3. **`claude/agent-rules-quality-gates-mvvkd1`** *(new this round)*
+   - **SHA:** `a3f30ea3022439fa0f213e77e47b64a68d234b77`
+   - **Based on current main:** Yes — merge-base = `2ff9598` (= main HEAD). 0 commits behind.
+   - **Commits unique to branch:** 1 — "Add mandatory agent quality-gate rules and handoff log"
+   - **Purpose:** Introduces `docs/development/AGENT_RULES.md` (new) — a
+     mandatory quality-gate checklist (understand-before-you-change,
+     feature test matrix, UI/production-verification honesty, mutation
+     testing beyond just the money path, a discovery-classification scale —
+     BLOCKER/HIGH RISK/REGRESSION/PRE-EXISTING BUG/TECH DEBT/INFORMATIONAL —
+     and a mandatory handoff-on-completion rule). Wires it into the existing
+     process docs: `CLAUDE.md`'s "Required reading" section now points to it
+     as a third mandatory read alongside `CONTRIBUTING.md`; `CONTRIBUTING.md`
+     §1's "discover in-flight work" checklist gains two new steps (read
+     `AGENT_RULES.md`, read `AGENT_HANDOFFS.md`) and a new §10 that points to
+     `AGENT_RULES.md` as authoritative for what "done" means. Also adds a
+     short "Discoveries found while closing gaps" note to
+     `docs/testing/COVERAGE-TRACKER.md` referencing the new classification
+     scale, and creates this branch's own version of
+     `docs/development/AGENT_HANDOFFS.md` (96 lines — did not exist on `main`,
+     same root cause as the other three branches).
+   - **Files changed (5):** `CLAUDE.md`, `CONTRIBUTING.md`,
+     `docs/development/AGENT_HANDOFFS.md` (new), `docs/development/AGENT_RULES.md`
+     (new), `docs/testing/COVERAGE-TRACKER.md`.
+   - **Conflicts with the other three branches:** **Only**
+     `docs/development/AGENT_HANDOFFS.md` (add/add), against all three,
+     verified individually with `git merge-tree --write-tree
+     --merge-base=origin/main`. `docs/testing/COVERAGE-TRACKER.md` (also
+     touched by `fund-foundation-phase-bjoybm` and
+     `admin-overview-dynamic-funds-quatcl`) auto-merges cleanly against both —
+     confirmed by the same `merge-tree` runs; the three branches' edits land
+     in different sections of the file. `CLAUDE.md`/`CONTRIBUTING.md` are not
+     touched by any of the other three branches, so no conflict there.
+   - **Dependencies on another branch:** None — independent commit off `main`,
+     same as the other three.
+   - **Payment-path check:** `functions/api/webhook.js`,
+     `razorpay-checkout.js`, `functions/api/contributions.js` — zero changes.
+   - **Special-attention files (`schema.sql`, `admin.html`,
+     `functions/api/funds.js`, `tests/api/funds.test.mjs`,
+     `docs/architecture/FUND-SYSTEM-AUDIT.md`):** all untouched by this
+     branch (empty `git diff --stat` confirmed for each).
+   - **Own test suite (run standalone on this branch):** 328/328 passing —
+     identical to baseline (docs/process-only branch, no test changes).
+   - **Cherry-pick vs merge:** Merge recommended, same reasoning as round 1 —
+     single commit either way, but merge preserves commit identity in
+     history that `CONTRIBUTING.md` §1 (as amended by this very branch) tells
+     future agents to read via `git log`.
+   - **Merge recommendation:** Safe to merge into an integration branch on
+     its own. The only manual step is resolving the `AGENT_HANDOFFS.md`
+     add/add conflict (mechanical: concatenate) if merged after any of the
+     other three; if merged **first**, there is no conflict at all since
+     `AGENT_HANDOFFS.md` doesn't yet exist on `main`.
+4. **`claude/lojm-website-architecture-audit-px3jzf`** — SHA `845df06`.
+   Unchanged from round 1. Re-confirmed untouched on all special-attention
+   files including `CLAUDE.md`/`CONTRIBUTING.md`. See round-1 entry for full
+   detail.
+
+---
+
+### RECOMMENDED MERGE ORDER (updated for 4 branches)
+
+1. **`claude/agent-rules-quality-gates-mvvkd1`** — merge first. It's the only
+   branch of the four that touches root process docs (`CLAUDE.md`,
+   `CONTRIBUTING.md`), it has zero conflicts with the other three anywhere
+   except `AGENT_HANDOFFS.md`, and merging it first means its
+   `AGENT_HANDOFFS.md` version becomes canonical with **no conflict at all**
+   (straight add onto `main`, which doesn't have the file yet) — every
+   subsequent branch's entry then gets appended into that canonical version
+   instead of triggering N-way add/add resolution later. It also establishes
+   `AGENT_RULES.md`'s handoff format before the other branches' entries are
+   folded in, which keeps the log format consistent going forward.
+2. **`claude/admin-overview-dynamic-funds-quatcl`** — smaller `funds.js`
+   diff, no schema change, fixes a real data-correctness gap (soft-deleted
+   contributions inflating fund totals). Same reasoning as round 1.
+3. **`claude/fund-foundation-phase-bjoybm`** — merge onto the result of (2),
+   manually reconciling the `functions/api/funds.js` SELECT (keep (2)'s
+   `is_deleted` filter + schema-drift fallback, add this branch's new
+   metadata columns to both branches of that try/catch) and concatenating
+   the two `tests/api/funds.test.mjs` additions. Append its
+   `AGENT_HANDOFFS.md` entry into the canonical version from step 1.
+4. **`claude/lojm-website-architecture-audit-px3jzf`** — docs-only, safe
+   anytime, independent of the other three. Append its `AGENT_HANDOFFS.md`
+   entry into the canonical version from step 1.
+
+At each step, re-run `npm test` on the merged tree and confirm the pass
+count is at least 328 + the sum of new tests from branches merged so far,
+with 0 failures, before proceeding.
+
+---
+
+### EXPECTED CONFLICTS (full matrix, all 6 pairs, verified via `git merge-tree`)
+
+| Pair | Conflicts |
+|---|---|
+| fund-foundation × admin-overview | `functions/api/funds.js`, `tests/api/funds.test.mjs`, `docs/development/AGENT_HANDOFFS.md` |
+| fund-foundation × agent-rules | `docs/development/AGENT_HANDOFFS.md` only |
+| fund-foundation × lojm-audit | `docs/development/AGENT_HANDOFFS.md` only |
+| admin-overview × agent-rules | `docs/development/AGENT_HANDOFFS.md` only |
+| admin-overview × lojm-audit | `docs/development/AGENT_HANDOFFS.md` only |
+| agent-rules × lojm-audit | `docs/development/AGENT_HANDOFFS.md` only |
+
+`docs/development/AGENT_HANDOFFS.md` conflicts on **every** pair — all four
+branches (now five, counting this audit branch) independently created it
+because it doesn't exist on `main`. This is the single dominant integration
+friction point across the whole branch set; everything else is either
+clean or (for the two `funds.js`-touching branches) a mechanical,
+well-understood two-file conflict.
+
+---
+
+### PAYMENT SAFETY
+
+Re-confirmed for all four branches (including the new one):
+`functions/api/webhook.js`, `razorpay-checkout.js`,
+`functions/api/contributions.js` — zero changes across all four. No branch
+touches payment verification, contribution creation/routing, or Razorpay
+configuration/secrets.
+
+---
+
+### TESTS
+
+- **Exact command:** `npm test` (= `node --test 'tests/**/*.test.mjs'`)
+- **Current branch (`claude/ljm-v2-integration-audit-vsmxj3` @ `a7cb383`):** 328/328 passing.
+- **`claude/agent-rules-quality-gates-mvvkd1` (standalone):** 328/328 passing (no test changes).
+- Branches 1, 2, 4's standalone counts are unchanged from round 1 (346/336/328
+  respectively) — not re-run this round since their SHAs didn't change.
+- No tests or application code modified by this audit.
+
+---
+
+### DOCUMENTATION
+
+Re-read `CLAUDE.md`, `CONTRIBUTING.md` on `main` (both still lack
+`AGENT_RULES.md`/`AGENT_HANDOFFS.md` references — those only exist on the
+`agent-rules-quality-gates-mvvkd1` branch, not yet on `main`). Confirmed
+`docs/development/AGENT_RULES.md` and `docs/development/AGENT_HANDOFFS.md` do
+**not** exist on `main` today — both are branch-only. No contradiction found
+between documentation and actual repo state.
+
+---
+
+### NEXT ACTION FOR ARCHITECT
+
+Same as round 1, updated: (a) decide whether
+`claude/agent-rules-quality-gates-mvvkd1` merges first per the recommended
+order above (**recommended**, not yet decided — DECISION REQUIRED); (b)
+decide whether to create `docs/development/IMPLEMENTATION_STATUS.md` per the
+structure proposed in the round-1 entry (**DECISION REQUIRED**, still not
+created); (c) perform the 4-branch merge in the order above, resolving the
+`AGENT_HANDOFFS.md` add/add conflict at each step (trivial concatenation) and
+the `functions/api/funds.js` / `tests/api/funds.test.mjs` conflict at step 3
+(mechanical, detailed in round 1's entry), running `npm test` after every
+step.
+
+---
+
 **HANDOFF END**
