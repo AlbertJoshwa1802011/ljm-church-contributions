@@ -338,3 +338,208 @@ test("funds: listing and detail survive a pre-0012 database missing is_deleted (
   assert.equal(detail.contributions.length, 1);
   assert.equal(detail.contributions[0].Member, "Pre Migration Giver");
 });
+
+// ── Fund Foundation metadata (hero image, message, ranking groundwork, Razorpay
+//    public-key groundwork) — see migrations/0015_fund_foundation_metadata.sql ──
+
+test("funds: a new fund defaults to no hero image, empty message, ranking disabled/public, and no Razorpay key", async () => {
+  const db = freshDb();
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds", body: { name: "Plain Fund" }
+  }));
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=plain-fund"
+  })));
+  assert.equal(detail.fund.heroImageUrl, "");
+  assert.equal(detail.fund.heroImageStorage, "");
+  assert.equal(detail.fund.message, "");
+  assert.equal(detail.fund.rankingEnabled, false);
+  assert.equal(detail.fund.rankingVisibility, "public");
+  assert.equal(detail.fund.razorpayKeyId, "");
+});
+
+test("funds: create with a data-URL hero image falls back to base64 storage with no R2 binding, and it round-trips through listing + detail", async () => {
+  const db = freshDb();
+  const dataUrl = "data:image/png;base64,iVBORw0KGgo=";
+  const create = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Building Fund", heroImage: dataUrl, message: "Help us build a new sanctuary." }
+  })));
+  assert.equal(create.success, true, create.message);
+
+  const list = await readJson(await funds.onRequestGet(makeContext({ db, url: "https://test.local/api/funds" })));
+  const row = list.funds.find(f => f.slug === "building-fund");
+  assert.equal(row.heroImageUrl, dataUrl);
+  assert.equal(row.heroImageStorage, "base64");
+  assert.equal(row.message, "Help us build a new sanctuary.");
+
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=building-fund"
+  })));
+  assert.equal(detail.fund.heroImageUrl, dataUrl);
+  assert.equal(detail.fund.heroImageStorage, "base64");
+});
+
+test("funds: create with a plain external hero image URL is stored as 'external' verbatim", async () => {
+  const db = freshDb();
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "External Hero", heroImage: "https://cdn.example.com/hero.jpg" }
+  }));
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=external-hero"
+  })));
+  assert.equal(detail.fund.heroImageUrl, "https://cdn.example.com/hero.jpg");
+  assert.equal(detail.fund.heroImageStorage, "external");
+});
+
+test("funds: create rejects a non-string hero image and an oversized external hero image URL", async () => {
+  const db = freshDb();
+  const badType = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds", body: { name: "Bad Hero 1", heroImage: 12345 }
+  })));
+  assert.equal(badType.success, false);
+
+  const tooLong = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Bad Hero 2", heroImage: "https://cdn.example.com/" + "x".repeat(2000) }
+  })));
+  assert.equal(tooLong.success, false);
+  assert.match(tooLong.message, /exceeds/i);
+});
+
+test("funds: create rejects a fund message over the length cap", async () => {
+  const db = freshDb();
+  const res = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Long Message Fund", message: "x".repeat(5001) }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /exceeds/i);
+});
+
+test("funds: create validates rankingVisibility and stores rankingEnabled/rankingVisibility", async () => {
+  const db = freshDb();
+  const bad = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Bad Ranking Fund", rankingVisibility: "everyone" }
+  })));
+  assert.equal(bad.success, false);
+  assert.match(bad.message, /rankingVisibility/);
+
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Ranked Fund", rankingEnabled: true, rankingVisibility: "members" }
+  }));
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=ranked-fund"
+  })));
+  assert.equal(detail.fund.rankingEnabled, true);
+  assert.equal(detail.fund.rankingVisibility, "members");
+});
+
+test("funds: create validates razorpayKeyId looks like a Razorpay public key id, never a secret", async () => {
+  const db = freshDb();
+  const bad = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Bad Key Fund", razorpayKeyId: "some_random_secret_looking_value" }
+  })));
+  assert.equal(bad.success, false);
+  assert.match(bad.message, /razorpayKeyId/);
+
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Good Key Fund", razorpayKeyId: "rzp_live_STrG9mXFNPWfMM" }
+  }));
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=good-key-fund"
+  })));
+  assert.equal(detail.fund.razorpayKeyId, "rzp_live_STrG9mXFNPWfMM");
+});
+
+test("funds: PUT allows Fund Foundation metadata edits on a SYSTEM fund (Tech Fund) while still blocking identity fields", async () => {
+  const db = freshDb();
+  const identityBlocked = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "tech-contributions", name: "Renamed" }
+  })));
+  assert.equal(identityBlocked.success, false);
+
+  const metaOk = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: {
+      slug: "tech-contributions",
+      message: "Every gift keeps our livestream and sound running.",
+      rankingEnabled: true,
+      rankingVisibility: "public",
+      razorpayKeyId: "rzp_live_TechFundKey01",
+      heroImage: "https://cdn.example.com/tech-hero.jpg"
+    }
+  })));
+  assert.equal(metaOk.success, true, metaOk.message);
+
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=tech-contributions"
+  })));
+  assert.equal(detail.fund.message, "Every gift keeps our livestream and sound running.");
+  assert.equal(detail.fund.rankingEnabled, true);
+  assert.equal(detail.fund.razorpayKeyId, "rzp_live_TechFundKey01");
+  assert.equal(detail.fund.heroImageUrl, "https://cdn.example.com/tech-hero.jpg");
+  assert.equal(detail.fund.heroImageStorage, "external");
+  // Identity fields must be untouched by the metadata-only update.
+  assert.equal(detail.fund.name, "Tech Fund", "system fund name must remain unchanged");
+});
+
+test("funds: PUT removeHeroImage clears a previously-set hero image", async () => {
+  const db = freshDb();
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Has Hero", heroImage: "https://cdn.example.com/hero.jpg" }
+  }));
+  const remove = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "has-hero", removeHeroImage: true }
+  })));
+  assert.equal(remove.success, true, remove.message);
+
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=has-hero"
+  })));
+  assert.equal(detail.fund.heroImageUrl, "");
+  assert.equal(detail.fund.heroImageStorage, "");
+});
+
+test("funds: PUT rejects an invalid rankingVisibility and an invalid razorpayKeyId", async () => {
+  const db = freshDb();
+  await funds.onRequestPost(makeContext({ db, method: "POST", url: "https://test.local/api/funds", body: { name: "Validate Me" } }));
+
+  const badRanking = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "validate-me", rankingVisibility: "everyone" }
+  })));
+  assert.equal(badRanking.success, false);
+
+  const badKey = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "validate-me", razorpayKeyId: "not-a-real-key" }
+  })));
+  assert.equal(badKey.success, false);
+});
+
+test("funds: PUT can clear a Razorpay key by sending an empty string", async () => {
+  const db = freshDb();
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Keyed Fund", razorpayKeyId: "rzp_live_KeyedFund01" }
+  }));
+  const clear = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "keyed-fund", razorpayKeyId: "" }
+  })));
+  assert.equal(clear.success, true, clear.message);
+
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=keyed-fund"
+  })));
+  assert.equal(detail.fund.razorpayKeyId, "");
+});

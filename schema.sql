@@ -126,7 +126,15 @@ CREATE TABLE IF NOT EXISTS funds (
     created_by TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_by TEXT,
-    updated_at DATETIME
+    updated_at DATETIME,
+    -- Fund Foundation metadata (see migrations/0015_fund_foundation_metadata.sql).
+    -- Groundwork only: nothing below is read by payment code yet.
+    hero_image_url TEXT,                    -- hero image URL, or /api/events/photo?key=... for R2-backed images
+    hero_image_storage TEXT,                -- 'r2' | 'base64' | 'external' | NULL (no hero image set)
+    message TEXT,                           -- longer "why this fund exists" narrative (distinct from `description`)
+    ranking_enabled INTEGER NOT NULL DEFAULT 0,     -- 0 = ranking off, 1 = on (no public ranking UI yet)
+    ranking_visibility TEXT NOT NULL DEFAULT 'public', -- 'public' | 'members', same convention as `visibility`
+    razorpay_key_id TEXT                    -- future per-fund Razorpay PUBLIC key id; NULL = today's single hardcoded key
 );
 
 -- 9. Member-to-Fund Assignment

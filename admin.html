@@ -616,6 +616,8 @@
                 <div class="page-head"><h2>Funds</h2><p>Create funds, set goals, assign members. Tech &amp; Christmas funds are protected system funds.</p></div>
                 <div class="card">
                     <h3 id="fundFormTitle">Create a fund</h3>
+
+                    <h4 style="font-size:13px; color:var(--text-soft); margin:0 0 8px;">Fund identity</h4>
                     <div class="form-grid">
                         <div><label class="f-label">Fund name *</label><input class="input" id="f_name" placeholder="e.g. Building Fund"></div>
                         <div><label class="f-label">Slug (URL key)</label><input class="input" id="f_slug" placeholder="auto from name"></div>
@@ -626,8 +628,46 @@
                                 <option value="members">Members-only — assigned members</option>
                             </select>
                         </div>
-                        <div class="span-all"><label class="f-label">Description</label><textarea class="input" id="f_desc" rows="2" placeholder="What is this fund for?"></textarea></div>
                     </div>
+
+                    <h4 style="font-size:13px; color:var(--text-soft); margin:20px 0 8px;">Description &amp; message</h4>
+                    <div class="form-grid">
+                        <div class="span-all"><label class="f-label">Description (short, shown as the subtitle)</label><textarea class="input" id="f_desc" rows="2" placeholder="What is this fund for?"></textarea></div>
+                        <div class="span-all"><label class="f-label">Fund message (the fuller story — why we're collecting this)</label><textarea class="input" id="f_message" rows="4" placeholder="Tell givers why this fund matters, e.g. what it will be used for and the impact it will have."></textarea></div>
+                    </div>
+
+                    <h4 style="font-size:13px; color:var(--text-soft); margin:20px 0 8px;">Visual — hero image</h4>
+                    <div class="form-grid">
+                        <div class="span-all">
+                            <label class="f-label">Hero image (optional)</label>
+                            <input class="input" id="f_heroImageFile" type="file" accept="image/jpeg,image/png,image/webp">
+                            <div id="f_heroImagePreviewContainer" style="display:none; margin-top:10px;">
+                                <img id="f_heroImagePreview" style="width:100%; max-width:360px; height:140px; object-fit:cover; border-radius:12px;" alt="Hero image preview">
+                                <div style="margin-top:6px;"><button type="button" class="btn btn-outline" id="f_removeHeroImageBtn">Remove hero image</button></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 style="font-size:13px; color:var(--text-soft); margin:20px 0 8px;">Ranking (configuration only — no public ranking screen yet)</h4>
+                    <div class="form-grid">
+                        <div><label class="f-label"><input type="checkbox" id="f_rankingEnabled"> Enable giver ranking for this fund</label></div>
+                        <div><label class="f-label">Ranking visibility</label>
+                            <select class="input" id="f_rankingVisibility">
+                                <option value="public">Public — everyone can see the ranking</option>
+                                <option value="members">Members-only — only assigned members can see it</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h4 style="font-size:13px; color:var(--text-soft); margin:20px 0 8px;">Payment configuration (groundwork — not active yet)</h4>
+                    <div class="form-grid">
+                        <div class="span-all">
+                            <label class="f-label">Razorpay public key id (optional)</label>
+                            <input class="input" id="f_razorpayKeyId" placeholder="e.g. rzp_live_xxxxxxxxxxxx">
+                            <p class="msg" style="margin-top:6px;">This is only stored for the future — it is the Razorpay <strong>publishable key id</strong> (never the secret), and payments still use the church's single existing Razorpay account until fund-level payment routing ships.</p>
+                        </div>
+                    </div>
+
                     <div style="display:none;" id="f_editingSlug"></div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="f_saveBtn">Save fund</button>
@@ -1670,7 +1710,11 @@
                     if (f.isSystem) badges += ' <span class="pill pill-accent">system</span>';
                     if (f.status === "archived") badges += ' <span class="pill pill-amber">archived</span>';
                     if (f.visibility === "members") badges += ' <span class="pill pill-grey">members-only</span>';
+                    var hero = f.heroImageUrl
+                        ? '<img src="' + esc(f.heroImageUrl) + '" alt="" style="width:100%; height:80px; object-fit:cover; border-radius:12px; margin-bottom:10px;">'
+                        : "";
                     return '<div class="fund-card">' +
+                        hero +
                         '<div class="fc-name">' + esc(f.name) + badges + "</div>" +
                         '<div class="fc-slug">' + esc(f.slug) + "</div>" +
                         '<div class="fc-bar"><div style="width:' + pct + '%"></div></div>' +
@@ -1697,6 +1741,20 @@
                 $("f_goal").value = f.goalAmount; $("f_desc").value = f.description || "";
                 $("f_visibility").value = f.visibility;
                 $("f_name").disabled = $("f_slug").disabled = $("f_desc").disabled = $("f_visibility").disabled = !!f.isSystem;
+
+                // Fund Foundation metadata — editable on every fund, including system funds.
+                $("f_message").value = f.message || "";
+                $("f_rankingEnabled").checked = !!f.rankingEnabled;
+                $("f_rankingVisibility").value = f.rankingVisibility || "public";
+                $("f_razorpayKeyId").value = f.razorpayKeyId || "";
+                state.fundRemoveHeroImage = false;
+                $("f_heroImageFile").value = "";
+                if (f.heroImageUrl) {
+                    $("f_heroImagePreview").src = f.heroImageUrl;
+                    $("f_heroImagePreviewContainer").style.display = "block";
+                } else {
+                    $("f_heroImagePreviewContainer").style.display = "none";
+                }
 
                 // Show delete/archive buttons only for non-system funds
                 var archiveBtn = $("f_archiveBtn");
@@ -1758,8 +1816,12 @@
             $("fundFormTitle").textContent = "Create a fund";
             $("f_archiveBtn").style.display = "none";
             $("f_deleteBtn").style.display = "none";
-            ["f_name", "f_slug", "f_goal", "f_desc"].forEach(function (id) { $(id).value = ""; $(id).disabled = false; });
+            ["f_name", "f_slug", "f_goal", "f_desc", "f_message", "f_razorpayKeyId", "f_heroImageFile"].forEach(function (id) { $(id).value = ""; $(id).disabled = false; });
             $("f_visibility").value = "public"; $("f_visibility").disabled = false;
+            $("f_rankingEnabled").checked = false;
+            $("f_rankingVisibility").value = "public";
+            $("f_heroImagePreviewContainer").style.display = "none";
+            state.fundRemoveHeroImage = false;
         }
         function saveFund() {
             var editing = state.editingFundSlug;
@@ -1768,11 +1830,35 @@
                 slug: ($("f_slug").value || "").trim(),
                 goal_amount: Number($("f_goal").value) || 0,
                 description: $("f_desc").value.trim(),
-                visibility: $("f_visibility").value
+                visibility: $("f_visibility").value,
+                message: $("f_message").value.trim(),
+                rankingEnabled: $("f_rankingEnabled").checked,
+                rankingVisibility: $("f_rankingVisibility").value,
+                razorpayKeyId: $("f_razorpayKeyId").value.trim()
             };
             if (!editing && !payload.name) { setMsg("f_msg", "Fund name is required", "err"); return; }
+
+            if (editing) payload.slug = editing;
+            if (state.fundRemoveHeroImage) payload.removeHeroImage = true;
+
+            // Only send heroImage when a NEW file was picked — resending the
+            // already-stored URL on every unrelated edit would make the backend
+            // treat it as a fresh upload (deleting + re-tagging an R2-stored
+            // image as "external" for no reason). Leaving heroImage out keeps
+            // the existing hero image untouched, matching the funds.js contract.
+            var heroFile = $("f_heroImageFile").files[0];
+            if (heroFile) {
+                var reader = new FileReader();
+                reader.onload = function (e) { payload.heroImage = e.target.result; submitFund(editing, payload); };
+                reader.onerror = function () { setMsg("f_msg", "Failed to read hero image file", "err"); };
+                reader.readAsDataURL(heroFile);
+            } else {
+                submitFund(editing, payload);
+            }
+        }
+        function submitFund(editing, payload) {
             var req = editing
-                ? api("/api/funds", { method: "PUT", body: JSON.stringify(Object.assign(payload, { slug: editing })) })
+                ? api("/api/funds", { method: "PUT", body: JSON.stringify(payload) })
                 : api("/api/funds", { method: "POST", body: JSON.stringify(payload) });
             req.then(function (d) {
                 setMsg("f_msg", d.message, d.success ? "ok" : "err");
@@ -3255,6 +3341,22 @@
                 }).catch(function (e) { setMsg("f_msg", e.message, "err"); });
             };
             $("f_name").oninput = function () { if (!state.editingFundSlug) $("f_slug").placeholder = $("f_name").value.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-"); };
+            $("f_heroImageFile").onchange = function () {
+                var file = this.files[0];
+                if (!file) return;
+                state.fundRemoveHeroImage = false;
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    $("f_heroImagePreview").src = e.target.result;
+                    $("f_heroImagePreviewContainer").style.display = "block";
+                };
+                reader.readAsDataURL(file);
+            };
+            $("f_removeHeroImageBtn").onclick = function () {
+                state.fundRemoveHeroImage = true;
+                $("f_heroImageFile").value = "";
+                $("f_heroImagePreviewContainer").style.display = "none";
+            };
             $("memberRefresh").onclick = loadMembers;
             $("memberSearch").oninput = renderMembers;
             $("fam_saveBtn").onclick = saveFamily; $("fam_clearBtn").onclick = clearFamilyForm;
