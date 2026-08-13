@@ -233,3 +233,108 @@ test("funds: DELETE requires the delete_funds permission, which is distinct from
   const stillThere = await db.prepare("SELECT status FROM funds WHERE slug='deletable'").first();
   assert.equal(stillThere.status, "active");
 });
+
+// ── Dynamic fund aggregation (Admin Overview reporting) ──────────────────
+// The Admin Overview no longer hardcodes Tech/Christmas: it discovers funds
+// from this listing and pulls each fund's contributions from the ?slug=
+// detail endpoint. These tests lock in that a brand-new, admin-created fund
+// is aggregated correctly with no code change required, and that soft-deleted
+// contributions (added in migration 0012) are excluded the same way
+// /api/contributions already excludes them from its own totals.
+
+test("funds: a newly created fund's contributions are aggregated in the listing and detail views (no hardcoded fund needed)", async () => {
+  const db = freshDb();
+  const create = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Roof Repair Fund", goal_amount: 50000 }
+  })));
+  assert.equal(create.success, true, create.message);
+
+  await db.prepare(
+    "INSERT INTO contributions (member_name, amount, date, category, proof_id, fund) VALUES ('Priya', 400, '2026-08-01', 'Online (Verified)', 'pay_roof1', 'roof-repair-fund')"
+  ).run();
+  await db.prepare(
+    "INSERT INTO contributions (member_name, amount, date, category, proof_id, fund) VALUES ('Kumar', 600, '2026-08-02', 'Direct Cash', NULL, 'roof-repair-fund')"
+  ).run();
+  await db.prepare(
+    "INSERT INTO purchases (name, amount, date, fund, fund_contribution, status) VALUES ('Roofing sheets', 300, '2026-08-03', 'roof-repair-fund', 300, 'Active')"
+  ).run();
+
+  const list = await readJson(await funds.onRequestGet(makeContext({ db, url: "https://test.local/api/funds" })));
+  const roof = list.funds.find(f => f.slug === "roof-repair-fund");
+  assert.ok(roof, "the new fund must appear in the listing without any code change");
+  assert.equal(roof.totalCollected, 1000);
+  assert.equal(roof.spentOnProducts, 300);
+  assert.equal(roof.availableBalance, 700);
+
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, url: "https://test.local/api/funds?slug=roof-repair-fund"
+  })));
+  assert.equal(detail.contributions.length, 2);
+  assert.equal(detail.contributions.reduce((s, c) => s + Number(c.Amount), 0), 1000);
+  assert.equal(detail.availableBalance, 700);
+});
+
+test("funds: listing totalCollected and detail contributions exclude soft-deleted rows, for system and custom funds alike", async () => {
+  const db = freshDb();
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds", body: { name: "Missions Fund" }
+  }));
+
+  await db.prepare(
+    "INSERT INTO contributions (member_name, amount, date, category, proof_id, fund) VALUES ('Live Giver', 500, '2026-08-01', 'Direct Cash', NULL, 'missions-fund')"
+  ).run();
+  await db.prepare(
+    "INSERT INTO contributions (member_name, amount, date, category, proof_id, fund, is_deleted) VALUES ('Deleted Giver', 9999, '2026-08-01', 'Direct Cash', NULL, 'missions-fund', 1)"
+  ).run();
+
+  const list = await readJson(await funds.onRequestGet(makeContext({ db, url: "https://test.local/api/funds" })));
+  const missions = list.funds.find(f => f.slug === "missions-fund");
+  assert.equal(missions.totalCollected, 500, "soft-deleted contribution must not inflate the listing total");
+
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, url: "https://test.local/api/funds?slug=missions-fund"
+  })));
+  assert.ok(!detail.contributions.find(c => c.Member === "Deleted Giver"), "soft-deleted row must not appear in the fund detail contributions list");
+  assert.equal(detail.contributions.length, 1);
+});
+
+test("funds: listing and detail survive a pre-0012 database missing is_deleted (schema-drift regression, mirrors /api/contributions' guard)", async () => {
+  // Reproduces the same class of incident covered in contributions.test.mjs:
+  // code that selects/filters on is_deleted must not 500 an entire endpoint
+  // when a database hasn't had migration 0012 applied yet.
+  const db = freshDb();
+  db._sqlite.exec(`
+    DROP TABLE contributions;
+    CREATE TABLE contributions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      member_name TEXT NOT NULL,
+      amount REAL NOT NULL,
+      date TEXT NOT NULL,
+      category TEXT,
+      notes TEXT,
+      proof_id TEXT,
+      email TEXT,
+      phone TEXT,
+      fund TEXT NOT NULL DEFAULT 'tech-contributions',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  db._sqlite.exec(
+    "INSERT INTO contributions (member_name, amount, date, category, fund) VALUES ('Pre Migration Giver', 750, '2026-07-01', 'Direct Cash', 'tech-contributions');"
+  );
+
+  const listRes = await funds.onRequestGet(makeContext({ db, url: "https://test.local/api/funds" }));
+  assert.equal(listRes.status, 200, "listing must not 500 when is_deleted is absent");
+  const list = await readJson(listRes);
+  const tech = list.funds.find(f => f.slug === "tech-contributions");
+  assert.equal(tech.totalCollected, 750);
+
+  const detailRes = await funds.onRequestGet(makeContext({
+    db, url: "https://test.local/api/funds?slug=tech-contributions"
+  }));
+  assert.equal(detailRes.status, 200, "detail must not 500 when is_deleted is absent");
+  const detail = await readJson(detailRes);
+  assert.equal(detail.contributions.length, 1);
+  assert.equal(detail.contributions[0].Member, "Pre Migration Giver");
+});

@@ -20,6 +20,9 @@
 - [x] `funds.js` POST create: reserved slug rejected, duplicate slug → 409 — `tests/api/funds.test.mjs`
 - [x] `funds.js` PUT nonexistent fund → 404, no editable fields → 400 — `tests/api/funds.test.mjs`
 - [x] `funds.js` DELETE requires `delete_funds` (distinct from `manage_funds`) — `tests/api/funds.test.mjs`
+- [x] `funds.js` GET listing/detail exclude soft-deleted (`is_deleted`) contributions from totals, with a pre-0012 schema-drift fallback — `tests/api/funds.test.mjs`
+- [x] `funds.js` GET listing/detail aggregate a brand-new admin-created fund correctly (Admin Overview dynamic-fund reporting) — `tests/api/funds.test.mjs`
+- [x] `admin.html` Overview `loadOverview()` discovers funds from `/api/funds` instead of hardcoding Tech/Christmas — `tests/frontend/admin-overview-dynamic-funds.test.mjs`
 - [x] `settings.js` PUT requires `manage_funds` permission — `tests/api/settings.test.mjs`
 - [x] `settings.js` PUT `force_login` must be `'true'`/`'false'` — `tests/api/settings.test.mjs`
 - [x] `settings.js` PUT `tech_goal_amount`/`christmas_goal_amount` syncs into `funds` table — `tests/api/settings.test.mjs`
