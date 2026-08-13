@@ -22,12 +22,17 @@ conflicting work ("resolving conflicts at scale" applies here even with a small
 team):
 
 1. Read `CLAUDE.md` (repo root) — the pitfalls and the milestone-planning ritual.
-2. Read `docs/milestone-v2/README.md` — the current milestone's plan and status.
-3. Read `docs/testing/COVERAGE-TRACKER.md` — the live test-coverage backlog. Skim
+2. Read `docs/development/AGENT_RULES.md` — the mandatory quality-gate checklist
+   (test-matrix coverage, UI/production verification honesty, mutation testing,
+   discovery classification, and the required final handoff).
+3. Read `docs/milestone-v2/README.md` — the current milestone's plan and status.
+4. Read `docs/testing/COVERAGE-TRACKER.md` — the live test-coverage backlog. Skim
    for open (`[ ]`) items in the area you're about to touch.
-4. Run `git log --oneline -20` and `git status` — see what actually landed most
+5. Read `docs/development/AGENT_HANDOFFS.md` — recent session handoffs, so you
+   know what the last few agent sessions actually did and verified (or didn't).
+6. Run `git log --oneline -20` and `git status` — see what actually landed most
    recently, not just what a stale handoff doc claims.
-5. Run `npm test` **before** making any change, to confirm you're starting from
+7. Run `npm test` **before** making any change, to confirm you're starting from
    a green baseline. If it's already red, stop and fix that first — don't build
    on a broken foundation.
 
@@ -136,3 +141,20 @@ For any major feature/milestone (not a routine bugfix), `CLAUDE.md`'s "Milestone
 workflow" section applies: PRD → TRD → App Flow → UI/UX Spec → Backend Schema →
 Implementation Plan, in order, before implementation begins. See
 `docs/milestone-v2/README.md` for the live example.
+
+## 10. Quality gates and mandatory handoffs
+
+[`docs/development/AGENT_RULES.md`](./docs/development/AGENT_RULES.md) is the
+authoritative, mandatory checklist for what "done" means on top of the process
+in this file — it doesn't restate the rules above, it adds the gates that stop
+a task from being reported complete prematurely: an explicit test matrix per
+feature (happy/negative/authorization/regression/boundary/persistence/error),
+honesty about what was and wasn't verified in a browser or in production,
+mutation testing for any authorization/validation guard (not only money-path
+changes), and a classification scale for anything discovered along the way
+(BLOCKER/HIGH RISK/REGRESSION/PRE-EXISTING BUG/TECH DEBT/INFORMATIONAL). Every
+session that changes anything ends by appending an entry to
+[`docs/development/AGENT_HANDOFFS.md`](./docs/development/AGENT_HANDOFFS.md) —
+never editing a previous entry — with the exact test command and result. Agents
+must never merge or push another agent's branch unless explicitly instructed to
+do that specific action.
