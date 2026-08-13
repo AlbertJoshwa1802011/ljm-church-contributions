@@ -6,9 +6,15 @@ Guidance for coding agents working in this repo.
 
 Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first — it's the mandatory process
 for this repo (tests required for every endpoint change, the giving/money path
-is frozen, CI blocks a red suite from deploying, additive-only migrations). This
-file covers pitfalls and the milestone-planning ritual; `CONTRIBUTING.md` covers
-the engineering process. Both apply, together.
+is frozen, CI blocks a red suite from deploying, additive-only migrations). Then
+read [`docs/development/AGENT_RULES.md`](./docs/development/AGENT_RULES.md) —
+the mandatory quality-gate checklist (test-matrix coverage, UI/production
+verification honesty, mutation testing, discovery classification, and the
+required final handoff in
+[`docs/development/AGENT_HANDOFFS.md`](./docs/development/AGENT_HANDOFFS.md)).
+This file covers pitfalls and the milestone-planning ritual; `CONTRIBUTING.md`
+covers the engineering process; `AGENT_RULES.md` covers what "done" has to mean
+before you report a task complete. All three apply, together.
 
 ## Project shape
 

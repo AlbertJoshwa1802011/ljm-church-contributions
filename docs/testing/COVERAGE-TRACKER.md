@@ -122,6 +122,15 @@ Closed alongside the Aug 2026 incident in which no online payment reached D1 for
 
 ---
 
+## Discoveries found while closing gaps
+
+When closing an item here turns up something that isn't the gap itself (a
+latent bug, like the `auth.js` `.meta.changes` entry above), classify it per
+[`docs/development/AGENT_RULES.md`](../development/AGENT_RULES.md) §8
+(BLOCKER / HIGH RISK / REGRESSION / PRE-EXISTING BUG / TECH DEBT /
+INFORMATIONAL) before recording it inline in the relevant row, the way the
+`auth.js` entry above already does.
+
 ## Explicitly accepted gaps (not oversights — recorded on purpose)
 
 These are **not** silently missing; they're judged not reducible to the current
