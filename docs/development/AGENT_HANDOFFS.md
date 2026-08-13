@@ -1148,3 +1148,462 @@ begin implementation until all six documents exist and are approved") and this
 task's explicit "do not implement" constraint.
 
 ---
+
+## 2026-08-13 — LJM V2 Branch Integration: 4 branches merged into `claude/ljm-v2-integration-audit-vsmxj3`
+
+- **Branch:** `claude/ljm-v2-integration-audit-vsmxj3`
+- **Role:** LJM V2 Integration Engineer (this session). Executed the merge the
+  two prior audit-only rounds above (this same session, same branch)
+  explicitly deferred to the architect. This entry is that merge.
+- **Scope:** Merged four independently-developed, already-approved agent
+  branches into this integration branch, one at a time, in the order the
+  architect specified: `claude/agent-rules-quality-gates-mvvkd1` →
+  `claude/admin-overview-dynamic-funds-quatcl` →
+  `claude/fund-foundation-phase-bjoybm` →
+  `claude/lojm-website-architecture-audit-px3jzf`. No product features were
+  implemented, no requirements changed, no unrelated code touched — this was
+  reconciliation of already-completed work, not new development. **Not
+  merged into `main`; not pushed as a PR** — pushed only to this integration
+  branch, per task instructions.
+
+---
+
+### STATUS
+
+**COMPLETE**
+
+All four branches merged. Final suite: 354/354 passing, 0 failures. No test
+weakened or deleted. No money-path file changed (confirmed byte-identical to
+original `main` via `git diff`/hash comparison). No migration collision. All
+documentation preserved — nothing discarded. One integration-created risk
+was found and is flagged below (not silently fixed, not blocking): see
+DISCOVERIES §1.
+
+---
+
+### CURRENT MAIN SHA
+
+`2ff95980d98de25006c2d04c1a2084ebb1c4ea4f` — unchanged throughout this
+session; nothing was pushed to `main` and `main` did not move upstream
+during this work (re-verified via `git log --oneline 2ff9598..origin/main`
+= empty, immediately before starting the merges).
+
+---
+
+### BASELINE
+
+```
+$ npm test
+...
+1..328
+# tests 328
+# suites 0
+# pass 328
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+```
+
+Confirmed on the integration branch immediately before merge 1 (branch was
+at `main` + the two prior audit-only doc commits, `a7cb383`/`80c21a8` —
+zero application-code delta from `main`, so 328/328 was expected and
+confirmed).
+
+---
+
+### AFTER EACH MERGE
+
+**Merge 1 — `claude/agent-rules-quality-gates-mvvkd1`**
+- Commit merged: `a3f30ea3022439fa0f213e77e47b64a68d234b77`
+- Integration commit: `4a56e8d` ("Merge remote-tracking branch
+  'origin/claude/agent-rules-quality-gates-mvvkd1' into ...")
+- Conflicts: `docs/development/AGENT_HANDOFFS.md` only (add/add — both this
+  branch and the incoming branch had independently created the file).
+  Resolved by hand: kept this branch's header/entry-template (adopted from
+  the incoming branch's own version, since that branch's whole purpose was
+  defining the canonical format) plus this session's two prior audit
+  entries, then appended the incoming branch's own dated entry at the tail.
+  `CLAUDE.md`, `CONTRIBUTING.md`, `docs/development/AGENT_RULES.md` (new),
+  `docs/testing/COVERAGE-TRACKER.md` applied with **no conflict** (this
+  branch hadn't touched any of them).
+- Tests: `npm test` → **328/328 passing, 0 fail** (identical to baseline —
+  this branch is documentation/process-only).
+- Result: Clean.
+
+**Merge 2 — `claude/admin-overview-dynamic-funds-quatcl`**
+- Commit merged: `b183d89c3e52ee9aee4162551b702a76172cc36a`
+- Integration commit: `e3a845e`
+- Conflicts: `docs/development/AGENT_HANDOFFS.md` only (add/add). Resolved
+  the same way — appended this branch's dated entry after the previous
+  entry, verbatim, nothing dropped. `admin.html`, `functions/api/funds.js`,
+  `tests/api/funds.test.mjs`, `docs/testing/COVERAGE-TRACKER.md`,
+  `tests/frontend/admin-overview-dynamic-funds.test.mjs` (new) all
+  auto-merged with **no conflict** — this branch's edits didn't overlap
+  anything merge 1 touched.
+- Tests: `npm test` → **336/336 passing, 0 fail** (328 baseline + 8 new: 3
+  in `funds.test.mjs`, 5 in `admin-overview-dynamic-funds.test.mjs`).
+- Money-path check: `git diff --cached --stat HEAD -- functions/api/webhook.js
+  razorpay-checkout.js functions/api/contributions.js` → empty. Clean.
+- Result: Clean.
+
+**Merge 3 — `claude/fund-foundation-phase-bjoybm`** (the expected hard merge)
+- Commit merged: `8f3d2894b557c7ce9e6ecdbb562cb9921eed7c3a`
+- Integration commit: `a1cf9ac`
+- Conflicts: 3 files —
+  1. **`functions/api/funds.js`** — real content conflict. Both this branch
+     and `admin-overview-dynamic-funds-quatcl` (already merged) edited the
+     exact same `SELECT` statement inside `onRequestGet`'s fund-listing
+     branch. Resolved by hand-combining both edits: kept
+     `admin-overview-dynamic-funds-quatcl`'s try/catch structure (the
+     `is_deleted = 0` filter with a schema-drift fallback for databases
+     that haven't had migration `0012` applied), and added
+     `fund-foundation-phase-bjoybm`'s new selected columns
+     (`hero_image_url`, `hero_image_storage`, `message`, `ranking_enabled`,
+     `ranking_visibility`, `razorpay_key_id`) to **both** branches of that
+     try/catch, not just one — so a database missing `is_deleted` still
+     gets the Fund Foundation metadata columns, and vice versa. Neither
+     branch's feature was removed or weakened; see DISCOVERIES §1 for a
+     risk this specific combination introduces.
+  2. **`tests/api/funds.test.mjs`** — both branches appended new test
+     blocks at the same location; no logical overlap, kept both blocks. A
+     mechanical git-diff-placement artifact dropped one closing `});`
+     between the two test blocks during the textual merge (not a real
+     conflict — git's hunk boundary landed mid-way through
+     `admin-overview-dynamic-funds-quatcl`'s last test); caught immediately
+     by `node --check` on the resolved file, which failed with
+     `SyntaxError: Unexpected end of input`, and fixed by re-inserting the
+     missing `});` (verified against that branch's own original file
+     content via `git show`, which confirmed exactly one `});` was missing
+     and where).
+  3. **`docs/development/AGENT_HANDOFFS.md`** — add/add, resolved the same
+     way as merges 1–2 (append this branch's full dated entry, nothing
+     dropped).
+  `admin.html`, `docs/testing/COVERAGE-TRACKER.md`,
+  `tests/regression/schema-contract.test.mjs` auto-merged cleanly.
+  `docs/architecture/FUND-SYSTEM-AUDIT.md` (new),
+  `migrations/0015_fund_foundation_metadata.sql` (new),
+  `tests/frontend/fund-admin-wiring.test.mjs` (new), and the `schema.sql`
+  update applied as clean adds/edits, no conflict.
+- Tests immediately after resolving conflicts, before the syntax fix:
+  `node --check tests/api/funds.test.mjs` → **failed**
+  (`SyntaxError: Unexpected end of input` at line 545) — caught the dropped
+  `});` before running the suite. After the fix: `node --check` → clean.
+- Tests: `npm test` → **354/354 passing, 0 fail** (336 + 18 new: 11 in
+  `funds.test.mjs`, 7 in `fund-admin-wiring.test.mjs` — exact match for
+  328 + 8 + 18). Targeted re-run: `node --test tests/api/funds.test.mjs` →
+  **30/30 passing** (16 pre-existing + 3 admin-overview + 11
+  fund-foundation), including test #18
+  ("listing totalCollected and detail contributions exclude soft-deleted
+  rows, for system and custom funds alike") and #19 (pre-0012 schema-drift
+  regression) from `admin-overview-dynamic-funds-quatcl` passing
+  side-by-side with tests #20–30 (hero image / message / ranking /
+  Razorpay key-id validation) from `fund-foundation-phase-bjoybm` — direct
+  proof both feature sets work together in the reconciled code, not just
+  that each passes in isolation.
+- Money-path check: `git diff --cached --stat HEAD -- functions/api/webhook.js
+  razorpay-checkout.js functions/api/contributions.js` → empty. Clean.
+- Migration check: `migrations/0015_fund_foundation_metadata.sql` is the
+  only new migration, numbered `0015` — next free number after the existing
+  `0014_backfill_missed_webhook_payments.sql`, no collision.
+- Result: Clean, with one flagged risk (DISCOVERIES §1) — not blocking, not
+  silently fixed.
+
+**Merge 4 — `claude/lojm-website-architecture-audit-px3jzf`**
+- Commit merged: `845df0676814afb757168f42913e8987e9d65b81`
+- Integration commit: `6d305fb`
+- Conflicts: `docs/development/AGENT_HANDOFFS.md` only (add/add), resolved
+  the same way — appended this branch's dated entry, nothing dropped.
+  `docs/architecture/website-ux-architecture-audit.md` (new) applied with
+  no conflict (unique filename, doesn't collide with
+  `FUND-SYSTEM-AUDIT.md`).
+- Tests: `npm test` → **354/354 passing, 0 fail** (unchanged from merge 3 —
+  this branch is documentation-only, no test changes).
+- Result: Clean.
+
+---
+
+### FINAL
+
+```
+$ npm test
+...
+1..354
+# tests 354
+# suites 0
+# pass 354
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2000.985059
+```
+
+**354/354 passing, 0 failures.** Matches the arithmetic exactly: 328
+(baseline) + 8 (`admin-overview-dynamic-funds-quatcl`) + 18
+(`fund-foundation-phase-bjoybm`) + 0 (`agent-rules-quality-gates-mvvkd1`,
+`lojm-website-architecture-audit-px3jzf` — both docs-only) = 354. No test
+was removed, skipped, or weakened — verified by comparing test counts at
+every step (they only ever went up by exactly the number of new tests each
+branch added) and by re-reading the final `tests/api/funds.test.mjs` in full
+after the manual conflict resolution to confirm every original assertion
+from both source branches survived intact.
+
+---
+
+### TARGETED TESTS
+
+| Area | Check performed | Result |
+|---|---|---|
+| Dynamic fund creation | `funds.test.mjs` #2 ("an admin can create a custom fund and it becomes visible"), #17 (new fund aggregated with no hardcoded fund needed) | PASS |
+| Fund metadata CRUD | `funds.test.mjs` #20–30 (hero image, message, ranking, Razorpay key-id create/update/clear) | PASS (11/11) |
+| Hero image validation | `funds.test.mjs` #21–23, #28 (base64 fallback, external URL, oversized/non-string rejection, remove) | PASS |
+| Ranking configuration | `funds.test.mjs` #20, #25, #27 (defaults, enum validation, edit on system fund) | PASS |
+| Razorpay key-id validation | `funds.test.mjs` #20, #26, #27, #29, #30 (format validation, rejects non-`rzp_` input, clear via empty string) + repo-wide grep confirming `razorpay_key_id`/`razorpayKeyId` appears only in `admin.html` (UI) and `functions/api/funds.js` (storage) — never in `razorpay-checkout.js` or `webhook.js` | PASS, confirmed inert |
+| Dynamic Admin Overview | `admin-overview-dynamic-funds.test.mjs` #1–5 (no hardcoded slugs, discovers funds via `/api/funds`, per-fund fetch, dynamic distribution chart, summed KPIs) | PASS (5/5) |
+| Soft-deleted contribution exclusion | `funds.test.mjs` #18 (excluded from listing + detail, system and custom funds alike), #19 (pre-migration-0012 schema-drift fallback) | PASS |
+| Existing Tech Fund behavior | `funds.test.mjs` #19 ("system funds reject rename but allow goal changes... keep legacy config key in sync"), #20 ("system funds cannot be deleted"), #43 ("PUT allows Fund Foundation metadata edits on a SYSTEM fund (Tech Fund) while still blocking identity fields") | PASS |
+| Existing Christmas Fund behavior | Same system-fund tests above apply to both seeded system funds (`tech-contributions`, `christmas-fund`) — `funds.test.mjs` #17 ("public listing shows the two seeded system funds"), `schema-contract.test.mjs` #49 ("the two legacy system funds are seeded and marked is_system") | PASS |
+| Existing payment path unchanged | `git diff 2ff9598 HEAD -- functions/api/webhook.js razorpay-checkout.js functions/api/contributions.js` → empty; `git hash-object` on `razorpay-checkout.js` before/after identical (`c61f09a...`) | PASS — byte-identical |
+| Migration numbering/order | `ls migrations/` → sequential `0002`...`0015`, no gaps beyond the pre-existing `0011` duplicate-number pair (`0011_events.sql`/`0011_member_appearance.sql`, pre-existing on `main`, not introduced by this integration), no collision from any of the 4 merged branches | PASS |
+| Fund admin UI wiring (hero/message/ranking/Razorpay fields) | `fund-admin-wiring.test.mjs` #1–7 (helpers defined, element ids exist, hero upload wired, `saveFund()` sends new fields, edit populates fields incl. on system funds, clear resets fields) | PASS (7/7) |
+| Repo-wide conflict-marker sweep | `grep -rl "^<<<<<<<\|^=======\|^>>>>>>>"` across `*.md/*.js/*.html/*.sql` | Clean — none found |
+
+---
+
+### FILES WITH CONFLICTS
+
+1. **`docs/development/AGENT_HANDOFFS.md`** — conflicted on **every one** of
+   the 4 merges (add/add each time: this branch and the incoming branch had
+   both independently created the file off `main`, which never had it).
+   Resolved identically each time: never chose one version and discarded
+   the other. The canonical header/template now in place is adopted from
+   `claude/agent-rules-quality-gates-mvvkd1`'s version (that branch's
+   purpose was literally to define this format). Every branch's own dated
+   entry was appended in full, verbatim, in merge order — nothing
+   summarized, trimmed, or dropped. The file is now 1150+ lines containing:
+   both audit-round entries from this session, `agent-rules-quality-gates-mvvkd1`'s
+   entry, `admin-overview-dynamic-funds-quatcl`'s entry,
+   `fund-foundation-phase-bjoybm`'s entry, `lojm-website-architecture-audit-px3jzf`'s
+   entry, and this entry.
+2. **`functions/api/funds.js`** (merge 3 only) — real content conflict, both
+   branches edited the same `SELECT` statement. Resolved by combining both
+   edits (see "Merge 3" above for the full detail) — confirmed via targeted
+   test run that both the `is_deleted` exclusion/schema-drift fallback and
+   the Fund Foundation metadata columns work correctly together, not just
+   individually.
+3. **`tests/api/funds.test.mjs`** (merge 3 only) — both branches appended
+   new tests at the same location; concatenated both blocks. A
+   git-diff-placement artifact (not a logical conflict) dropped one closing
+   brace between the two blocks; caught by `node --check` before running
+   any tests, and fixed by restoring the missing `});` from the source
+   branch's original file content.
+
+No other file conflicted across all 4 merges.
+
+---
+
+### MONEY-PATH VERIFICATION
+
+Explicitly checked after every merge and again at the end, against the
+original `main` commit (`2ff9598`):
+
+- **`functions/api/webhook.js`** — **UNCHANGED.** Zero diff, hash-identical.
+- **`razorpay-checkout.js`** — **UNCHANGED.** Zero diff, hash-identical
+  (`c61f09af01883d38a97e7740ab09588e5fdef588` before and after).
+- **`functions/api/contributions.js`** — **UNCHANGED.** Zero diff,
+  hash-identical.
+- **Payment verification code** — no payment-verification logic exists
+  outside the three files above in this repo (confirmed by the repo's own
+  architecture: Razorpay signature verification lives in `webhook.js`); not
+  touched.
+
+`fund-foundation-phase-bjoybm`'s `razorpay_key_id` column is real but
+**inert**: stored and validated in `functions/api/funds.js`, editable from
+`admin.html`, but not read anywhere in `razorpay-checkout.js` or
+`webhook.js` (confirmed by repo-wide grep, see TARGETED TESTS table). No
+payment routing behavior changed for any existing or new fund.
+
+---
+
+### MIGRATION VERIFICATION
+
+Every migration in `migrations/` after integration, in filename order:
+
+```
+0002_dynamic_funds_audit.sql
+0003_expenses.sql
+0004_sandha.sql
+0005_purchase_attribution.sql
+0006_families.sql
+0007_sandha_family.sql
+0008_bible_verses.sql
+0009_bible_kjv_seed.sql
+0010_wishlist_images.sql
+0011_events.sql
+0011_member_appearance.sql              ← pre-existing duplicate-number pair, already on main before this integration, not introduced by it
+0012_contribution_attribution.sql
+0013_beta_access.sql
+0014_backfill_missed_webhook_payments.sql
+0015_fund_foundation_metadata.sql       ← NEW, introduced by fund-foundation-phase-bjoybm
+```
+
+**Only one new migration was introduced by the four merged branches:**
+`0015_fund_foundation_metadata.sql` (from `fund-foundation-phase-bjoybm`).
+It is the next free number after `0014`, purely additive (`ALTER TABLE
+funds ADD COLUMN ...` for 6 nullable/DEFAULT-ed columns — no drops,
+renames, or retypes), and matches the corresponding `schema.sql` update
+byte-for-byte in column list. `admin-overview-dynamic-funds-quatcl`,
+`agent-rules-quality-gates-mvvkd1`, and `lojm-website-architecture-audit-px3jzf`
+introduced no migrations. **No migration-number collision was introduced by
+this integration.** (The pre-existing `0011` duplicate pair predates all
+four branches and this integration — flagged here for visibility, not
+something this task caused or was asked to fix.)
+
+**This migration has not been applied to production D1** — per
+`CONTRIBUTING.md` §4, migrations are dispatched manually, never
+automatically, and that step is explicitly out of scope for an integration
+task. See DISCOVERIES §1 below for a deployment-ordering risk this creates.
+
+---
+
+### DOCUMENTATION
+
+- **`docs/development/AGENT_RULES.md`** — now canonical (only one version
+  ever existed; came from `agent-rules-quality-gates-mvvkd1`, merged
+  without conflict). Contains the full quality-gate checklist as authored.
+  Not edited by this integration.
+- **`docs/development/AGENT_HANDOFFS.md`** — now canonical, containing
+  **every** entry from every source: both of this session's prior
+  audit-round entries, plus one full entry from each of the four merged
+  branches, plus this entry. Verified no entry was truncated, summarized,
+  or dropped — each was compared against the source branch's original file
+  content (via `git show origin/<branch>:docs/development/AGENT_HANDOFFS.md`)
+  before being appended, and the header/template is `agent-rules-quality-gates-mvvkd1`'s
+  version with a note at the top explaining the reconciliation.
+- **`CLAUDE.md`, `CONTRIBUTING.md`** — updated by
+  `agent-rules-quality-gates-mvvkd1` (pointers to the new `AGENT_RULES.md`);
+  merged with no conflict since no other branch touched them.
+- **`docs/architecture/FUND-SYSTEM-AUDIT.md`** (from
+  `fund-foundation-phase-bjoybm`) and
+  **`docs/architecture/website-ux-architecture-audit.md`** (from
+  `lojm-website-architecture-audit-px3jzf`) — both present, distinct
+  filenames, no conflict, neither edited by this integration.
+- **`docs/testing/COVERAGE-TRACKER.md`** — all three branches that touched
+  it (`agent-rules-quality-gates-mvvkd1`, `admin-overview-dynamic-funds-quatcl`,
+  `fund-foundation-phase-bjoybm`) auto-merged cleanly; all their added rows
+  present.
+
+---
+
+### DISCOVERIES
+
+1. **HIGH RISK — migration-deployment-ordering gap created by combining
+   two independent schema-drift assumptions.** The reconciled
+   `functions/api/funds.js` listing query now unconditionally selects the
+   Fund Foundation columns (`hero_image_url`, `message`, `ranking_enabled`,
+   `ranking_visibility`, `razorpay_key_id`) in **both** branches of its
+   `is_deleted`-missing-column try/catch (this was necessary to preserve
+   both features together — see "Merge 3" above). Neither original branch
+   anticipated this interaction: `admin-overview-dynamic-funds-quatcl`'s
+   fallback existed only to tolerate migration `0012` (`is_deleted`) not
+   yet being applied; `fund-foundation-phase-bjoybm`'s own code had **no**
+   fallback for migration `0015` not yet being applied (its own handoff
+   entry above says as much under NEXT STEP: "Apply migration
+   0015_fund_foundation_metadata.sql to production D1... before any admin
+   can use the new fields"). Combined as merged: **if this integrated code
+   is deployed to an environment where migration `0012` is applied but
+   `0015` is not, `GET /api/funds` (both the public listing and the admin
+   listing) will 500** — both the `try` and the `catch` branches select the
+   new columns, so a database missing them fails both attempts, and the
+   outer `onRequestGet` catch returns a 500 to every caller, breaking the
+   public fund listing (`funds.html`) entirely until migration `0015` is
+   applied. This is worse than either branch's individual behavior and is
+   a genuine emergent risk from combining two independently-developed
+   schema-drift assumptions, not a bug either branch's author could have
+   anticipated in isolation. **Not fixed by this integration** — adding a
+   third fallback tier (or restructuring the guard) would be a design
+   decision beyond "reconcile the known conflict," and this task's
+   instructions are explicit that architectural choices the architect
+   hasn't approved must not be made silently. **DECISION REQUIRED:** either
+   (a) apply `migrations/0015_fund_foundation_metadata.sql` to every target
+   D1 database (production and any staging/preview) atomically with/before
+   deploying this integrated code — the simplest fix, and already
+   `fund-foundation-phase-bjoybm`'s own documented next step — or (b)
+   explicitly ask for a nested schema-drift fallback to be added, which is
+   additional code this integration did not write.
+2. **INFORMATIONAL — pre-existing duplicate migration number.**
+   `migrations/0011_events.sql` and `migrations/0011_member_appearance.sql`
+   both use number `0011`. Confirmed pre-existing on `main` before any of
+   the four branches or this integration — not introduced here, but noted
+   for completeness per the migration-verification requirement.
+3. **INFORMATIONAL — entry-ordering note for future readers of
+   `AGENT_HANDOFFS.md`.** Entries in the canonical file are ordered by the
+   sequence branches were merged in during this integration, not strictly
+   by each entry's original authorship date (e.g. the
+   `admin-overview-dynamic-funds-quatcl` and `fund-foundation-phase-bjoybm`
+   entries are dated 2026-08-12, appearing after this session's own
+   2026-08-13 audit entries, because those two branches were merged after
+   this session's audit rounds had already run). Each entry's own heading
+   carries its real date, so chronology is still recoverable; flagging so
+   nobody mistakes file position for authorship order.
+
+No BLOCKER, REGRESSION, or PRE-EXISTING BUG affecting current production
+behavior was found. (Note: `fund-foundation-phase-bjoybm`'s own prior
+handoff entry above already disclosed one pre-existing, unrelated bug — the
+"Archive fund" button in `admin.html` sending an unread `action` field —
+discovered by that branch's author, not this integration, and still
+untouched/out of scope here.)
+
+---
+
+### RISKS
+
+- See DISCOVERIES §1 (migration-deployment-ordering) — the one risk this
+  integration's merge decisions created. Everything else below is
+  inherited/pre-existing, not introduced by this integration.
+- (Inherited from the round-1/round-2 audits, still true) 21 other remote
+  branches exist beyond the four integrated here and were not touched or
+  re-evaluated by this integration.
+- (Inherited) `claude/subscription-admin-interface-z3bt3k` has its own,
+  differently-numbered `migrations/0012_families_search_index.sql` — not
+  part of this integration, flagged previously, unresolved.
+
+---
+
+### RECOMMENDED MERGE ORDER
+
+(Historical — already executed in this order; recorded for the record per
+the task's required output format.)
+
+1. `claude/agent-rules-quality-gates-mvvkd1` — merged, commit `4a56e8d`.
+2. `claude/admin-overview-dynamic-funds-quatcl` — merged, commit `e3a845e`.
+3. `claude/fund-foundation-phase-bjoybm` — merged, commit `a1cf9ac`.
+4. `claude/lojm-website-architecture-audit-px3jzf` — merged, commit `6d305fb`.
+
+---
+
+### NEXT STEP
+
+For the architect:
+1. Resolve DISCOVERIES §1 (DECISION REQUIRED) — either schedule
+   `migrations/0015_fund_foundation_metadata.sql` to be applied to every
+   target D1 atomically with deploying this integrated branch, or
+   explicitly request a nested schema-drift fallback be added to
+   `functions/api/funds.js` before deploy.
+2. Review this integration branch (`claude/ljm-v2-integration-audit-vsmxj3`,
+   currently at commit `6d305fb` before this handoff commit) — diff against
+   `main` is the 15-file, +2936/-49-line change listed above, entirely
+   `admin.html` / `functions/api/funds.js` / `schema.sql` /
+   `migrations/0015...` / docs / tests. No money-path file touched.
+3. Decide whether/when to merge this integration branch into `main` — **not
+   done by this task**, per explicit instruction ("Do NOT merge directly
+   into main unless explicitly instructed").
+4. Apply migration `0015_fund_foundation_metadata.sql` to production D1
+   (dry-run first per `CONTRIBUTING.md` §4) before or atomically with any
+   deploy that includes this integrated `funds.js`.
+5. The round-1/round-2 audit's still-open item — whether to create
+   `docs/development/IMPLEMENTATION_STATUS.md` — remains open and was not
+   revisited by this integration task.
+
+---
