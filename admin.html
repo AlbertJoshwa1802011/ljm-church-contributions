@@ -1283,6 +1283,17 @@
         }
 
         // Every admin call carries the token (Google ID token, or legacy email in dev)
+        //
+        // r.ok guard: a non-2xx response (e.g. a 500 from a D1 outage) must
+        // never be handed to a caller's .then() as if it were a normal
+        // result — funds/summary endpoints return an object shape
+        // (`{funds: [...]}`) on success, and an error body like
+        // `{error: "..."}` or `{success:false, message:"..."}` on failure
+        // has no `.funds`/`.contributions` array. Treating that as valid
+        // data silently reads as "zero funds" / "zero giving" to a caller
+        // that doesn't itself re-check `success`. Rejecting here routes
+        // every HTTP failure through the same .catch() path callers already
+        // use for network errors, with the server's own message preserved.
         function api(path, opts) {
             opts = opts || {};
             opts.headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
@@ -1295,7 +1306,12 @@
                         throw new Error(d.message || "Session expired — please sign in again.");
                     });
                 }
-                return r.json();
+                return r.json().catch(function () { return {}; }).then(function (d) {
+                    if (!r.ok) {
+                        throw new Error(d.message || d.error || ("Request failed (HTTP " + r.status + ")"));
+                    }
+                    return d;
+                });
             });
         }
 
@@ -1597,6 +1613,26 @@
         }
 
         // ═══════════════ Overview ═══════════════
+        // Pure — no DOM, no fetch — so it can be extracted from admin.html's
+        // source and executed directly in a test runner (see
+        // tests/frontend/admin-overview-dynamic-funds.test.mjs) for real
+        // behavioral coverage of the month-bucketing/growth math, not just
+        // structural regex checks against the surrounding wiring.
+        function computeMonthlyGiving(contributions, now) {
+            now = now || new Date();
+            var cm = now.getMonth(), cy = now.getFullYear();
+            var lm = cm === 0 ? 11 : cm - 1, ly = cm === 0 ? cy - 1 : cy;
+            var thisMonth = 0, lastMonth = 0;
+            (contributions || []).forEach(function (c) {
+                var d = new Date(c.Date);
+                if (isNaN(d)) return;
+                if (d.getFullYear() === cy && d.getMonth() === cm) thisMonth += Number(c.Amount) || 0;
+                else if (d.getFullYear() === ly && d.getMonth() === lm) lastMonth += Number(c.Amount) || 0;
+            });
+            var growthPct = lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : null;
+            return { thisMonth: thisMonth, lastMonth: lastMonth, growthPct: growthPct };
+        }
+
         // Fund-agnostic: discovers every registered fund from /api/funds (the
         // dynamic fund registry — includes system funds like Tech/Christmas
         // AND any admin-created fund) and pulls each fund's own contribution
@@ -1621,17 +1657,11 @@
 
                 var total = all.reduce(function (s, c) { return s + (Number(c.Amount) || 0); }, 0);
                 var names = {}; all.forEach(function (c) { if (c.Member) names[c.Member] = 1; });
-                var now = new Date(), cm = now.getMonth(), cy = now.getFullYear();
-                var thisM = 0, lastM = 0;
-                all.forEach(function (c) {
-                    var d = new Date(c.Date);
-                    if (d.getFullYear() === cy && d.getMonth() === cm) thisM += Number(c.Amount) || 0;
-                    var lm = cm === 0 ? 11 : cm - 1, ly = cm === 0 ? cy - 1 : cy;
-                    if (d.getFullYear() === ly && d.getMonth() === lm) lastM += Number(c.Amount) || 0;
-                });
+                var monthly = computeMonthlyGiving(all, new Date());
+                var thisM = monthly.thisMonth, lastM = monthly.lastMonth;
                 var spent = funds.reduce(function (s, f) { return s + (Number(f.spentOnProducts) || 0); }, 0);
                 var avail = funds.reduce(function (s, f) { return s + (Number(f.availableBalance) || 0); }, 0);
-                var growthPct = lastM > 0 ? Math.round(((thisM - lastM) / lastM) * 100) : null;
+                var growthPct = monthly.growthPct;
                 var growthValue = growthPct === null ? (thisM > 0 ? "New" : "—") : Math.abs(growthPct) + "%";
                 var growthTrend = growthPct === null
                     ? { dir: "flat", text: thisM > 0 ? "first activity" : "no data" }
@@ -3326,7 +3356,7 @@
                 if (!confirm("Archive this fund? It will be hidden from the public but data is preserved.")) return;
                 api("/api/funds", {
                     method: "PUT",
-                    body: JSON.stringify({ slug: state.editingFundSlug, action: "archive" })
+                    body: JSON.stringify({ slug: state.editingFundSlug, status: "archived" })
                 }).then(function (d) {
                     setMsg("f_msg", d.message, d.success ? "ok" : "err");
                     if (d.success) { clearFundForm(); loadFunds(); state.loaded.overview = false; }
