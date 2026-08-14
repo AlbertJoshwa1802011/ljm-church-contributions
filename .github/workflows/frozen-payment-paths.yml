@@ -1,0 +1,43 @@
+name: Frozen Payment Paths
+
+# Tripwire for CONTRIBUTING.md section 3: the giving/money path is frozen.
+# Fails the build when a change touches one of the 8 frozen files without an
+# explicit ACKNOWLEDGED-MONEY-PATH-CHANGE token in a commit message or the PR
+# description. See scripts/check-frozen-paths.sh for the actual check.
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  check-frozen-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine diff range
+        id: range
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          PUSH_HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "base=$PR_BASE_SHA" >> "$GITHUB_OUTPUT"
+            echo "head=$PR_HEAD_SHA" >> "$GITHUB_OUTPUT"
+          else
+            echo "base=$PUSH_BEFORE_SHA" >> "$GITHUB_OUTPUT"
+            echo "head=$PUSH_HEAD_SHA" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check frozen payment-path files
+        env:
+          BASE_SHA: ${{ steps.range.outputs.base }}
+          HEAD_SHA: ${{ steps.range.outputs.head }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: ./scripts/check-frozen-paths.sh

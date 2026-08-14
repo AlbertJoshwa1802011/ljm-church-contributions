@@ -67,8 +67,10 @@ export function wrapD1(sqlite) {
 // Builds a fake Pages Functions `context` for calling onRequestGet/Post/Put/Delete
 // directly. `authToken` defaults to the machine ADMIN_API_TOKEN path (wildcard
 // permissions, no network call to Google) so tests don't need real Google tokens.
-export function makeContext({ db, method = "GET", url = "https://test.local/api/x", body, authToken = "test-admin-token", headers = {} } = {}) {
-  const env = { DB: db, ADMIN_API_TOKEN: "test-admin-token" };
+// `env` lets a caller merge in additional bindings (e.g. a mock R2 bucket from
+// tests/helpers/mock-r2.mjs) without needing to hand-build the whole context.
+export function makeContext({ db, method = "GET", url = "https://test.local/api/x", body, authToken = "test-admin-token", headers = {}, env: envOverrides = {} } = {}) {
+  const env = { DB: db, ADMIN_API_TOKEN: "test-admin-token", ...envOverrides };
   const reqHeaders = new Map(Object.entries(headers));
   if (authToken) reqHeaders.set("Authorization", "Bearer " + authToken);
   const request = {

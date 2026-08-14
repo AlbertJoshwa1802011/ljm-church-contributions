@@ -39,7 +39,7 @@
 - [x] `events.js` PUT update incl. `removePhotoIds`/`addPhotos`, nonexistent id → 404 — `tests/api/events.test.mjs`
 - [x] `events.js` DELETE incl. cascading photo cleanup, nonexistent id → 404 — `tests/api/events.test.mjs`
 - [x] `events/photo.js` missing key → 400, missing/no R2 binding → 404 — `tests/api/events-photo.test.mjs`
-- [ ] `events.js` real R2 object storage branch (`env.EVENT_PHOTOS.put`) — **accepted gap**, needs an R2 mock helper in `tests/helpers/` that doesn't exist yet (base64-fallback path IS covered above; this is only the R2-bound branch).
+- [x] `events.js` real R2 object storage branch (`env.EVENT_PHOTOS.put`/`.delete`) — `tests/helpers/mock-r2.mjs` (OFFLINE R2 MOCK, in-memory `Map`-backed, no network/credentials/real bucket) + `tests/api/events-r2.test.mjs`. Covers: cover-photo `put()` through `storePhoto()`, the returned/persisted `/api/events/photo?key=` path, gallery-photo replace (`removePhotoIds` + `addPhotos` in the same `PUT`) triggering `deletePhotoObject()` cleanup of the old key, `removePhotoIds`-only deletion, `DELETE`'s per-photo cascade cleanup, and that a thrown/failing R2 `.delete()` does not break the primary DB operation (matches `deletePhotoObject()`'s existing try/catch, best-effort contract). Note: a `coverPhoto` that is never also inserted as an `event_photos` row is **not** R2-cleaned-up on replace or delete — that's a pre-existing `events.js` characteristic the new tests document rather than paper over (see the FOLLOW-UP/PRE-EXISTING GAP note below re: `events.js` not being touched this round).
 
 ## P1 — CRUD completeness
 
@@ -122,6 +122,71 @@ Closed alongside the Aug 2026 incident in which no online payment reached D1 for
 
 ---
 
+## BROWSER E2E (Playwright + Chromium) — smoke coverage
+
+Added in the Aug 2026 pre-release hardening pass. Distinct from the STRUCTURAL
+(source/regex, e.g. `tests/frontend/analytics-charts.test.mjs`) and BEHAVIORAL
+(Node/vm/API execution, everything under `tests/api`) tiers above — these
+actually drive Chromium against a real local `wrangler pages dev` + local D1/R2,
+via `npm run test:e2e` (`playwright.config.mjs`, `tests/e2e/`). See
+`tests/e2e/fixtures.mjs` for why every page navigation is routed through a
+production-URL interceptor (`theme.js` redirects `/api/*` to the live
+Cloudflare Pages URL on `localhost`/`127.0.0.1` by design — E2E must neutralize
+that, not rely on the sandbox's network policy happening to block it).
+
+- [x] Admin console loads, the dev-only local auth path (`admin.html`'s
+  `#devLoginBtn`, real code path minus the Google OAuth popup) establishes a
+  session, Overview renders with live KPI/chart data, and dynamic
+  (admin-created) funds are represented in the Funds section —
+  `tests/e2e/admin-overview.spec.mjs`.
+- [x] API failure: `/api/funds` unreachable shows a visible error rather than
+  a silent empty/zero dashboard — `tests/e2e/api-failure.spec.mjs`. See the
+  discovered-gap note below re: a narrower case (non-2xx *with* a JSON body)
+  this specific test does not cover.
+- [x] Fund admin create/edit/archive flow, logged in as a non-super-admin
+  `manage_funds`-only role holder — `tests/e2e/fund-admin.spec.mjs`. Create and
+  edit are verified working; Archive is verified to currently **fail** (see
+  the discovered-gap note below — this documents real shipped behavior, not
+  the intended one).
+- [x] Public funds page renders both system and dynamic funds with no
+  release-breaking console errors — `tests/e2e/public-funds.spec.mjs`.
+- [x] Give/checkout modal (`razorpay-checkout.js`, one of the 8 frozen files —
+  not modified) opens and is wired up, with Razorpay's real domains
+  hard-blocked and "Proceed to Pay" never clicked — `tests/e2e/razorpay-ui.spec.mjs`.
+
+---
+
+## Discovered during the Aug 2026 pre-release hardening pass (not fixed — out of that pass's approved scope)
+
+Two real, pre-existing bugs surfaced while building the BROWSER E2E tests
+above. Neither `functions/api/funds.js` nor `admin.html` were in that pass's
+approved change list, so these are recorded here rather than silently fixed:
+
+- **`funds.js` PUT ignores `body.action` — the admin "Archive fund" button is
+  currently non-functional.** `admin.html`'s `#f_archiveBtn` handler sends
+  `PUT /api/funds` with `{ slug, action: "archive" }`. `functions/api/funds.js`'s
+  `onRequestPut` never reads `body.action` (only the POST handler's
+  `add_member`/`remove_member` branch does) — it only recognizes
+  `body.status`. With no `status`/`name`/etc. in the payload, `changes` ends up
+  empty and the handler returns `{ success: false, message: "No editable
+  fields provided" }`; the fund's status never actually changes. Confirmed
+  directly against the live local API with `curl` and exercised end-to-end in
+  `tests/e2e/fund-admin.spec.mjs`, which asserts the real (broken) behavior so
+  it stays honest about what's shipped. **Fix direction (not applied here):**
+  either have `onRequestPut` treat `action: "archive"`/`"unarchive"` as
+  shorthand for `status: "archived"`/`"active"`, or change the button to send
+  `status` directly.
+- **`admin.html`'s `api()` helper only rejects on HTTP 401** — any other
+  non-2xx status (e.g. a real 500 with a JSON error body) still resolves via
+  `r.json()`, so callers like `loadFunds()` that check `d.funds` see `undefined`
+  and fall back to their generic "No funds yet." empty state instead of a
+  distinct error. `tests/e2e/api-failure.spec.mjs` guards the *connection-
+  unreachable* case (which does surface a distinct error via a rejected
+  `fetch()`), not this narrower non-2xx-with-body case — noted here so it
+  isn't mistaken for full coverage of "API failures are never silent."
+
+---
+
 ## Explicitly accepted gaps (not oversights — recorded on purpose)
 
 These are **not** silently missing; they're judged not reducible to the current
@@ -130,9 +195,17 @@ offline harness and are tracked here so nobody re-discovers them as a surprise:
 - **`functions/api/selftest.js`** — by design a live-production-only E2E suite
   (see `TESTING.md`). Not unit-testable offline; its value is running against a
   real deployment. Not a gap to close with `node --test`.
-- **`events.js` real R2 upload branch** — needs an R2 binding mock in
-  `tests/helpers/` (doesn't exist yet). The base64-fallback path (the default in
-  local/dev without an R2 binding) IS covered.
+- **`events.js` real R2 upload branch** — closed, see the P0 zero-coverage-files
+  row above (`tests/api/events-r2.test.mjs`, OFFLINE R2 MOCK). The base64-fallback
+  path (the default in local/dev without an R2 binding) was already covered.
+- **`events.js` MIME-type validation on uploaded photos** — **FOLLOW-UP /
+  PRE-EXISTING GAP.** `storePhoto()` in `functions/api/events.js` derives the
+  file extension straight from the `data:<mime>;base64,...` prefix's declared
+  MIME type with no allowlist check — any string in that position is accepted
+  and used to build the R2 key/extension and the stored `Content-Type`. This
+  predates this hardening pass and `events.js` is explicitly out of scope for
+  it (frozen for this round, not one of the 8 money-path files). Not fixed
+  here; tracked as a distinct follow-up.
 - **`razorpay-checkout.js`** — no structural-test precedent yet (unlike
   `tests/frontend/analytics-charts.test.mjs`'s regex-based pattern for `script.js`).
   Flagged as a distinct future initiative, not silently ignored. If you pick this
