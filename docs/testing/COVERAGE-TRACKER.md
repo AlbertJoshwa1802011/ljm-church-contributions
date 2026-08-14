@@ -147,25 +147,28 @@ coverage-shaped (a bug a test would have caught, or a gap a test should
 close), it goes here, in the same session that found it — not "noted for a
 future session to add."
 
-- [ ] `funds.js` **PRE-EXISTING BUG** — Admin "Archive fund" button
-  (`admin.html`'s `$("f_archiveBtn").onclick`) sends `PUT /api/funds` with
+- [x] `funds.js` **PRE-EXISTING BUG — FIXED.** Admin "Archive fund" button
+  (`admin.html`'s `$("f_archiveBtn").onclick`) sent `PUT /api/funds` with
   `{ slug, action: "archive" }`, but `onRequestPut` in
-  `functions/api/funds.js` never reads `body.action` — only `body.status`
-  toggles `'active'`/`'archived'`. Clicking "Archive fund" on a non-system
-  fund currently sends a body with no recognized editable field, so the
-  handler returns `{ success:false, message: "No editable fields provided"
-  }` instead of archiving the fund. Discovered during the Fund Foundation
+  `functions/api/funds.js` never read `body.action` — only `body.status`
+  toggled `'active'`/`'archived'`. Clicking "Archive fund" on a non-system
+  fund sent a body with no recognized editable field, so the handler
+  returned `{ success:false, message: "No editable fields provided" }`
+  instead of archiving the fund. Discovered during the Fund Foundation
   phase (see `docs/development/AGENT_HANDOFFS.md`'s 2026-08-12
-  `fund-foundation-phase-bjoybm` entry) but, until now, recorded only in
-  handoff prose — not here, so it wasn't visible to agents who skim this
-  tracker instead of the full handoff log. Not fixed here: `funds.js` and
-  `admin.html` are outside this session's ownership. **TEST GAP:** no test
-  in `tests/api/funds.test.mjs` or `tests/frontend/fund-admin-wiring.test.mjs`
-  exercises the archive-button's actual request shape against the handler,
-  which is why this shipped unnoticed — a request-shape test would have
-  caught it immediately. Fix (either send `status: "archived"` from the
-  button handler, or add an `action === "archive"` branch server-side) plus
-  a regression test are both still open.
+  `fund-foundation-phase-bjoybm` entry), initially recorded only in handoff
+  prose, then logged here (still open) by the agent-hardening pass.
+  **Fixed** by the admin-hardening pass: the button now sends
+  `{ slug, status: "archived" }`, the shape `funds.js`'s PUT handler
+  actually understands — `admin.html`'s `$("f_archiveBtn").onclick`.
+  **Regression test added:** `tests/frontend/fund-admin-wiring.test.mjs`
+  ("funds admin: the Archive Fund button sends `{ status: "archived" }`")
+  asserts the button's request body matches the handler's expected shape
+  and that the old `{ action: "archive" }` shape is no longer sent.
+  Resolved during LJM V2 release-candidate integration (2026-08-14) by
+  reconciling the fund-hardening/admin-hardening/agent-hardening branches:
+  the fix and the bug report were developed in parallel, so the tracker
+  entry above was still describing the pre-fix state until this update.
 
 ## Explicitly accepted gaps (not oversights — recorded on purpose)
 

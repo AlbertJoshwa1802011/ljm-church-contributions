@@ -1621,3 +1621,198 @@ For the architect:
    revisited by this integration task.
 
 ---
+
+## 2026-08-14 — claude/ljm-v2-release-candidate-3v3663 — LJM V2 release-candidate integration (Phase 1)
+
+STATUS:
+IMPLEMENTATION: COMPLETE
+OFFLINE TESTS: COMPLETE
+UI VERIFICATION: NOT PERFORMED (no browser available in this environment)
+PRODUCTION VERIFICATION: NOT PERFORMED
+
+- **Branch:** `claude/ljm-v2-release-candidate-3v3663`, created from verified
+  `main` HEAD `2ff9598`.
+- **Scope:** Assemble the first real, reviewable LJM V2 release candidate by
+  merging the integration-audit tip and all four parallel hardening branches
+  into one branch, in the order and with the semantic-conflict handling
+  `AGENT_RULES.md` §14's integration checklist requires. Not a feature task —
+  no new product code was written beyond the two reconciliation edits below.
+- **Ancestry verified with `git merge-base`/`git log --graph`, not trusted
+  from prior reports:**
+  - `main` (`2ff9598`) confirmed an ancestor of
+    `claude/ljm-v2-integration-audit-vsmxj3` (tip `e41903f`) — the audit
+    branch's own merge-base with `main` equals `main`'s own HEAD.
+  - All four hardening branches (`claude/ljm-v2-admin-hardening-hy8x4l`
+    `d54c063`, `claude/ljm-v2-fund-hardening-d6had9` `606f8c9`,
+    `claude/ljm-v2-agent-hardening-ur0s8r` `48d397e`,
+    `claude/ljm-v2-migration-hardening-5s44jz` `7f7ba0f`) are each **exactly
+    one commit ahead of `e41903f`** — confirmed via
+    `git merge-base <branch> claude/ljm-v2-integration-audit-vsmxj3` ==
+    `e41903f` for all four. They are not stacked on each other; each was
+    developed independently against the same integration-audit tip.
+- **Merge order performed:** (1) `claude/ljm-v2-integration-audit-vsmxj3`
+  (`e41903f`, no-ff), (2) `claude/ljm-v2-admin-hardening-hy8x4l` (`d54c063`,
+  no-ff), (3) `claude/ljm-v2-fund-hardening-d6had9` (`606f8c9`, no-ff),
+  (4) `claude/ljm-v2-agent-hardening-ur0s8r` (`48d397e`, no-ff),
+  (5) `claude/ljm-v2-migration-hardening-5s44jz` (`7f7ba0f`, no-ff). `npm
+  test` run after every step, not only at the end.
+- **Files changed per branch inspected individually** (`git diff --stat
+  e41903f <branch>`) before combining, per §14:
+  - admin-hardening: `admin.html` + 2 new frontend test files (Archive Fund
+    fix, `api()` HTTP-error rejection, `computeMonthlyGiving()` extraction).
+  - fund-hardening: `functions/api/funds.js`, `tests/api/funds.test.mjs`,
+    `docs/testing/COVERAGE-TRACKER.md` (hero-image MIME/size/data-URI
+    validation, `fundFoundationColumnsExist()` pre-0015 guard on POST/PUT,
+    two-axis schema-drift fallback on GET).
+  - agent-hardening: `.github/workflows/frozen-payment-paths.yml` (new),
+    `CONTRIBUTING.md`, `docs/development/AGENT_HANDOFFS.md`,
+    `docs/development/AGENT_RULES.md`, `docs/testing/COVERAGE-TRACKER.md`.
+  - migration-hardening: `.github/workflows/deploy-migrations.yml`,
+    `migrations/README.md` (new), `tests/regression/migrations-validate.test.mjs`
+    (new).
+- **Test command run:** `npm test` (= `node --test 'tests/**/*.test.mjs'`).
+- **Test result — before (main baseline):** 328 pass / 0 fail.
+- **Test result — after integration-audit merge alone:** 354 pass / 0 fail
+  (matches that branch's own reported count).
+- **Test result — after admin-hardening merge:** unchanged file set, count
+  increases via new test files (verified incrementally, not just at the end).
+- **Test result — after all five merges combined:** **392 pass / 0 fail, 0
+  skipped, 0 todo.** Also ran each merged branch's own targeted test files
+  individually against the final combined tree, per §14's requirement not to
+  trust only the aggregate count: `tests/api/funds.test.mjs` (38/38),
+  `tests/frontend/fund-admin-wiring.test.mjs` (8/8),
+  `tests/frontend/admin-overview-dynamic-funds.test.mjs` (14/14),
+  `tests/regression/migrations-validate.test.mjs` (20/20),
+  `tests/regression/schema-contract.test.mjs` (3/3) — all green in isolation.
+- **UI verification:** NOT PERFORMED — no browser available in this
+  environment. No `script.js`/`index.html`/`style.css` changes went through
+  this integration beyond what each source branch already carried structural
+  tests for (`tests/frontend/*`); those are structural (parses source, does
+  not execute the DOM), not behavioral, per §13's distinction.
+- **Production verification:** NOT PERFORMED. `npm test` proves the offline
+  mock-D1 harness only. Migration `0015` was **not** applied to any D1
+  (production or otherwise) by this session — confirmed present, correctly
+  numbered after `0014`, and validated by `tests/regression/migrations-validate.test.mjs`,
+  but application to production D1 is explicitly out of scope for this phase
+  and remains a separate, later, human-dispatched step per `CONTRIBUTING.md`
+  §4. No Cloudflare/R2 configuration was read, changed, or claimed verified.
+
+### Semantic conflict resolution (§14's mandatory step — clean merge ≠ correct combination)
+
+1. **`docs/testing/COVERAGE-TRACKER.md` — Archive Fund bug entry.** The
+   prior integration audit's `agent-hardening` branch recorded the admin
+   "Archive fund" button bug (button sends `{action:"archive"}`, handler
+   only understands `body.status`) as an **open** `[ ]` PRE-EXISTING BUG /
+   TEST GAP. Independently, `admin-hardening` (developed in parallel off the
+   same `e41903f` base, unaware of the tracker entry) **fixed the exact same
+   bug** — the button now sends `{slug, status:"archived"}` — and added a
+   regression test (`tests/frontend/fund-admin-wiring.test.mjs`, "the
+   Archive Fund button sends `{ status: 'archived' }`") that asserts the
+   fixed request shape and asserts the old `{action:"archive"}` shape is no
+   longer sent. `git merge` auto-merged the textual diff cleanly (different
+   line ranges of the same file) but the **combined result still described
+   an already-fixed bug as open** — exactly the "clean merge, wrong combined
+   behavior" failure mode §14 calls out. Verified the fix and test actually
+   exist in the merged tree, ran `tests/frontend/fund-admin-wiring.test.mjs`
+   to confirm the regression test passes, then edited the tracker entry
+   in-place (checked `[x]`, added a "FIXED" note explaining both what shipped
+   and which regression test covers it) rather than leaving stale text or
+   silently deleting the historical bug report — per §10's "edit in place,
+   never overwrite" convention and this task's explicit instruction not to
+   leave the tracker claiming an already-fixed bug remains open.
+2. **`functions/api/funds.js` — migration-deployment-ordering HIGH RISK from
+   the prior integration audit's DISCOVERIES §1, now resolved.** That entry
+   (see the `2026-08-13` integration-audit entry above) flagged that the
+   merged `GET /api/funds` selected the Fund Foundation (migration 0015)
+   columns unconditionally in both branches of its `is_deleted`-missing-column
+   try/catch, so a database with `0012` applied but not `0015` would 500 on
+   *every* funds-listing request — and explicitly left this unfixed, asking
+   for a deliberate decision: apply `0015` everywhere, or add a nested
+   schema-drift fallback. Independently, `fund-hardening` (also off
+   `e41903f`) had already written exactly option (b): `buildQuery(includeFoundation,
+   includeIsDeletedFilter)` with a three-tier try/catch (both axes → drop
+   Foundation columns → drop `is_deleted` filter too), so each axis of
+   schema drift degrades independently instead of compounding. Verified this
+   is present in the merged tree (`functions/api/funds.js`'s `onRequestGet`),
+   confirmed it preserves `is_deleted = 0` contribution filtering, the six
+   Fund Foundation columns, the pre-0015 compatibility path, existing
+   system-fund restrictions, and existing custom-fund behavior — all
+   required by this task's conflict-resolution rules — and confirmed
+   `tests/api/funds.test.mjs`'s schema-drift tests exercise it. **DISCOVERIES
+   §1 from the prior integration is now resolved** by this merge; no code
+   change was needed from this session beyond merging fund-hardening in.
+3. No other file was touched by more than one of the five merged
+   components, so no further semantic reconciliation was needed — verified
+   by inspecting `git diff --stat e41903f <branch>` for each of the four
+   hardening branches individually before merging (listed above).
+
+### Money-path verification
+
+All eight frozen files confirmed **byte-identical to `main`** via
+`git hash-object`, not visual diffing: `functions/api/webhook.js`,
+`functions/api/verify.js`, `functions/api/contributions.js`,
+`functions/api/purchases.js`, `razorpay-checkout.js`, `functions/api/_lib.js`,
+`functions/api/auth.js`, `functions/api/roles.js`. None of the five merged
+components touched any of these. `razorpay_key_id` confirmed inert:
+`functions/api/funds.js` stores/validates its *format* only
+(`^rzp_[A-Za-z0-9_]+$`, rejecting anything that looks like a secret) and
+returns it as plain metadata; grepped the full frozen-file set and
+`razorpay-checkout.js` — no reference to `razorpayKeyId`/`razorpay_key_id`
+outside `funds.js` and its `admin.html` form field. No dynamic Razorpay
+routing/account/secret selection introduced.
+
+### Migration verification
+
+`migrations/0015_fund_foundation_metadata.sql` present, numbered directly
+after `0014_backfill_missed_webhook_payments.sql`, no new numbering collision
+introduced by this integration (the pre-existing `0011_events.sql` /
+`0011_member_appearance.sql` duplicate, noted in the prior integration
+audit's DISCOVERIES §2, is untouched and still open — out of scope for this
+phase). `tests/regression/migrations-validate.test.mjs` (20/20, added by
+migration-hardening) and `tests/regression/schema-contract.test.mjs` (3/3)
+both pass against the merged tree. **Not applied to production D1** — that
+remains a separate, later, human-dispatched phase.
+
+### Discoveries (classified per `AGENT_RULES.md` §8)
+
+1. **RESOLVED** (was HIGH RISK, prior integration's DISCOVERIES §1) — see
+   semantic-conflict item #2 above. No longer an open risk in this tree.
+2. **PRE-EXISTING BUG — FIXED**, recorded and closed in
+   `docs/testing/COVERAGE-TRACKER.md` — the Archive Fund button bug; see
+   semantic-conflict item #1 above.
+3. **INFORMATIONAL** — `migrations/0011_events.sql` /
+   `0011_member_appearance.sql` duplicate numbering remains open, inherited,
+   not introduced or worsened by this integration.
+4. **INFORMATIONAL** — 21+ other remote branches beyond the five integrated
+   here still exist and were not touched or evaluated by this task, per its
+   explicit scope (assemble the already-approved LJM V2 work, not audit the
+   entire remaining branch inventory).
+5. **FOLLOW-UP** — none of `admin-hardening`, `fund-hardening`, or
+   `migration-hardening` added their own `AGENT_HANDOFFS.md` entry for their
+   individual sessions (only `agent-hardening` touched the file, and only to
+   improve the template/header — see its diff). This integration did not
+   fabricate retroactive entries on their behalf, since this session did not
+   perform that work and cannot attest to their verification claims
+   first-hand; their commit messages and diffs are the available record.
+   Flagging so a future reader knows why those three sessions have no
+   first-person handoff entry.
+- **No BLOCKER, REGRESSION, or NEW BUG found or introduced by this
+  integration.**
+
+### NEXT STEP
+
+For the reviewer/architect:
+1. Review this branch (`claude/ljm-v2-release-candidate-3v3663`) against
+   `main` — a 5-merge, no-ff history; `git diff main...claude/ljm-v2-release-candidate-3v3663`
+   for the full combined diff.
+2. Decide when to apply `migrations/0015_fund_foundation_metadata.sql` to
+   production D1 (dry-run first, per `CONTRIBUTING.md` §4) — required before
+   any Fund Foundation admin UI is used against production, but explicitly
+   **not done** by this phase.
+3. Decide whether/when to merge this branch into `main` and/or open a PR —
+   **not done by this task**, per explicit instruction.
+4. The pre-existing `0011` migration duplicate-numbering and the 21+
+   untouched remote branches remain open items for a future session, not
+   blockers to this release candidate.
+
+---
