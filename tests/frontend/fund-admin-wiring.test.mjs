@@ -124,6 +124,36 @@ test("funds admin: editing a fund populates the Fund Foundation metadata fields,
   );
 });
 
+// Regression: the Archive Fund button sent `{ slug, action: "archive" }` to
+// PUT /api/funds, but funds.js's PUT handler only recognizes a `status`
+// field ("active" | "archived") — it has no `action` field at all. Since
+// nothing in the request body matched a recognized change, `changes` stayed
+// empty and the handler returned 400 "No editable fields provided", so
+// clicking Archive silently failed. The fix sends the status-based shape the
+// API actually expects.
+test("funds admin: the Archive Fund button sends { status: \"archived\" } — the shape funds.js's PUT handler expects", () => {
+  const start = adminSource.indexOf('$("f_archiveBtn").onclick = function');
+  assert.ok(start !== -1, "the Archive Fund button's onclick handler should exist");
+  const nextHandler = adminSource.indexOf('$("f_deleteBtn").onclick', start);
+  const fn = adminSource.slice(start, nextHandler);
+
+  assert.match(
+    fn,
+    /method:\s*["']PUT["']/,
+    "archiving a fund must PUT to /api/funds"
+  );
+  assert.match(
+    fn,
+    /body:\s*JSON\.stringify\(\{\s*slug:\s*state\.editingFundSlug,\s*status:\s*["']archived["']\s*\}\)/,
+    "the Archive Fund button must send { slug, status: 'archived' } — funds.js's PUT handler has no 'action' field, only 'status'"
+  );
+  assert.doesNotMatch(
+    fn,
+    /action:\s*["']archive["']/,
+    "the Archive Fund button must not send the old { action: 'archive' } shape — funds.js's PUT handler doesn't understand it and returns 400"
+  );
+});
+
 test("funds admin: clearing the fund form resets the Fund Foundation metadata fields", () => {
   const start = adminSource.indexOf("function clearFundForm()");
   assert.ok(start !== -1, "clearFundForm() should exist");
