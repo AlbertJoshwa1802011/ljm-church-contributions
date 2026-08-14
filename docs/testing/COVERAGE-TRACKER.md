@@ -148,6 +148,16 @@ offline harness and are tracked here so nobody re-discovers them as a surprise:
 - **`events.js` real R2 upload branch** — needs an R2 binding mock in
   `tests/helpers/` (doesn't exist yet). The base64-fallback path (the default in
   local/dev without an R2 binding) IS covered.
+- **`funds.js` real R2 hero-image branch** (`storeHeroImage`'s `env.EVENT_PHOTOS`
+  put path and `deleteHeroImageObject`'s delete path) — same gap as the
+  `events.js` entry above and for the same reason: no `EVENT_PHOTOS` R2 binding
+  mock exists in `tests/helpers/` yet, and `funds.js` reuses that exact binding
+  (see the comment on `storeHeroImage` in `functions/api/funds.js`), so this is
+  one shared gap, not two. The base64-fallback path (the default without an R2
+  binding, exercised by every hero-image test in `tests/api/funds.test.mjs`) IS
+  covered, including the new MIME-allow-list/size-cap/malformed-URI validation
+  added for the Fund Foundation hardening pass — that validation runs before
+  `storeHeroImage` is ever called, so it's fully covered independent of this gap.
 - **`razorpay-checkout.js`** — no structural-test precedent yet (unlike
   `tests/frontend/analytics-charts.test.mjs`'s regex-based pattern for `script.js`).
   Flagged as a distinct future initiative, not silently ignored. If you pick this

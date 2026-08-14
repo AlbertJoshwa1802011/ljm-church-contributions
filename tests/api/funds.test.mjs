@@ -543,3 +543,182 @@ test("funds: PUT can clear a Razorpay key by sending an empty string", async () 
   })));
   assert.equal(detail.fund.razorpayKeyId, "");
 });
+
+// ── Migration 0015 schema-drift regression (Fund Foundation hardening) ──
+// Reproduces a database that has migration 0012 applied (contributions.is_deleted
+// exists — see the pre-0012 test above) but NOT migration 0015 (funds lacks
+// hero_image_url, hero_image_storage, message, ranking_enabled,
+// ranking_visibility, razorpay_key_id). Before this hardening, the GET
+// listing's schema-drift fallback still referenced all six of those columns
+// in its "catch" branch, so this exact database shape made the fallback fail
+// the same way the primary query did — the ENTIRE public funds listing 500'd,
+// unlike the pre-0012 case which degrades gracefully. This is a real,
+// pre-schema.sql shape (schema.sql always includes migration 0015), built by
+// hand here the same way the pre-0012 test above rebuilds a pre-0012
+// `contributions` table.
+function dropTo0014FundsTable(db) {
+  db._sqlite.exec(`
+    DROP TABLE funds;
+    CREATE TABLE funds (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        goal_amount REAL DEFAULT 0,
+        status TEXT DEFAULT 'active',
+        visibility TEXT DEFAULT 'public',
+        is_system INTEGER DEFAULT 0,
+        created_by TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_by TEXT,
+        updated_at DATETIME
+    );
+  `);
+  db._sqlite.exec(
+    "INSERT INTO funds (slug, name, goal_amount, is_system, status, visibility) VALUES ('tech-contributions','Tech Fund',50000,1,'active','public');"
+  );
+  db._sqlite.exec(
+    "INSERT INTO funds (slug, name, goal_amount, is_system, status, visibility) VALUES ('christmas-fund','Christmas Fund',0,1,'active','public');"
+  );
+}
+
+test("funds: listing and detail survive a pre-0015 database missing hero_image_url/message/ranking/razorpay columns (schema-drift regression)", async () => {
+  const db = freshDb();
+  dropTo0014FundsTable(db);
+
+  await db.prepare(
+    "INSERT INTO contributions (member_name, amount, date, category, proof_id, fund) VALUES ('Pre 0015 Giver', 500, '2026-07-01', 'Direct Cash', 'pf-pre0015', 'tech-contributions')"
+  ).run();
+
+  const listRes = await funds.onRequestGet(makeContext({ db, url: "https://test.local/api/funds" }));
+  assert.equal(listRes.status, 200, "listing must not 500 when migration 0015 columns are absent");
+  const list = await readJson(listRes);
+  const tech = list.funds.find(f => f.slug === "tech-contributions");
+  assert.ok(tech, "tech-contributions must still be listed");
+  assert.equal(tech.totalCollected, 500);
+  // Fund Foundation fields must degrade to safe defaults rather than being absent/undefined.
+  assert.equal(tech.heroImageUrl, null);
+  assert.equal(tech.heroImageStorage, null);
+  assert.equal(tech.message, "");
+  assert.equal(tech.rankingEnabled, 0);
+  assert.equal(tech.rankingVisibility, "public");
+  assert.equal(tech.razorpayKeyId, null);
+
+  const detailRes = await funds.onRequestGet(makeContext({
+    db, url: "https://test.local/api/funds?slug=tech-contributions"
+  }));
+  assert.equal(detailRes.status, 200, "detail must not 500 when migration 0015 columns are absent");
+  const detail = await readJson(detailRes);
+  assert.equal(detail.contributions.length, 1);
+  assert.equal(detail.fund.heroImageUrl, "");
+  assert.equal(detail.fund.message, "");
+  assert.equal(detail.fund.rankingEnabled, false);
+  assert.equal(detail.fund.rankingVisibility, "public");
+  assert.equal(detail.fund.razorpayKeyId, "");
+});
+
+test("funds: POST create still works on a pre-0015 database when no Fund Foundation fields are requested", async () => {
+  const db = freshDb();
+  dropTo0014FundsTable(db);
+
+  const create = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Plain Pre-0015 Fund", goal_amount: 1000 }
+  })));
+  assert.equal(create.success, true, create.message);
+
+  const list = await readJson(await funds.onRequestGet(makeContext({ db, url: "https://test.local/api/funds" })));
+  assert.ok(list.funds.find(f => f.slug === "plain-pre-0015-fund"));
+});
+
+test("funds: POST create with Fund Foundation metadata on a pre-0015 database is rejected with a clear 503, not a raw SQL 500", async () => {
+  const db = freshDb();
+  dropTo0014FundsTable(db);
+
+  const res = await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Wants Metadata", message: "Help us build." }
+  }));
+  assert.equal(res.status, 503);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+  assert.match(body.message, /migration 0015/i);
+});
+
+test("funds: PUT with Fund Foundation metadata on a pre-0015 database is rejected with a clear 503, and non-foundation edits still work", async () => {
+  const db = freshDb();
+  dropTo0014FundsTable(db);
+
+  const res = await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "tech-contributions", razorpayKeyId: "rzp_live_x" }
+  }));
+  assert.equal(res.status, 503);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+  assert.match(body.message, /migration 0015/i);
+
+  const goalUpdate = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "tech-contributions", goal_amount: 60000 }
+  })));
+  assert.equal(goalUpdate.success, true, goalUpdate.message);
+});
+
+// ── Hero image data: URI hardening (MIME allow-list, size cap, malformed rejection) ──
+// The audit found data: URIs had no MIME allow-list and no size limit
+// equivalent to the external-URL length check just above them.
+
+test("funds: create rejects a hero image data URI with a disallowed MIME type (e.g. SVG, which can carry script)", async () => {
+  const db = freshDb();
+  const res = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "SVG Hero", heroImage: "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=" }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /not allowed/i);
+});
+
+test("funds: create rejects a malformed hero image data URI (no base64 marker, or a garbage payload)", async () => {
+  const db = freshDb();
+  const noBase64Marker = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Malformed Hero 1", heroImage: "data:image/png,not-base64-at-all" }
+  })));
+  assert.equal(noBase64Marker.success, false);
+  assert.match(noBase64Marker.message, /malformed/i);
+
+  const badPayload = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Malformed Hero 2", heroImage: "data:image/png;base64,not!!valid==base64" }
+  })));
+  assert.equal(badPayload.success, false);
+  assert.match(badPayload.message, /malformed/i);
+});
+
+test("funds: create rejects a hero image data URI over the size cap", async () => {
+  const db = freshDb();
+  const huge = "data:image/png;base64," + "A".repeat(3 * 1024 * 1024);
+  const res = await readJson(await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds", body: { name: "Huge Hero", heroImage: huge }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /exceeds/i);
+});
+
+test("funds: create accepts hero image data URIs across the allowed MIME types (png, jpeg, webp, gif)", async () => {
+  const db = freshDb();
+  const cases = [
+    ["image/png", "data:image/png;base64,iVBORw0KGgo="],
+    ["image/jpeg", "data:image/jpeg;base64,/9j/4AAQSkZJRg=="],
+    ["image/webp", "data:image/webp;base64,UklGRiQAAABXRUJQ"],
+    ["image/gif", "data:image/gif;base64,R0lGODlhAQABAIAAAAA="]
+  ];
+  for (const [mime, dataUrl] of cases) {
+    const name = "Hero " + mime.split("/")[1];
+    const res = await readJson(await funds.onRequestPost(makeContext({
+      db, method: "POST", url: "https://test.local/api/funds", body: { name, heroImage: dataUrl }
+    })));
+    assert.equal(res.success, true, `${mime} should be accepted: ${res.message}`);
+  }
+});
