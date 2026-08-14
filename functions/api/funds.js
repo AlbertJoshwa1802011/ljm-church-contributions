@@ -2,10 +2,23 @@
 // Dynamic fund registry: public listing/detail + admin CRUD + member assignment.
 // Legacy funds (tech-contributions, christmas-fund) are seeded with is_system=1 and
 // stay served by /api/contributions unchanged; here they are list-only + goal edits.
+//
+// Fund Foundation metadata (hero image, message, ranking groundwork, Razorpay
+// public-key groundwork — see migrations/0015_fund_foundation_metadata.sql) is
+// editable on every fund, including system funds, since it's new metadata with
+// no existing restriction to preserve. None of it is read by payment code yet.
 
 import { requireAuth, resolveViewer, audit, json } from "./_lib.js";
 
 const RESERVED_SLUGS = ["purchases", "api", "admin", "all"];
+
+const MESSAGE_MAX_LEN = 5000;
+const HERO_IMAGE_EXTERNAL_URL_MAX_LEN = 2000;
+// Razorpay key ids (the PUBLIC id, never the secret) always look like
+// rzp_live_xxxx / rzp_test_xxxx. Requiring this shape also happens to reject
+// a pasted key SECRET (which has no rzp_ prefix) — a small guard against
+// accidentally storing a credential in fund metadata.
+const RAZORPAY_KEY_ID_RE = /^rzp_[A-Za-z0-9_]+$/;
 
 function slugify(name) {
   return String(name || "")
@@ -19,6 +32,58 @@ function slugify(name) {
 
 async function getFundBySlug(db, slug) {
   return db.prepare("SELECT * FROM funds WHERE slug = ?").bind(slug).first();
+}
+
+function validateHeroImageInput(value) {
+  if (typeof value !== "string" || !value.trim()) return "heroImage must be a non-empty string";
+  if (!value.startsWith("data:") && value.length > HERO_IMAGE_EXTERNAL_URL_MAX_LEN) {
+    return `heroImage URL exceeds ${HERO_IMAGE_EXTERNAL_URL_MAX_LEN} characters`;
+  }
+  return null;
+}
+
+// Store a fund hero image in R2 if bound, otherwise fall back to base64-in-D1.
+// Mirrors functions/api/events.js's storePhoto(): reuses the same EVENT_PHOTOS
+// R2 bucket (under a `funds/` key prefix) and the existing
+// /api/events/photo?key=... server, so no new binding/endpoint is needed.
+async function storeHeroImage(env, slug, dataUrl) {
+  if (!dataUrl || typeof dataUrl !== "string") return null;
+
+  if (!dataUrl.startsWith("data:")) {
+    return { hero_image_url: dataUrl, hero_image_storage: "external" };
+  }
+
+  if (env.EVENT_PHOTOS) {
+    const match = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
+    if (!match) return { hero_image_url: dataUrl, hero_image_storage: "base64" };
+
+    const mime = match[1] || "image/jpeg";
+    const b64 = match[2] || "";
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+    const ext = (mime.split("/")[1] || "jpg").split("+")[0];
+    const key = `funds/${slug}/${crypto.randomUUID()}.${ext}`;
+
+    await env.EVENT_PHOTOS.put(key, bytes, { httpMetadata: { contentType: mime } });
+
+    return { hero_image_url: "/api/events/photo?key=" + encodeURIComponent(key), hero_image_storage: "r2" };
+  }
+
+  return { hero_image_url: dataUrl, hero_image_storage: "base64" };
+}
+
+// Best-effort delete of the underlying R2 object for a fund's hero image. Never throws.
+async function deleteHeroImageObject(env, fund) {
+  if (!fund || fund.hero_image_storage !== "r2" || !env.EVENT_PHOTOS) return;
+  try {
+    const url = new URL(fund.hero_image_url, "http://internal");
+    const key = url.searchParams.get("key");
+    if (key) await env.EVENT_PHOTOS.delete(key);
+  } catch (_) {
+    // best-effort — ignore
+  }
 }
 
 export async function onRequestGet(context) {
@@ -39,16 +104,46 @@ export async function onRequestGet(context) {
         ? "WHERE f.status != 'deleted'"
         : "WHERE f.status = 'active' AND f.visibility = 'public'";
 
-      const query = await db.prepare(
-        `SELECT f.id, f.slug, f.name, f.description, f.goal_amount AS goalAmount,
-                f.status, f.visibility, f.is_system AS isSystem,
-                f.created_by AS createdBy, f.created_at AS createdAt,
-                COALESCE((SELECT SUM(c.amount) FROM contributions c WHERE c.fund = f.slug), 0) AS totalCollected,
-                COALESCE((SELECT SUM(p.fund_contribution) FROM purchases p WHERE p.fund = f.slug AND p.status = 'Active'), 0) AS spentOnProducts,
-                (SELECT COUNT(*) FROM fund_members fm WHERE fm.fund_id = f.id) AS memberCount
-         FROM funds f ${where}
-         ORDER BY f.is_system DESC, f.created_at ASC`
-      ).all();
+      // Soft-deleted contributions (is_deleted, added in migration 0012) must
+      // stay out of totalCollected the same way /api/contributions excludes
+      // them — otherwise a deleted row would still inflate a fund's total.
+      // Older databases without that column fall back to the unfiltered sum
+      // (mirrors the schema-drift guard in functions/api/contributions.js).
+      // Also selects the Fund Foundation metadata columns (hero image,
+      // message, ranking groundwork, Razorpay key-id groundwork — see
+      // migrations/0015_fund_foundation_metadata.sql) in both branches of
+      // this fallback, since they're independent, additive columns.
+      let query;
+      try {
+        query = await db.prepare(
+          `SELECT f.id, f.slug, f.name, f.description, f.goal_amount AS goalAmount,
+                  f.status, f.visibility, f.is_system AS isSystem,
+                  f.hero_image_url AS heroImageUrl, f.hero_image_storage AS heroImageStorage,
+                  f.message, f.ranking_enabled AS rankingEnabled, f.ranking_visibility AS rankingVisibility,
+                  f.razorpay_key_id AS razorpayKeyId,
+                  f.created_by AS createdBy, f.created_at AS createdAt,
+                  COALESCE((SELECT SUM(c.amount) FROM contributions c WHERE c.fund = f.slug AND c.is_deleted = 0), 0) AS totalCollected,
+                  COALESCE((SELECT SUM(p.fund_contribution) FROM purchases p WHERE p.fund = f.slug AND p.status = 'Active'), 0) AS spentOnProducts,
+                  (SELECT COUNT(*) FROM fund_members fm WHERE fm.fund_id = f.id) AS memberCount
+           FROM funds f ${where}
+           ORDER BY f.is_system DESC, f.created_at ASC`
+        ).all();
+      } catch (schemaErr) {
+        if (!/no such column/i.test(schemaErr.message || String(schemaErr))) throw schemaErr;
+        query = await db.prepare(
+          `SELECT f.id, f.slug, f.name, f.description, f.goal_amount AS goalAmount,
+                  f.status, f.visibility, f.is_system AS isSystem,
+                  f.hero_image_url AS heroImageUrl, f.hero_image_storage AS heroImageStorage,
+                  f.message, f.ranking_enabled AS rankingEnabled, f.ranking_visibility AS rankingVisibility,
+                  f.razorpay_key_id AS razorpayKeyId,
+                  f.created_by AS createdBy, f.created_at AS createdAt,
+                  COALESCE((SELECT SUM(c.amount) FROM contributions c WHERE c.fund = f.slug), 0) AS totalCollected,
+                  COALESCE((SELECT SUM(p.fund_contribution) FROM purchases p WHERE p.fund = f.slug AND p.status = 'Active'), 0) AS spentOnProducts,
+                  (SELECT COUNT(*) FROM fund_members fm WHERE fm.fund_id = f.id) AS memberCount
+           FROM funds f ${where}
+           ORDER BY f.is_system DESC, f.created_at ASC`
+        ).all();
+      }
 
       const funds = (query.results || []).map(f => ({
         ...f,
@@ -87,11 +182,22 @@ export async function onRequestGet(context) {
       if (!allowed) return json({ error: "This fund is restricted to assigned members. Please sign in." }, 403);
     }
 
-    const contributionsQuery = await db.prepare(
-      `SELECT member_name AS Member, amount AS Amount, date AS Date, category AS Category,
-              notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID
-       FROM contributions WHERE fund = ? ORDER BY date DESC`
-    ).bind(fund.slug).all();
+    // Same is_deleted exclusion + schema-drift fallback as the listing query above.
+    let contributionsQuery;
+    try {
+      contributionsQuery = await db.prepare(
+        `SELECT member_name AS Member, amount AS Amount, date AS Date, category AS Category,
+                notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID
+         FROM contributions WHERE fund = ? AND is_deleted = 0 ORDER BY date DESC`
+      ).bind(fund.slug).all();
+    } catch (schemaErr) {
+      if (!/no such column/i.test(schemaErr.message || String(schemaErr))) throw schemaErr;
+      contributionsQuery = await db.prepare(
+        `SELECT member_name AS Member, amount AS Amount, date AS Date, category AS Category,
+                notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID
+         FROM contributions WHERE fund = ? ORDER BY date DESC`
+      ).bind(fund.slug).all();
+    }
     const contributions = contributionsQuery.results || [];
 
     const membersQuery = await db.prepare("SELECT name, email, phone, is_verified FROM members").all();
@@ -132,7 +238,13 @@ export async function onRequestGet(context) {
         description: fund.description || "",
         status: fund.status,
         visibility: fund.visibility,
-        isSystem: fund.is_system === 1
+        isSystem: fund.is_system === 1,
+        heroImageUrl: fund.hero_image_url || "",
+        heroImageStorage: fund.hero_image_storage || "",
+        message: fund.message || "",
+        rankingEnabled: fund.ranking_enabled === 1,
+        rankingVisibility: fund.ranking_visibility || "public",
+        razorpayKeyId: fund.razorpay_key_id || ""
       },
       assignedMembers: assignedQuery.results || []
     }, 200, { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=15" });
@@ -195,10 +307,42 @@ export async function onRequestPost(context) {
     const goal = Number(body.goal_amount || body.goalAmount || 0) || 0;
     const visibility = body.visibility === "members" ? "members" : "public";
 
+    const message = body.message != null ? String(body.message) : "";
+    if (message.length > MESSAGE_MAX_LEN) {
+      return json({ success: false, message: `Fund message exceeds ${MESSAGE_MAX_LEN} characters` }, 400);
+    }
+
+    const rankingEnabled = body.rankingEnabled ? 1 : 0;
+    if (body.rankingVisibility != null && !["public", "members"].includes(body.rankingVisibility)) {
+      return json({ success: false, message: "rankingVisibility must be 'public' or 'members'" }, 400);
+    }
+    const rankingVisibility = body.rankingVisibility === "members" ? "members" : "public";
+
+    let razorpayKeyId = null;
+    if (body.razorpayKeyId != null) {
+      const raw = String(body.razorpayKeyId).trim();
+      if (raw) {
+        if (!RAZORPAY_KEY_ID_RE.test(raw)) {
+          return json({ success: false, message: "razorpayKeyId must look like a Razorpay public key id, e.g. rzp_live_xxxxx (never the key secret)" }, 400);
+        }
+        razorpayKeyId = raw;
+      }
+    }
+
+    let heroImageUrl = null, heroImageStorage = null;
+    if (body.heroImage) {
+      const validationError = validateHeroImageInput(body.heroImage);
+      if (validationError) return json({ success: false, message: validationError }, 400);
+      const stored = await storeHeroImage(env, slug, body.heroImage);
+      if (stored) { heroImageUrl = stored.hero_image_url; heroImageStorage = stored.hero_image_storage; }
+    }
+
     await db.prepare(
-      `INSERT INTO funds (slug, name, description, goal_amount, status, visibility, is_system, created_by, updated_at)
-       VALUES (?, ?, ?, ?, 'active', ?, 0, ?, CURRENT_TIMESTAMP)`
-    ).bind(slug, name, body.description || "", goal, visibility, auth.email).run();
+      `INSERT INTO funds (slug, name, description, goal_amount, status, visibility, is_system, created_by, updated_at,
+                           hero_image_url, hero_image_storage, message, ranking_enabled, ranking_visibility, razorpay_key_id)
+       VALUES (?, ?, ?, ?, 'active', ?, 0, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?)`
+    ).bind(slug, name, body.description || "", goal, visibility, auth.email,
+      heroImageUrl, heroImageStorage, message, rankingEnabled, rankingVisibility, razorpayKeyId).run();
 
     await audit(context, {
       actorEmail: auth.email, actorType: "admin", verified: auth.verified,
@@ -243,6 +387,49 @@ export async function onRequestPut(context) {
       if (body.status && ["active", "archived"].includes(body.status)) changes.status = body.status;
     } else if (body.name || body.status || body.visibility) {
       return json({ success: false, message: "System funds (Tech/Christmas) allow only goal amount edits" }, 400);
+    }
+
+    // Fund Foundation metadata — new, so editable on every fund (including
+    // system funds): there's no pre-existing restriction to preserve here.
+    if (body.message != null) {
+      const message = String(body.message);
+      if (message.length > MESSAGE_MAX_LEN) {
+        return json({ success: false, message: `Fund message exceeds ${MESSAGE_MAX_LEN} characters` }, 400);
+      }
+      changes.message = message;
+    }
+
+    if (body.rankingEnabled != null) {
+      changes.ranking_enabled = body.rankingEnabled ? 1 : 0;
+    }
+    if (body.rankingVisibility != null) {
+      if (!["public", "members"].includes(body.rankingVisibility)) {
+        return json({ success: false, message: "rankingVisibility must be 'public' or 'members'" }, 400);
+      }
+      changes.ranking_visibility = body.rankingVisibility;
+    }
+
+    if (body.razorpayKeyId != null) {
+      const raw = String(body.razorpayKeyId).trim();
+      if (raw && !RAZORPAY_KEY_ID_RE.test(raw)) {
+        return json({ success: false, message: "razorpayKeyId must look like a Razorpay public key id, e.g. rzp_live_xxxxx (never the key secret)" }, 400);
+      }
+      changes.razorpay_key_id = raw || null;
+    }
+
+    if (body.removeHeroImage) {
+      await deleteHeroImageObject(env, fund);
+      changes.hero_image_url = null;
+      changes.hero_image_storage = null;
+    } else if (body.heroImage) {
+      const validationError = validateHeroImageInput(body.heroImage);
+      if (validationError) return json({ success: false, message: validationError }, 400);
+      await deleteHeroImageObject(env, fund); // replace the old object, if any
+      const stored = await storeHeroImage(env, slug, body.heroImage);
+      if (stored) {
+        changes.hero_image_url = stored.hero_image_url;
+        changes.hero_image_storage = stored.hero_image_storage;
+      }
     }
 
     if (Object.keys(changes).length === 0) {
