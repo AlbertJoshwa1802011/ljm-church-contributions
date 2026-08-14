@@ -2,6 +2,8 @@
 |---|---|
 | **Purpose** | Append-only log of agent-session handoffs: what changed, exact test results, what was and wasn't verified, and any discoveries. The mandatory final-handoff record required by [`AGENT_RULES.md`](./AGENT_RULES.md) §11. |
 | **Rule** | **Append, never rewrite.** Add a new entry per session at the bottom of the log. Do not edit or delete a previous entry — it's a historical record. If a later session finds a previous entry was wrong, add a new entry correcting it; don't silently rewrite history. |
+| **Heading convention** | `## <YYYY-MM-DD> — <branch-name> — <short task title>` — date **and** branch name, always. This is what makes simultaneous branch creation append-safe: two sessions started the same day on different branches produce headings that cannot collide, so merging both entries in is always clean (`AGENT_RULES.md` §11). A heading with only a date is exactly the pattern that produced this file's own four-way add/add conflict, described below. |
+| **"Canonical" claims** | Never write "this is the canonical version of this file" from a branch that hasn't actually performed an integration merge — only an integration agent gets to say that, and only after doing the merge (`AGENT_RULES.md` §14). Every other entry describes its own session only. |
 | **Before starting new work** | Skim recent entries here, `git log --oneline -20`, and `docs/testing/COVERAGE-TRACKER.md` for work already in flight (`AGENT_RULES.md` §10 / `CONTRIBUTING.md` §1). |
 
 ---
@@ -11,7 +13,13 @@
 Copy this block for each new entry:
 
 ```markdown
-## <YYYY-MM-DD> — <short task title>
+## <YYYY-MM-DD> — <branch-name> — <short task title>
+
+STATUS:
+IMPLEMENTATION: <COMPLETE / NOT COMPLETE / PARTIAL>
+OFFLINE TESTS: <COMPLETE / NOT COMPLETE / N/A>
+UI VERIFICATION: <PERFORMED / NOT PERFORMED (no browser available) / N/A (no UI change)>
+PRODUCTION VERIFICATION: <PERFORMED / NOT PERFORMED>
 
 - **Branch:** `<branch-name>`
 - **Scope:** <one or two sentences: what this session changed and why>
@@ -23,11 +31,17 @@ Copy this block for each new entry:
   "NOT PERFORMED (no browser available)" — never omit this line>
 - **Production verification:** <what was checked against the live deployment,
   OR explicitly "NOT PERFORMED — offline tests only">
-- **Discoveries:** <classified per `AGENT_RULES.md` §8: BLOCKER / HIGH RISK /
-  REGRESSION / PRE-EXISTING BUG / TECH DEBT / INFORMATIONAL — or "None">
-- **Status:** <explicit status per `AGENT_RULES.md` §9 — never a bare
-  "COMPLETE" if anything above is unverified>
+- **Discoveries:** <classified per `AGENT_RULES.md` §8: BLOCKER / NEW BUG /
+  REGRESSION / PRE-EXISTING BUG / TEST GAP / ACCEPTED LIMITATION / FOLLOW-UP /
+  HIGH RISK / TECH DEBT / INFORMATIONAL — or "None". Any PRE-EXISTING BUG,
+  NEW BUG, or TEST GAP also goes in `docs/testing/COVERAGE-TRACKER.md` in
+  this same session — see `AGENT_RULES.md` §8.>
 ```
+
+The `STATUS:` block at the top is mandatory and must match the vocabulary in
+`AGENT_RULES.md` §9 exactly — it's deliberately placed first so a reader who
+only reads the top of the entry still gets the honest picture, not just a
+reader who reads to the end.
 
 ---
 

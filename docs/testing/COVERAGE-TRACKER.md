@@ -133,9 +133,39 @@ Closed alongside the Aug 2026 incident in which no online payment reached D1 for
 When closing an item here turns up something that isn't the gap itself (a
 latent bug, like the `auth.js` `.meta.changes` entry above), classify it per
 [`docs/development/AGENT_RULES.md`](../development/AGENT_RULES.md) §8
-(BLOCKER / HIGH RISK / REGRESSION / PRE-EXISTING BUG / TECH DEBT /
-INFORMATIONAL) before recording it inline in the relevant row, the way the
-`auth.js` entry above already does.
+(BLOCKER / NEW BUG / REGRESSION / PRE-EXISTING BUG / TEST GAP / ACCEPTED
+LIMITATION / FOLLOW-UP / HIGH RISK / TECH DEBT / INFORMATIONAL) before
+recording it inline in the relevant row, the way the `auth.js` entry above
+already does.
+
+**This is not optional narration.** A discovery written up only in
+`AGENT_HANDOFFS.md` prose and never added here is, in practice, invisible to
+the next agent — nobody re-reads 1000+ lines of historical handoff entries
+before starting new work, but everybody is expected to skim this tracker
+(`AGENT_RULES.md` §10, `CONTRIBUTING.md` §1). If the discovery is
+coverage-shaped (a bug a test would have caught, or a gap a test should
+close), it goes here, in the same session that found it — not "noted for a
+future session to add."
+
+- [ ] `funds.js` **PRE-EXISTING BUG** — Admin "Archive fund" button
+  (`admin.html`'s `$("f_archiveBtn").onclick`) sends `PUT /api/funds` with
+  `{ slug, action: "archive" }`, but `onRequestPut` in
+  `functions/api/funds.js` never reads `body.action` — only `body.status`
+  toggles `'active'`/`'archived'`. Clicking "Archive fund" on a non-system
+  fund currently sends a body with no recognized editable field, so the
+  handler returns `{ success:false, message: "No editable fields provided"
+  }` instead of archiving the fund. Discovered during the Fund Foundation
+  phase (see `docs/development/AGENT_HANDOFFS.md`'s 2026-08-12
+  `fund-foundation-phase-bjoybm` entry) but, until now, recorded only in
+  handoff prose — not here, so it wasn't visible to agents who skim this
+  tracker instead of the full handoff log. Not fixed here: `funds.js` and
+  `admin.html` are outside this session's ownership. **TEST GAP:** no test
+  in `tests/api/funds.test.mjs` or `tests/frontend/fund-admin-wiring.test.mjs`
+  exercises the archive-button's actual request shape against the handler,
+  which is why this shipped unnoticed — a request-shape test would have
+  caught it immediately. Fix (either send `status: "archived"` from the
+  button handler, or add an `action === "archive"` branch server-side) plus
+  a regression test are both still open.
 
 ## Explicitly accepted gaps (not oversights — recorded on purpose)
 
