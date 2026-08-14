@@ -20,6 +20,33 @@ const HERO_IMAGE_EXTERNAL_URL_MAX_LEN = 2000;
 // accidentally storing a credential in fund metadata.
 const RAZORPAY_KEY_ID_RE = /^rzp_[A-Za-z0-9_]+$/;
 
+// Raster types only. image/svg+xml is deliberately excluded: an SVG data URI
+// can carry <script>/event-handler markup, so allowing it would let fund
+// metadata smuggle attacker-controlled script into anywhere the hero image
+// is rendered — unlike a raster format, which is inert as embedded data.
+const HERO_IMAGE_ALLOWED_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+const HERO_IMAGE_DATA_URI_RE = /^data:([a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/]+=*)$/s;
+// ~2MB of base64 text ≈ 1.5MB of decoded image bytes — enough for a real
+// hero photo while keeping a single fund row (and a D1 write) bounded.
+const HERO_IMAGE_DATA_URI_MAX_LEN = 2 * 1024 * 1024;
+
+// Cheap capability probe for the six migrations/0015_fund_foundation_metadata.sql
+// columns, mirroring the try/catch "no such column" convention used
+// elsewhere in this file (and in functions/api/contributions.js) rather
+// than inventing a schema-version table. Only called on the POST/PUT
+// (low-traffic, admin-only) paths, and only when the request actually
+// touches Fund Foundation metadata — GET stays on the zero-overhead
+// try/catch fallback below since it's the hot, public-facing path.
+async function fundFoundationColumnsExist(db) {
+  try {
+    await db.prepare("SELECT hero_image_url FROM funds LIMIT 1").first();
+    return true;
+  } catch (err) {
+    if (/no such column/i.test(err.message || String(err))) return false;
+    throw err;
+  }
+}
+
 function slugify(name) {
   return String(name || "")
     .toLowerCase()
@@ -30,15 +57,39 @@ function slugify(name) {
     .substring(0, 60);
 }
 
+// SELECT * is deliberately schema-drift-safe for the migrations/0015 columns:
+// it never names hero_image_url/message/etc. explicitly, so it can't throw
+// "no such column" on a pre-0015 database. Callers that read those columns
+// off the returned row already guard with `|| ""` / `=== 1` (see the GET
+// detail handler below), so a pre-0015 row — which simply won't carry those
+// keys — degrades to the same "no Fund Foundation metadata set" defaults a
+// migrated row has right after creation.
 async function getFundBySlug(db, slug) {
   return db.prepare("SELECT * FROM funds WHERE slug = ?").bind(slug).first();
 }
 
 function validateHeroImageInput(value) {
   if (typeof value !== "string" || !value.trim()) return "heroImage must be a non-empty string";
-  if (!value.startsWith("data:") && value.length > HERO_IMAGE_EXTERNAL_URL_MAX_LEN) {
-    return `heroImage URL exceeds ${HERO_IMAGE_EXTERNAL_URL_MAX_LEN} characters`;
+
+  if (!value.startsWith("data:")) {
+    if (value.length > HERO_IMAGE_EXTERNAL_URL_MAX_LEN) {
+      return `heroImage URL exceeds ${HERO_IMAGE_EXTERNAL_URL_MAX_LEN} characters`;
+    }
+    return null;
   }
+
+  if (value.length > HERO_IMAGE_DATA_URI_MAX_LEN) {
+    return `heroImage data URI exceeds ${HERO_IMAGE_DATA_URI_MAX_LEN} characters`;
+  }
+
+  const match = HERO_IMAGE_DATA_URI_RE.exec(value);
+  if (!match) return "heroImage data URI is malformed (expected data:<mime>;base64,<payload>)";
+
+  const mime = match[1].toLowerCase();
+  if (!HERO_IMAGE_ALLOWED_MIME_TYPES.has(mime)) {
+    return `heroImage data URI type '${mime}' is not allowed (allowed: ${[...HERO_IMAGE_ALLOWED_MIME_TYPES].join(", ")})`;
+  }
+
   return null;
 }
 
@@ -46,6 +97,12 @@ function validateHeroImageInput(value) {
 // Mirrors functions/api/events.js's storePhoto(): reuses the same EVENT_PHOTOS
 // R2 bucket (under a `funds/` key prefix) and the existing
 // /api/events/photo?key=... server, so no new binding/endpoint is needed.
+// The env.EVENT_PHOTOS branch below is untested offline for the same reason
+// events.js's equivalent branch is: tests/helpers/mock-d1.mjs's makeContext()
+// never sets an EVENT_PHOTOS binding, and there's no R2 mock yet to add one
+// with. Tracked as an accepted gap, not a silent one — see
+// docs/testing/COVERAGE-TRACKER.md's "Explicitly accepted gaps" section. The
+// base64-fallback branch (taken whenever EVENT_PHOTOS isn't bound) IS covered.
 async function storeHeroImage(env, slug, dataUrl) {
   if (!dataUrl || typeof dataUrl !== "string") return null;
 
@@ -109,44 +166,53 @@ export async function onRequestGet(context) {
       // them — otherwise a deleted row would still inflate a fund's total.
       // Older databases without that column fall back to the unfiltered sum
       // (mirrors the schema-drift guard in functions/api/contributions.js).
-      // Also selects the Fund Foundation metadata columns (hero image,
-      // message, ranking groundwork, Razorpay key-id groundwork — see
-      // migrations/0015_fund_foundation_metadata.sql) in both branches of
-      // this fallback, since they're independent, additive columns.
+      //
+      // The Fund Foundation metadata columns (hero image, message, ranking
+      // groundwork, Razorpay key-id groundwork — migrations/0015) are an
+      // INDEPENDENT, later axis of drift: a database can have 0012 (so
+      // contributions.is_deleted exists) applied without yet having 0015 (so
+      // funds.hero_image_url etc. don't exist). Selecting those columns
+      // unconditionally used to make this query fail with "no such column"
+      // on exactly that (realistic, mid-deploy) database shape, and — since
+      // the old fallback branch still referenced the same 0015 columns —
+      // the failure wasn't actually caught, so the whole public funds
+      // listing 500'd. Guard the two axes independently: try the full
+      // query, then drop the 0015 columns, then drop the is_deleted filter
+      // too, so each axis of drift is handled on its own.
+      const buildQuery = (includeFoundation, includeIsDeletedFilter) => `
+        SELECT f.id, f.slug, f.name, f.description, f.goal_amount AS goalAmount,
+               f.status, f.visibility, f.is_system AS isSystem,
+               ${includeFoundation ? `f.hero_image_url AS heroImageUrl, f.hero_image_storage AS heroImageStorage,
+               f.message, f.ranking_enabled AS rankingEnabled, f.ranking_visibility AS rankingVisibility,
+               f.razorpay_key_id AS razorpayKeyId,` : ""}
+               f.created_by AS createdBy, f.created_at AS createdAt,
+               COALESCE((SELECT SUM(c.amount) FROM contributions c WHERE c.fund = f.slug${includeIsDeletedFilter ? " AND c.is_deleted = 0" : ""}), 0) AS totalCollected,
+               COALESCE((SELECT SUM(p.fund_contribution) FROM purchases p WHERE p.fund = f.slug AND p.status = 'Active'), 0) AS spentOnProducts,
+               (SELECT COUNT(*) FROM fund_members fm WHERE fm.fund_id = f.id) AS memberCount
+        FROM funds f ${where}
+        ORDER BY f.is_system DESC, f.created_at ASC`;
+
       let query;
       try {
-        query = await db.prepare(
-          `SELECT f.id, f.slug, f.name, f.description, f.goal_amount AS goalAmount,
-                  f.status, f.visibility, f.is_system AS isSystem,
-                  f.hero_image_url AS heroImageUrl, f.hero_image_storage AS heroImageStorage,
-                  f.message, f.ranking_enabled AS rankingEnabled, f.ranking_visibility AS rankingVisibility,
-                  f.razorpay_key_id AS razorpayKeyId,
-                  f.created_by AS createdBy, f.created_at AS createdAt,
-                  COALESCE((SELECT SUM(c.amount) FROM contributions c WHERE c.fund = f.slug AND c.is_deleted = 0), 0) AS totalCollected,
-                  COALESCE((SELECT SUM(p.fund_contribution) FROM purchases p WHERE p.fund = f.slug AND p.status = 'Active'), 0) AS spentOnProducts,
-                  (SELECT COUNT(*) FROM fund_members fm WHERE fm.fund_id = f.id) AS memberCount
-           FROM funds f ${where}
-           ORDER BY f.is_system DESC, f.created_at ASC`
-        ).all();
+        query = await db.prepare(buildQuery(true, true)).all();
       } catch (schemaErr) {
         if (!/no such column/i.test(schemaErr.message || String(schemaErr))) throw schemaErr;
-        query = await db.prepare(
-          `SELECT f.id, f.slug, f.name, f.description, f.goal_amount AS goalAmount,
-                  f.status, f.visibility, f.is_system AS isSystem,
-                  f.hero_image_url AS heroImageUrl, f.hero_image_storage AS heroImageStorage,
-                  f.message, f.ranking_enabled AS rankingEnabled, f.ranking_visibility AS rankingVisibility,
-                  f.razorpay_key_id AS razorpayKeyId,
-                  f.created_by AS createdBy, f.created_at AS createdAt,
-                  COALESCE((SELECT SUM(c.amount) FROM contributions c WHERE c.fund = f.slug), 0) AS totalCollected,
-                  COALESCE((SELECT SUM(p.fund_contribution) FROM purchases p WHERE p.fund = f.slug AND p.status = 'Active'), 0) AS spentOnProducts,
-                  (SELECT COUNT(*) FROM fund_members fm WHERE fm.fund_id = f.id) AS memberCount
-           FROM funds f ${where}
-           ORDER BY f.is_system DESC, f.created_at ASC`
-        ).all();
+        try {
+          query = await db.prepare(buildQuery(false, true)).all();
+        } catch (schemaErr2) {
+          if (!/no such column/i.test(schemaErr2.message || String(schemaErr2))) throw schemaErr2;
+          query = await db.prepare(buildQuery(false, false)).all();
+        }
       }
 
       const funds = (query.results || []).map(f => ({
         ...f,
+        heroImageUrl: f.heroImageUrl ?? null,
+        heroImageStorage: f.heroImageStorage ?? null,
+        message: f.message ?? "",
+        rankingEnabled: f.rankingEnabled ?? 0,
+        rankingVisibility: f.rankingVisibility ?? "public",
+        razorpayKeyId: f.razorpayKeyId ?? null,
         availableBalance: Math.max((f.totalCollected || 0) - (f.spentOnProducts || 0), 0)
       }));
 
@@ -307,6 +373,23 @@ export async function onRequestPost(context) {
     const goal = Number(body.goal_amount || body.goalAmount || 0) || 0;
     const visibility = body.visibility === "members" ? "members" : "public";
 
+    // Pre-0015 guarding: the INSERT below always writes the six Fund
+    // Foundation columns (migrations/0015). On a database that hasn't had
+    // 0015 applied yet, those columns don't exist. Probe once (cheap —
+    // POST is a low-traffic, admin-only path, unlike GET's hot public
+    // listing) and either reject explicitly when the caller actually asked
+    // for metadata the database can't store yet, or drop those columns from
+    // the INSERT entirely so plain fund creation keeps working.
+    const wantsFoundationMetadata = body.message != null || body.rankingEnabled != null ||
+      body.rankingVisibility != null || body.razorpayKeyId != null || !!body.heroImage;
+    const foundationColumnsExist = await fundFoundationColumnsExist(db);
+    if (wantsFoundationMetadata && !foundationColumnsExist) {
+      return json({
+        success: false,
+        message: "Fund Foundation metadata (hero image, message, ranking, Razorpay key) isn't available yet — this database is pending migration 0015. Create the fund without these fields, or apply the migration first."
+      }, 503);
+    }
+
     const message = body.message != null ? String(body.message) : "";
     if (message.length > MESSAGE_MAX_LEN) {
       return json({ success: false, message: `Fund message exceeds ${MESSAGE_MAX_LEN} characters` }, 400);
@@ -337,12 +420,21 @@ export async function onRequestPost(context) {
       if (stored) { heroImageUrl = stored.hero_image_url; heroImageStorage = stored.hero_image_storage; }
     }
 
-    await db.prepare(
-      `INSERT INTO funds (slug, name, description, goal_amount, status, visibility, is_system, created_by, updated_at,
-                           hero_image_url, hero_image_storage, message, ranking_enabled, ranking_visibility, razorpay_key_id)
-       VALUES (?, ?, ?, ?, 'active', ?, 0, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?)`
-    ).bind(slug, name, body.description || "", goal, visibility, auth.email,
-      heroImageUrl, heroImageStorage, message, rankingEnabled, rankingVisibility, razorpayKeyId).run();
+    if (foundationColumnsExist) {
+      await db.prepare(
+        `INSERT INTO funds (slug, name, description, goal_amount, status, visibility, is_system, created_by, updated_at,
+                             hero_image_url, hero_image_storage, message, ranking_enabled, ranking_visibility, razorpay_key_id)
+         VALUES (?, ?, ?, ?, 'active', ?, 0, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?)`
+      ).bind(slug, name, body.description || "", goal, visibility, auth.email,
+        heroImageUrl, heroImageStorage, message, rankingEnabled, rankingVisibility, razorpayKeyId).run();
+    } else {
+      // Pre-0015 database and no Fund Foundation metadata was requested
+      // (guarded above) — insert only the columns that exist.
+      await db.prepare(
+        `INSERT INTO funds (slug, name, description, goal_amount, status, visibility, is_system, created_by, updated_at)
+         VALUES (?, ?, ?, ?, 'active', ?, 0, ?, CURRENT_TIMESTAMP)`
+      ).bind(slug, name, body.description || "", goal, visibility, auth.email).run();
+    }
 
     await audit(context, {
       actorEmail: auth.email, actorType: "admin", verified: auth.verified,
@@ -391,6 +483,24 @@ export async function onRequestPut(context) {
 
     // Fund Foundation metadata — new, so editable on every fund (including
     // system funds): there's no pre-existing restriction to preserve here.
+    //
+    // Pre-0015 guarding: unlike the fixed-shape INSERT in onRequestPost,
+    // `changes` here is already built dynamically from whichever fields the
+    // caller sent, so if none of the six migrations/0015 columns are
+    // touched, the UPDATE below stays schema-drift-safe on its own — no
+    // probe needed. Only check when the caller actually asked to change
+    // one of those columns, and check it before the heroImage branch below
+    // (which has real R2 side effects) so a pre-0015 database never wastes
+    // an R2 write/delete on a change that's about to be rejected anyway.
+    const wantsFoundationMetadata = body.message != null || body.rankingEnabled != null ||
+      body.rankingVisibility != null || body.razorpayKeyId != null || body.removeHeroImage || !!body.heroImage;
+    if (wantsFoundationMetadata && !(await fundFoundationColumnsExist(db))) {
+      return json({
+        success: false,
+        message: "Fund Foundation metadata (hero image, message, ranking, Razorpay key) isn't available yet — this database is pending migration 0015."
+      }, 503);
+    }
+
     if (body.message != null) {
       const message = String(body.message);
       if (message.length > MESSAGE_MAX_LEN) {
