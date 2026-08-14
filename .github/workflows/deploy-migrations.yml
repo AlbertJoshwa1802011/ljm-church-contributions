@@ -3,8 +3,17 @@ name: Deploy Migrations to Production D1
 on:
   workflow_dispatch:
     inputs:
+      # GitHub Actions `type: choice` options must be a static list in this
+      # file — there is no supported way to populate them dynamically from
+      # migrations/ at dispatch time, so this list has to be kept in sync by
+      # hand whenever a new migration file is added. That's exactly how it
+      # went stale before (stopped at 0011 while the repo had moved on to
+      # 0015): see tests/regression/migrations-validate.test.mjs's
+      # "deploy-migrations.yml's dropdown lists every migration it claims to
+      # cover" test, which now fails CI if this list falls behind
+      # migrations/ again. See migrations/README.md for the full picture.
       migration:
-        description: 'Migration file to apply (0005-0011)'
+        description: 'Migration file to apply (0005-0015)'
         required: true
         default: '0005_purchase_attribution'
         type: choice
@@ -17,6 +26,10 @@ on:
           - 0010_wishlist_images
           - 0011_events
           - 0011_member_appearance
+          - 0012_contribution_attribution
+          - 0013_beta_access
+          - 0014_backfill_missed_webhook_payments
+          - 0015_fund_foundation_metadata
 
 jobs:
   deploy_migration:
