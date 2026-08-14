@@ -1,0 +1,67 @@
+name: Frozen Payment Path Guard
+
+# CONTRIBUTING.md §3 / AGENT_RULES.md §6 freeze the giving/money path. This
+# workflow is a lightweight tripwire so an *accidental* touch to those files
+# can never silently pass CI unnoticed — it is deliberately not an approval
+# workflow. A deliberate, reviewed change to these files is still allowed;
+# it just has to be acknowledged in a commit message, which is the one thing
+# an accidental change (e.g. a broad find/replace or a merge mistake) won't
+# have done. Passing this check is not itself the enhanced verification
+# AGENT_RULES.md §6 requires for a real money-path change.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes to frozen payment-path files
+        run: |
+          set -euo pipefail
+
+          FROZEN_PATHS="functions/api/webhook.js functions/api/contributions.js razorpay-checkout.js functions/api/verify.js functions/api/purchases.js"
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.event.after }}"
+            # First push of a new branch: `before` is the all-zero SHA — fall
+            # back to this push's root commit so the diff still has a base.
+            if [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+              BASE="$(git rev-list --max-parents=0 "$HEAD" | tail -1)"
+            fi
+          fi
+
+          CHANGED="$(git diff --name-only "$BASE" "$HEAD" -- $FROZEN_PATHS || true)"
+
+          if [ -z "$CHANGED" ]; then
+            echo "No frozen payment-path files touched."
+            exit 0
+          fi
+
+          echo "::warning::Frozen payment-path file(s) changed:"
+          echo "$CHANGED"
+
+          COMMIT_MSGS="$(git log --format=%B "$BASE..$HEAD")"
+
+          if echo "$COMMIT_MSGS" | grep -q "ACKNOWLEDGED-MONEY-PATH-CHANGE"; then
+            echo "Change to frozen path(s) explicitly acknowledged in a commit message."
+            echo "Per CONTRIBUTING.md §3 / AGENT_RULES.md §6, confirm this was a deliberate decision backed by extra tests and a mutation-testing pass before merging/deploying."
+            exit 0
+          fi
+
+          echo "::error::Frozen giving/money-path file(s) changed without an explicit acknowledgement: $CHANGED"
+          echo "Per CONTRIBUTING.md §3, the giving/money path (functions/api/webhook.js, functions/api/contributions.js, razorpay-checkout.js, functions/api/verify.js, functions/api/purchases.js) does not change behavior without a deliberate decision."
+          echo "If this change is deliberate, add 'ACKNOWLEDGED-MONEY-PATH-CHANGE' to a commit message in this PR/push (and follow AGENT_RULES.md §6's enhanced verification) — then re-run this check."
+          exit 1

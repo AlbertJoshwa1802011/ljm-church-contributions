@@ -30,8 +30,14 @@ team):
    for open (`[ ]`) items in the area you're about to touch.
 5. Read `docs/development/AGENT_HANDOFFS.md` — recent session handoffs, so you
    know what the last few agent sessions actually did and verified (or didn't).
-6. Run `git log --oneline -20` and `git status` — see what actually landed most
-   recently, not just what a stale handoff doc claims.
+6. Run `git fetch --all`, then `git branch -a` and `git log --all --oneline -30`
+   and `git status` — see what actually landed most recently and what sibling
+   branches exist, not just what a stale handoff doc claims. **This cannot
+   discover a sibling branch nobody has advertised to you** — four branches
+   once collided by all starting from the same commit, unaware of each other,
+   because none had merged anywhere the others could see. If your task
+   mentions other agents/branches by name, check those explicitly. See
+   `docs/development/AGENT_RULES.md` §10 for the full pre-work sync checklist.
 7. Run `npm test` **before** making any change, to confirm you're starting from
    a green baseline. If it's already red, stop and fix that first — don't build
    on a broken foundation.
@@ -71,10 +77,19 @@ genuinely wrong, fix the test with a clear explanation of why — don't silence 
 
 We have **real, live contribution data.** `functions/api/webhook.js`, the
 `contributions` table (including the `proof_id UNIQUE` idempotency guarantee),
-`functions/api/contributions.js`'s read model, and `razorpay-checkout.js` do not
-change behavior without an explicit, deliberate decision — and even then, extra
+`functions/api/contributions.js`'s read model, `razorpay-checkout.js`,
+`functions/api/verify.js`, and `functions/api/purchases.js` do not change
+behavior without an explicit, deliberate decision — and even then, extra
 tests plus a mutation-testing sanity check (see §5) are required, not optional.
 Full detail: [`docs/milestone-v2/SAFETY-AND-TESTS.md`](./docs/milestone-v2/SAFETY-AND-TESTS.md).
+
+This is technically enforced, not only written policy:
+[`.github/workflows/frozen-payment-paths.yml`](./.github/workflows/frozen-payment-paths.yml)
+fails CI on any push/PR that touches those files without the commit message
+containing `ACKNOWLEDGED-MONEY-PATH-CHANGE`, so an accidental touch can't
+silently pass. It's a tripwire, not an approval system — passing it doesn't
+substitute for the enhanced verification `docs/development/AGENT_RULES.md`
+§6 requires for a real money-path change.
 
 ## 4. Database changes are additive-only
 
@@ -88,6 +103,11 @@ Full detail: [`docs/milestone-v2/SAFETY-AND-TESTS.md`](./docs/milestone-v2/SAFET
   a solo agent session, re-read the SQL once more, slowly, after a break) before
   dispatching a migration workflow against production.** This is the one place in
   the pipeline where CI cannot save you.
+- **Before picking the next migration number, check every reachable
+  branch/remote, not just local HEAD** — `migrations/0011_events.sql` and
+  `migrations/0011_member_appearance.sql` already collide in this repo's
+  history because two branches each numbered off local HEAD independently.
+  See `docs/development/AGENT_RULES.md` §4 for the exact commands.
 - When you add a new critical table, add it to the `REQUIRED` map in
   `tests/regression/schema-contract.test.mjs` so a future breaking migration gets
   caught automatically.
@@ -149,12 +169,18 @@ authoritative, mandatory checklist for what "done" means on top of the process
 in this file — it doesn't restate the rules above, it adds the gates that stop
 a task from being reported complete prematurely: an explicit test matrix per
 feature (happy/negative/authorization/regression/boundary/persistence/error),
-honesty about what was and wasn't verified in a browser or in production,
-mutation testing for any authorization/validation guard (not only money-path
-changes), and a classification scale for anything discovered along the way
-(BLOCKER/HIGH RISK/REGRESSION/PRE-EXISTING BUG/TECH DEBT/INFORMATIONAL). Every
-session that changes anything ends by appending an entry to
+a STATUS block that states verification state per dimension up front rather
+than a bare "COMPLETE" with a caveat buried later, mutation testing for any
+authorization/validation guard (not only money-path changes) plus general
+test-quality guidance against vacuous tests, and a classification scale for
+anything discovered along the way (BLOCKER/NEW BUG/REGRESSION/PRE-EXISTING
+BUG/TEST GAP/ACCEPTED LIMITATION/FOLLOW-UP/HIGH RISK/TECH DEBT/INFORMATIONAL)
+— coverage-shaped discoveries go in `docs/testing/COVERAGE-TRACKER.md` in the
+same session that finds them, not only in handoff prose. Every session that
+changes anything ends by appending an entry to
 [`docs/development/AGENT_HANDOFFS.md`](./docs/development/AGENT_HANDOFFS.md) —
-never editing a previous entry — with the exact test command and result. Agents
-must never merge or push another agent's branch unless explicitly instructed to
-do that specific action.
+using a `<date> — <branch> — <title>` heading so parallel sessions can never
+collide, never editing a previous entry — with the exact test command and
+result. Agents must never merge or push another agent's branch unless
+explicitly instructed to do that specific action, and an integration agent
+follows the explicit merge-completion checklist in `AGENT_RULES.md` §14.
