@@ -198,3 +198,59 @@ test("events: DELETE requires manage_events", async () => {
   })));
   assert.equal(res.success, false);
 });
+
+test("events: church scoping (migration 0019) round-trips through create, update, and ?church= filtering", async () => {
+  const db = freshDb();
+
+  const inChurch1 = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Church 1 Outreach", status: "published", churchId: 1, beneficiariesCount: 40, goodDeedSummaryEn: "Fed 40 families" }
+  })));
+  await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Church 2 Outreach", status: "published", churchId: 2 }
+  })));
+
+  const detail = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: `https://test.local/api/events?id=${inChurch1.id}`
+  })));
+  assert.equal(detail.event.churchId, 1);
+  assert.equal(detail.event.beneficiariesCount, 40);
+  assert.equal(detail.event.goodDeedSummaryEn, "Fed 40 families");
+
+  const filtered = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/events?church=1"
+  })));
+  assert.equal(filtered.events.length, 1);
+  assert.equal(filtered.events[0].title, "Church 1 Outreach");
+  assert.equal(filtered.events[0].beneficiariesCount, 40);
+
+  const unfiltered = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/events"
+  })));
+  assert.equal(unfiltered.events.length, 2);
+
+  await events.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/events",
+    body: { id: inChurch1.id, title: "Church 1 Outreach", status: "published", churchId: 2, beneficiariesCount: 55 }
+  }));
+  const afterMove = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/events?church=2"
+  })));
+  assert.equal(afterMove.events.length, 2);
+  assert.ok(afterMove.events.some(e => e.title === "Church 1 Outreach" && e.beneficiariesCount === 55));
+});
+
+test("events: church/beneficiary fields default to null when not supplied (existing callers unaffected)", async () => {
+  const db = freshDb();
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Plain Event", status: "published" }
+  })));
+  const detail = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.equal(detail.event.churchId, null);
+  assert.equal(detail.event.beneficiariesCount, null);
+  assert.equal(detail.event.goodDeedSummaryEn, null);
+});

@@ -47,6 +47,13 @@ the owner's sign-off before implementation planning continues** — see §3 of t
 
 ---
 
+## 📍 Latest status — [`12-overnight-status-2026-08-16.md`](./12-overnight-status-2026-08-16.md)
+
+Phases 0–5 of `06-implementation-plan.md` shipped **backend-only** (new tables +
+API endpoints + tests for churches, promises, testimonies, prayer, contact, programs,
+and blog — 328 → 407 tests, zero regressions). No frontend/admin-UI work yet — read
+the status doc before starting the next session so work isn't duplicated.
+
 ## 👉 Next up — owner review of the mockups (`07-ui-mockups-review.md`)
 
 **All six planning documents are complete**, plus the safety net and a first round of

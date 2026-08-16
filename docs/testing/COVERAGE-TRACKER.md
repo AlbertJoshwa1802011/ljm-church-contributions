@@ -122,6 +122,45 @@ Closed alongside the Aug 2026 incident in which no online payment reached D1 for
 
 ---
 
+## Milestone v2 — new ministry-content endpoints (Phases 0-5, backend)
+
+Added in the overnight deep-implementation pass that executed `06-implementation-plan.md`
+Phases 0-5 (churches → promises → testimonies → prayer/contact → programs/events
+scoping → blog). All additive migrations (`0015`-`0020`), all new endpoints ship
+with the mandatory happy-path + permission-gate + visibility-boundary tests, and
+`schema-contract.test.mjs` was extended for every new table. **Backend + tests
+only** — see the status doc for what's still pending on the frontend/admin-UI side.
+
+- [x] `churches.js` GET public (active only) / `?all=1` admin, POST/PUT/DELETE
+      (archive, not hard-delete) — `tests/api/churches.test.mjs`
+- [x] `_mail.js` Resend-via-fetch helper, opt-in on `RESEND_API_KEY`, never throws
+      — `tests/api/_mail.test.mjs`
+- [x] `promises.js` today-resolver (daily/monthly/yearly, IST, fallback to most
+      recent published row) + admin CRUD — `tests/api/promises.test.mjs`
+- [x] `testimonies.js` public submit → `pending`, published-only public reads,
+      a submitter cannot self-publish via the `status` field, admin moderation
+      — `tests/api/testimonies.test.mjs`
+- [x] `prayer.js` public submit (persist-first, best-effort team notify), admin
+      inbox + status flow, inbox never public — `tests/api/prayer.test.mjs`
+- [x] `contact.js` public submit (persist-first, best-effort ack + team notify,
+      survives a mail-provider failure — mutation-tested), admin inbox + status
+      flow — `tests/api/contact.test.mjs`
+- [x] `programs.js` GET public (active, `?church=` filter) / `?all=1` admin, CRUD
+      — `tests/api/programs.test.mjs`
+- [x] `events.js` extended (additive columns only) with `churchId`/
+      `beneficiariesCount`/`goodDeedSummaryEn`/`goodDeedSummaryTa` + `?church=`
+      filter on the public listing — `tests/api/events.test.mjs`
+- [x] `blog.js` GET public (published, `?slug=`, `?ministryArea=` for the Youth
+      Ministry reuse) / `?all=1` admin, slug-collision 409, CRUD
+      — `tests/api/blog.test.mjs`
+
+**Not yet done** (tracked, not silent): admin-console UI panels for all eight of
+the above (no `admin.html` wiring shipped this pass — API-only), public-facing
+pages/screens per `03-app-flow.md`, the i18n scaffold (`t()` helper + EN/TA
+dictionary) from Phase 0, wiring `_mail.js`'s `RESEND_API_KEY`/`TEAM_NOTIFY_EMAIL`
+in the real Cloudflare Pages environment, and applying migrations `0015`-`0020`
+to production D1.
+
 ## Explicitly accepted gaps (not oversights — recorded on purpose)
 
 These are **not** silently missing; they're judged not reducible to the current

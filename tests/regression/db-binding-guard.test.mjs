@@ -12,10 +12,10 @@ import assert from "node:assert/strict";
 // missing-DB scenario doesn't apply to it — its own guard (missing EVENT_PHOTOS)
 // is covered in events-photo.test.mjs.
 const MODULES = [
-  "appearance.js", "auth.js", "bible.js", "contributions.js", "events.js",
+  "appearance.js", "auth.js", "bible.js", "blog.js", "churches.js", "contact.js", "contributions.js", "events.js",
   "expenses.js", "families.js", "funds.js", "logs.js", "members.js",
-  "migrate.js", "purchases.js", "roles.js", "search.js", "settings.js",
-  "subscriptions.js", "verify.js", "webhook.js", "wishlist.js"
+  "migrate.js", "prayer.js", "programs.js", "promises.js", "purchases.js", "roles.js", "search.js", "settings.js",
+  "subscriptions.js", "testimonies.js", "verify.js", "webhook.js", "wishlist.js"
 ];
 
 function fakeRequest(method) {

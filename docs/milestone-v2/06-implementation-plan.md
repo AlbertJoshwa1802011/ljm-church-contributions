@@ -31,66 +31,84 @@
 
 ---
 
-## Phase 0 — Foundations & safety  ✅ *(started)*
+## Phase 0 — Foundations & safety  🟡 *(backend done, frontend pending)*
 **Goal:** groundwork that everything else stands on.
-- ✅ **Regression test net** locking in existing behavior (82 tests) — *done*.
-- `0012_churches.sql` + `/api/churches` + seed the two churches.
-- **Feature-flag plumbing** in `settings.js`/`config` (`new_home_enabled`, etc.) and a
-  tiny client helper to read flags.
-- **i18n scaffold**: a client dictionary (JSON) + language toggle state in
-  `localStorage`; a `t()` helper. No content yet — just the mechanism.
-- **Email helper** `functions/api/_mail.js` (Resend via `fetch`) + team-notify address
-  in config; unit-tested with a stubbed `fetch` (no network).
-- **Media/flags config** keys registered.
-**Tests:** `churches.test.mjs`, `_mail` helper test (stubbed), extend
-`schema-contract.test.mjs` (`churches`). **Exit:** flags + churches live; suite green.
+- ✅ **Regression test net** locking in existing behavior — now 407 tests (grew from
+  the original 82 as this milestone's phases landed) — *done*.
+- ✅ `0015_churches.sql` (renumbered from the doc's original `0012` — `0012`-`0014`
+  were already taken by contribution-attribution/beta-access/webhook-backfill on
+  `main`) + `/api/churches` + seed the two churches — `tests/api/churches.test.mjs`.
+- ✅ **Email helper** `functions/api/_mail.js` (Resend via `fetch`, opt-in on
+  `RESEND_API_KEY`) + `TEAM_NOTIFY_EMAIL`; unit-tested with a stubbed `fetch` (no
+  network) — `tests/api/_mail.test.mjs`.
+- ⬜ **Feature-flag plumbing** for the new public screens (`new_home_enabled` etc.) —
+  not started; the existing `new_flow`/beta-cookie mechanism from
+  `11-v2-flow-implementation.md` only gates the *existing-data* v2 port
+  (Home/Our-Giving/Events/My-Giving/Give-Flow), not these new content types.
+- ⬜ **i18n scaffold** (client dictionary + `t()` helper + `localStorage` toggle) —
+  not started. Every new table already has bilingual `*_en`/`*_ta` columns ready
+  for it (schema-level foundation is done; the client mechanism is not).
+- ⬜ **Media/flags config keys** (`sunday_live_url`, `daily_prayer_url`,
+  `podcast_playlist_url`) — not registered yet.
+**Exit (partial):** churches + email helper live and tested; flag plumbing, i18n
+scaffold, and media config keys remain.
 
-## Phase 1 — Home + Promises engine
+## Phase 1 — Home + Promises engine  🟡 *(backend done, Home screen not built)*
 **Goal:** the inspirational front door (PRD §7.1–7.2).
-- `0013_promises.sql`, `/api/promises` (today-resolver + admin CRUD).
-- New **Home** (behind flag): hero, Today/Monthly/Yearly promise cards (auto by date),
-  Give·Pray·Contact, live strip + daily-prayer link, latest-testimony teaser slot.
-- Admin: **Promises** scheduler in the console.
-**Tests:** `promises.test.mjs` (today-resolver, fallback, permission), schema guard.
-**Exit:** signed-out visitor sees today's promise on the flagged Home.
+- ✅ `0016_promises.sql`, `/api/promises` (today-resolver + admin CRUD) —
+  `tests/api/promises.test.mjs`.
+- ⬜ New **Home** screen (hero, Today/Monthly/Yearly promise cards, Give·Pray·Contact,
+  live strip, latest-testimony teaser) — not built.
+- ⬜ Admin: **Promises** scheduler UI in `admin.html` — not built (API-only so far).
+**Exit (partial):** the today-resolver works and is tested; nothing renders it yet.
 
-## Phase 2 — Testimonies & Miracles
+## Phase 2 — Testimonies & Miracles  🟡 *(backend done, screens/admin UI not built)*
 **Goal:** PRD §7.3.
-- `0014_testimonies.sql`, `/api/testimonies` (public list published, public submit →
-  `pending`, admin moderate/publish).
-- Screens S4/S4a/S4b; wire the Home teaser.
-- Admin: **Testimonies** moderation queue.
-**Tests:** submit lands pending; only published shown publicly; moderation gated.
-**Exit:** a submitted testimony can be approved and appears publicly.
+- ✅ `0017_testimonies.sql`, `/api/testimonies` (public list published, public submit →
+  `pending`, admin moderate/publish) — `tests/api/testimonies.test.mjs`.
+- ⬜ Screens S4/S4a/S4b; Home teaser wiring — not built.
+- ⬜ Admin: **Testimonies** moderation queue UI — not built.
+**Exit (partial):** a submitted testimony can be approved via the API and is proven
+to appear only in the published public read; there's no UI to submit/moderate yet.
 
-## Phase 3 — Prayer + Contact (with email)
+## Phase 3 — Prayer + Contact (with email)  🟡 *(backend done, screens/admin UI not built)*
 **Goal:** PRD §7.5–7.6 — the cared-for response.
-- `0015_prayer_requests.sql`, `0016_contact_messages.sql`; `/api/prayer`, `/api/contact`.
-- On submit: **persist first**, then send **noreply acknowledgement** + **team
-  notification** via `_mail.js`. Screens S10/S11 (+ call-us).
-- Admin: **Prayer requests** inbox (status flow) + **Contact messages** inbox.
-**Tests:** submission persists even if mail stubbed to fail; team-notify/ack flags set;
-inboxes permission-gated.
-**Exit:** a contact submission stores a row, sends the ack, and notifies the team.
+- ✅ `0018_prayer_contact.sql` (`prayer_requests` + `contact_messages`); `/api/prayer`,
+  `/api/contact` — persist-first-then-email, mutation-tested (see
+  `docs/testing/COVERAGE-TRACKER.md`) — `tests/api/prayer.test.mjs`,
+  `tests/api/contact.test.mjs`.
+- ⬜ Screens S10/S11 (+ call-us) — not built.
+- ⬜ Admin: **Prayer requests** inbox + **Contact messages** inbox UI — not built.
+**Exit (partial):** a contact submission stores a row and (when `RESEND_API_KEY`/
+`TEAM_NOTIFY_EMAIL` are configured) sends the ack + notifies the team — proven by
+test, including surviving a simulated mail-provider outage. No inbox UI yet.
 
-## Phase 4 — Events, Impact, Programs & Schedule
+## Phase 4 — Events, Impact, Programs & Schedule  🟡 *(backend done, admin UI not built)*
 **Goal:** PRD §7.7–7.8 — "what's happening / what we've done", per church.
-- `0019_events_church.sql` (nullable church + beneficiary columns) — **complete** the
-  events module and add it to the admin `NAV_GROUPS` (it's currently pending).
-- `0018_programs.sql`, `/api/programs`; church switcher wired to Events + Programs.
-- Impact reuses existing purchases/expenses read models.
-- Admin: **Events** (completed) + **Programs**.
-**Tests:** church filter works; existing events behavior unchanged; programs gated.
-**Exit:** events/programs display and filter by church; impact shows transparently.
+- ✅ `0019_programs_and_event_church.sql` — nullable `church_id`/`beneficiaries_count`/
+  `good_deed_summary_en`/`good_deed_summary_ta` added to the existing `events` table
+  (additive `ALTER TABLE`, existing rows/behavior unaffected — proven by a
+  default-to-null regression test), plus the new `programs` table.
+- ✅ `/api/programs` (public `?church=` filter, admin CRUD) —
+  `tests/api/programs.test.mjs`. `events.js`'s public listing gained the same
+  `?church=` filter — `tests/api/events.test.mjs`.
+- ⬜ Church switcher UI wired to Events + Programs — not built.
+- ⬜ Admin: **Programs** panel (Events admin panel already exists) — not built.
+**Exit (partial):** events/programs can be filtered by church via the API, proven by
+test; no UI switcher yet.
 
-## Phase 5 — Watch & Listen, Blog, Youth Ministry
+## Phase 5 — Watch & Listen, Blog, Youth Ministry  🟡 *(blog backend done; media hub + youth UI not built)*
 **Goal:** PRD §7.9–7.11.
-- Media hub S5/S5a–c: YouTube Live embed + daily-prayer + playlist, URLs from config.
-- `0017_blog.sql`, `/api/blog`; Blog screens S8/S8a.
-- Youth Ministry hub reusing programs/events/blog scoped by `ministry_area='youth'`.
-- Admin: **Blog**, **Media/Livestream** settings, youth tagging.
-**Tests:** blog published-vs-draft visibility + permission; media URLs render safely.
-**Exit:** Sunday live embeds; blog + youth sections populate.
+- ⬜ Media hub S5/S5a–c (YouTube Live embed + daily-prayer + playlist) — not built;
+  depends on Phase 0's media config keys, also not yet registered.
+- ✅ `0020_blog.sql`, `/api/blog` (public published/`?slug=`/`?ministryArea=`, admin
+  CRUD, slug-collision handling) — `tests/api/blog.test.mjs`.
+- ⬜ Blog screens S8/S8a — not built.
+- ⬜ Youth Ministry hub (reuses `programs`/`events`/`blog` via `ministry_area='youth'`
+  — the data-model support exists; no dedicated screen yet).
+- ⬜ Admin: **Blog**, **Media/Livestream** settings, youth tagging UI — not built.
+**Exit (partial):** blog posts can be authored/published via the API with correct
+draft/published visibility, proven by test; nothing public-facing renders them yet.
 
 ## Phase 6 — About / Our Churches + language + admin polish
 **Goal:** PRD §7.12–7.14 and full admin coverage.

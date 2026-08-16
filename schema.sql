@@ -476,6 +476,10 @@ CREATE TABLE IF NOT EXISTS events (
   status TEXT DEFAULT 'draft',       -- 'draft' | 'published'
   featured INTEGER DEFAULT 0,        -- 1 = pin to top of public listing
   extra TEXT,                        -- JSON blob for future/optional fields
+  church_id INTEGER,                 -- nullable = ministry-wide (see migrations/0019)
+  beneficiaries_count INTEGER,
+  good_deed_summary_en TEXT,
+  good_deed_summary_ta TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -503,3 +507,150 @@ CREATE TABLE IF NOT EXISTS beta_testers (
 );
 INSERT OR IGNORE INTO beta_testers (email, added_by, note)
 VALUES ('albertjoshrock101@gmail.com', 'migration-0013', 'Initial requester, seeded at rollout');
+
+-- 19. Churches — the two-church ministry model (see migrations/0015_churches.sql)
+CREATE TABLE IF NOT EXISTS churches (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug              TEXT UNIQUE NOT NULL,
+  name_en           TEXT NOT NULL,
+  name_ta           TEXT,
+  is_mother_church  INTEGER DEFAULT 0,
+  address_en        TEXT,
+  address_ta        TEXT,
+  city              TEXT,
+  country           TEXT DEFAULT 'India',
+  phone             TEXT,
+  email             TEXT,
+  map_url           TEXT,
+  service_times_en  TEXT,
+  service_times_ta  TEXT,
+  status            TEXT DEFAULT 'active',
+  sort_order        INTEGER DEFAULT 0,
+  created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at        DATETIME
+);
+INSERT OR IGNORE INTO churches (slug, name_en, is_mother_church, sort_order)
+  VALUES ('church-of-light', 'Church of Light', 1, 0);
+INSERT OR IGNORE INTO churches (slug, name_en, is_mother_church, sort_order)
+  VALUES ('city-worship-center', 'City Worship Center', 0, 1);
+
+-- 20. Promises — daily/monthly/yearly promise words (see migrations/0016_promises.sql)
+CREATE TABLE IF NOT EXISTS promises (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  scope         TEXT NOT NULL,
+  on_date       TEXT,
+  month         INTEGER,
+  year          INTEGER,
+  reference     TEXT,
+  text_en       TEXT NOT NULL,
+  text_ta       TEXT,
+  reflection_en TEXT,
+  reflection_ta TEXT,
+  is_published  INTEGER DEFAULT 1,
+  created_by    TEXT,
+  created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_promises_daily ON promises(scope, on_date);
+CREATE INDEX IF NOT EXISTS idx_promises_month ON promises(scope, year, month);
+
+-- 21. Testimonies & Miracles (see migrations/0017_testimonies.sql)
+CREATE TABLE IF NOT EXISTS testimonies (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  title_en     TEXT NOT NULL,
+  title_ta     TEXT,
+  body_en      TEXT NOT NULL,
+  body_ta      TEXT,
+  author_name  TEXT,
+  member_id    INTEGER,
+  place        TEXT,
+  kind         TEXT DEFAULT 'testimony',
+  media_url    TEXT,
+  church_id    INTEGER,
+  status       TEXT DEFAULT 'pending',
+  submitted_ip TEXT,
+  created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+  published_at DATETIME,
+  reviewed_by  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_testi_status ON testimonies(status, created_at DESC);
+
+-- 22. Prayer requests + Contact messages (see migrations/0018_prayer_contact.sql)
+CREATE TABLE IF NOT EXISTS prayer_requests (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  name           TEXT,
+  email          TEXT,
+  phone          TEXT,
+  request        TEXT NOT NULL,
+  wants_callback INTEGER DEFAULT 0,
+  language       TEXT DEFAULT 'en',
+  church_id      INTEGER,
+  member_id      INTEGER,
+  status         TEXT DEFAULT 'new',
+  is_private     INTEGER DEFAULT 1,
+  submitted_ip   TEXT,
+  created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+  handled_by     TEXT,
+  handled_at     DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_prayer_status ON prayer_requests(status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  name          TEXT,
+  email         TEXT NOT NULL,
+  subject       TEXT,
+  message       TEXT NOT NULL,
+  church_id     INTEGER,
+  language      TEXT DEFAULT 'en',
+  status        TEXT DEFAULT 'new',
+  ack_sent      INTEGER DEFAULT 0,
+  team_notified INTEGER DEFAULT 0,
+  submitted_ip  TEXT,
+  created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+  handled_by    TEXT,
+  handled_at    DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_contact_status ON contact_messages(status, created_at DESC);
+
+-- 23. Programs — service times & recurring programs (see migrations/0019_programs_and_event_church.sql)
+CREATE TABLE IF NOT EXISTS programs (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  title_en       TEXT NOT NULL,
+  title_ta       TEXT,
+  description_en TEXT,
+  description_ta TEXT,
+  church_id      INTEGER,
+  ministry_area  TEXT,
+  day_of_week    INTEGER,
+  start_time     TEXT,
+  end_time       TEXT,
+  recurrence     TEXT DEFAULT 'weekly',
+  location       TEXT,
+  status         TEXT DEFAULT 'active',
+  sort_order     INTEGER DEFAULT 0,
+  created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at     DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_programs_church ON programs(church_id, day_of_week);
+
+-- 24. Blog posts (see migrations/0020_blog.sql)
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug          TEXT UNIQUE NOT NULL,
+  title_en      TEXT NOT NULL,
+  title_ta      TEXT,
+  body_en       TEXT NOT NULL,
+  body_ta       TEXT,
+  excerpt_en    TEXT,
+  excerpt_ta    TEXT,
+  category      TEXT,
+  cover_url     TEXT,
+  ministry_area TEXT,
+  status        TEXT DEFAULT 'draft',
+  author        TEXT,
+  created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+  published_at  DATETIME,
+  updated_at    DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_blog_status ON blog_posts(status, published_at DESC);

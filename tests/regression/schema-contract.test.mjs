@@ -15,7 +15,15 @@ const REQUIRED = {
   config: ["key", "value"],
   roles: ["role_name", "permissions"],
   member_roles: ["email", "role_name"],
-  activity_logs: ["id", "action", "actor_email", "actor_type"]
+  activity_logs: ["id", "action", "actor_email", "actor_type"],
+  churches: ["id", "slug", "name_en", "is_mother_church", "status"],
+  promises: ["id", "scope", "on_date", "month", "year", "text_en", "is_published"],
+  testimonies: ["id", "title_en", "body_en", "kind", "status"],
+  prayer_requests: ["id", "request", "status", "is_private"],
+  contact_messages: ["id", "email", "message", "status", "ack_sent", "team_notified"],
+  programs: ["id", "title_en", "church_id", "day_of_week", "status"],
+  events: ["id", "title", "status", "church_id", "beneficiaries_count", "good_deed_summary_en"],
+  blog_posts: ["id", "slug", "title_en", "body_en", "status", "ministry_area"]
 };
 
 test("schema contract: critical tables and columns still exist (guards against a breaking migration)", () => {

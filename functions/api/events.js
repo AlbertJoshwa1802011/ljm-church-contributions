@@ -84,6 +84,10 @@ function toEventCamel(row) {
     status: row.status,
     featured: !!row.featured,
     extra,
+    churchId: row.church_id != null ? row.church_id : null,
+    beneficiariesCount: row.beneficiaries_count != null ? row.beneficiaries_count : null,
+    goodDeedSummaryEn: row.good_deed_summary_en || null,
+    goodDeedSummaryTa: row.good_deed_summary_ta || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -124,14 +128,21 @@ export async function onRequestGet(context) {
       return json({ events }, 200, corsHeaders({ "Cache-Control": "no-store" }));
     }
 
-    // Public listing — published events only.
-    const q = await db.prepare(
-      `SELECT id, title, category, event_date, location, description, cover_photo, featured, status,
+    // Public listing — published events only, optionally scoped to a church.
+    const church = url.searchParams.get("church");
+    let sql = `SELECT id, title, category, event_date, location, description, cover_photo, featured, status,
+              church_id, beneficiaries_count, good_deed_summary_en, good_deed_summary_ta,
               (SELECT COUNT(*) FROM event_photos p WHERE p.event_id = events.id) AS photoCount
        FROM events
-       WHERE status = 'published'
-       ORDER BY featured DESC, event_date DESC, id DESC`
-    ).all();
+       WHERE status = 'published'`;
+    const params = [];
+    if (church) {
+      sql += " AND church_id = ?";
+      params.push(Number(church));
+    }
+    sql += " ORDER BY featured DESC, event_date DESC, id DESC";
+
+    const q = await db.prepare(sql).bind(...params).all();
     const rows = q.results || [];
 
     const events = rows.map(r => ({
@@ -144,7 +155,11 @@ export async function onRequestGet(context) {
       coverPhoto: r.cover_photo,
       featured: !!r.featured,
       status: r.status,
-      photoCount: r.photoCount || 0
+      photoCount: r.photoCount || 0,
+      churchId: r.church_id != null ? r.church_id : null,
+      beneficiariesCount: r.beneficiaries_count != null ? r.beneficiaries_count : null,
+      goodDeedSummaryEn: r.good_deed_summary_en || null,
+      goodDeedSummaryTa: r.good_deed_summary_ta || null
     }));
 
     const categories = [...new Set(rows.map(r => r.category).filter(Boolean))];
@@ -175,15 +190,19 @@ export async function onRequestPost(context) {
     const status = body.status === "published" ? "published" : (body.status || "draft");
     const featured = body.featured ? 1 : 0;
     const extra = JSON.stringify(body.extra || {});
+    const churchId = body.churchId || null;
+    const beneficiariesCount = body.beneficiariesCount != null ? Number(body.beneficiariesCount) : null;
+    const goodDeedSummaryEn = body.goodDeedSummaryEn || null;
+    const goodDeedSummaryTa = body.goodDeedSummaryTa || null;
 
     // The event id (used as the R2 key prefix) isn't known until after INSERT,
     // so the cover photo — if a data URL — is stored/patched in once we have it.
     let coverPhotoUrl = null;
 
     const res = await db.prepare(
-      `INSERT INTO events (title, category, event_date, location, description, cover_photo, status, featured, extra)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(title, category, eventDate, location, description, null, status, featured, extra).run();
+      `INSERT INTO events (title, category, event_date, location, description, cover_photo, status, featured, extra, church_id, beneficiaries_count, good_deed_summary_en, good_deed_summary_ta)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(title, category, eventDate, location, description, null, status, featured, extra, churchId, beneficiariesCount, goodDeedSummaryEn, goodDeedSummaryTa).run();
 
     const id = res.meta && res.meta.last_row_id;
 
@@ -249,6 +268,10 @@ export async function onRequestPut(context) {
     const status = body.status === "published" ? "published" : (body.status || "draft");
     const featured = body.featured ? 1 : 0;
     const extra = JSON.stringify(body.extra || {});
+    const churchId = body.churchId || null;
+    const beneficiariesCount = body.beneficiariesCount != null ? Number(body.beneficiariesCount) : null;
+    const goodDeedSummaryEn = body.goodDeedSummaryEn || null;
+    const goodDeedSummaryTa = body.goodDeedSummaryTa || null;
 
     let coverPhotoUrl = body.coverPhoto && typeof body.coverPhoto === "string" && !body.coverPhoto.startsWith("data:")
       ? body.coverPhoto
@@ -261,13 +284,13 @@ export async function onRequestPut(context) {
 
     const res = coverPhotoUrl !== undefined
       ? await db.prepare(
-          `UPDATE events SET title=?, category=?, event_date=?, location=?, description=?, cover_photo=?, status=?, featured=?, extra=?, updated_at=CURRENT_TIMESTAMP
+          `UPDATE events SET title=?, category=?, event_date=?, location=?, description=?, cover_photo=?, status=?, featured=?, extra=?, church_id=?, beneficiaries_count=?, good_deed_summary_en=?, good_deed_summary_ta=?, updated_at=CURRENT_TIMESTAMP
            WHERE id=?`
-        ).bind(title, category, eventDate, location, description, coverPhotoUrl, status, featured, extra, id).run()
+        ).bind(title, category, eventDate, location, description, coverPhotoUrl, status, featured, extra, churchId, beneficiariesCount, goodDeedSummaryEn, goodDeedSummaryTa, id).run()
       : await db.prepare(
-          `UPDATE events SET title=?, category=?, event_date=?, location=?, description=?, status=?, featured=?, extra=?, updated_at=CURRENT_TIMESTAMP
+          `UPDATE events SET title=?, category=?, event_date=?, location=?, description=?, status=?, featured=?, extra=?, church_id=?, beneficiaries_count=?, good_deed_summary_en=?, good_deed_summary_ta=?, updated_at=CURRENT_TIMESTAMP
            WHERE id=?`
-        ).bind(title, category, eventDate, location, description, status, featured, extra, id).run();
+        ).bind(title, category, eventDate, location, description, status, featured, extra, churchId, beneficiariesCount, goodDeedSummaryEn, goodDeedSummaryTa, id).run();
 
     if (!res.meta || res.meta.changes === 0) return json({ success: false, message: "Event not found" }, 404);
 

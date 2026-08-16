@@ -11,9 +11,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 const MODULES_WITH_OPTIONS = [
-  "appearance.js", "bible.js", "contributions.js", "events.js", "expenses.js",
-  "families.js", "funds.js", "logs.js", "members.js", "purchases.js", "roles.js",
-  "search.js", "settings.js", "subscriptions.js", "wishlist.js", "events/photo.js"
+  "appearance.js", "bible.js", "blog.js", "churches.js", "contributions.js", "events.js", "expenses.js",
+  "contact.js", "families.js", "funds.js", "logs.js", "members.js", "prayer.js", "programs.js",
+  "promises.js", "purchases.js", "roles.js", "search.js", "settings.js", "subscriptions.js",
+  "testimonies.js", "wishlist.js", "events/photo.js"
 ];
 
 function methodFromHandlerName(name) {
