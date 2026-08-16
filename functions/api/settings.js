@@ -15,8 +15,11 @@ const PASTOR_KEYS = ["pastor_name", "pastor_address", "pastor_phone", "pastor_em
 // The whole About page, editable by the pastor from the admin console — a
 // single JSON blob (see ABOUT_PAGE.md) so new fields don't need a migration.
 const CONTENT_KEYS = ["about_content"];
-const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS];
-const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS];
+// Milestone v2 — feature flag + Watch & Listen (media hub / live podcast) URLs
+// (docs/milestone-v2/05-backend-schema.md §2.9). Plain config rows; no schema change.
+const V2_MEDIA_KEYS = ["new_home_enabled", "sunday_live_url", "daily_prayer_url", "podcast_playlist_url", "sunday_live_status"];
+const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS, ...V2_MEDIA_KEYS];
+const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS, ...V2_MEDIA_KEYS];
 
 const MAX_VALUE_LEN = 1000;
 // about_content is a whole page's worth of JSON (hero, mission cards, verses,
@@ -73,6 +76,12 @@ export async function onRequestPut(context) {
       }
       if (key === "force_login" && !["true", "false"].includes(value)) {
         return json({ success: false, message: "force_login must be 'true' or 'false'" }, 400);
+      }
+      if (key === "new_home_enabled" && !["true", "false"].includes(value)) {
+        return json({ success: false, message: "new_home_enabled must be 'true' or 'false'" }, 400);
+      }
+      if (key === "sunday_live_status" && !["live", "offline"].includes(value)) {
+        return json({ success: false, message: "sunday_live_status must be 'live' or 'offline'" }, 400);
       }
       if (key === "pastor_email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         return json({ success: false, message: "pastor_email must be a valid email address" }, 400);
