@@ -1109,31 +1109,45 @@
 
             <!-- PROGRAMS -->
             <div class="section" id="section-programs">
-                <div class="page-head"><h2>Programs &amp; service times</h2><p>Weekly/recurring programs, shown per church on the public site.</p></div>
+                <div class="page-head"><h2>Programs &amp; service times</h2><p>Recurring ministry programs — service times, daily prayer, monthly gatherings — shown on the public Programs, Prayer, and Home pages. This is <strong>not</strong> the Prayer Requests inbox (see the "Prayer" tab for that) — this is the schedule of when prayer/services happen.</p></div>
                 <div class="card">
-                    <h3>Add a program</h3>
+                    <h3 id="pg_formTitle">Add a program</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Title (English) *</label><input class="input" id="pg_titleEn"></div>
+                        <div><label class="f-label">Title (Tamil)</label><input class="input" id="pg_titleTa"></div>
                         <div><label class="f-label">Church</label><select class="input" id="pg_churchId"><option value="">Ministry-wide</option></select></div>
+                        <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. prayer, service, youth"></div>
+                        <div><label class="f-label">Recurrence</label><select class="input" id="pg_recurrence">
+                            <option value="weekly">Weekly</option><option value="daily">Daily</option>
+                            <option value="monthly">Monthly (nth weekday)</option><option value="once">One-off / other</option>
+                        </select></div>
+                        <div><label class="f-label">Which occurrence (monthly only)</label><select class="input" id="pg_monthOrdinal">
+                            <option value="">—</option>
+                            <option value="1">First</option><option value="2">Second</option><option value="3">Third</option>
+                            <option value="4">Fourth</option><option value="5">Fifth</option>
+                        </select></div>
                         <div><label class="f-label">Day of week</label><select class="input" id="pg_dayOfWeek">
-                            <option value="">One-off / other</option>
+                            <option value="">—</option>
                             <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
                             <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
                         </select></div>
                         <div><label class="f-label">Start time</label><input class="input" type="time" id="pg_startTime"></div>
                         <div><label class="f-label">End time</label><input class="input" type="time" id="pg_endTime"></div>
-                        <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. youth"></div>
-                        <div><label class="f-label">Location</label><input class="input" id="pg_location"></div>
+                        <div><label class="f-label">Location</label><input class="input" id="pg_location" placeholder="Leave blank if online-only"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="pg_status"><option value="active">Active (published)</option><option value="inactive">Inactive (hidden)</option></select></div>
+                        <div class="span-all"><label class="f-label">Google Meet / online join URL (https:// only)</label><input class="input" id="pg_meetingUrl" placeholder="https://meet.google.com/..."></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Description (English)</label><textarea class="input" id="pg_descriptionEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Description (Tamil)</label><textarea class="input" id="pg_descriptionTa" rows="2"></textarea></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="pg_saveBtn">Add program</button>
+                        <button class="btn btn-outline" id="pg_clearBtn" type="button">Clear</button>
                         <span class="msg" id="pg_msg"></span>
                     </div>
                 </div>
                 <div class="card">
                     <h3>All programs</h3>
-                    <div class="table-wrap"><table id="pg_table"><thead><tr><th>Title</th><th>Church</th><th>When</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-wrap"><table id="pg_table"><thead><tr><th>Title</th><th>Church</th><th>Schedule</th><th>Online</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
                 </div>
             </div>
 
@@ -3202,44 +3216,97 @@
         }
 
         // ═══════════════ Programs ═══════════════
+        state.programsCache = [];
+        state.editingProgramId = null;
         function loadPrograms() { if (state.churchesCache && state.churchesCache.length) populateChurchSelect(); else fetchChurches(); fetchPrograms(); }
         function fetchPrograms() {
             api("/api/programs?all=1").then(function (d) {
                 if (!d.success) { setMsg("pg_msg", d.message || "No access", "err"); return; }
-                var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                state.programsCache = d.programs || [];
                 var tb = $("pg_table").querySelector("tbody");
-                tb.innerHTML = (d.programs || []).map(function (p) {
-                    var when = (p.dayOfWeek !== null && p.dayOfWeek !== undefined ? days[p.dayOfWeek] + " " : "") + (p.startTime || "");
+                tb.innerHTML = state.programsCache.map(function (p) {
                     return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.churchNameEn || "Ministry-wide") + "</td>" +
-                        "<td>" + esc(when || "—") + "</td>" +
+                        "<td>" + esc(p.scheduleLabelEn || "—") + "</td>" +
+                        "<td>" + (p.meetingUrl ? "<span class='pill pill-green'>Google Meet</span>" : "—") + "</td>" +
                         "<td><span class='pill " + (p.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
-                        '<td><button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
-                }).join("") || '<tr><td colspan="5" class="empty">No programs yet.</td></tr>';
+                        '<td><button class="mini-btn" data-edit="' + p.id + '">Edit</button> ' +
+                        '<button class="mini-btn" data-toggle="' + p.id + '">' + (p.status === "active" ? "Unpublish" : "Publish") + '</button> ' +
+                        '<button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="6" class="empty">No programs yet.</td></tr>';
                 tb.querySelectorAll("[data-id]").forEach(function (b) {
                     b.onclick = function () {
                         if (!confirm("Delete this program?")) return;
                         api("/api/programs?id=" + b.dataset.id, { method: "DELETE" }).then(function (d2) { setMsg("pg_msg", d2.message, d2.success ? "ok" : "err"); fetchPrograms(); });
                     };
                 });
+                tb.querySelectorAll("[data-edit]").forEach(function (b) {
+                    b.onclick = function () { editProgram(Number(b.dataset.edit)); };
+                });
+                tb.querySelectorAll("[data-toggle]").forEach(function (b) {
+                    b.onclick = function () {
+                        var p = state.programsCache.filter(function (x) { return x.id === Number(b.dataset.toggle); })[0];
+                        if (!p) return;
+                        var body = programToBody(p);
+                        body.id = p.id;
+                        body.status = p.status === "active" ? "inactive" : "active";
+                        api("/api/programs", { method: "PUT", body: JSON.stringify(body) }).then(function (d2) { setMsg("pg_msg", d2.message, d2.success ? "ok" : "err"); fetchPrograms(); });
+                    };
+                });
             }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
+        }
+        function programToBody(p) {
+            return {
+                titleEn: p.titleEn, titleTa: p.titleTa || "", descriptionEn: p.descriptionEn || "", descriptionTa: p.descriptionTa || "",
+                churchId: p.churchId || null, ministryArea: p.ministryArea || "", recurrence: p.recurrence || "weekly",
+                dayOfWeek: p.dayOfWeek === null || p.dayOfWeek === undefined ? null : p.dayOfWeek,
+                monthOrdinal: p.monthOrdinal === null || p.monthOrdinal === undefined ? null : p.monthOrdinal,
+                startTime: p.startTime || "", endTime: p.endTime || "", location: p.location || "",
+                meetingUrl: p.meetingUrl || "", status: p.status
+            };
+        }
+        function editProgram(id) {
+            var p = state.programsCache.filter(function (x) { return x.id === id; })[0];
+            if (!p) return;
+            state.editingProgramId = id;
+            $("pg_formTitle").textContent = "Edit " + p.titleEn;
+            $("pg_titleEn").value = p.titleEn || ""; $("pg_titleTa").value = p.titleTa || "";
+            $("pg_churchId").value = p.churchId || ""; $("pg_ministryArea").value = p.ministryArea || "";
+            $("pg_recurrence").value = p.recurrence || "weekly";
+            $("pg_monthOrdinal").value = p.monthOrdinal === null || p.monthOrdinal === undefined ? "" : p.monthOrdinal;
+            $("pg_dayOfWeek").value = p.dayOfWeek === null || p.dayOfWeek === undefined ? "" : p.dayOfWeek;
+            $("pg_startTime").value = p.startTime || ""; $("pg_endTime").value = p.endTime || "";
+            $("pg_location").value = p.location || ""; $("pg_status").value = p.status || "active";
+            $("pg_meetingUrl").value = p.meetingUrl || "";
+            $("pg_descriptionEn").value = p.descriptionEn || ""; $("pg_descriptionTa").value = p.descriptionTa || "";
+            $("pg_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearProgramForm() {
+            state.editingProgramId = null;
+            $("pg_formTitle").textContent = "Add a program";
+            ["pg_titleEn", "pg_titleTa", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_meetingUrl", "pg_descriptionEn", "pg_descriptionTa"].forEach(function (id) { $(id).value = ""; });
+            $("pg_dayOfWeek").value = ""; $("pg_monthOrdinal").value = ""; $("pg_churchId").value = "";
+            $("pg_recurrence").value = "weekly"; $("pg_status").value = "active";
+            $("pg_saveBtn").textContent = "Add program";
         }
         function saveProgram() {
             var titleEn = $("pg_titleEn").value.trim();
             if (!titleEn) { setMsg("pg_msg", "Title is required", "err"); return; }
             var body = {
-                titleEn: titleEn, churchId: $("pg_churchId").value || null,
+                titleEn: titleEn, titleTa: $("pg_titleTa").value.trim(), churchId: $("pg_churchId").value || null,
+                recurrence: $("pg_recurrence").value,
                 dayOfWeek: $("pg_dayOfWeek").value === "" ? null : Number($("pg_dayOfWeek").value),
+                monthOrdinal: $("pg_monthOrdinal").value === "" ? null : Number($("pg_monthOrdinal").value),
                 startTime: $("pg_startTime").value, endTime: $("pg_endTime").value,
                 ministryArea: $("pg_ministryArea").value.trim(), location: $("pg_location").value.trim(),
-                descriptionEn: $("pg_descriptionEn").value.trim()
+                meetingUrl: $("pg_meetingUrl").value.trim(), status: $("pg_status").value,
+                descriptionEn: $("pg_descriptionEn").value.trim(), descriptionTa: $("pg_descriptionTa").value.trim()
             };
-            api("/api/programs", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+            var isEdit = !!state.editingProgramId;
+            if (isEdit) body.id = state.editingProgramId;
+            api("/api/programs", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
                 setMsg("pg_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn"].forEach(function (id) { $(id).value = ""; });
-                    $("pg_dayOfWeek").value = ""; $("pg_churchId").value = "";
-                    fetchPrograms();
-                }
+                if (d.success) { clearProgramForm(); fetchPrograms(); }
             }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
         }
 
@@ -3767,7 +3834,7 @@
             $("ts_filter").onchange = fetchTestimonies; $("ts_refreshBtn").onclick = fetchTestimonies;
             $("pq_filter").onchange = fetchPrayer; $("pq_refreshBtn").onclick = fetchPrayer;
             $("cm_filter").onchange = fetchContactMsgs; $("cm_refreshBtn").onclick = fetchContactMsgs;
-            $("pg_saveBtn").onclick = saveProgram;
+            $("pg_saveBtn").onclick = saveProgram; $("pg_clearBtn").onclick = clearProgramForm;
             $("bl_saveBtn").onclick = saveBlogPost;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };

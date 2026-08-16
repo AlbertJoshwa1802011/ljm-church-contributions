@@ -23,9 +23,18 @@
       "cta.give": "Give", "cta.pray": "Pray", "cta.contact": "Contact",
       "cta.submit": "Submit", "cta.readMore": "Read more", "cta.learnMore": "Learn more",
       "cta.viewAll": "View all", "cta.send": "Send",
+      "cta.joinOnline": "Join Online", "cta.viewAllPrograms": "View all programs",
+      "cta.submitPrayerRequest": "Submit prayer request",
       "state.loading": "Loading…", "state.empty": "Nothing here yet.",
       "state.error": "Something went wrong — please try again.",
-      "footer.tagline": "Giving with faith, transparency & purpose — for Coimbatore, and for the world."
+      "footer.tagline": "Giving with faith, transparency & purpose — for Coimbatore, and for the world.",
+      "programs.onlineViaMeet": "Online via Google Meet",
+      "prayer.joinUsHeading": "Join Us in Prayer",
+      "prayer.joinUsSub": "Scheduled prayer gatherings you can join — online or in person.",
+      "prayer.needPrayer": "Need prayer? Share your request with us.",
+      "home.scheduleEyebrow": "Prayer & Weekly Schedule",
+      "home.scheduleHeading": "Join us in prayer and worship",
+      "home.scheduleSub": "Daily prayer, Sunday services, and monthly gatherings — online or in person."
     },
     ta: {
       "nav.home": "முகப்பு", "nav.about": "எங்களைப் பற்றி", "nav.watch": "பார்க்க & கேட்க",
@@ -35,9 +44,18 @@
       "cta.give": "காணிக்கை செலுத்த", "cta.pray": "ஜெபத்திற்கு", "cta.contact": "தொடர்பு கொள்ள",
       "cta.submit": "சமர்ப்பிக்க", "cta.readMore": "மேலும் படிக்க", "cta.learnMore": "மேலும் அறிய",
       "cta.viewAll": "அனைத்தையும் காண", "cta.send": "அனுப்பு",
+      "cta.joinOnline": "ஆன்லைனில் இணைக", "cta.viewAllPrograms": "அனைத்து நிகழ்ச்சிகளையும் காண",
+      "cta.submitPrayerRequest": "ஜெப வேண்டுதலை சமர்ப்பிக்க",
       "state.loading": "ஏற்றுகிறது…", "state.empty": "இதுவரை எதுவும் இல்லை.",
       "state.error": "ஏதோ தவறு நடந்தது — மீண்டும் முயற்சிக்கவும்.",
-      "footer.tagline": "விசுவாசம், வெளிப்படைத்தன்மை மற்றும் நோக்கத்துடன் கொடுத்தல் — கோயம்புத்தூருக்கும், உலகிற்கும்."
+      "footer.tagline": "விசுவாசம், வெளிப்படைத்தன்மை மற்றும் நோக்கத்துடன் கொடுத்தல் — கோயம்புத்தூருக்கும், உலகிற்கும்.",
+      "programs.onlineViaMeet": "கூகுள் மீட் மூலம் ஆன்லைனில்",
+      "prayer.joinUsHeading": "எங்களுடன் சேர்ந்து ஜெபியுங்கள்",
+      "prayer.joinUsSub": "நீங்கள் இணையக்கூடிய ஜெப கூட்டங்கள் — ஆன்லைனில் அல்லது நேரடியாக.",
+      "prayer.needPrayer": "ஜெபம் தேவையா? உங்கள் வேண்டுதலை எங்களுடன் பகிருங்கள்.",
+      "home.scheduleEyebrow": "ஜெபம் & வாராந்திர அட்டவணை",
+      "home.scheduleHeading": "ஜெபத்திலும் ஆராதனையிலும் எங்களுடன் இணையுங்கள்",
+      "home.scheduleSub": "தினசரி ஜெபம், ஞாயிறு ஆராதனைகள், மாதாந்திர கூட்டங்கள் — ஆன்லைனில் அல்லது நேரடியாக."
     }
   };
 
