@@ -47,17 +47,19 @@ the owner's sign-off before implementation planning continues** — see §3 of t
 
 ---
 
-## 👉 Next up — owner review of the mockups (`07-ui-mockups-review.md`)
+## 👉 Next up — see [`STATUS-v2.md`](./STATUS-v2.md) for the live 14-requirement tracker
 
-**All six planning documents are complete**, plus the safety net and a first round of
-UI/UX mockups. **Do not proceed to implementation** (Phase 0 of
-[`06-implementation-plan.md`](./06-implementation-plan.md)) **until the owner has
-reviewed `07-ui-mockups-review.md`** and confirmed the Home/Our-Giving split and the
-Give-flow confirmation proposal. If the structure changes, update `03-app-flow.md`
-and `06-implementation-plan.md` to match before writing any production code.
+The mockup-review gate above has been passed — implementation is under way.
+**[`11-v2-flow-implementation.md`](./11-v2-flow-implementation.md)** shipped Phase 0
+(flag-gated routing + Home/Our-Giving/Give-flow/My-Giving/Events ported to `/v2/*`).
+A later deep-implementation session shipped the Phase 0-5 content layer — churches,
+promises, testimonies, prayer, contact, programs, blog, each with backend + admin +
+public UI — plus a real i18n foundation. **[`STATUS-v2.md`](./STATUS-v2.md)** is the
+current source of truth for what's actually done vs. remaining across all 14 PRD §7
+requirements; read it before trusting any other status claim about this milestone,
+including this file's older prose below.
 
-Once approved, implementation begins **one phase at a time**, keeping `npm test`
-green throughout.
+Implementation continues **one phase at a time**, keeping `npm test` green throughout.
 
 Before coding any phase:
 - Read [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) (the zero-breakage rules + test

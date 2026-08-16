@@ -139,6 +139,8 @@ tables/endpoints/screens behind the flag. Phase 6 consolidates; Phase 7 launches
 ---
 
 ## Next steps
-All six milestone documents are complete. On the owner's approval, begin **Phase 0
-→ Phase 1**, one phase at a time, keeping the regression suite green throughout. See
-[`README.md`](./README.md) for the live tracker.
+All six milestone documents are complete. Phases 0-5 have substantial backend +
+admin + public UI coverage (Phase 4's events church-scope columns exist but aren't
+yet exposed in the Events admin form or public filter; Phase 6's About/language
+work is partial). See **[`STATUS-v2.md`](./STATUS-v2.md)** for the authoritative,
+per-requirement status — this section is a historical plan, not a live tracker.
