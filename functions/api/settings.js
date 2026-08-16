@@ -15,8 +15,12 @@ const PASTOR_KEYS = ["pastor_name", "pastor_address", "pastor_phone", "pastor_em
 // The whole About page, editable by the pastor from the admin console — a
 // single JSON blob (see ABOUT_PAGE.md) so new fields don't need a migration.
 const CONTENT_KEYS = ["about_content"];
-const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS];
-const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS];
+// Livestream/podcast URLs (PRD §7.11, TRD §3) — plain config rows, admin-editable,
+// no schema change needed. Team-notify address is intentionally NOT here: it's an
+// operational secret, set via env.TEAM_NOTIFY_EMAIL, not a public-readable setting.
+const MEDIA_KEYS = ["sunday_live_url", "daily_prayer_url", "podcast_playlist_url"];
+const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS, ...MEDIA_KEYS];
+const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS, ...MEDIA_KEYS];
 
 const MAX_VALUE_LEN = 1000;
 // about_content is a whole page's worth of JSON (hero, mission cards, verses,

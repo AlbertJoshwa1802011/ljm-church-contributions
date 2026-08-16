@@ -1233,6 +1233,19 @@
                         <span class="msg" id="s_contactMsg"></span>
                     </div>
                 </div>
+                <div class="card">
+                    <h3>Watch &amp; Listen</h3>
+                    <p class="msg" style="margin-bottom:10px;">Livestream + podcast links shown on the public Watch &amp; Listen page. Leave blank to hide a link.</p>
+                    <div class="form-grid">
+                        <div><label class="f-label">Sunday live worship URL</label><input class="input" id="s_sundayLive" placeholder="https://youtube.com/live/..."></div>
+                        <div><label class="f-label">Daily morning prayer URL</label><input class="input" id="s_dailyPrayer" placeholder="https://..."></div>
+                        <div class="span-all"><label class="f-label">Podcast/archive playlist URL</label><input class="input" id="s_podcastPlaylist" placeholder="https://youtube.com/playlist?list=..."></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="s_saveMedia">Save Watch &amp; Listen links</button>
+                        <span class="msg" id="s_mediaMsg"></span>
+                    </div>
+                </div>
             </div>
 
             <!-- VERSES -->
@@ -3314,6 +3327,9 @@
                 $("s_pastorPhone").value = s.pastor_phone || "";
                 $("s_pastorEmail").value = s.pastor_email || "";
                 $("s_pastorAddress").value = s.pastor_address || "";
+                $("s_sundayLive").value = s.sunday_live_url || "";
+                $("s_dailyPrayer").value = s.daily_prayer_url || "";
+                $("s_podcastPlaylist").value = s.podcast_playlist_url || "";
 
                 $("footerPastorName").textContent = s.pastor_name || "Pastor MK";
                 $("footerPastorPhone").textContent = s.pastor_phone || "+91 99409 40326";
@@ -3358,6 +3374,20 @@
                     $("s_saveContact").disabled = false;
                     setMsg("s_contactMsg", e.message, "err");
                 });
+        }
+        function saveMediaLinks() {
+            var updates = {
+                sunday_live_url: $("s_sundayLive").value.trim(),
+                daily_prayer_url: $("s_dailyPrayer").value.trim(),
+                podcast_playlist_url: $("s_podcastPlaylist").value.trim()
+            };
+            $("s_saveMedia").disabled = true;
+            api("/api/settings", { method: "PUT", body: JSON.stringify({ updates: updates }) })
+                .then(function (d) {
+                    $("s_saveMedia").disabled = false;
+                    setMsg("s_mediaMsg", d.message, d.success ? "ok" : "err");
+                })
+                .catch(function (e) { $("s_saveMedia").disabled = false; setMsg("s_mediaMsg", e.message, "err"); });
         }
         function toggleForceLogin() {
             var v = $("s_forceLogin").checked ? "true" : "false";
@@ -3745,6 +3775,7 @@
             $("s_forceLogin").onchange = toggleForceLogin;
             $("s_saveGoals").onclick = saveGoals;
             $("s_saveContact").onclick = saveContact;
+            $("s_saveMedia").onclick = saveMediaLinks;
             $("v_saveBtn").onclick = saveVerses;
             $("v_monthSearchBtn").onclick = function () { runVerseSearch("v_month"); };
             $("v_yearSearchBtn").onclick = function () { runVerseSearch("v_year"); };
