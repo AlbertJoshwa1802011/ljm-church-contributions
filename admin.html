@@ -944,6 +944,172 @@
                 </div>
             </div>
 
+            <!-- CHURCHES -->
+            <div class="section" id="section-churches">
+                <div class="page-head"><h2>Churches</h2><p>The two-church model — used to scope Events, Programs, Prayer and Contact.</p></div>
+                <div class="card">
+                    <h3 id="ch_formTitle">Add church</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Slug *</label><input class="input" id="ch_slug" placeholder="city-worship-center"></div>
+                        <div><label class="f-label">Name (English) *</label><input class="input" id="ch_nameEn"></div>
+                        <div><label class="f-label">Name (Tamil)</label><input class="input" id="ch_nameTa"></div>
+                        <div><label class="f-label">City</label><input class="input" id="ch_city"></div>
+                        <div><label class="f-label">Phone</label><input class="input" id="ch_phone"></div>
+                        <div><label class="f-label">Email</label><input class="input" id="ch_email"></div>
+                        <div class="span-all"><label class="f-label">Address (English)</label><textarea class="input" id="ch_addressEn" rows="2"></textarea></div>
+                        <div class="span-all"><label class="f-label">Service times (English)</label><textarea class="input" id="ch_serviceTimesEn" rows="2" placeholder="Sunday 9:00 AM, 6:00 PM"></textarea></div>
+                        <div class="span-all"><label><input type="checkbox" id="ch_isMother"> Mother church</label></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="ch_saveBtn">Save church</button>
+                        <button class="btn btn-outline" id="ch_clearBtn">Clear</button>
+                        <span class="msg" id="ch_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>All churches (<span id="ch_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="ch_table"><thead><tr><th>Name</th><th>Slug</th><th>City</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- PROMISES -->
+            <div class="section" id="section-promises">
+                <div class="page-head"><h2>Promises</h2><p>Daily / monthly / yearly promise words shown on the public Home + Promises page.</p></div>
+                <div class="card">
+                    <h3 id="pr_formTitle">Add promise</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Scope *</label><select class="input" id="pr_scope"><option value="daily">Daily</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
+                        <div id="pr_onDateWrap"><label class="f-label">Date (daily)</label><input class="input" id="pr_onDate" type="date"></div>
+                        <div id="pr_monthWrap"><label class="f-label">Month (1-12, monthly)</label><input class="input" id="pr_month" type="number" min="1" max="12"></div>
+                        <div id="pr_yearWrap"><label class="f-label">Year (monthly/yearly)</label><input class="input" id="pr_year" type="number"></div>
+                        <div><label class="f-label">Reference</label><input class="input" id="pr_reference" placeholder="Isaiah 41:10"></div>
+                        <div class="span-all"><label class="f-label">Text (English) *</label><textarea class="input" id="pr_textEn" rows="2"></textarea></div>
+                        <div class="span-all"><label class="f-label">Text (Tamil)</label><textarea class="input" id="pr_textTa" rows="2"></textarea></div>
+                        <div class="span-all"><label class="f-label">Reflection (English)</label><textarea class="input" id="pr_reflectionEn" rows="2"></textarea></div>
+                        <div class="span-all"><label><input type="checkbox" id="pr_isPublished" checked> Published</label></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="pr_saveBtn">Save promise</button>
+                        <button class="btn btn-outline" id="pr_clearBtn">Clear</button>
+                        <span class="msg" id="pr_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>All promises (<span id="pr_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="pr_table"><thead><tr><th>Scope</th><th>When</th><th>Text</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- TESTIMONIES -->
+            <div class="section" id="section-testimonies">
+                <div class="page-head"><h2>Testimonies & Miracles</h2><p>Moderate public submissions, or add one directly.</p></div>
+                <div class="card">
+                    <h3 id="te_formTitle">Add testimony</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Kind</label><select class="input" id="te_kind"><option value="testimony">Testimony</option><option value="miracle">Miracle</option></select></div>
+                        <div><label class="f-label">Author name</label><input class="input" id="te_authorName"></div>
+                        <div><label class="f-label">Place</label><input class="input" id="te_place"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="te_status"><option value="pending">Pending</option><option value="published">Published</option><option value="rejected">Rejected</option></select></div>
+                        <div class="span-all"><label class="f-label">Title (English) *</label><input class="input" id="te_titleEn"></div>
+                        <div class="span-all"><label class="f-label">Story (English) *</label><textarea class="input" id="te_bodyEn" rows="4"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="te_saveBtn">Save testimony</button>
+                        <button class="btn btn-outline" id="te_clearBtn">Clear</button>
+                        <span class="msg" id="te_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Moderation queue (<span id="te_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="te_table"><thead><tr><th>Title</th><th>Kind</th><th>Submitted</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- PRAYER -->
+            <div class="section" id="section-prayer">
+                <div class="page-head"><h2>Prayer requests</h2><p>Private submissions from the Pray page — never shown publicly.</p></div>
+                <div class="card">
+                    <div class="btn-row">
+                        <label class="f-label">Filter</label>
+                        <select class="input" id="pray_statusFilter" style="max-width:200px;">
+                            <option value="">All</option><option value="new">New</option><option value="praying">Praying</option><option value="contacted">Contacted</option><option value="closed">Closed</option>
+                        </select>
+                        <span class="msg" id="pray_msg"></span>
+                    </div>
+                    <h3>Inbox (<span id="pray_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="pray_table"><thead><tr><th>From</th><th>Request</th><th>Callback?</th><th>Received</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- CONTACT -->
+            <div class="section" id="section-contact">
+                <div class="page-head"><h2>Contact messages</h2><p>Submissions from the Contact page.</p></div>
+                <div class="card">
+                    <div class="btn-row">
+                        <label class="f-label">Filter</label>
+                        <select class="input" id="ct_statusFilter" style="max-width:200px;">
+                            <option value="">All</option><option value="new">New</option><option value="acknowledged">Acknowledged</option><option value="replied">Replied</option><option value="closed">Closed</option>
+                        </select>
+                        <span class="msg" id="ct_msg"></span>
+                    </div>
+                    <h3>Inbox (<span id="ct_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="ct_table"><thead><tr><th>From</th><th>Subject / message</th><th>Received</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- PROGRAMS -->
+            <div class="section" id="section-programs">
+                <div class="page-head"><h2>Programs & Schedule</h2><p>Service times and recurring programs, per church.</p></div>
+                <div class="card">
+                    <h3 id="pg_formTitle">Add program</h3>
+                    <div class="form-grid">
+                        <div class="span-all"><label class="f-label">Title (English) *</label><input class="input" id="pg_titleEn"></div>
+                        <div><label class="f-label">Church</label><select class="input" id="pg_churchId"><option value="">Ministry-wide</option></select></div>
+                        <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="youth (optional)"></div>
+                        <div><label class="f-label">Day of week</label><select class="input" id="pg_dayOfWeek"><option value="">One-off / other</option><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></div>
+                        <div><label class="f-label">Start time</label><input class="input" id="pg_startTime" type="time"></div>
+                        <div><label class="f-label">End time</label><input class="input" id="pg_endTime" type="time"></div>
+                        <div><label class="f-label">Location</label><input class="input" id="pg_location"></div>
+                        <div><label><input type="checkbox" id="pg_active" checked> Active</label></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="pg_saveBtn">Save program</button>
+                        <button class="btn btn-outline" id="pg_clearBtn">Clear</button>
+                        <span class="msg" id="pg_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>All programs (<span id="pg_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="pg_table"><thead><tr><th>Title</th><th>When</th><th>Church</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- BLOG -->
+            <div class="section" id="section-blog">
+                <div class="page-head"><h2>Blog</h2><p>Articles — also backs the Youth Ministry hub via ministry area "youth".</p></div>
+                <div class="card">
+                    <h3 id="bl_formTitle">Add post</h3>
+                    <div class="form-grid">
+                        <div class="span-all"><label class="f-label">Title (English) *</label><input class="input" id="bl_titleEn"></div>
+                        <div><label class="f-label">Slug (auto if blank)</label><input class="input" id="bl_slug"></div>
+                        <div><label class="f-label">Category</label><input class="input" id="bl_category"></div>
+                        <div><label class="f-label">Ministry area</label><input class="input" id="bl_ministryArea" placeholder="youth (optional)"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="bl_status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
+                        <div class="span-all"><label class="f-label">Excerpt (English)</label><textarea class="input" id="bl_excerptEn" rows="2"></textarea></div>
+                        <div class="span-all"><label class="f-label">Body (English) *</label><textarea class="input" id="bl_bodyEn" rows="6"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="bl_saveBtn">Save post</button>
+                        <button class="btn btn-outline" id="bl_clearBtn">Clear</button>
+                        <span class="msg" id="bl_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>All posts (<span id="bl_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="bl_table"><thead><tr><th>Title</th><th>Category</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
             <!-- ROLES -->
             <div class="section" id="section-roles">
                 <div class="page-head"><h2>Roles &amp; access</h2><p>Define permission scopes and link Google emails to roles.</p></div>
@@ -1173,6 +1339,13 @@
             editingContributionId: null,
             editingWishlistId: null,
             wishlistImageUrl: null,
+            churchesCache: [], editingChurchId: null,
+            promisesCache: [], editingPromiseId: null,
+            testimoniesCache: [], editingTestimonyId: null,
+            prayerCache: [],
+            contactCache: [],
+            programsCache: [], editingProgramId: null,
+            blogCache: [], editingBlogId: null,
             // Member-directory cache shared by the Members page and the
             // Add-a-contribution member picker. membersPromise de-dupes
             // concurrent loads; membersError records a failed/forbidden fetch
@@ -1211,6 +1384,15 @@
                 ["wishlist", "📋", "Wishlist"],
                 ["verses", "📖", "Verses"],
                 ["about", "📰", "About page"]
+            ] },
+            { id: "ministry", icon: "✝️", label: "Ministry", items: [
+                ["churches", "⛪", "Churches"],
+                ["promises", "🙏", "Promises"],
+                ["testimonies", "✨", "Testimonies"],
+                ["prayer", "🕊️", "Prayer requests"],
+                ["contact", "✉️", "Contact messages"],
+                ["programs", "📅", "Programs"],
+                ["blog", "📝", "Blog"]
             ] },
             { id: "admin", icon: "🛡️", label: "Admin", items: [
                 ["roles", "🛡️", "Roles"],
@@ -2730,6 +2912,367 @@
             }).catch(function (e) { setMsg("w_msg", e.message, "err"); });
         }
 
+        // ═══════════════ Churches ═══════════════
+        function loadChurches() {
+            api("/api/churches?all=1&_t=" + Date.now()).then(function (d) {
+                if (!d.success) { setMsg("ch_msg", d.message, "err"); return; }
+                state.churchesCache = d.churches || [];
+                $("ch_count").textContent = state.churchesCache.length;
+                var tb = $("ch_table").querySelector("tbody");
+                tb.innerHTML = state.churchesCache.map(function (c) {
+                    return "<tr><td><strong>" + esc(c.nameEn) + "</strong>" + (c.isMotherChurch ? ' <span class="pill pill-green">mother</span>' : "") + "</td>" +
+                        "<td>" + esc(c.slug) + "</td><td>" + esc(c.city || "—") + "</td>" +
+                        "<td>" + (c.status === "active" ? '<span class="pill pill-green">active</span>' : '<span class="pill pill-grey">archived</span>') + "</td>" +
+                        '<td><button class="mini-btn" data-act="edit" data-id="' + c.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + c.id + '">Archive</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">No churches yet.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () { b.dataset.act === "edit" ? editChurch(Number(b.dataset.id)) : deleteChurch(Number(b.dataset.id)); };
+                });
+            }).catch(function (e) { setMsg("ch_msg", e.message, "err"); });
+        }
+        function editChurch(id) {
+            var c = state.churchesCache.find(function (x) { return x.id === id; });
+            if (!c) return;
+            state.editingChurchId = id;
+            $("ch_formTitle").textContent = "Edit church — #" + id;
+            $("ch_slug").value = c.slug; $("ch_slug").disabled = true;
+            $("ch_nameEn").value = c.nameEn || ""; $("ch_nameTa").value = c.nameTa || "";
+            $("ch_city").value = c.city || ""; $("ch_phone").value = c.phone || ""; $("ch_email").value = c.email || "";
+            $("ch_addressEn").value = c.addressEn || ""; $("ch_serviceTimesEn").value = c.serviceTimesEn || "";
+            $("ch_isMother").checked = !!c.isMotherChurch;
+        }
+        function deleteChurch(id) {
+            if (!confirm("Archive this church? It stays available to already-linked content but disappears from public listings.")) return;
+            api("/api/churches?id=" + id, { method: "DELETE" })
+                .then(function (d) { setMsg("ch_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadChurches(); })
+                .catch(function (e) { setMsg("ch_msg", e.message, "err"); });
+        }
+        function clearChurchForm() {
+            state.editingChurchId = null;
+            $("ch_formTitle").textContent = "Add church";
+            ["ch_slug", "ch_nameEn", "ch_nameTa", "ch_city", "ch_phone", "ch_email", "ch_addressEn", "ch_serviceTimesEn"].forEach(function (id) { $(id).value = ""; });
+            $("ch_slug").disabled = false; $("ch_isMother").checked = false;
+        }
+        function saveChurch() {
+            var payload = {
+                slug: $("ch_slug").value.trim(), nameEn: $("ch_nameEn").value.trim(), nameTa: $("ch_nameTa").value.trim(),
+                city: $("ch_city").value.trim(), phone: $("ch_phone").value.trim(), email: $("ch_email").value.trim(),
+                addressEn: $("ch_addressEn").value.trim(), serviceTimesEn: $("ch_serviceTimesEn").value.trim(),
+                isMotherChurch: $("ch_isMother").checked
+            };
+            if (!payload.nameEn || (!state.editingChurchId && !payload.slug)) { setMsg("ch_msg", "Slug and name are required", "err"); return; }
+            var req = state.editingChurchId
+                ? api("/api/churches", { method: "PUT", body: JSON.stringify(Object.assign(payload, { id: state.editingChurchId })) })
+                : api("/api/churches", { method: "POST", body: JSON.stringify(payload) });
+            req.then(function (d) {
+                setMsg("ch_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearChurchForm(); loadChurches(); }
+            }).catch(function (e) { setMsg("ch_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Promises ═══════════════
+        function loadPromises() {
+            api("/api/promises?all=1&_t=" + Date.now()).then(function (d) {
+                if (!d.success) { setMsg("pr_msg", d.message, "err"); return; }
+                state.promisesCache = d.promises || [];
+                $("pr_count").textContent = state.promisesCache.length;
+                var tb = $("pr_table").querySelector("tbody");
+                tb.innerHTML = state.promisesCache.map(function (p) {
+                    var when = p.scope === "daily" ? (p.onDate || "—") : p.scope === "monthly" ? (p.month + "/" + p.year) : String(p.year || "—");
+                    return "<tr><td>" + esc(p.scope) + "</td><td>" + esc(when) + "</td><td>" + esc((p.textEn || "").slice(0, 60)) + "</td>" +
+                        "<td>" + (p.isPublished ? '<span class="pill pill-green">published</span>' : '<span class="pill pill-grey">draft</span>') + "</td>" +
+                        '<td><button class="mini-btn" data-act="edit" data-id="' + p.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + p.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">No promises yet.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () { b.dataset.act === "edit" ? editPromise(Number(b.dataset.id)) : deletePromise(Number(b.dataset.id)); };
+                });
+            }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
+        }
+        function editPromise(id) {
+            var p = state.promisesCache.find(function (x) { return x.id === id; });
+            if (!p) return;
+            state.editingPromiseId = id;
+            $("pr_formTitle").textContent = "Edit promise — #" + id;
+            $("pr_scope").value = p.scope; $("pr_onDate").value = p.onDate || ""; $("pr_month").value = p.month || "";
+            $("pr_year").value = p.year || ""; $("pr_reference").value = p.reference || "";
+            $("pr_textEn").value = p.textEn || ""; $("pr_textTa").value = p.textTa || ""; $("pr_reflectionEn").value = p.reflectionEn || "";
+            $("pr_isPublished").checked = !!p.isPublished;
+        }
+        function deletePromise(id) {
+            if (!confirm("Delete promise #" + id + "?")) return;
+            api("/api/promises?id=" + id, { method: "DELETE" })
+                .then(function (d) { setMsg("pr_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadPromises(); })
+                .catch(function (e) { setMsg("pr_msg", e.message, "err"); });
+        }
+        function clearPromiseForm() {
+            state.editingPromiseId = null;
+            $("pr_formTitle").textContent = "Add promise";
+            ["pr_onDate", "pr_month", "pr_year", "pr_reference", "pr_textEn", "pr_textTa", "pr_reflectionEn"].forEach(function (id) { $(id).value = ""; });
+            $("pr_scope").value = "daily"; $("pr_isPublished").checked = true;
+        }
+        function savePromise() {
+            var payload = {
+                scope: $("pr_scope").value, onDate: $("pr_onDate").value || null,
+                month: $("pr_month").value ? Number($("pr_month").value) : null, year: $("pr_year").value ? Number($("pr_year").value) : null,
+                reference: $("pr_reference").value.trim(), textEn: $("pr_textEn").value.trim(), textTa: $("pr_textTa").value.trim(),
+                reflectionEn: $("pr_reflectionEn").value.trim(), isPublished: $("pr_isPublished").checked
+            };
+            if (!payload.textEn) { setMsg("pr_msg", "Text (English) is required", "err"); return; }
+            var req = state.editingPromiseId
+                ? api("/api/promises", { method: "PUT", body: JSON.stringify(Object.assign(payload, { id: state.editingPromiseId })) })
+                : api("/api/promises", { method: "POST", body: JSON.stringify(payload) });
+            req.then(function (d) {
+                setMsg("pr_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearPromiseForm(); loadPromises(); }
+            }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Testimonies ═══════════════
+        function loadTestimonies() {
+            api("/api/testimonies?all=1&_t=" + Date.now()).then(function (d) {
+                if (!d.success) { setMsg("te_msg", d.message, "err"); return; }
+                state.testimoniesCache = d.testimonies || [];
+                $("te_count").textContent = state.testimoniesCache.length;
+                var statusPill = { pending: "pill-amber", published: "pill-green", rejected: "pill-red" };
+                var tb = $("te_table").querySelector("tbody");
+                tb.innerHTML = state.testimoniesCache.map(function (t) {
+                    return "<tr><td><strong>" + esc(t.titleEn) + "</strong><br><span style='color:var(--text-soft);font-size:12px;'>" + esc(t.authorName || "Anonymous") + "</span></td>" +
+                        "<td>" + esc(t.kind) + "</td><td>" + esc(String(t.createdAt || "").slice(0, 10)) + "</td>" +
+                        '<td><span class="pill ' + (statusPill[t.status] || "pill-grey") + '">' + esc(t.status) + "</span></td>" +
+                        '<td>' +
+                        (t.status !== "published" ? '<button class="mini-btn" data-act="publish" data-id="' + t.id + '">Publish</button> ' : "") +
+                        (t.status !== "rejected" ? '<button class="mini-btn" data-act="reject" data-id="' + t.id + '">Reject</button> ' : "") +
+                        '<button class="mini-btn" data-act="edit" data-id="' + t.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + t.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">No testimonies yet.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    var id = Number(b.dataset.id);
+                    b.onclick = function () {
+                        if (b.dataset.act === "edit") editTestimony(id);
+                        else if (b.dataset.act === "del") deleteTestimony(id);
+                        else moderateTestimony(id, b.dataset.act === "publish" ? "published" : "rejected");
+                    };
+                });
+            }).catch(function (e) { setMsg("te_msg", e.message, "err"); });
+        }
+        function moderateTestimony(id, status) {
+            api("/api/testimonies", { method: "PUT", body: JSON.stringify({ id: id, status: status }) })
+                .then(function (d) { setMsg("te_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadTestimonies(); })
+                .catch(function (e) { setMsg("te_msg", e.message, "err"); });
+        }
+        function editTestimony(id) {
+            var t = state.testimoniesCache.find(function (x) { return x.id === id; });
+            if (!t) return;
+            state.editingTestimonyId = id;
+            $("te_formTitle").textContent = "Edit testimony — #" + id;
+            $("te_kind").value = t.kind; $("te_authorName").value = t.authorName || ""; $("te_place").value = t.place || "";
+            $("te_status").value = t.status; $("te_titleEn").value = t.titleEn || ""; $("te_bodyEn").value = t.bodyEn || "";
+        }
+        function deleteTestimony(id) {
+            if (!confirm("Delete testimony #" + id + "?")) return;
+            api("/api/testimonies?id=" + id, { method: "DELETE" })
+                .then(function (d) { setMsg("te_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadTestimonies(); })
+                .catch(function (e) { setMsg("te_msg", e.message, "err"); });
+        }
+        function clearTestimonyForm() {
+            state.editingTestimonyId = null;
+            $("te_formTitle").textContent = "Add testimony";
+            ["te_authorName", "te_place", "te_titleEn", "te_bodyEn"].forEach(function (id) { $(id).value = ""; });
+            $("te_kind").value = "testimony"; $("te_status").value = "pending";
+        }
+        function saveTestimony() {
+            var payload = {
+                kind: $("te_kind").value, authorName: $("te_authorName").value.trim(), place: $("te_place").value.trim(),
+                status: $("te_status").value, titleEn: $("te_titleEn").value.trim(), bodyEn: $("te_bodyEn").value.trim()
+            };
+            if (!payload.titleEn || !payload.bodyEn) { setMsg("te_msg", "Title and story are required", "err"); return; }
+            var req = state.editingTestimonyId
+                ? api("/api/testimonies", { method: "PUT", body: JSON.stringify(Object.assign(payload, { id: state.editingTestimonyId })) })
+                : api("/api/testimonies", { method: "POST", body: JSON.stringify(payload) });
+            req.then(function (d) {
+                setMsg("te_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearTestimonyForm(); loadTestimonies(); }
+            }).catch(function (e) { setMsg("te_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Prayer requests ═══════════════
+        function loadPrayer() {
+            var status = $("pray_statusFilter").value;
+            api("/api/prayer" + (status ? "?status=" + status : "") + "&_t=" + Date.now()).then(function (d) {
+                if (!d.success) { setMsg("pray_msg", d.message, "err"); return; }
+                state.prayerCache = d.requests || [];
+                $("pray_count").textContent = state.prayerCache.length;
+                var tb = $("pray_table").querySelector("tbody");
+                tb.innerHTML = state.prayerCache.map(function (r) {
+                    return "<tr><td><strong>" + esc(r.name || "Anonymous") + "</strong><br><span style='color:var(--text-soft);font-size:12px;'>" + esc(r.email || r.phone || "") + "</span></td>" +
+                        "<td>" + esc((r.request || "").slice(0, 80)) + "</td><td>" + (r.wantsCallback ? "Yes" : "—") + "</td>" +
+                        "<td>" + esc(String(r.createdAt || "").slice(0, 16).replace("T", " ")) + "</td>" +
+                        '<td><select class="input mini-select" data-id="' + r.id + '" style="max-width:140px;">' +
+                        ["new", "praying", "contacted", "closed"].map(function (s) { return '<option value="' + s + '"' + (s === r.status ? " selected" : "") + ">" + s + "</option>"; }).join("") +
+                        "</select></td></tr>";
+                }).join("") || '<tr><td colspan="5" class="empty">No prayer requests.</td></tr>';
+                tb.querySelectorAll(".mini-select").forEach(function (sel) {
+                    sel.onchange = function () {
+                        api("/api/prayer", { method: "PUT", body: JSON.stringify({ id: Number(sel.dataset.id), status: sel.value }) })
+                            .then(function (d2) { setMsg("pray_msg", d2.message, d2.success ? "ok" : "err"); })
+                            .catch(function (e) { setMsg("pray_msg", e.message, "err"); });
+                    };
+                });
+            }).catch(function (e) { setMsg("pray_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Contact messages ═══════════════
+        function loadContact() {
+            var status = $("ct_statusFilter").value;
+            api("/api/contact" + (status ? "?status=" + status : "") + "&_t=" + Date.now()).then(function (d) {
+                if (!d.success) { setMsg("ct_msg", d.message, "err"); return; }
+                state.contactCache = d.messages || [];
+                $("ct_count").textContent = state.contactCache.length;
+                var tb = $("ct_table").querySelector("tbody");
+                tb.innerHTML = state.contactCache.map(function (m) {
+                    return "<tr><td><strong>" + esc(m.name || "Anonymous") + "</strong><br><span style='color:var(--text-soft);font-size:12px;'>" + esc(m.email) + "</span></td>" +
+                        "<td>" + (m.subject ? "<strong>" + esc(m.subject) + "</strong> — " : "") + esc((m.message || "").slice(0, 80)) + "</td>" +
+                        "<td>" + esc(String(m.createdAt || "").slice(0, 16).replace("T", " ")) + "</td>" +
+                        '<td><select class="input mini-select" data-id="' + m.id + '" style="max-width:150px;">' +
+                        ["new", "acknowledged", "replied", "closed"].map(function (s) { return '<option value="' + s + '"' + (s === m.status ? " selected" : "") + ">" + s + "</option>"; }).join("") +
+                        "</select></td></tr>";
+                }).join("") || '<tr><td colspan="4" class="empty">No contact messages.</td></tr>';
+                tb.querySelectorAll(".mini-select").forEach(function (sel) {
+                    sel.onchange = function () {
+                        api("/api/contact", { method: "PUT", body: JSON.stringify({ id: Number(sel.dataset.id), status: sel.value }) })
+                            .then(function (d2) { setMsg("ct_msg", d2.message, d2.success ? "ok" : "err"); })
+                            .catch(function (e) { setMsg("ct_msg", e.message, "err"); });
+                    };
+                });
+            }).catch(function (e) { setMsg("ct_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Programs ═══════════════
+        var DOW_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        function loadPrograms() {
+            Promise.all([
+                api("/api/programs?all=1&_t=" + Date.now()),
+                api("/api/churches?all=1")
+            ]).then(function (res) {
+                var d = res[0], churchesRes = res[1];
+                if (!d.success) { setMsg("pg_msg", d.message, "err"); return; }
+                state.programsCache = d.programs || [];
+                var churches = (churchesRes && churchesRes.churches) || [];
+                var churchName = {}; churches.forEach(function (c) { churchName[c.id] = c.nameEn; });
+                $("pg_churchId").innerHTML = '<option value="">Ministry-wide</option>' +
+                    churches.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nameEn) + "</option>"; }).join("");
+                $("pg_count").textContent = state.programsCache.length;
+                var tb = $("pg_table").querySelector("tbody");
+                tb.innerHTML = state.programsCache.map(function (p) {
+                    var when = (p.dayOfWeek != null ? DOW_NAMES[p.dayOfWeek] : "One-off") + (p.startTime ? " " + p.startTime : "");
+                    return "<tr><td><strong>" + esc(p.titleEn) + "</strong>" + (p.ministryArea ? ' <span class="pill pill-grey">' + esc(p.ministryArea) + "</span>" : "") + "</td>" +
+                        "<td>" + esc(when) + "</td><td>" + esc(p.churchId ? (churchName[p.churchId] || "—") : "Ministry-wide") + "</td>" +
+                        "<td>" + (p.status === "active" ? '<span class="pill pill-green">active</span>' : '<span class="pill pill-grey">archived</span>') + "</td>" +
+                        '<td><button class="mini-btn" data-act="edit" data-id="' + p.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + p.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">No programs yet.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () { b.dataset.act === "edit" ? editProgram(Number(b.dataset.id)) : deleteProgram(Number(b.dataset.id)); };
+                });
+            }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
+        }
+        function editProgram(id) {
+            var p = state.programsCache.find(function (x) { return x.id === id; });
+            if (!p) return;
+            state.editingProgramId = id;
+            $("pg_formTitle").textContent = "Edit program — #" + id;
+            $("pg_titleEn").value = p.titleEn || ""; $("pg_churchId").value = p.churchId || ""; $("pg_ministryArea").value = p.ministryArea || "";
+            $("pg_dayOfWeek").value = p.dayOfWeek != null ? String(p.dayOfWeek) : "";
+            $("pg_startTime").value = p.startTime || ""; $("pg_endTime").value = p.endTime || ""; $("pg_location").value = p.location || "";
+            $("pg_active").checked = p.status === "active";
+        }
+        function deleteProgram(id) {
+            if (!confirm("Delete this program?")) return;
+            api("/api/programs?id=" + id, { method: "DELETE" })
+                .then(function (d) { setMsg("pg_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadPrograms(); })
+                .catch(function (e) { setMsg("pg_msg", e.message, "err"); });
+        }
+        function clearProgramForm() {
+            state.editingProgramId = null;
+            $("pg_formTitle").textContent = "Add program";
+            ["pg_titleEn", "pg_ministryArea", "pg_startTime", "pg_endTime", "pg_location"].forEach(function (id) { $(id).value = ""; });
+            $("pg_churchId").value = ""; $("pg_dayOfWeek").value = ""; $("pg_active").checked = true;
+        }
+        function saveProgram() {
+            var payload = {
+                titleEn: $("pg_titleEn").value.trim(), churchId: $("pg_churchId").value || null, ministryArea: $("pg_ministryArea").value.trim() || null,
+                dayOfWeek: $("pg_dayOfWeek").value !== "" ? Number($("pg_dayOfWeek").value) : null,
+                startTime: $("pg_startTime").value || null, endTime: $("pg_endTime").value || null, location: $("pg_location").value.trim(),
+                status: $("pg_active").checked ? "active" : "archived"
+            };
+            if (!payload.titleEn) { setMsg("pg_msg", "Title is required", "err"); return; }
+            var req = state.editingProgramId
+                ? api("/api/programs", { method: "PUT", body: JSON.stringify(Object.assign(payload, { id: state.editingProgramId })) })
+                : api("/api/programs", { method: "POST", body: JSON.stringify(payload) });
+            req.then(function (d) {
+                setMsg("pg_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearProgramForm(); loadPrograms(); }
+            }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Blog ═══════════════
+        function loadBlog() {
+            api("/api/blog?all=1&_t=" + Date.now()).then(function (d) {
+                if (!d.success) { setMsg("bl_msg", d.message, "err"); return; }
+                state.blogCache = d.posts || [];
+                $("bl_count").textContent = state.blogCache.length;
+                var tb = $("bl_table").querySelector("tbody");
+                tb.innerHTML = state.blogCache.map(function (p) {
+                    return "<tr><td><strong>" + esc(p.titleEn) + "</strong>" + (p.ministryArea ? ' <span class="pill pill-grey">' + esc(p.ministryArea) + "</span>" : "") + "</td>" +
+                        "<td>" + esc(p.category || "—") + "</td>" +
+                        "<td>" + (p.status === "published" ? '<span class="pill pill-green">published</span>' : '<span class="pill pill-grey">draft</span>') + "</td>" +
+                        '<td><button class="mini-btn" data-act="edit" data-id="' + p.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + p.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="4" class="empty">No posts yet.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () { b.dataset.act === "edit" ? editBlog(Number(b.dataset.id)) : deleteBlog(Number(b.dataset.id)); };
+                });
+            }).catch(function (e) { setMsg("bl_msg", e.message, "err"); });
+        }
+        function editBlog(id) {
+            var p = state.blogCache.find(function (x) { return x.id === id; });
+            if (!p) return;
+            state.editingBlogId = id;
+            $("bl_formTitle").textContent = "Edit post — #" + id;
+            $("bl_titleEn").value = p.titleEn || ""; $("bl_slug").value = p.slug || ""; $("bl_category").value = p.category || "";
+            $("bl_ministryArea").value = p.ministryArea || ""; $("bl_status").value = p.status;
+            $("bl_excerptEn").value = p.excerptEn || ""; $("bl_bodyEn").value = p.bodyEn || "";
+        }
+        function deleteBlog(id) {
+            if (!confirm("Delete this post?")) return;
+            api("/api/blog?id=" + id, { method: "DELETE" })
+                .then(function (d) { setMsg("bl_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadBlog(); })
+                .catch(function (e) { setMsg("bl_msg", e.message, "err"); });
+        }
+        function clearBlogForm() {
+            state.editingBlogId = null;
+            $("bl_formTitle").textContent = "Add post";
+            ["bl_titleEn", "bl_slug", "bl_category", "bl_ministryArea", "bl_excerptEn", "bl_bodyEn"].forEach(function (id) { $(id).value = ""; });
+            $("bl_status").value = "draft";
+        }
+        function saveBlog() {
+            var payload = {
+                titleEn: $("bl_titleEn").value.trim(), slug: $("bl_slug").value.trim(), category: $("bl_category").value.trim(),
+                ministryArea: $("bl_ministryArea").value.trim() || null, status: $("bl_status").value,
+                excerptEn: $("bl_excerptEn").value.trim(), bodyEn: $("bl_bodyEn").value.trim()
+            };
+            if (!payload.titleEn || !payload.bodyEn) { setMsg("bl_msg", "Title and body are required", "err"); return; }
+            var req = state.editingBlogId
+                ? api("/api/blog", { method: "PUT", body: JSON.stringify(Object.assign(payload, { id: state.editingBlogId })) })
+                : api("/api/blog", { method: "POST", body: JSON.stringify(payload) });
+            req.then(function (d) {
+                setMsg("bl_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearBlogForm(); loadBlog(); }
+            }).catch(function (e) { setMsg("bl_msg", e.message, "err"); });
+        }
+
         // ═══════════════ Roles ═══════════════
         function loadRoles() {
             $("r_perms").innerHTML = PERMISSION_SCOPES.map(function (p) {
@@ -3140,7 +3683,9 @@
             contributions: loadContributions, purchases: loadPurchases,
             sandha: loadSubscriptions, expenses: loadExpenses, wishlist: loadWishlist,
             roles: loadRoles, audit: loadAudit, beta: loadBeta,
-            verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {}
+            verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {},
+            churches: loadChurches, promises: loadPromises, testimonies: loadTestimonies,
+            prayer: loadPrayer, contact: loadContact, programs: loadPrograms, blog: loadBlog
         };
 
         function wireThemeToggle() {
@@ -3270,6 +3815,20 @@
                     reader.readAsDataURL(file);
                 }
             };
+            $("ch_saveBtn").onclick = saveChurch; $("ch_clearBtn").onclick = clearChurchForm;
+            $("pr_saveBtn").onclick = savePromise; $("pr_clearBtn").onclick = clearPromiseForm;
+            $("pr_scope").onchange = function () {
+                var s = $("pr_scope").value;
+                $("pr_onDateWrap").style.display = s === "daily" ? "" : "none";
+                $("pr_monthWrap").style.display = s === "monthly" ? "" : "none";
+                $("pr_yearWrap").style.display = s === "daily" ? "none" : "";
+            };
+            $("pr_scope").onchange();
+            $("te_saveBtn").onclick = saveTestimony; $("te_clearBtn").onclick = clearTestimonyForm;
+            $("pray_statusFilter").onchange = loadPrayer;
+            $("ct_statusFilter").onchange = loadContact;
+            $("pg_saveBtn").onclick = saveProgram; $("pg_clearBtn").onclick = clearProgramForm;
+            $("bl_saveBtn").onclick = saveBlog; $("bl_clearBtn").onclick = clearBlogForm;
             $("r_saveBtn").onclick = saveRole; $("r_linkBtn").onclick = linkEmail;
             $("bt_addBtn").onclick = addBetaTester;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };

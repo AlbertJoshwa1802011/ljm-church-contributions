@@ -102,23 +102,33 @@ export async function onRequestPost(context) {
 
     const kind = VALID_KINDS.includes(body.kind) ? body.kind : "testimony";
 
+    // Public submissions always land 'pending' for moderation. A signed-in
+    // moderator (manage_content) may add a testimony directly at any status —
+    // e.g. entering an already-approved story straight into 'published'.
+    const auth = await requireAuth(context, "manage_content");
+    const status = auth.ok && VALID_STATUSES.includes(body.status) ? body.status : "pending";
+    const publishedAt = status === "published" ? new Date().toISOString() : null;
+
     const res = await db.prepare(
-      `INSERT INTO testimonies (title_en, title_ta, body_en, body_ta, author_name, place, kind, media_url, church_id, status, submitted_ip)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
+      `INSERT INTO testimonies (title_en, title_ta, body_en, body_ta, author_name, place, kind, media_url, church_id, status, submitted_ip, published_at, reviewed_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       titleEn, body.titleTa || null, bodyEn, body.bodyTa || null,
       String(body.authorName || "").trim().slice(0, 200) || null,
       body.place || null, kind, body.mediaUrl || null, body.churchId ? Number(body.churchId) : null,
-      request.headers.get("CF-Connecting-IP") || ""
+      status, request.headers.get("CF-Connecting-IP") || "", publishedAt, auth.ok ? auth.email : null
     ).run();
 
     const id = res.meta && res.meta.last_row_id;
     await audit(context, {
-      actorEmail: null, actorType: "public", verified: false,
-      action: "testimonies.submit", entityType: "testimony", entityId: id, details: { kind }
+      actorEmail: auth.ok ? auth.email : null, actorType: auth.ok ? "admin" : "public", verified: auth.verified,
+      action: "testimonies.submit", entityType: "testimony", entityId: id, details: { kind, status }
     });
 
-    return json({ success: true, id, message: "Thank you — your story has been submitted for review." }, 200, corsHeaders());
+    return json({
+      success: true, id,
+      message: status === "pending" ? "Thank you — your story has been submitted for review." : "Testimony added"
+    }, 200, corsHeaders());
   } catch (err) {
     return json({ success: false, message: err.message }, 500);
   }

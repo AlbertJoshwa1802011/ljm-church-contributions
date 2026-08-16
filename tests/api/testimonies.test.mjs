@@ -67,6 +67,21 @@ test("testimonies: a moderator publishing a submission makes it publicly visible
   assert.ok(publicList.testimonies[0].publishedAt);
 });
 
+test("testimonies: an authenticated moderator can submit directly at any status (e.g. already-approved story)", async () => {
+  const db = freshDb();
+  const created = await readJson(await testimonies.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/testimonies",
+    body: { titleEn: "Added by admin", bodyEn: "Already approved.", status: "published" }
+  })));
+  assert.equal(created.success, true);
+
+  const publicList = await readJson(await testimonies.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/testimonies"
+  })));
+  assert.equal(publicList.testimonies.length, 1);
+  assert.equal(publicList.testimonies[0].titleEn, "Added by admin");
+});
+
 test("testimonies: validation rejects missing required fields", async () => {
   const db = freshDb();
   const res = await readJson(await testimonies.onRequestPost(makeContext({
