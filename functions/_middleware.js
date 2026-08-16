@@ -16,7 +16,14 @@ const ROUTE_MAP = {
   "/our-giving.html": "/v2/our-giving.html",
   "/events.html": "/v2/events.html",
   "/give-flow.html": "/v2/give-flow.html",
-  "/my-giving.html": "/v2/my-giving.html"
+  "/my-giving.html": "/v2/my-giving.html",
+  // Milestone v2, Phases 1-3: brand-new public pages with no old-flow
+  // equivalent (docs/milestone-v2/03-app-flow.md S3/S4/S10/S11) — reachable
+  // only through a beta session, same as everything else in this map.
+  "/promises.html": "/v2/promises.html",
+  "/testimonies.html": "/v2/testimonies.html",
+  "/pray.html": "/v2/pray.html",
+  "/contact.html": "/v2/contact.html"
 };
 
 export async function onRequest(context) {

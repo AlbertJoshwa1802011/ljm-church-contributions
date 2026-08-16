@@ -122,12 +122,15 @@
   <div class="wrap">
     <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
     <nav class="primary-nav">
-      <a href="/" class="current">Home</a>
-      <a href="/about.html">About</a>
-      <a href="#">Watch &amp; Listen</a>
-      <a href="/events.html">Events</a>
-      <a href="#">Blog</a>
-      <a href="/our-giving.html">Our Giving</a>
+      <a href="/" class="current" data-i18n="nav_home">Home</a>
+      <a href="/about.html" data-i18n="nav_about">About</a>
+      <a href="/promises.html" data-i18n="nav_promises">Promises</a>
+      <a href="/testimonies.html" data-i18n="nav_testimonies">Testimonies</a>
+      <a href="#" data-i18n="nav_watch">Watch &amp; Listen</a>
+      <a href="/events.html" data-i18n="nav_events">Events</a>
+      <a href="#" data-i18n="nav_blog">Blog</a>
+      <a href="/our-giving.html" data-i18n="nav_giving">Our Giving</a>
+      <a href="/contact.html" data-i18n="nav_contact">Contact</a>
     </nav>
     <div class="header-actions">
       <div class="auth-slot">
@@ -141,8 +144,9 @@
           </span>
         </div>
       </div>
-      <a href="/give-flow.html" class="btn btn-secondary btn-sm">Pray</a>
+      <a href="/pray.html" class="btn btn-secondary btn-sm" data-i18n="btn_pray">Pray</a>
       <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+      <button class="lang-toggle" type="button"></button>
       <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
@@ -157,12 +161,15 @@
     <button class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">✕</button>
   </div>
   <nav>
-    <a href="/" class="current">Home</a>
-    <a href="/about.html">About</a>
-    <a href="#">Watch &amp; Listen</a>
-    <a href="/events.html">Events</a>
-    <a href="#">Blog</a>
-    <a href="/our-giving.html">Our Giving</a>
+    <a href="/" class="current" data-i18n="nav_home">Home</a>
+    <a href="/about.html" data-i18n="nav_about">About</a>
+      <a href="/promises.html" data-i18n="nav_promises">Promises</a>
+      <a href="/testimonies.html" data-i18n="nav_testimonies">Testimonies</a>
+    <a href="#" data-i18n="nav_watch">Watch &amp; Listen</a>
+    <a href="/events.html" data-i18n="nav_events">Events</a>
+    <a href="#" data-i18n="nav_blog">Blog</a>
+    <a href="/our-giving.html" data-i18n="nav_giving">Our Giving</a>
+    <a href="/contact.html" data-i18n="nav_contact">Contact</a>
   </nav>
   <div class="nav-drawer-section nav-drawer-auth">
     <div id="signinBtnDrawer"></div>
@@ -176,14 +183,17 @@
     </div>
   </div>
   <div class="nav-drawer-section">
+    <button class="lang-toggle" type="button" style="width:100%;"></button>
+  </div>
+  <div class="nav-drawer-section">
     <button class="theme-toggle" aria-label="Toggle light/dark theme">
       <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
     </button>
   </div>
   <div class="nav-drawer-actions">
-    <a href="/give-flow.html" class="btn btn-secondary btn-sm">Pray</a>
-    <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+    <a href="/pray.html" class="btn btn-secondary btn-sm" data-i18n="btn_pray">Pray</a>
+    <a href="/give-flow.html" class="btn btn-primary btn-sm" data-i18n="btn_give">Give</a>
   </div>
 </div>
 <script>
@@ -256,12 +266,12 @@
 <section class="hero tight">
   <div class="wrap">
     <div class="hero-copy">
-      <div class="eyebrow">✦ Light of Jesus Ministry</div>
-      <h1>Light for the world,<br><em>hope</em> for today.</h1>
-      <p class="lede">Two churches, one family — Church of Light and City Worship Center. Wherever you're joining from, you're welcome at the table.</p>
+      <div class="eyebrow" data-i18n="home_eyebrow">✦ Light of Jesus Ministry</div>
+      <h1><span data-i18n="home_h1_1">Light for the world,</span><br><em data-i18n="home_h1_em">hope</em> <span data-i18n="home_h1_2">for today.</span></h1>
+      <p class="lede" data-i18n="home_lede">Two churches, one family — Church of Light and City Worship Center. Wherever you're joining from, you're welcome at the table.</p>
       <div class="hero-actions">
-        <a href="/give-flow.html" class="btn btn-primary">Give Today</a>
-        <a href="#happening" class="btn btn-secondary">Plan a Visit</a>
+        <a href="/give-flow.html" class="btn btn-primary" data-i18n="btn_give_today">Give Today</a>
+        <a href="#happening" class="btn btn-secondary" data-i18n="btn_plan_visit">Plan a Visit</a>
       </div>
       <div class="hero-churches">
         <div class="hero-church"><span class="dot"></span> Church of Light — Mother Church</div>
@@ -271,7 +281,7 @@
 
     <div class="promise-card">
       <div class="promise-top">
-        <span class="promise-date" id="promiseDate">Today's Promise</span>
+        <span class="promise-date" id="promiseDate" data-i18n="home_todays_promise">Today's Promise</span>
         <span class="promise-share">↗</span>
       </div>
       <div class="promise-rotator" id="promiseRotator">
@@ -298,21 +308,21 @@
     <div class="actions-grid">
       <a class="action-card give" href="/give-flow.html">
         <span class="action-icon">🤍</span>
-        <h3>Give</h3>
-        <p>Support the ministry, a fund, or a cause close to your heart — from anywhere in the world.</p>
-        <span class="go">Give now →</span>
+        <h3 data-i18n="action_give_title">Give</h3>
+        <p data-i18n="action_give_body">Support the ministry, a fund, or a cause close to your heart — from anywhere in the world.</p>
+        <span class="go" data-i18n="go_give">Give now →</span>
       </a>
-      <a class="action-card pray" href="#">
+      <a class="action-card pray" href="/pray.html">
         <span class="action-icon">🕊️</span>
-        <h3>Pray</h3>
-        <p>Send a prayer request, ask for a callback, or reach our prayer team directly.</p>
-        <span class="go">Request prayer →</span>
+        <h3 data-i18n="action_pray_title">Pray</h3>
+        <p data-i18n="action_pray_body">Send a prayer request, ask for a callback, or reach our prayer team directly.</p>
+        <span class="go" data-i18n="go_pray">Request prayer →</span>
       </a>
-      <a class="action-card connect" href="#">
+      <a class="action-card connect" href="/contact.html">
         <span class="action-icon">📍</span>
-        <h3>Connect</h3>
-        <p>Visit a service, join a program, or get in touch with our team.</p>
-        <span class="go">Get in touch →</span>
+        <h3 data-i18n="action_connect_title">Connect</h3>
+        <p data-i18n="action_connect_body">Visit a service, join a program, or get in touch with our team.</p>
+        <span class="go" data-i18n="go_connect">Get in touch →</span>
       </a>
     </div>
   </div>
@@ -377,7 +387,7 @@
       </div>
       <div>
         <h4>Quick Links</h4>
-        <ul><li><a href="/give-flow.html">Give</a></li><li><a href="#">Pray</a></li><li><a href="#">Contact</a></li><li><a href="/our-giving.html">Our Giving</a></li></ul>
+        <ul><li><a href="/give-flow.html">Give</a></li><li><a href="/pray.html">Pray</a></li><li><a href="/contact.html">Contact</a></li><li><a href="/our-giving.html">Our Giving</a></li><li><a href="/promises.html">Promises</a></li><li><a href="/testimonies.html">Testimonies</a></li></ul>
       </div>
     </div>
     <div class="footer-bottom">
@@ -387,8 +397,8 @@
 </footer>
 
 <div class="mobile-actions">
-  <a href="#" class="btn btn-secondary">Pray</a>
-  <a href="#" class="btn btn-ghost">Contact</a>
+  <a href="/pray.html" class="btn btn-secondary" data-i18n="btn_pray">Pray</a>
+  <a href="/contact.html" class="btn btn-ghost" data-i18n="btn_contact">Contact</a>
   <a href="/give-flow.html" class="btn btn-primary">Give</a>
 </div>
 
@@ -398,6 +408,7 @@
 </button>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="i18n.js"></script>
 <script src="auth.js"></script>
 <script>
   (function () {
@@ -411,42 +422,91 @@
 </script>
 <script>
   (function () {
-    // "Today's Promise" — a small curated set (no real per-day source exists
-    // yet, see docs/milestone-v2/11-v2-flow-implementation.md §7 Home).
-    var verses = [
-      { text: '"Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee."', ref: "Isaiah 41:10" },
-      { text: '"The Lord is my shepherd; I shall not want."', ref: "Psalm 23:1" },
-      { text: '"For I know the plans I have for you, plans to prosper you and not to harm you, plans to give you hope and a future."', ref: "Jeremiah 29:11" },
-      { text: '"I can do all things through Christ which strengtheneth me."', ref: "Philippians 4:13" }
+    // "Today's Promise" — real content from the Promises engine
+    // (docs/milestone-v2/01-PRD.md §7.2), with the same curated fallback set
+    // used before the engine existed so the hero card is never blank if the
+    // API is unreachable or nothing has been scheduled/published yet.
+    var FALLBACK = [
+      { label: "Today's Promise", text: '"Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee."', ref: "Isaiah 41:10" },
+      { label: "Today's Promise", text: '"The Lord is my shepherd; I shall not want."', ref: "Psalm 23:1" }
     ];
     var rotator = document.getElementById('promiseRotator');
+    var dateEl = document.getElementById('promiseDate');
     var textEl = document.getElementById('promiseText');
     var refEl = document.getElementById('promiseRef');
     var dotsEl = document.getElementById('promiseDots');
+    var cards = FALLBACK;
     var idx = 0, timer;
 
-    verses.forEach(function (_, i) {
-      var b = document.createElement('button');
-      b.className = i === 0 ? 'active' : '';
-      b.setAttribute('aria-label', 'Show verse ' + (i + 1));
-      b.addEventListener('click', function () { show(i); restart(); });
-      dotsEl.appendChild(b);
-    });
+    function pickText(c) {
+      if (!c) return null;
+      return { label: c._label, text: (window.LJM_I18N ? LJM_I18N.pick(c.textEn, c.textTa) : c.textEn), ref: c.reference };
+    }
+
+    function buildDots() {
+      dotsEl.innerHTML = "";
+      cards.forEach(function (_, i) {
+        var b = document.createElement('button');
+        b.className = i === 0 ? 'active' : '';
+        b.setAttribute('aria-label', 'Show promise ' + (i + 1));
+        b.addEventListener('click', function () { show(i); restart(); });
+        dotsEl.appendChild(b);
+      });
+    }
 
     function show(i) {
       idx = i;
+      var c = cards[idx];
       rotator.classList.add('fading');
       setTimeout(function () {
-        textEl.textContent = verses[idx].text;
-        refEl.textContent = verses[idx].ref;
+        dateEl.textContent = c.label || (window.LJM_I18N ? LJM_I18N.t("home_todays_promise") : "Today's Promise");
+        textEl.textContent = c.text || "";
+        refEl.textContent = c.ref || "";
         Array.prototype.forEach.call(dotsEl.children, function (d, di) { d.classList.toggle('active', di === idx); });
         rotator.classList.remove('fading');
       }, 350);
     }
-    function next() { show((idx + 1) % verses.length); }
-    function restart() { clearInterval(timer); timer = setInterval(next, 8000); }
-    show(0);
-    restart();
+    function next() { show((idx + 1) % cards.length); }
+    function restart() { clearInterval(timer); if (cards.length > 1) timer = setInterval(next, 9000); }
+
+    fetch("/api/promises?when=today&_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.success || !data.today) return;
+        var built = [];
+        if (data.today.daily) { data.today.daily._label = window.LJM_I18N ? LJM_I18N.t("promises_today") : "Today's Promise"; built.push(pickText(data.today.daily)); }
+        if (data.today.monthly) { data.today.monthly._label = window.LJM_I18N ? LJM_I18N.t("promises_month") : "This Month"; built.push(pickText(data.today.monthly)); }
+        if (data.today.yearly) { data.today.yearly._label = window.LJM_I18N ? LJM_I18N.t("promises_year") : "This Year"; built.push(pickText(data.today.yearly)); }
+        built = built.filter(function (c) { return c && c.text; });
+        if (built.length) cards = built;
+      })
+      .catch(function () { /* keep FALLBACK */ })
+      .finally(function () { buildDots(); show(0); restart(); });
+
+    document.addEventListener('ljm:langchange', function () { show(idx); });
+  })();
+</script>
+<script>
+  (function () {
+    // Latest-testimony teaser slot (PRD §7.1 Home anatomy item 6).
+    fetch("/api/testimonies?_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var t = data && data.success && (data.testimonies || [])[0];
+        if (!t) return;
+        var section = document.createElement('section');
+        section.className = 'tight';
+        function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+        var title = (window.LJM_I18N ? LJM_I18N.pick(t.titleEn, t.titleTa) : t.titleEn) || "";
+        var body = (window.LJM_I18N ? LJM_I18N.pick(t.bodyEn, t.bodyTa) : t.bodyEn) || "";
+        section.innerHTML =
+          '<div class="wrap"><div class="section-head"><div class="eyebrow gold" data-i18n="testimony_eyebrow">A Story of Faith</div>' +
+          '<h2>' + esc(title) + '</h2><p>' + esc(body.slice(0, 220)) + (body.length > 220 ? '…' : '') + '</p>' +
+          '<a href="/testimonies.html" class="btn btn-secondary" style="margin-top:16px" data-i18n="testimony_teaser_cta">Read more testimonies →</a></div></div>';
+        document.getElementById('happening').insertAdjacentElement('beforebegin', section);
+        if (window.LJM_I18N) LJM_I18N.applyTranslations(section);
+      })
+      .catch(function () {});
   })();
 </script>
 <script>
