@@ -94,6 +94,28 @@ test("programs: DELETE requires manage_content", async () => {
   assert.equal(denied.success, false);
 });
 
+test("programs: PUT requires manage_content", async () => {
+  const db = freshDb();
+  const create = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "X" }
+  })));
+  const denied = await readJson(await programs.onRequestPut(makeContext({
+    db, authToken: null, method: "PUT", url: "https://test.local/api/programs", body: { id: create.id, titleEn: "Y" }
+  })));
+  assert.equal(denied.success, false);
+
+  const all = await readJson(await programs.onRequestGet(makeContext({ db, url: "https://test.local/api/programs?all=1" })));
+  assert.equal(all.programs.find(p => p.id === create.id).titleEn, "X", "denied PUT must not have changed the row");
+});
+
+test("programs: ?all=1 (admin listing) requires manage_content", async () => {
+  const db = freshDb();
+  const denied = await readJson(await programs.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/programs?all=1"
+  })));
+  assert.equal(denied.success, false);
+});
+
 // ── Recurrence validation ──────────────────────────────────────────────
 
 test("programs: weekly recurrence with no dayOfWeek is accepted (blank = one-off/other, matches the admin form)", async () => {
