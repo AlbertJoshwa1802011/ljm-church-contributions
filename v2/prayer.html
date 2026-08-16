@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Prayer — Light of Jesus Ministry</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .prayer-hero { padding: 56px 0 40px; background: radial-gradient(1100px 420px at 84% -10%, var(--gold-soft), transparent 60%), var(--bg); border-bottom: 1px solid var(--border); }
+  .prayer-hero .wrap { max-width: 720px; text-align: center; }
+  .prayer-hero h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); margin-top: 14px; }
+  .prayer-hero p.lede { font-size: 1.02rem; margin-top: 14px; }
+  .call-us { display: inline-flex; align-items: center; gap: 8px; margin-top: 22px; font-weight: 700; color: var(--accent); font-size: .95rem; }
+  .prayer-form-wrap { max-width: 640px; margin: 0 auto; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: .78rem; font-weight: 700; color: var(--text-soft); margin-bottom: 6px; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font: inherit; font-size: .92rem;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .checkbox-row { display: flex; align-items: center; gap: 10px; font-size: .88rem; color: var(--text-soft); margin-bottom: 18px; }
+  .form-msg { margin-top: 14px; font-size: .88rem; text-align: center; }
+  .form-msg.ok { color: var(--green); }
+  .form-msg.err { color: var(--red); }
+  .success-card { text-align: center; padding: 40px 24px; }
+  .success-card .icon { font-size: 2.4rem; }
+  @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <nav class="primary-nav">
+      <a href="/" data-i18n="nav.home">Home</a>
+      <a href="/v2/about.html" data-i18n="nav.about">About</a>
+      <a href="/v2/watch.html" data-i18n="nav.watch">Watch &amp; Listen</a>
+      <a href="/events.html" data-i18n="nav.events">Events</a>
+      <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a>
+      <a href="/v2/blog.html" data-i18n="nav.blog">Blog</a>
+      <a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a>
+      <a href="/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a>
+    </nav>
+    <div class="header-actions">
+      <button class="lang-toggle" type="button">TA</button>
+      <div class="auth-slot">
+        <div id="signinBtn"></div>
+        <div class="user-chip" id="userChip">
+          <span class="user-avatar" id="userAvatar">··</span>
+          <span class="user-meta">
+            <span class="nm" id="userName"></span>
+            <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+            <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
+          </span>
+        </div>
+      </div>
+      <a href="/v2/contact.html" class="btn btn-secondary btn-sm" data-i18n="cta.contact">Contact</a>
+      <a href="/give-flow.html" class="btn btn-primary btn-sm" data-i18n="cta.give">Give</a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="nav-drawer-head">
+    <a class="brand" href="/">Light of Jesus Ministry</a>
+    <button class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">✕</button>
+  </div>
+  <nav>
+    <a href="/" data-i18n="nav.home">Home</a>
+    <a href="/v2/about.html" data-i18n="nav.about">About</a>
+    <a href="/v2/watch.html" data-i18n="nav.watch">Watch &amp; Listen</a>
+    <a href="/events.html" data-i18n="nav.events">Events</a>
+    <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a>
+    <a href="/v2/blog.html" data-i18n="nav.blog">Blog</a>
+    <a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a>
+    <a href="/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a>
+  </nav>
+  <div class="nav-drawer-section"><button class="lang-toggle" type="button" style="display:block;width:100%;">TA</button></div>
+  <div class="nav-drawer-section nav-drawer-auth">
+    <div id="signinBtnDrawer"></div>
+    <div class="user-chip" id="userChipDrawer">
+      <span class="user-avatar" id="userAvatarDrawer">··</span>
+      <span class="user-meta">
+        <span class="nm" id="userNameDrawer"></span>
+        <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+        <a href="/admin.html" class="admin-link" id="adminLinkDrawer">⚡ Admin Access</a>
+      </span>
+    </div>
+  </div>
+  <div class="nav-drawer-actions">
+    <a href="/v2/contact.html" class="btn btn-secondary btn-sm">Contact</a>
+    <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+  </div>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('hamburgerBtn');
+  var drawer = document.getElementById('navDrawer');
+  var backdrop = document.getElementById('navDrawerBackdrop');
+  var closeBtn = document.getElementById('navDrawerClose');
+  function openDrawer() { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('drawer-open'); btn.setAttribute('aria-expanded', 'true'); }
+  function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('drawer-open'); btn.setAttribute('aria-expanded', 'false'); }
+  btn.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+  Array.prototype.forEach.call(drawer.querySelectorAll('a'), function (a) { a.addEventListener('click', closeDrawer); });
+})();
+</script>
+
+<section class="prayer-hero">
+  <div class="wrap">
+    <div class="eyebrow gold">🕊️ Prayer</div>
+    <h1>We would be honored to pray with you.</h1>
+    <p class="lede">Share what's on your heart. Our prayer team reads every request and prays over it — you're never carrying this alone.</p>
+    <a class="call-us" href="tel:+919940940326">📞 Call us directly: +91 99409 40326</a>
+  </div>
+</section>
+
+<section>
+  <div class="wrap prayer-form-wrap">
+    <div class="card" id="prayerFormCard">
+      <form id="prayerForm">
+        <div class="field">
+          <label for="pf_request">What would you like prayer for? *</label>
+          <textarea id="pf_request" rows="5" required placeholder="Share as much or as little as you'd like…"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="pf_name">Your name (optional)</label><input id="pf_name" type="text"></div>
+          <div class="field"><label for="pf_email">Email (optional)</label><input id="pf_email" type="email"></div>
+        </div>
+        <div class="field"><label for="pf_phone">Phone (optional)</label><input id="pf_phone" type="tel"></div>
+        <div class="checkbox-row"><input type="checkbox" id="pf_callback"> <label for="pf_callback" style="margin:0;">I'd like someone from the team to call me back</label></div>
+        <button class="btn btn-primary btn-block" type="submit" id="pf_submitBtn" data-i18n="cta.submit">Submit prayer request</button>
+        <div class="form-msg" id="pf_msg"></div>
+      </form>
+    </div>
+    <div class="card success-card" id="prayerSuccessCard" style="display:none;">
+      <div class="icon">🙏</div>
+      <h2>Thank you — we're praying for you.</h2>
+      <p>Someone from our team will reach out if you asked for a callback. You're always welcome to write again.</p>
+      <a href="/" class="btn btn-secondary" style="margin-top:16px;">Return home</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="/" style="margin-bottom:10px">Light of Jesus Ministry</a>
+        <p style="font-size:.86rem;margin-top:10px;max-width:32ch" data-i18n="footer.tagline">Giving with faith, transparency &amp; purpose — for Coimbatore, and for the world.</p>
+      </div>
+      <div><h4>Church of Light</h4><ul><li>Mother Church</li><li>Coimbatore, Tamil Nadu</li></ul></div>
+      <div><h4>City Worship Center</h4><ul><li>Coimbatore, Tamil Nadu</li></ul></div>
+      <div><h4>Quick Links</h4><ul><li><a href="/give-flow.html">Give</a></li><li><a href="/v2/prayer.html">Pray</a></li><li><a href="/v2/contact.html">Contact</a></li><li><a href="/our-giving.html">Our Giving</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 Light of Jesus Ministry</span></div>
+  </div>
+</footer>
+
+<div class="mobile-actions">
+  <a href="/v2/contact.html" class="btn btn-secondary">Contact</a>
+  <a href="/give-flow.html" class="btn btn-primary">Give</a>
+</div>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+  <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+</button>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="auth.js"></script>
+<script src="i18n.js"></script>
+<script>
+  (function () {
+    var root = document.documentElement;
+    document.querySelectorAll('.theme-toggle').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var form = document.getElementById('prayerForm');
+    var msg = document.getElementById('pf_msg');
+    var submitBtn = document.getElementById('pf_submitBtn');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var request = document.getElementById('pf_request').value.trim();
+      if (!request) { msg.textContent = 'Please share what you\'d like prayer for.'; msg.className = 'form-msg err'; return; }
+      submitBtn.disabled = true; msg.textContent = ''; msg.className = 'form-msg';
+      fetch('/api/prayer', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request: request,
+          name: document.getElementById('pf_name').value.trim() || undefined,
+          email: document.getElementById('pf_email').value.trim() || undefined,
+          phone: document.getElementById('pf_phone').value.trim() || undefined,
+          wantsCallback: document.getElementById('pf_callback').checked,
+          language: (window.LJM_I18N ? window.LJM_I18N.lang() : 'en')
+        })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        submitBtn.disabled = false;
+        if (d && d.success) {
+          document.getElementById('prayerFormCard').style.display = 'none';
+          document.getElementById('prayerSuccessCard').style.display = '';
+        } else {
+          msg.textContent = (d && d.message) || 'Something went wrong — please try again.';
+          msg.className = 'form-msg err';
+        }
+      }).catch(function () {
+        submitBtn.disabled = false;
+        msg.textContent = 'Network error — please try again in a moment.';
+        msg.className = 'form-msg err';
+      });
+    });
+  })();
+</script>
+</body>
+</html>

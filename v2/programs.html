@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Programs &amp; Service Times — Light of Jesus Ministry</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .pg-hero { padding: 56px 0 40px; background: radial-gradient(1100px 420px at 84% -10%, var(--accent-soft), transparent 60%), var(--bg); border-bottom: 1px solid var(--border); }
+  .pg-hero .wrap { max-width: 760px; text-align: center; }
+  .pg-hero h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); margin-top: 14px; }
+  .pg-church-block { margin-bottom: 40px; }
+  .pg-church-block h2 { font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
+  .pg-list { display: grid; gap: 12px; margin-top: 16px; }
+  .pg-item { display: flex; align-items: center; gap: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+  .pg-day { min-width: 64px; font-weight: 700; color: var(--accent); font-size: .82rem; text-transform: uppercase; }
+  .pg-item h4 { font-size: .98rem; }
+  .pg-item p { font-size: .84rem; color: var(--text-soft); margin-top: 2px; }
+  .pg-time { margin-left: auto; font-family: var(--serif); font-weight: 700; color: var(--text); white-space: nowrap; }
+  .pg-empty { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 24px; text-align: center; color: var(--text-faint); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
+    <nav class="primary-nav">
+      <a href="/" data-i18n="nav.home">Home</a>
+      <a href="/v2/about.html" data-i18n="nav.about">About</a>
+      <a href="/v2/watch.html" data-i18n="nav.watch">Watch &amp; Listen</a>
+      <a href="/events.html" data-i18n="nav.events">Events</a>
+      <a href="/v2/programs.html" class="current" data-i18n="nav.programs">Programs</a>
+      <a href="/v2/blog.html" data-i18n="nav.blog">Blog</a>
+      <a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a>
+      <a href="/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a>
+    </nav>
+    <div class="header-actions">
+      <button class="lang-toggle" type="button">TA</button>
+      <div class="auth-slot">
+        <div id="signinBtn"></div>
+        <div class="user-chip" id="userChip"><span class="user-avatar" id="userAvatar">··</span>
+          <span class="user-meta"><span class="nm" id="userName"></span><a href="/my-giving.html" class="mygiving-link">My Giving</a><a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a></span></div>
+      </div>
+      <a href="/v2/prayer.html" class="btn btn-secondary btn-sm" data-i18n="cta.pray">Pray</a>
+      <a href="/give-flow.html" class="btn btn-primary btn-sm" data-i18n="cta.give">Give</a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="nav-drawer-head"><a class="brand" href="/">Light of Jesus Ministry</a><button class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">✕</button></div>
+  <nav>
+    <a href="/" data-i18n="nav.home">Home</a><a href="/v2/about.html" data-i18n="nav.about">About</a>
+    <a href="/v2/watch.html" data-i18n="nav.watch">Watch &amp; Listen</a><a href="/events.html" data-i18n="nav.events">Events</a>
+    <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a><a href="/v2/blog.html" data-i18n="nav.blog">Blog</a>
+    <a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a><a href="/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a>
+  </nav>
+  <div class="nav-drawer-section"><button class="lang-toggle" type="button" style="display:block;width:100%;">TA</button></div>
+  <div class="nav-drawer-section nav-drawer-auth">
+    <div id="signinBtnDrawer"></div>
+    <div class="user-chip" id="userChipDrawer"><span class="user-avatar" id="userAvatarDrawer">··</span>
+      <span class="user-meta"><span class="nm" id="userNameDrawer"></span><a href="/my-giving.html" class="mygiving-link">My Giving</a><a href="/admin.html" class="admin-link" id="adminLinkDrawer">⚡ Admin Access</a></span></div>
+  </div>
+  <div class="nav-drawer-actions"><a href="/v2/prayer.html" class="btn btn-secondary btn-sm">Pray</a><a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a></div>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('hamburgerBtn'), drawer = document.getElementById('navDrawer'), backdrop = document.getElementById('navDrawerBackdrop'), closeBtn = document.getElementById('navDrawerClose');
+  function openDrawer() { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('drawer-open'); btn.setAttribute('aria-expanded', 'true'); }
+  function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('drawer-open'); btn.setAttribute('aria-expanded', 'false'); }
+  btn.addEventListener('click', openDrawer); closeBtn.addEventListener('click', closeDrawer); backdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+  Array.prototype.forEach.call(drawer.querySelectorAll('a'), function (a) { a.addEventListener('click', closeDrawer); });
+})();
+</script>
+
+<section class="pg-hero">
+  <div class="wrap">
+    <div class="eyebrow">🗓️ Programs</div>
+    <h1>Service times &amp; weekly programs.</h1>
+    <p class="lede">A glanceable schedule so you know exactly when and where to join us — at either church.</p>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap" id="programsWrap"><div class="pg-empty">Loading…</div></div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div><a class="brand" href="/" style="margin-bottom:10px">Light of Jesus Ministry</a><p style="font-size:.86rem;margin-top:10px;max-width:32ch" data-i18n="footer.tagline">Giving with faith, transparency &amp; purpose — for Coimbatore, and for the world.</p></div>
+      <div><h4>Church of Light</h4><ul><li>Mother Church</li><li>Coimbatore, Tamil Nadu</li></ul></div>
+      <div><h4>City Worship Center</h4><ul><li>Coimbatore, Tamil Nadu</li></ul></div>
+      <div><h4>Quick Links</h4><ul><li><a href="/give-flow.html">Give</a></li><li><a href="/v2/prayer.html">Pray</a></li><li><a href="/v2/contact.html">Contact</a></li><li><a href="/our-giving.html">Our Giving</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 Light of Jesus Ministry</span></div>
+  </div>
+</footer>
+
+<div class="mobile-actions"><a href="/v2/prayer.html" class="btn btn-secondary">Pray</a><a href="/give-flow.html" class="btn btn-primary">Give</a></div>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+  <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+</button>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="auth.js"></script>
+<script src="i18n.js"></script>
+<script>
+  (function () {
+    var root = document.documentElement;
+    document.querySelectorAll('.theme-toggle').forEach(function (t) { t.addEventListener('click', function () { root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }); });
+  })();
+</script>
+<script>
+  (function () {
+    var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    Promise.all([
+      fetch('/api/churches?_t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }),
+      fetch('/api/programs?_t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); })
+    ]).then(function (res) {
+      var churches = (res[0] && res[0].churches) || [];
+      var programs = (res[1] && res[1].programs) || [];
+      var wrap = document.getElementById('programsWrap');
+      if (!programs.length) { wrap.innerHTML = '<div class="pg-empty">No programs published yet — check back soon.</div>'; return; }
+
+      function renderList(items) {
+        return '<div class="pg-list">' + items.map(function (p) {
+          var when = p.dayOfWeek !== null && p.dayOfWeek !== undefined ? DAYS[p.dayOfWeek].slice(0, 3) : (p.recurrence === 'once' ? 'One-off' : '—');
+          var time = [p.startTime, p.endTime].filter(Boolean).join(' – ');
+          return '<div class="pg-item"><div class="pg-day">' + esc(when) + '</div><div><h4>' + esc(p.titleEn) + '</h4>' +
+            (p.descriptionEn ? '<p>' + esc(p.descriptionEn) + '</p>' : '') + (p.location ? '<p>📍 ' + esc(p.location) + '</p>' : '') + '</div>' +
+            (time ? '<div class="pg-time">' + esc(time) + '</div>' : '') + '</div>';
+        }).join('') + '</div>';
+      }
+
+      var ministryWide = programs.filter(function (p) { return !p.churchId; });
+      var byChurch = churches.map(function (c) {
+        var items = programs.filter(function (p) { return p.churchId === c.id; });
+        return { church: c, items: items };
+      }).filter(function (g) { return g.items.length; });
+
+      var html = '';
+      byChurch.forEach(function (g) {
+        html += '<div class="pg-church-block"><h2>⛪ ' + esc(g.church.nameEn) + (g.church.isMotherChurch ? ' <span class="badge badge-gold">Mother church</span>' : '') + '</h2>' + renderList(g.items) + '</div>';
+      });
+      if (ministryWide.length) html += '<div class="pg-church-block"><h2>🕊️ Ministry-wide</h2>' + renderList(ministryWide) + '</div>';
+      wrap.innerHTML = html || '<div class="pg-empty">No programs published yet — check back soon.</div>';
+    }).catch(function () { document.getElementById('programsWrap').innerHTML = '<div class="pg-empty">Couldn\'t load programs right now — please try again shortly.</div>'; });
+  })();
+</script>
+</body>
+</html>

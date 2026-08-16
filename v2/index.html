@@ -123,13 +123,16 @@
     <a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 34.5C20 34.5 5 25.7 5 15.4C5 10.1 9.1 6 14.2 6C17 6 19.4 7.4 20 9.4C20.6 7.4 23 6 25.8 6C30.9 6 35 10.1 35 15.4C35 25.7 20 34.5 20 34.5Z" fill="#C1443A"/><path d="M13 16.5C13 16.5 16 15.3 20 15.9V25.3C16 24.7 13 25.9 13 25.9V16.5Z" fill="#FFFFFF"/><path d="M27 16.5C27 16.5 24 15.3 20 15.9V25.3C24 24.7 27 25.9 27 25.9V16.5Z" fill="#FFFFFF"/><line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/></svg></span> Light of Jesus Ministry<small>Coimbatore · Worldwide</small></a>
     <nav class="primary-nav">
       <a href="/" class="current">Home</a>
-      <a href="/about.html">About</a>
-      <a href="#">Watch &amp; Listen</a>
+      <a href="/v2/about.html">About</a>
+      <a href="/v2/watch.html">Watch &amp; Listen</a>
       <a href="/events.html">Events</a>
-      <a href="#">Blog</a>
+      <a href="/v2/blog.html">Blog</a>
+      <a href="/v2/testimonies.html">Testimonies</a>
+      <a href="/v2/programs.html">Programs</a>
       <a href="/our-giving.html">Our Giving</a>
     </nav>
     <div class="header-actions">
+      <button class="lang-toggle" type="button">TA</button>
       <div class="auth-slot">
         <div id="signinBtn"></div>
         <div class="user-chip" id="userChip">
@@ -141,7 +144,7 @@
           </span>
         </div>
       </div>
-      <a href="/give-flow.html" class="btn btn-secondary btn-sm">Pray</a>
+      <a href="/v2/prayer.html" class="btn btn-secondary btn-sm">Pray</a>
       <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
       <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -158,10 +161,12 @@
   </div>
   <nav>
     <a href="/" class="current">Home</a>
-    <a href="/about.html">About</a>
-    <a href="#">Watch &amp; Listen</a>
+    <a href="/v2/about.html">About</a>
+    <a href="/v2/watch.html">Watch &amp; Listen</a>
     <a href="/events.html">Events</a>
-    <a href="#">Blog</a>
+    <a href="/v2/blog.html">Blog</a>
+    <a href="/v2/testimonies.html">Testimonies</a>
+    <a href="/v2/programs.html">Programs</a>
     <a href="/our-giving.html">Our Giving</a>
   </nav>
   <div class="nav-drawer-section nav-drawer-auth">
@@ -182,7 +187,7 @@
     </button>
   </div>
   <div class="nav-drawer-actions">
-    <a href="/give-flow.html" class="btn btn-secondary btn-sm">Pray</a>
+    <a href="/v2/prayer.html" class="btn btn-secondary btn-sm">Pray</a>
     <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
   </div>
 </div>
@@ -302,13 +307,13 @@
         <p>Support the ministry, a fund, or a cause close to your heart — from anywhere in the world.</p>
         <span class="go">Give now →</span>
       </a>
-      <a class="action-card pray" href="#">
+      <a class="action-card pray" href="/v2/prayer.html">
         <span class="action-icon">🕊️</span>
         <h3>Pray</h3>
         <p>Send a prayer request, ask for a callback, or reach our prayer team directly.</p>
         <span class="go">Request prayer →</span>
       </a>
-      <a class="action-card connect" href="#">
+      <a class="action-card connect" href="/v2/contact.html">
         <span class="action-icon">📍</span>
         <h3>Connect</h3>
         <p>Visit a service, join a program, or get in touch with our team.</p>
@@ -360,6 +365,20 @@
   </div>
 </section>
 
+<section class="tight" id="latestTestimonyWrap" style="display:none;">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow gold">✨ What God has done</div>
+      <h2>Latest testimony</h2>
+    </div>
+    <div class="glance-card" style="padding:26px 28px;">
+      <h3 id="ltTitle" style="font-size:1.1rem;"></h3>
+      <p id="ltBody" style="margin-top:8px;color:var(--text-soft);"></p>
+      <a href="/v2/testimonies.html" class="btn btn-secondary btn-sm" style="margin-top:16px;">See all testimonies →</a>
+    </div>
+  </div>
+</section>
+
 <footer class="site-footer">
   <div class="wrap">
     <div class="footer-grid">
@@ -377,7 +396,7 @@
       </div>
       <div>
         <h4>Quick Links</h4>
-        <ul><li><a href="/give-flow.html">Give</a></li><li><a href="#">Pray</a></li><li><a href="#">Contact</a></li><li><a href="/our-giving.html">Our Giving</a></li></ul>
+        <ul><li><a href="/give-flow.html">Give</a></li><li><a href="/v2/prayer.html">Pray</a></li><li><a href="/v2/contact.html">Contact</a></li><li><a href="/our-giving.html">Our Giving</a></li></ul>
       </div>
     </div>
     <div class="footer-bottom">
@@ -387,8 +406,8 @@
 </footer>
 
 <div class="mobile-actions">
-  <a href="#" class="btn btn-secondary">Pray</a>
-  <a href="#" class="btn btn-ghost">Contact</a>
+  <a href="/v2/prayer.html" class="btn btn-secondary">Pray</a>
+  <a href="/v2/contact.html" class="btn btn-ghost">Contact</a>
   <a href="/give-flow.html" class="btn btn-primary">Give</a>
 </div>
 
@@ -399,6 +418,7 @@
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="auth.js"></script>
+<script src="i18n.js"></script>
 <script>
   (function () {
     var root = document.documentElement;
@@ -411,9 +431,11 @@
 </script>
 <script>
   (function () {
-    // "Today's Promise" — a small curated set (no real per-day source exists
-    // yet, see docs/milestone-v2/11-v2-flow-implementation.md §7 Home).
-    var verses = [
+    // "Today's Promise" — real, admin-curated daily/monthly/yearly promises
+    // from /api/promises (see functions/api/promises.js's IST today-resolver).
+    // Falls back to a small curated set only if nothing has been published
+    // yet for any scope, so the card is never empty.
+    var FALLBACK = [
       { text: '"Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee."', ref: "Isaiah 41:10" },
       { text: '"The Lord is my shepherd; I shall not want."', ref: "Psalm 23:1" },
       { text: '"For I know the plans I have for you, plans to prosper you and not to harm you, plans to give you hope and a future."', ref: "Jeremiah 29:11" },
@@ -423,15 +445,19 @@
     var textEl = document.getElementById('promiseText');
     var refEl = document.getElementById('promiseRef');
     var dotsEl = document.getElementById('promiseDots');
+    var verses = FALLBACK;
     var idx = 0, timer;
 
-    verses.forEach(function (_, i) {
-      var b = document.createElement('button');
-      b.className = i === 0 ? 'active' : '';
-      b.setAttribute('aria-label', 'Show verse ' + (i + 1));
-      b.addEventListener('click', function () { show(i); restart(); });
-      dotsEl.appendChild(b);
-    });
+    function buildDots() {
+      dotsEl.innerHTML = '';
+      verses.forEach(function (_, i) {
+        var b = document.createElement('button');
+        b.className = i === 0 ? 'active' : '';
+        b.setAttribute('aria-label', 'Show verse ' + (i + 1));
+        b.addEventListener('click', function () { show(i); restart(); });
+        dotsEl.appendChild(b);
+      });
+    }
 
     function show(i) {
       idx = i;
@@ -444,9 +470,23 @@
       }, 350);
     }
     function next() { show((idx + 1) % verses.length); }
-    function restart() { clearInterval(timer); timer = setInterval(next, 8000); }
-    show(0);
-    restart();
+    function restart() { clearInterval(timer); timer = setInterval(next, verses.length > 1 ? 8000 : 999999); }
+
+    buildDots(); show(0); restart();
+
+    fetch('/api/promises?when=today&_t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var today = (d && d.today) || {};
+        var bi = window.LJM_I18N ? window.LJM_I18N.bi : function (row, f) { return row[f + 'En']; };
+        var real = ['daily', 'monthly', 'yearly'].map(function (scope) { return today[scope]; })
+          .filter(Boolean)
+          .map(function (p) { return { text: '"' + bi(p, 'text') + '"', ref: p.reference || '' }; });
+        if (real.length) {
+          verses = real;
+          buildDots(); idx = 0; show(0); restart();
+        }
+      }).catch(function () { /* keep the fallback set */ });
   })();
 </script>
 <script>
@@ -519,6 +559,24 @@
       .catch(function () {
         document.getElementById("eventsGrid").innerHTML = '<div class="events-empty" style="grid-column:1/-1">See the full <a href="/events.html">Events page</a>.</div>';
       });
+  })();
+</script>
+<script>
+  (function () {
+    // Real latest-testimony teaser — hidden entirely (not a fabricated
+    // example) until at least one testimony has actually been published.
+    fetch("/api/testimonies?_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var items = (data && data.testimonies) || [];
+        if (!items.length) return;
+        function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+        var t = items[0];
+        document.getElementById("ltTitle").textContent = t.titleEn;
+        document.getElementById("ltBody").textContent = (t.bodyEn || "").slice(0, 220) + ((t.bodyEn || "").length > 220 ? "…" : "");
+        document.getElementById("latestTestimonyWrap").style.display = "";
+      })
+      .catch(function () {});
   })();
 </script>
 </body>
