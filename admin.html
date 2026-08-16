@@ -1255,6 +1255,15 @@
                         throw new Error(d.message || "Session expired — please sign in again.");
                     });
                 }
+                if (!r.ok) {
+                    // Any other non-2xx (400/403/404/409/500/…): parse whatever JSON error
+                    // body is available and reject, so callers' .catch() runs instead of
+                    // silently treating a failure response as successful data (which used
+                    // to produce a fake empty/zero UI instead of a visible error state).
+                    return r.json().catch(function () { return {}; }).then(function (d) {
+                        throw new Error(d.message || d.error || ("Request failed (" + r.status + ")"));
+                    });
+                }
                 return r.json();
             });
         }
@@ -1955,7 +1964,8 @@
                 b.onclick = function (e) {
                     e.stopPropagation();
                     api("/api/families", { method: "POST", body: JSON.stringify({ action: "set_head", familyId: Number(b.dataset.family), memberId: Number(b.dataset.member) }) })
-                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); })
+                        .catch(function (e) { setMsg("fam_msg", e.message, "err"); });
                 };
             });
             $("fam_list").querySelectorAll('[data-act="removemember"]').forEach(function (b) {
@@ -1963,7 +1973,8 @@
                     e.stopPropagation();
                     if (!confirm("Remove this member from their family? They stay in the church directory, just unassigned.")) return;
                     api("/api/families", { method: "POST", body: JSON.stringify({ action: "remove_member", memberId: Number(b.dataset.member) }) })
-                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); })
+                        .catch(function (e) { setMsg("fam_msg", e.message, "err"); });
                 };
             });
             $("fam_list").querySelectorAll('[data-act="deletefamily"]').forEach(function (b) {
@@ -1971,7 +1982,8 @@
                     e.stopPropagation();
                     if (!confirm("Delete this family? Members are kept and unassigned, not deleted.")) return;
                     api("/api/families?id=" + b.dataset.family, { method: "DELETE" })
-                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); })
+                        .catch(function (e) { setMsg("fam_msg", e.message, "err"); });
                 };
             });
             $("fam_list").querySelectorAll('[data-act="addmember"]').forEach(function (b) {
@@ -1982,7 +1994,8 @@
                     if (!name) return;
                     var relation = prompt("Relation (Head, Spouse, Child, Parent, Other):", "Other") || "Other";
                     api("/api/families", { method: "POST", body: JSON.stringify({ action: "add_member", familyId: familyId, name: name, relation: relation }) })
-                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); })
+                        .catch(function (e) { setMsg("fam_msg", e.message, "err"); });
                 };
             });
         }
@@ -2002,7 +2015,8 @@
                 sel.onchange = function () {
                     if (!sel.value) return;
                     api("/api/families", { method: "POST", body: JSON.stringify({ action: "add_member", familyId: Number(sel.value), existingMemberId: Number(sel.dataset.assign), relation: "Other" }) })
-                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); });
+                        .then(function (d) { setMsg("fam_msg", d.message, d.success ? "ok" : "err"); if (d.success) loadFamilies(); })
+                        .catch(function (e) { setMsg("fam_msg", e.message, "err"); });
                 };
             });
         }
@@ -3234,7 +3248,7 @@
                 if (!confirm("Archive this fund? It will be hidden from the public but data is preserved.")) return;
                 api("/api/funds", {
                     method: "PUT",
-                    body: JSON.stringify({ slug: state.editingFundSlug, action: "archive" })
+                    body: JSON.stringify({ slug: state.editingFundSlug, status: "archived" })
                 }).then(function (d) {
                     setMsg("f_msg", d.message, d.success ? "ok" : "err");
                     if (d.success) { clearFundForm(); loadFunds(); state.loaded.overview = false; }

@@ -134,3 +134,119 @@ OFFLINE TESTS: COMPLETE
 BROWSER VERIFICATION: COMPLETE
 PRODUCTION VERIFICATION: NOT PERFORMED
 ```
+
+---
+
+## 2026-08-16 — LJM V2 final pre-release bug fix (Archive Fund, api() error masking)
+
+**Requested scope:** fix the two real, pre-existing bugs the previous
+(2026-08-14) hardening pass discovered but explicitly left unfixed (out of
+that pass's approved scope), add regression coverage that exercises the
+actual browser, and independently re-verify that pass's reported counts
+before building on top of it.
+
+**Correction to the task brief's premise, for whoever reads this next:** the
+brief this pass was dispatched with referenced `docs/development/
+AGENT_RULES.md` and `docs/development/AGENT_HANDOFFS.md` — neither exists in
+this repository. The real file is this one, `AGENT_HANDOFFS.md`, at the repo
+root (added by the 2026-08-14 pass). The brief also described the working
+branch as already containing the 2026-08-14 pass's commits; in the actual
+session, that work lived on a sibling branch
+(`claude/ljm-v2-pre-release-hardening-6bjrwy`) and had to be merged into this
+session's designated branch (`claude/ljm-v2-bug-fixes-a8gsm2`) first — a
+clean, additive fast-forward-style merge, no conflicts.
+
+**Independent re-verification of the 2026-08-14 pass's reported baseline,**
+done before any code changes: `npm test` → 335/335 (matches). `npm run
+test:e2e` → 5/5, run twice consecutively for determinism (matches).
+`tests/api/events-r2.test.mjs` (the R2 offline mock tests) → 7/7 run in
+isolation (matches). All three claims held up.
+
+### What changed
+
+1. **Archive Fund fixed.** `admin.html`'s `#f_archiveBtn` handler now sends
+   `PUT /api/funds` with `{ slug, status: "archived" }` instead of
+   `{ slug, action: "archive" }` — `functions/api/funds.js`'s `onRequestPut`
+   already recognized `body.status` (no backend change needed or made).
+2. **`admin.html`'s `api()` helper hardened.** Now rejects on any non-2xx
+   response, not just HTTP 401 (401 handling unchanged). Parses `d.message`
+   or `d.error` from the JSON body for the thrown `Error`'s message where
+   available. Audited all 60 `api()` call sites in `admin.html`; added a
+   missing `.catch()` to the 5 that had none (all in the Families section),
+   matching the file's existing `setMsg(..., e.message, "err")` convention —
+   every other call site already had equivalent error handling, so behavior
+   is unchanged for expected business-logic errors (e.g. 404 "Fund not
+   found") and newly correct (a visible error instead of a silent
+   empty/zero render) for real server failures.
+3. **Regression coverage:** `tests/e2e/fund-admin.spec.mjs` rewritten to
+   drive a real archive through the browser and assert success (was
+   previously written to assert the bug); new `tests/e2e/api-http-error.spec.mjs`
+   intercepts `/api/funds` with a real HTTP 500 + JSON error body and asserts
+   both the Overview KPI grid and the Funds section show a visible error, not
+   fabricated success-looking output.
+4. **`docs/testing/COVERAGE-TRACKER.md` updated** — both bugs moved from
+   "discovered, not fixed" to a new "FIXED — Aug 2026 bug-fix pass" section
+   with fix + regression-coverage detail; the BROWSER E2E checklist entries
+   updated to reflect the new/changed test files and behavior.
+
+**Not changed:** all 8 frozen money-path files (verified byte-identical to
+`origin/main` before and after this pass — see mutation-testing note below
+for one wrinkle discovered along the way), `functions/api/funds.js` (the
+backend already supported the correct contract; only the caller needed to
+change), `functions/api/events.js` (MIME-validation gap remains untouched,
+still tracked as FOLLOW-UP/PRE-EXISTING GAP in the coverage tracker, assessed
+non-blocking: reachable only by an already-`manage_events`-authenticated
+admin, not a public attack surface), `migrations/` and `schema.sql` (no
+schema change needed — both fixes are frontend-only), no migration was
+applied to any database, nothing was deployed, no PR was created, no real
+Razorpay payment was made.
+
+### Mutation testing
+
+- **Archive Fund:** temporarily reverted `admin.html` to send
+  `action: "archive"` again → `tests/e2e/fund-admin.spec.mjs` failed on the
+  `expect(archivePutBody.status).toBe("archived")` assertion (received
+  `undefined`) → reverted the revert, suite green again.
+- **`api()` non-2xx rejection:** temporarily removed the `!r.ok` branch from
+  `api()` → `tests/e2e/api-http-error.spec.mjs` failed (`#kpiGrid` rendered
+  real-looking non-error KPI data instead of the expected "Failed to load"
+  text) → reverted the revert, suite green again.
+- Full suites (`npm test` + `npm run test:e2e`) re-ran clean after each
+  restore.
+
+### A process note on the frozen-path tripwire (not fixed, flagged for
+### awareness — not a release blocker)
+
+While independently testing `scripts/check-frozen-paths.sh` against a
+synthetic diff, discovered its `ACKNOWLEDGED-MONEY-PATH-CHANGE` detection
+does a plain substring `grep` across every commit message in the
+`BASE_SHA..HEAD_SHA` range — not just the commit(s) that actually touch a
+frozen file. Because the 2026-08-14 pass's own merge commit *describes* that
+token in prose (documenting how the bypass works), any later diff range that
+includes that commit will report the tripwire as "acknowledged" even for an
+unrelated, unintentional frozen-file change further down the same branch.
+Confirmed this does **not** affect this pass's own frozen-file verification
+(all 8 files were independently diffed byte-for-byte against `origin/main`
+and found unchanged, not relying on the tripwire's ACK logic). Not fixed
+here — out of this pass's approved scope (fixing the tripwire script itself
+was not requested) — but worth a future pass tightening the ACK check to
+only scan commits that actually touch a frozen file, or requiring the token
+on its own line/trailer rather than anywhere in the message body.
+
+### Test results
+
+- `npm test`: 335/335 (unchanged — no `functions/api/*` files were touched,
+  so no test count change was expected or occurred).
+- `npm run test:e2e`: 6/6 (was 5; +1 for the new
+  `tests/e2e/api-http-error.spec.mjs`), run twice consecutively, both clean.
+- `tests/api/events-r2.test.mjs`: 7/7, unaffected (R2/events.js untouched).
+
+### Handoff status
+
+```
+IMPLEMENTATION: COMPLETE
+OFFLINE TESTS: COMPLETE
+BROWSER VERIFICATION: COMPLETE
+PRODUCTION VERIFICATION: NOT PERFORMED
+MIGRATION: NOT NEEDED, NOT APPLIED
+```

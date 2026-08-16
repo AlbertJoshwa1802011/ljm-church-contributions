@@ -139,15 +139,19 @@ that, not rely on the sandbox's network policy happening to block it).
   session, Overview renders with live KPI/chart data, and dynamic
   (admin-created) funds are represented in the Funds section —
   `tests/e2e/admin-overview.spec.mjs`.
-- [x] API failure: `/api/funds` unreachable shows a visible error rather than
-  a silent empty/zero dashboard — `tests/e2e/api-failure.spec.mjs`. See the
-  discovered-gap note below re: a narrower case (non-2xx *with* a JSON body)
-  this specific test does not cover.
+- [x] API failure (connection-unreachable case): `/api/funds` unreachable
+  shows a visible error rather than a silent empty/zero dashboard —
+  `tests/e2e/api-failure.spec.mjs`.
+- [x] API failure (HTTP non-2xx + JSON error body case): a real, fulfilled
+  `HTTP 500` response with a JSON error body on `/api/funds` shows a visible
+  error on both the Overview KPI grid and the Funds section, instead of a
+  silently-successful-looking empty/zero render — `tests/e2e/api-http-error.spec.mjs`.
+  This was the narrower gap the note below used to describe; it's closed now,
+  see "FIXED — Aug 2026 bug-fix pass" below.
 - [x] Fund admin create/edit/archive flow, logged in as a non-super-admin
-  `manage_funds`-only role holder — `tests/e2e/fund-admin.spec.mjs`. Create and
-  edit are verified working; Archive is verified to currently **fail** (see
-  the discovered-gap note below — this documents real shipped behavior, not
-  the intended one).
+  `manage_funds`-only role holder — `tests/e2e/fund-admin.spec.mjs`. Create,
+  edit, **and archive** are all verified working end to end (archive used to
+  be verified as broken — now fixed, see below).
 - [x] Public funds page renders both system and dynamic funds with no
   release-breaking console errors — `tests/e2e/public-funds.spec.mjs`.
 - [x] Give/checkout modal (`razorpay-checkout.js`, one of the 8 frozen files —
@@ -156,34 +160,60 @@ that, not rely on the sandbox's network policy happening to block it).
 
 ---
 
-## Discovered during the Aug 2026 pre-release hardening pass (not fixed — out of that pass's approved scope)
+## FIXED — Aug 2026 bug-fix pass (previously "Discovered during the Aug 2026 pre-release hardening pass")
 
-Two real, pre-existing bugs surfaced while building the BROWSER E2E tests
-above. Neither `functions/api/funds.js` nor `admin.html` were in that pass's
-approved change list, so these are recorded here rather than silently fixed:
+Both bugs below were discovered (not fixed) during the pre-release hardening
+pass and are now **FIXED**, with regression coverage, as of the follow-up
+bug-fix pass on the same milestone:
 
-- **`funds.js` PUT ignores `body.action` — the admin "Archive fund" button is
-  currently non-functional.** `admin.html`'s `#f_archiveBtn` handler sends
-  `PUT /api/funds` with `{ slug, action: "archive" }`. `functions/api/funds.js`'s
-  `onRequestPut` never reads `body.action` (only the POST handler's
-  `add_member`/`remove_member` branch does) — it only recognizes
-  `body.status`. With no `status`/`name`/etc. in the payload, `changes` ends up
-  empty and the handler returns `{ success: false, message: "No editable
-  fields provided" }`; the fund's status never actually changes. Confirmed
-  directly against the live local API with `curl` and exercised end-to-end in
-  `tests/e2e/fund-admin.spec.mjs`, which asserts the real (broken) behavior so
-  it stays honest about what's shipped. **Fix direction (not applied here):**
-  either have `onRequestPut` treat `action: "archive"`/`"unarchive"` as
-  shorthand for `status: "archived"`/`"active"`, or change the button to send
-  `status` directly.
-- **`admin.html`'s `api()` helper only rejects on HTTP 401** — any other
-  non-2xx status (e.g. a real 500 with a JSON error body) still resolves via
-  `r.json()`, so callers like `loadFunds()` that check `d.funds` see `undefined`
-  and fall back to their generic "No funds yet." empty state instead of a
-  distinct error. `tests/e2e/api-failure.spec.mjs` guards the *connection-
-  unreachable* case (which does surface a distinct error via a rejected
-  `fetch()`), not this narrower non-2xx-with-body case — noted here so it
-  isn't mistaken for full coverage of "API failures are never silent."
+- **FIXED — `funds.js` PUT ignored `body.action`; the admin "Archive fund"
+  button was non-functional.** `admin.html`'s `#f_archiveBtn` handler used to
+  send `PUT /api/funds` with `{ slug, action: "archive" }`, but
+  `functions/api/funds.js`'s `onRequestPut` never read `body.action` — only
+  `body.status` (already a recognized field: `if (body.status &&
+  ["active","archived"].includes(body.status)) changes.status = body.status;`).
+  **Fix applied:** changed `admin.html`'s archive handler to send
+  `{ slug, status: "archived" }` instead — matching the backend's existing
+  contract, no backend change needed (per the "use the existing API contract"
+  guidance for this fix). **Regression coverage:**
+  `tests/e2e/fund-admin.spec.mjs` now drives a real archive through the
+  browser, asserts the actual `PUT` request body contains `status: "archived"`
+  and NOT `action` (fails if the button regresses back to the old shape),
+  asserts the backend returns 200 with an "updated" message, asserts the fund
+  card shows the "archived" pill, and asserts the fund is excluded from the
+  Purchases section's active-fund picker. Mutation-tested: reverting the fix
+  (temporarily restoring `action: "archive"`) makes this test fail with a
+  clear assertion diff; restoring the fix makes it pass again.
+- **FIXED — `admin.html`'s `api()` helper only rejected on HTTP 401.** Any
+  other non-2xx status (e.g. a real 500 with a JSON error body, such as the
+  `{ error: "D1 database binding missing" }` shape several handlers return)
+  used to still resolve via `r.json()`, so callers like `loadFunds()` that
+  read `d.funds` saw `undefined` and fell back to a generic "No funds yet."
+  empty state — indistinguishable from a legitimately empty fund list —
+  instead of a distinct error. **Fix applied:** `api()` now also rejects on
+  any non-`r.ok` response (preserving the existing 401 branch unchanged),
+  parsing `d.message` or `d.error` from the JSON body when available (falling
+  back to `"Request failed (<status>)"` otherwise) into the thrown `Error`'s
+  `.message`. Every caller of `api()` in `admin.html` was audited (60 call
+  sites): all but 5 already had a `.catch()` that displays `e.message` in the
+  same place/style their `.then()` success-path's error branch would have
+  used, so behavior is unchanged for the "expected business error"
+  case (e.g. "Fund not found", "No editable fields provided") and newly
+  correct for the previously-silent "unexpected server failure" case. The 5
+  gaps (all in the Families section's set-head/remove-member/delete-
+  family/add-member action handlers) had no `.catch()` at all and would have
+  produced an unhandled promise rejection with no visible feedback after this
+  change — each got a `.catch(function (e) { setMsg("fam_msg", e.message,
+  "err"); })` added, matching the exact pattern already used by every other
+  handler in the file. **Regression coverage:**
+  `tests/e2e/api-http-error.spec.mjs` (new) — intercepts `/api/funds` with a
+  real HTTP 500 + `{ error: "Simulated database failure" }` JSON body, logs
+  into the admin console, and asserts the Overview KPI grid shows a "Failed to
+  load" error (not fabricated ₹0 KPI cards) and the Funds section shows the
+  real error text (not "No funds yet."), with zero uncaught page exceptions.
+  Mutation-tested: reverting the `!r.ok` branch makes this test fail (the KPI
+  grid renders real-looking, non-error data instead of an error); restoring
+  the fix makes it pass again.
 
 ---
 

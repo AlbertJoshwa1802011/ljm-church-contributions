@@ -3,19 +3,18 @@
 // tests/e2e/global-setup.mjs) — admin.html only shows the Archive button
 // (as opposed to Delete, which is super-admin-only) to that kind of caller.
 //
-// DISCOVERED PRE-EXISTING BUG (not fixed here — out of this hardening
-// pass's approved scope, and functions/api/funds.js is not one of the 8
-// frozen files but also isn't one of the files this pass is authorized to
-// change): admin.html's Archive button sends `PUT /api/funds` with
+// REGRESSION COVERAGE for a real, previously-shipped bug: admin.html's
+// Archive button used to send `PUT /api/funds` with
 // `{ slug, action: "archive" }`, but functions/api/funds.js's PUT handler
 // only ever reads `body.status` (never `body.action` — that field is read
-// only by the POST handler's add_member/remove_member branch). Confirmed
-// directly against the live local API: a real archive PUT with
-// `action: "archive"` returns `{ success: false, message: "No editable
-// fields provided" }` — the fund's status never actually changes. This test
-// asserts the REAL current behavior (archive fails visibly) rather than the
-// intended behavior, so it stays honest about what's shipped today. See
-// docs/testing/COVERAGE-TRACKER.md for the tracked follow-up.
+// only by the POST handler's add_member/remove_member branch), so the
+// archive request silently no-opped (`{ success: false, message: "No
+// editable fields provided" }`) and the fund was never actually archived.
+// Fixed by sending `{ slug, status: "archived" }`, which matches the
+// existing PUT contract (see funds.js's `changes.status` handling) — no
+// backend change was needed. This test asserts the CORRECT behavior end to
+// end and will fail if the Archive button regresses back to sending
+// `action: "archive"` instead of `status: "archived"`.
 import { test, expect, loginAsAdmin } from "./fixtures.mjs";
 
 const PROD_ORIGIN = "https://light-of-jesus-ministry-contributions.pages.dev";
@@ -26,7 +25,7 @@ async function openFundsSection(page) {
   await page.locator('.nav-group[data-group="giving"] .nav-item[data-section="funds"]').click();
 }
 
-test("fund admin: create and edit work; archive currently fails (documents a real, pre-existing bug)", async ({ page }) => {
+test("fund admin: create, edit, and archive all work end to end", async ({ page }) => {
   await loginAsAdmin(page, "e2e-fund-admin@example.com");
   page.on("dialog", (dialog) => dialog.accept());
 
@@ -82,17 +81,31 @@ test("fund admin: create and edit work; archive currently fails (documents a rea
   await expect(page.locator("#f_msg")).toHaveText(/updated/i, { timeout: 10000 });
   await expect(fundList.locator(".fund-card", { hasText: FUND_NAME })).toContainText("30,000");
 
-  // Archive: sends the request shape admin.html actually sends...
+  // Archive: verify the actual network request admin.html sends, that the
+  // backend accepts it, and that the UI reflects the archived state.
   await card.locator('button[data-act="edit"]').click();
   await page.locator("#f_archiveBtn").click();
   await expect(page.locator("#f_msg")).not.toHaveText("", { timeout: 10000 });
 
+  // This is the regression guard: fails if the button reverts to sending
+  // `action: "archive"` (which funds.js's PUT handler never reads) instead
+  // of the `status` field the backend actually understands.
   expect(archivePutBody).not.toBeNull();
-  expect(archivePutBody.action).toBe("archive");
+  expect(typeof archivePutBody.slug).toBe("string");
+  expect(archivePutBody.slug.length).toBeGreaterThan(0);
+  expect(archivePutBody.status).toBe("archived");
+  expect(archivePutBody.action).toBeUndefined();
 
-  // ...and the backend, as shipped today, rejects it instead of archiving —
-  // the fund is NOT actually archived. This is the bug this test documents.
+  // Backend accepts the request and actually updates the fund's status.
   expect(archivePutStatus).toBe(200);
-  await expect(page.locator("#f_msg")).toContainText("No editable fields provided");
-  await expect(fundList.locator(".fund-card", { hasText: FUND_NAME })).not.toContainText("archived");
+  await expect(page.locator("#f_msg")).toContainText("updated");
+  await expect(page.locator("#f_msg")).not.toContainText("No editable fields provided");
+
+  // UI reflects the archived state: the fund card shows the "archived" pill.
+  await expect(fundList.locator(".fund-card", { hasText: FUND_NAME })).toContainText("archived");
+
+  // The fund is no longer treated as active elsewhere in the admin UI: the
+  // Purchases section's fund picker excludes archived funds.
+  await page.locator('.nav-group[data-group="giving"] .nav-item[data-section="purchases"]').click();
+  await expect(page.locator("#p_fund")).not.toContainText(FUND_NAME);
 });
