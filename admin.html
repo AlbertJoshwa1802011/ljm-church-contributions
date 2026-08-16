@@ -1001,6 +1001,168 @@
                 </div>
             </div>
 
+            <!-- CHURCHES -->
+            <div class="section" id="section-churches">
+                <div class="page-head"><h2>Churches</h2><p>The ministry's churches/campuses — shown on About and used to scope Events/Programs. See docs/milestone-v2/01-PRD.md §6.</p></div>
+                <div class="card">
+                    <h3 id="ch_formTitle">Add a church</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Slug *</label><input class="input" id="ch_slug" placeholder="e.g. new-campus"></div>
+                        <div><label class="f-label">Name (English) *</label><input class="input" id="ch_nameEn"></div>
+                        <div><label class="f-label">Name (Tamil)</label><input class="input" id="ch_nameTa"></div>
+                        <div><label class="f-label">Mother church?</label><select class="input" id="ch_isMother"><option value="0">No</option><option value="1">Yes</option></select></div>
+                        <div><label class="f-label">City</label><input class="input" id="ch_city"></div>
+                        <div><label class="f-label">Phone</label><input class="input" id="ch_phone"></div>
+                        <div><label class="f-label">Email</label><input class="input" id="ch_email"></div>
+                        <div><label class="f-label">Map URL</label><input class="input" id="ch_mapUrl"></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Address (English)</label><textarea class="input" id="ch_addressEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Service times (English)</label><textarea class="input" id="ch_serviceTimesEn" rows="2" placeholder="Sunday 9:00 AM, 6:00 PM"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="ch_saveBtn">Add church</button>
+                        <button class="btn btn-outline" id="ch_clearBtn" type="button">Clear</button>
+                        <span class="msg" id="ch_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>All churches</h3>
+                    <div class="table-wrap"><table id="ch_table"><thead><tr><th>Name</th><th>Slug</th><th>City</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- PROMISES -->
+            <div class="section" id="section-promises">
+                <div class="page-head"><h2>Promises</h2><p>Daily/monthly/yearly promise words — auto-shown on the public Home by date (ministry timezone: IST). See docs/milestone-v2/01-PRD.md §7.2.</p></div>
+                <div class="card">
+                    <h3>Add a promise</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Scope *</label><select class="input" id="pr_scope">
+                            <option value="daily">Daily</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option>
+                        </select></div>
+                        <div id="pr_dateWrap"><label class="f-label">Date (daily)</label><input class="input" type="date" id="pr_onDate"></div>
+                        <div id="pr_monthWrap"><label class="f-label">Month (1-12, monthly)</label><input class="input" type="number" min="1" max="12" id="pr_month"></div>
+                        <div id="pr_yearWrap"><label class="f-label">Year (monthly/yearly)</label><input class="input" type="number" id="pr_year"></div>
+                        <div><label class="f-label">Scripture reference</label><input class="input" id="pr_reference" placeholder="e.g. Isaiah 41:10"></div>
+                        <div><label class="f-label">Published?</label><select class="input" id="pr_published"><option value="1">Yes</option><option value="0">No (draft)</option></select></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Promise text (English) *</label><textarea class="input" id="pr_textEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Promise text (Tamil)</label><textarea class="input" id="pr_textTa" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Reflection (English)</label><textarea class="input" id="pr_reflectionEn" rows="2"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="pr_saveBtn">Add promise</button>
+                        <span class="msg" id="pr_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>All promises</h3>
+                    <div class="table-wrap"><table id="pr_table"><thead><tr><th>Scope</th><th>When</th><th>Text</th><th>Published</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- TESTIMONIES -->
+            <div class="section" id="section-testimonies">
+                <div class="page-head"><h2>Testimonies &amp; Miracles</h2><p>Moderation queue — visitor-submitted testimonies land here as "pending"; publish to show them on the public site.</p></div>
+                <div class="card">
+                    <div class="btn-row" style="margin:0 0 12px;">
+                        <select class="input" id="ts_filter" style="max-width:180px;">
+                            <option value="">All statuses</option><option value="pending">Pending</option>
+                            <option value="published">Published</option><option value="rejected">Rejected</option>
+                        </select>
+                        <button class="btn btn-outline" id="ts_refreshBtn">Refresh</button>
+                        <span class="msg" id="ts_msg"></span>
+                    </div>
+                    <div class="table-wrap"><table id="ts_table"><thead><tr><th>Title</th><th>Kind</th><th>Author</th><th>Status</th><th>Submitted</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- PRAYER REQUESTS -->
+            <div class="section" id="section-prayer">
+                <div class="page-head"><h2>Prayer requests</h2><p>Never shown publicly. Someone from the team should follow up on every "new" request.</p></div>
+                <div class="card">
+                    <div class="btn-row" style="margin:0 0 12px;">
+                        <select class="input" id="pq_filter" style="max-width:180px;">
+                            <option value="">All statuses</option><option value="new">New</option>
+                            <option value="praying">Praying</option><option value="contacted">Contacted</option><option value="closed">Closed</option>
+                        </select>
+                        <button class="btn btn-outline" id="pq_refreshBtn">Refresh</button>
+                        <span class="msg" id="pq_msg"></span>
+                    </div>
+                    <div class="table-wrap"><table id="pq_table"><thead><tr><th>Name</th><th>Contact</th><th>Request</th><th>Callback?</th><th>Status</th><th>When</th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- CONTACT MESSAGES -->
+            <div class="section" id="section-contactmsgs">
+                <div class="page-head"><h2>Contact messages</h2><p>Every contact-form submission — an automatic acknowledgement is sent to the sender when an email provider is configured.</p></div>
+                <div class="card">
+                    <div class="btn-row" style="margin:0 0 12px;">
+                        <select class="input" id="cm_filter" style="max-width:180px;">
+                            <option value="">All statuses</option><option value="new">New</option>
+                            <option value="acknowledged">Acknowledged</option><option value="replied">Replied</option><option value="closed">Closed</option>
+                        </select>
+                        <button class="btn btn-outline" id="cm_refreshBtn">Refresh</button>
+                        <span class="msg" id="cm_msg"></span>
+                    </div>
+                    <div class="table-wrap"><table id="cm_table"><thead><tr><th>Name</th><th>Email</th><th>Subject</th><th>Message</th><th>Status</th><th>When</th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- PROGRAMS -->
+            <div class="section" id="section-programs">
+                <div class="page-head"><h2>Programs &amp; service times</h2><p>Weekly/recurring programs, shown per church on the public site.</p></div>
+                <div class="card">
+                    <h3>Add a program</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Title (English) *</label><input class="input" id="pg_titleEn"></div>
+                        <div><label class="f-label">Church</label><select class="input" id="pg_churchId"><option value="">Ministry-wide</option></select></div>
+                        <div><label class="f-label">Day of week</label><select class="input" id="pg_dayOfWeek">
+                            <option value="">One-off / other</option>
+                            <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
+                            <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+                        </select></div>
+                        <div><label class="f-label">Start time</label><input class="input" type="time" id="pg_startTime"></div>
+                        <div><label class="f-label">End time</label><input class="input" type="time" id="pg_endTime"></div>
+                        <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. youth"></div>
+                        <div><label class="f-label">Location</label><input class="input" id="pg_location"></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Description (English)</label><textarea class="input" id="pg_descriptionEn" rows="2"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="pg_saveBtn">Add program</button>
+                        <span class="msg" id="pg_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>All programs</h3>
+                    <div class="table-wrap"><table id="pg_table"><thead><tr><th>Title</th><th>Church</th><th>When</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- BLOG -->
+            <div class="section" id="section-blog">
+                <div class="page-head"><h2>Blog</h2><p>Teachings, news, and reflections. Tag ministryArea "youth" to also surface a post in Youth Ministry.</p></div>
+                <div class="card">
+                    <h3>Add a post</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Title (English) *</label><input class="input" id="bl_titleEn"></div>
+                        <div><label class="f-label">Slug (optional)</label><input class="input" id="bl_slug" placeholder="auto from title if blank"></div>
+                        <div><label class="f-label">Category</label><input class="input" id="bl_category"></div>
+                        <div><label class="f-label">Ministry area</label><input class="input" id="bl_ministryArea" placeholder="e.g. youth"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="bl_status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
+                        <div><label class="f-label">Cover image URL</label><input class="input" id="bl_coverUrl"></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Excerpt (English)</label><textarea class="input" id="bl_excerptEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Body (English) *</label><textarea class="input" id="bl_bodyEn" rows="5"></textarea></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="bl_saveBtn">Add post</button>
+                        <span class="msg" id="bl_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>All posts</h3>
+                    <div class="table-wrap"><table id="bl_table"><thead><tr><th>Title</th><th>Category</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
             <!-- AUDIT -->
             <div class="section" id="section-audit">
                 <div class="page-head"><h2>Audit log</h2><p>Every admin operation and visitor view event, newest first.</p></div>
@@ -1211,6 +1373,15 @@
                 ["wishlist", "📋", "Wishlist"],
                 ["verses", "📖", "Verses"],
                 ["about", "📰", "About page"]
+            ] },
+            { id: "ministry", icon: "🕊️", label: "Ministry", items: [
+                ["churches", "⛪", "Churches"],
+                ["promises", "🙏", "Promises"],
+                ["testimonies", "✨", "Testimonies"],
+                ["prayer", "🕯️", "Prayer requests"],
+                ["contactmsgs", "✉️", "Contact messages"],
+                ["programs", "🗓️", "Programs"],
+                ["blog", "📝", "Blog"]
             ] },
             { id: "admin", icon: "🛡️", label: "Admin", items: [
                 ["roles", "🛡️", "Roles"],
@@ -2817,6 +2988,293 @@
                 .catch(function (e) { setMsg("bt_msg", e.message, "err"); });
         }
 
+        // ═══════════════ Churches ═══════════════
+        state.churchesCache = [];
+        function loadChurches() { fetchChurches(); }
+        function fetchChurches() {
+            api("/api/churches?all=1").then(function (d) {
+                if (!d.success) { setMsg("ch_msg", d.message || "No access", "err"); return; }
+                state.churchesCache = d.churches || [];
+                var tb = $("ch_table").querySelector("tbody");
+                tb.innerHTML = state.churchesCache.map(function (c) {
+                    return "<tr><td><strong>" + esc(c.nameEn) + "</strong>" + (c.isMotherChurch ? ' <span class="pill pill-accent">Mother church</span>' : "") + "</td>" +
+                        "<td style='color:var(--text-soft)'>" + esc(c.slug) + "</td><td>" + esc(c.city || "") + "</td>" +
+                        "<td><span class='pill " + (c.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(c.status) + "</span></td>" +
+                        '<td><button class="mini-btn" data-edit="' + c.id + '">Edit</button> <button class="mini-btn danger" data-archive="' + c.id + '">Archive</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">No churches yet.</td></tr>';
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editChurch(Number(b.dataset.edit)); }; });
+                tb.querySelectorAll("[data-archive]").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Archive this church? It will no longer appear on the public site.")) return;
+                        api("/api/churches?id=" + b.dataset.archive, { method: "DELETE" }).then(function (d2) { setMsg("ch_msg", d2.message, d2.success ? "ok" : "err"); fetchChurches(); });
+                    };
+                });
+                populateChurchSelect();
+            }).catch(function (e) { setMsg("ch_msg", e.message, "err"); });
+        }
+        function populateChurchSelect() {
+            var sel = $("pg_churchId"); if (!sel) return;
+            var current = sel.value;
+            sel.innerHTML = '<option value="">Ministry-wide</option>' + state.churchesCache.map(function (c) {
+                return '<option value="' + c.id + '">' + esc(c.nameEn) + "</option>";
+            }).join("");
+            sel.value = current;
+        }
+        function editChurch(id) {
+            var c = state.churchesCache.filter(function (x) { return x.id === id; })[0];
+            if (!c) return;
+            state.editingChurchId = id;
+            $("ch_formTitle").textContent = "Edit " + c.nameEn;
+            $("ch_slug").value = c.slug; $("ch_slug").disabled = true;
+            $("ch_nameEn").value = c.nameEn || ""; $("ch_nameTa").value = c.nameTa || "";
+            $("ch_isMother").value = c.isMotherChurch ? "1" : "0";
+            $("ch_city").value = c.city || ""; $("ch_phone").value = c.phone || ""; $("ch_email").value = c.email || "";
+            $("ch_mapUrl").value = c.mapUrl || ""; $("ch_addressEn").value = c.addressEn || ""; $("ch_serviceTimesEn").value = c.serviceTimesEn || "";
+            $("ch_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearChurchForm() {
+            state.editingChurchId = null;
+            $("ch_formTitle").textContent = "Add a church";
+            ["ch_slug", "ch_nameEn", "ch_nameTa", "ch_city", "ch_phone", "ch_email", "ch_mapUrl", "ch_addressEn", "ch_serviceTimesEn"].forEach(function (id) { $(id).value = ""; });
+            $("ch_slug").disabled = false; $("ch_isMother").value = "0"; $("ch_saveBtn").textContent = "Add church";
+        }
+        function saveChurch() {
+            var body = {
+                slug: $("ch_slug").value.trim(), nameEn: $("ch_nameEn").value.trim(), nameTa: $("ch_nameTa").value.trim(),
+                isMotherChurch: $("ch_isMother").value === "1", city: $("ch_city").value.trim(), phone: $("ch_phone").value.trim(),
+                email: $("ch_email").value.trim(), mapUrl: $("ch_mapUrl").value.trim(),
+                addressEn: $("ch_addressEn").value.trim(), serviceTimesEn: $("ch_serviceTimesEn").value.trim()
+            };
+            if (!body.nameEn) { setMsg("ch_msg", "Name (English) is required", "err"); return; }
+            var isEdit = !!state.editingChurchId;
+            if (isEdit) body.id = state.editingChurchId;
+            api("/api/churches", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
+                setMsg("ch_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearChurchForm(); fetchChurches(); }
+            }).catch(function (e) { setMsg("ch_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Promises ═══════════════
+        function loadPromises() { fetchPromises(); wirePromiseScopeFields(); }
+        function wirePromiseScopeFields() {
+            var syncFields = function () {
+                var scope = $("pr_scope").value;
+                $("pr_dateWrap").style.display = scope === "daily" ? "" : "none";
+                $("pr_monthWrap").style.display = scope === "monthly" ? "" : "none";
+                $("pr_yearWrap").style.display = scope !== "daily" ? "" : "none";
+            };
+            $("pr_scope").onchange = syncFields;
+            syncFields();
+        }
+        function fetchPromises() {
+            api("/api/promises").then(function (d) {
+                if (!d.success) { setMsg("pr_msg", d.message || "No access", "err"); return; }
+                var tb = $("pr_table").querySelector("tbody");
+                tb.innerHTML = (d.promises || []).map(function (p) {
+                    var when = p.scope === "daily" ? (p.onDate || "") : p.scope === "monthly" ? (p.month + "/" + p.year) : String(p.year || "");
+                    return "<tr><td><span class='pill pill-grey'>" + esc(p.scope) + "</span></td><td>" + esc(when) + "</td>" +
+                        "<td style='max-width:340px;'>" + esc((p.textEn || "").substring(0, 90)) + "</td>" +
+                        "<td>" + (p.isPublished ? "<span class='pill pill-green'>Yes</span>" : "<span class='pill pill-grey'>Draft</span>") + "</td>" +
+                        '<td><button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">No promises yet — add one above.</td></tr>';
+                tb.querySelectorAll("[data-id]").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Delete this promise?")) return;
+                        api("/api/promises?id=" + b.dataset.id, { method: "DELETE" }).then(function (d2) { setMsg("pr_msg", d2.message, d2.success ? "ok" : "err"); fetchPromises(); });
+                    };
+                });
+            }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
+        }
+        function savePromise() {
+            var scope = $("pr_scope").value;
+            var body = {
+                scope: scope, onDate: $("pr_onDate").value, month: $("pr_month").value, year: $("pr_year").value,
+                reference: $("pr_reference").value.trim(), textEn: $("pr_textEn").value.trim(), textTa: $("pr_textTa").value.trim(),
+                reflectionEn: $("pr_reflectionEn").value.trim(), isPublished: $("pr_published").value === "1"
+            };
+            if (!body.textEn) { setMsg("pr_msg", "Promise text (English) is required", "err"); return; }
+            api("/api/promises", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+                setMsg("pr_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) {
+                    ["pr_onDate", "pr_month", "pr_year", "pr_reference", "pr_textEn", "pr_textTa", "pr_reflectionEn"].forEach(function (id) { $(id).value = ""; });
+                    fetchPromises();
+                }
+            }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Testimonies ═══════════════
+        function loadTestimonies() { fetchTestimonies(); }
+        function fetchTestimonies() {
+            api("/api/testimonies?all=1").then(function (d) {
+                if (!d.success) { setMsg("ts_msg", d.message || "No access", "err"); return; }
+                var filter = $("ts_filter").value;
+                var rows = (d.testimonies || []).filter(function (t) { return !filter || t.status === filter; });
+                var statusPill = { pending: "pill-grey", published: "pill-green", rejected: "pill-red" };
+                var tb = $("ts_table").querySelector("tbody");
+                tb.innerHTML = rows.map(function (t) {
+                    return "<tr><td><strong>" + esc(t.titleEn) + "</strong><div style='color:var(--text-soft);font-size:12px;max-width:280px;'>" + esc((t.bodyEn || "").substring(0, 100)) + "…</div></td>" +
+                        "<td>" + esc(t.kind) + "</td><td>" + esc(t.authorName || "—") + "</td>" +
+                        "<td><span class='pill " + (statusPill[t.status] || "pill-grey") + "'>" + esc(t.status) + "</span></td>" +
+                        "<td style='color:var(--text-soft)'>" + esc((t.createdAt || "").substring(0, 10)) + "</td>" +
+                        '<td>' +
+                        (t.status !== "published" ? '<button class="mini-btn" data-pub="' + t.id + '">Publish</button> ' : "") +
+                        (t.status !== "rejected" ? '<button class="mini-btn" data-rej="' + t.id + '">Reject</button> ' : "") +
+                        '<button class="mini-btn danger" data-del="' + t.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="6" class="empty">Nothing here yet.</td></tr>';
+                tb.querySelectorAll("[data-pub]").forEach(function (b) { b.onclick = function () { moderateTestimony(b.dataset.pub, "published"); }; });
+                tb.querySelectorAll("[data-rej]").forEach(function (b) { b.onclick = function () { moderateTestimony(b.dataset.rej, "rejected"); }; });
+                tb.querySelectorAll("[data-del]").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Delete this testimony permanently?")) return;
+                        api("/api/testimonies?id=" + b.dataset.del, { method: "DELETE" }).then(function (d2) { setMsg("ts_msg", d2.message, d2.success ? "ok" : "err"); fetchTestimonies(); });
+                    };
+                });
+            }).catch(function (e) { setMsg("ts_msg", e.message, "err"); });
+        }
+        function moderateTestimony(id, status) {
+            api("/api/testimonies", { method: "PUT", body: JSON.stringify({ id: Number(id), status: status }) })
+                .then(function (d) { setMsg("ts_msg", d.message, d.success ? "ok" : "err"); fetchTestimonies(); });
+        }
+
+        // ═══════════════ Prayer requests ═══════════════
+        function loadPrayer() { fetchPrayer(); }
+        function fetchPrayer() {
+            var params = $("pq_filter").value ? "?status=" + $("pq_filter").value : "";
+            api("/api/prayer" + params).then(function (d) {
+                if (!d.success) { setMsg("pq_msg", d.message || "No access", "err"); return; }
+                var statusPill = { new: "pill-accent", praying: "pill-grey", contacted: "pill-green", closed: "pill-grey" };
+                var tb = $("pq_table").querySelector("tbody");
+                tb.innerHTML = (d.requests || []).map(function (r) {
+                    return "<tr><td>" + esc(r.name || "Anonymous") + "</td>" +
+                        "<td style='color:var(--text-soft);font-size:12px;'>" + esc(r.email || "") + (r.phone ? "<br>" + esc(r.phone) : "") + "</td>" +
+                        "<td style='max-width:300px;'>" + esc(r.request) + "</td>" +
+                        "<td>" + (r.wantsCallback ? "✅" : "—") + "</td>" +
+                        "<td><select class='input' style='padding:4px 8px;' data-status='" + r.id + "'>" +
+                        ["new", "praying", "contacted", "closed"].map(function (s) { return "<option value='" + s + "'" + (s === r.status ? " selected" : "") + ">" + s + "</option>"; }).join("") +
+                        "</select></td>" +
+                        "<td style='color:var(--text-soft);font-size:12px;'>" + esc((r.createdAt || "").substring(0, 16)) + "</td></tr>";
+                }).join("") || '<tr><td colspan="6" class="empty">No prayer requests yet.</td></tr>';
+                tb.querySelectorAll("[data-status]").forEach(function (sel) {
+                    sel.onchange = function () {
+                        api("/api/prayer", { method: "PUT", body: JSON.stringify({ id: Number(sel.dataset.status), status: sel.value }) })
+                            .then(function (d2) { setMsg("pq_msg", d2.message, d2.success ? "ok" : "err"); });
+                    };
+                });
+            }).catch(function (e) { setMsg("pq_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Contact messages ═══════════════
+        function loadContactMsgs() { fetchContactMsgs(); }
+        function fetchContactMsgs() {
+            var params = $("cm_filter").value ? "?status=" + $("cm_filter").value : "";
+            api("/api/contact" + params).then(function (d) {
+                if (!d.success) { setMsg("cm_msg", d.message || "No access", "err"); return; }
+                var tb = $("cm_table").querySelector("tbody");
+                tb.innerHTML = (d.messages || []).map(function (m) {
+                    return "<tr><td>" + esc(m.name || "—") + "</td><td style='color:var(--text-soft);font-size:12px;'>" + esc(m.email) + "</td>" +
+                        "<td>" + esc(m.subject || "—") + "</td><td style='max-width:280px;'>" + esc((m.message || "").substring(0, 120)) + "</td>" +
+                        "<td><select class='input' style='padding:4px 8px;' data-status='" + m.id + "'>" +
+                        ["new", "acknowledged", "replied", "closed"].map(function (s) { return "<option value='" + s + "'" + (s === m.status ? " selected" : "") + ">" + s + "</option>"; }).join("") +
+                        "</select></td>" +
+                        "<td style='color:var(--text-soft);font-size:12px;'>" + esc((m.createdAt || "").substring(0, 16)) + "</td></tr>";
+                }).join("") || '<tr><td colspan="6" class="empty">No contact messages yet.</td></tr>';
+                tb.querySelectorAll("[data-status]").forEach(function (sel) {
+                    sel.onchange = function () {
+                        api("/api/contact", { method: "PUT", body: JSON.stringify({ id: Number(sel.dataset.status), status: sel.value }) })
+                            .then(function (d2) { setMsg("cm_msg", d2.message, d2.success ? "ok" : "err"); });
+                    };
+                });
+            }).catch(function (e) { setMsg("cm_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Programs ═══════════════
+        function loadPrograms() { if (state.churchesCache && state.churchesCache.length) populateChurchSelect(); else fetchChurches(); fetchPrograms(); }
+        function fetchPrograms() {
+            api("/api/programs?all=1").then(function (d) {
+                if (!d.success) { setMsg("pg_msg", d.message || "No access", "err"); return; }
+                var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                var tb = $("pg_table").querySelector("tbody");
+                tb.innerHTML = (d.programs || []).map(function (p) {
+                    var when = (p.dayOfWeek !== null && p.dayOfWeek !== undefined ? days[p.dayOfWeek] + " " : "") + (p.startTime || "");
+                    return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.churchNameEn || "Ministry-wide") + "</td>" +
+                        "<td>" + esc(when || "—") + "</td>" +
+                        "<td><span class='pill " + (p.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
+                        '<td><button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">No programs yet.</td></tr>';
+                tb.querySelectorAll("[data-id]").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Delete this program?")) return;
+                        api("/api/programs?id=" + b.dataset.id, { method: "DELETE" }).then(function (d2) { setMsg("pg_msg", d2.message, d2.success ? "ok" : "err"); fetchPrograms(); });
+                    };
+                });
+            }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
+        }
+        function saveProgram() {
+            var titleEn = $("pg_titleEn").value.trim();
+            if (!titleEn) { setMsg("pg_msg", "Title is required", "err"); return; }
+            var body = {
+                titleEn: titleEn, churchId: $("pg_churchId").value || null,
+                dayOfWeek: $("pg_dayOfWeek").value === "" ? null : Number($("pg_dayOfWeek").value),
+                startTime: $("pg_startTime").value, endTime: $("pg_endTime").value,
+                ministryArea: $("pg_ministryArea").value.trim(), location: $("pg_location").value.trim(),
+                descriptionEn: $("pg_descriptionEn").value.trim()
+            };
+            api("/api/programs", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+                setMsg("pg_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) {
+                    ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn"].forEach(function (id) { $(id).value = ""; });
+                    $("pg_dayOfWeek").value = ""; $("pg_churchId").value = "";
+                    fetchPrograms();
+                }
+            }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Blog ═══════════════
+        function loadBlog() { fetchBlog(); }
+        function fetchBlog() {
+            api("/api/blog?all=1").then(function (d) {
+                if (!d.success) { setMsg("bl_msg", d.message || "No access", "err"); return; }
+                var tb = $("bl_table").querySelector("tbody");
+                tb.innerHTML = (d.posts || []).map(function (p) {
+                    return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.category || "—") + "</td>" +
+                        "<td><span class='pill " + (p.status === "published" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
+                        '<td>' +
+                        (p.status !== "published" ? '<button class="mini-btn" data-pub="' + p.id + '">Publish</button> ' : '<button class="mini-btn" data-unpub="' + p.id + '">Unpublish</button> ') +
+                        '<button class="mini-btn danger" data-del="' + p.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="4" class="empty">No posts yet.</td></tr>';
+                tb.querySelectorAll("[data-pub]").forEach(function (b) { b.onclick = function () { setBlogStatus(b.dataset.pub, "published"); }; });
+                tb.querySelectorAll("[data-unpub]").forEach(function (b) { b.onclick = function () { setBlogStatus(b.dataset.unpub, "draft"); }; });
+                tb.querySelectorAll("[data-del]").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Delete this post permanently?")) return;
+                        api("/api/blog?id=" + b.dataset.del, { method: "DELETE" }).then(function (d2) { setMsg("bl_msg", d2.message, d2.success ? "ok" : "err"); fetchBlog(); });
+                    };
+                });
+            }).catch(function (e) { setMsg("bl_msg", e.message, "err"); });
+        }
+        function setBlogStatus(id, status) {
+            api("/api/blog", { method: "PUT", body: JSON.stringify({ id: Number(id), status: status }) })
+                .then(function (d) { setMsg("bl_msg", d.message, d.success ? "ok" : "err"); fetchBlog(); });
+        }
+        function saveBlogPost() {
+            var titleEn = $("bl_titleEn").value.trim(), bodyEn = $("bl_bodyEn").value.trim();
+            if (!titleEn || !bodyEn) { setMsg("bl_msg", "Title and body are required", "err"); return; }
+            var body = {
+                titleEn: titleEn, bodyEn: bodyEn, slug: $("bl_slug").value.trim(), category: $("bl_category").value.trim(),
+                ministryArea: $("bl_ministryArea").value.trim(), status: $("bl_status").value,
+                coverUrl: $("bl_coverUrl").value.trim(), excerptEn: $("bl_excerptEn").value.trim()
+            };
+            api("/api/blog", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+                setMsg("bl_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) {
+                    ["bl_titleEn", "bl_slug", "bl_category", "bl_ministryArea", "bl_coverUrl", "bl_excerptEn", "bl_bodyEn"].forEach(function (id) { $(id).value = ""; });
+                    $("bl_status").value = "draft";
+                    fetchBlog();
+                }
+            }).catch(function (e) { setMsg("bl_msg", e.message, "err"); });
+        }
+
         // ═══════════════ Audit log ═══════════════
         function loadAudit() { state.auditOffset = 0; fetchAudit(); }
         function fetchAudit() {
@@ -3140,7 +3598,9 @@
             contributions: loadContributions, purchases: loadPurchases,
             sandha: loadSubscriptions, expenses: loadExpenses, wishlist: loadWishlist,
             roles: loadRoles, audit: loadAudit, beta: loadBeta,
-            verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {}
+            verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {},
+            churches: loadChurches, promises: loadPromises, testimonies: loadTestimonies,
+            prayer: loadPrayer, contactmsgs: loadContactMsgs, programs: loadPrograms, blog: loadBlog
         };
 
         function wireThemeToggle() {
@@ -3272,6 +3732,13 @@
             };
             $("r_saveBtn").onclick = saveRole; $("r_linkBtn").onclick = linkEmail;
             $("bt_addBtn").onclick = addBetaTester;
+            $("ch_saveBtn").onclick = saveChurch; $("ch_clearBtn").onclick = clearChurchForm;
+            $("pr_saveBtn").onclick = savePromise;
+            $("ts_filter").onchange = fetchTestimonies; $("ts_refreshBtn").onclick = fetchTestimonies;
+            $("pq_filter").onchange = fetchPrayer; $("pq_refreshBtn").onclick = fetchPrayer;
+            $("cm_filter").onchange = fetchContactMsgs; $("cm_refreshBtn").onclick = fetchContactMsgs;
+            $("pg_saveBtn").onclick = saveProgram;
+            $("bl_saveBtn").onclick = saveBlogPost;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };
             $("a_nextBtn").onclick = function () { state.auditOffset += 50; fetchAudit(); };
