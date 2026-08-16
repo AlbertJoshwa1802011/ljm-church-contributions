@@ -55,6 +55,19 @@ test("churches: DELETE archives (soft-delete) — archived churches drop from pu
   assert.ok(all.churches.some(c => c.slug === "temp" && c.status === "archived"));
 });
 
+test("churches: PUT/DELETE on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const putRes = await readJson(await churches.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/churches", body: { id: 999999, nameEn: "X" }
+  })));
+  assert.equal(putRes.success, false);
+
+  const delRes = await readJson(await churches.onRequestDelete(makeContext({
+    db, method: "DELETE", url: "https://test.local/api/churches?id=999999"
+  })));
+  assert.equal(delRes.success, false);
+});
+
 test("churches: ?all=1 requires manage_funds", async () => {
   const db = freshDb();
   const res = await readJson(await churches.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/churches?all=1" })));

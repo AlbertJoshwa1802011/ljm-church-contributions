@@ -34,6 +34,14 @@ test("contact: validation rejects an invalid email or empty message", async () =
   assert.equal(emptyMessage.success, false);
 });
 
+test("contact: PUT on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const res = await readJson(await contact.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/contact", body: { id: 999999, status: "replied" }
+  })));
+  assert.equal(res.success, false);
+});
+
 test("contact: inbox (GET) and status update (PUT) require manage_content", async () => {
   const db = freshDb();
   const submit = await readJson(await contact.onRequestPost(makeContext({

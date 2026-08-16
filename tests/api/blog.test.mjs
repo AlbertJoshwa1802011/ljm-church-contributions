@@ -42,6 +42,19 @@ test("blog: POST/PUT/DELETE require manage_content", async () => {
   assert.equal(denied.success, false);
 });
 
+test("blog: PUT/DELETE on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const putRes = await readJson(await blog.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/blog", body: { id: 999999, titleEn: "X" }
+  })));
+  assert.equal(putRes.success, false);
+
+  const delRes = await readJson(await blog.onRequestDelete(makeContext({
+    db, method: "DELETE", url: "https://test.local/api/blog?id=999999"
+  })));
+  assert.equal(delRes.success, false);
+});
+
 test("blog: duplicate slugs are rejected with a friendly message", async () => {
   const db = freshDb();
   await blog.onRequestPost(makeContext({

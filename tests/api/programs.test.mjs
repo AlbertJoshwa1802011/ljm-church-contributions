@@ -56,6 +56,19 @@ test("programs: inactive programs are excluded from the public listing but visib
   assert.equal(all.programs.length, 1);
 });
 
+test("programs: PUT/DELETE on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const putRes = await readJson(await programs.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/programs", body: { id: 999999, titleEn: "X" }
+  })));
+  assert.equal(putRes.success, false);
+
+  const delRes = await readJson(await programs.onRequestDelete(makeContext({
+    db, method: "DELETE", url: "https://test.local/api/programs?id=999999"
+  })));
+  assert.equal(delRes.success, false);
+});
+
 test("programs: DELETE requires manage_content", async () => {
   const db = freshDb();
   const create = await readJson(await programs.onRequestPost(makeContext({

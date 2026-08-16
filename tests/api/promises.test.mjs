@@ -80,6 +80,19 @@ test("promises: POST validates scope-specific required fields and permission", a
   assert.equal(missingDate.success, false);
 });
 
+test("promises: PUT/DELETE on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const putRes = await readJson(await promises.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/promises", body: { id: 999999, scope: "yearly", year: 2026, textEn: "X" }
+  })));
+  assert.equal(putRes.success, false);
+
+  const delRes = await readJson(await promises.onRequestDelete(makeContext({
+    db, method: "DELETE", url: "https://test.local/api/promises?id=999999"
+  })));
+  assert.equal(delRes.success, false);
+});
+
 test("promises: PUT edits and DELETE removes", async () => {
   const db = freshDb();
   const create = await readJson(await promises.onRequestPost(makeContext({

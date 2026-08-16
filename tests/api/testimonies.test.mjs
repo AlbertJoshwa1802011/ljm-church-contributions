@@ -63,6 +63,19 @@ test("testimonies: ?all=1 (admin queue) requires manage_content and shows every 
   assert.equal(res.testimonies[0].status, "pending");
 });
 
+test("testimonies: PUT/DELETE on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const putRes = await readJson(await testimonies.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/testimonies", body: { id: 999999, status: "published" }
+  })));
+  assert.equal(putRes.success, false);
+
+  const delRes = await readJson(await testimonies.onRequestDelete(makeContext({
+    db, method: "DELETE", url: "https://test.local/api/testimonies?id=999999"
+  })));
+  assert.equal(delRes.success, false);
+});
+
 test("testimonies: DELETE requires manage_content", async () => {
   const db = freshDb();
   const submit = await readJson(await testimonies.onRequestPost(makeContext({

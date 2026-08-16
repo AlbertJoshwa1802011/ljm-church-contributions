@@ -53,6 +53,14 @@ test("prayer: inbox (GET) and status update (PUT) require manage_content", async
   assert.equal(filtered.requests.length, 1);
 });
 
+test("prayer: PUT on a nonexistent id is a 404", async () => {
+  const db = freshDb();
+  const res = await readJson(await prayer.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/prayer", body: { id: 999999, status: "praying" }
+  })));
+  assert.equal(res.success, false);
+});
+
 test("prayer: PUT rejects an invalid status", async () => {
   const db = freshDb();
   const submit = await readJson(await prayer.onRequestPost(makeContext({
