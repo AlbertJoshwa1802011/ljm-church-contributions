@@ -47,17 +47,21 @@ the owner's sign-off before implementation planning continues** — see §3 of t
 
 ---
 
-## 👉 Next up — owner review of the mockups (`07-ui-mockups-review.md`)
+## 👉 Current status — Phases 0–5 implemented, awaiting production cutover
 
-**All six planning documents are complete**, plus the safety net and a first round of
-UI/UX mockups. **Do not proceed to implementation** (Phase 0 of
-[`06-implementation-plan.md`](./06-implementation-plan.md)) **until the owner has
-reviewed `07-ui-mockups-review.md`** and confirmed the Home/Our-Giving split and the
-Give-flow confirmation proposal. If the structure changes, update `03-app-flow.md`
-and `06-implementation-plan.md` to match before writing any production code.
+**All six planning documents are complete.** The flag-gated beta-flow port
+([`11-v2-flow-implementation.md`](./11-v2-flow-implementation.md)) shipped Home,
+Our Giving, Events, Give Flow, and My Giving. A follow-up session implemented the
+PRD's ministry-content features — Churches, Promises, Testimonies, Prayer, Contact,
+Programs, Blog, Watch & Listen, and the i18n scaffold — as new, directly-reachable
+`/v2/*.html` pages with full backend + admin support. See
+[`12-phase-0-5-implementation-status.md`](./12-phase-0-5-implementation-status.md)
+for the honest current state: what's built, what isn't, and the production
+migration/deploy status.
 
-Once approved, implementation begins **one phase at a time**, keeping `npm test`
-green throughout.
+**Not yet done:** merging `claude/ljm-v2-production-impl-amrdbz` to `main` (the
+branch that auto-deploys), a Youth Ministry hub page, full Tamil content, and a
+Playwright E2E suite.
 
 Before coding any phase:
 - Read [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) (the zero-breakage rules + test
