@@ -47,21 +47,23 @@ the owner's sign-off before implementation planning continues** — see §3 of t
 
 ---
 
-## 👉 Current status — Phases 0–5 implemented, awaiting production cutover
+## 👉 Current status — Phases 0–5 implemented + populated, awaiting production cutover
 
 **All six planning documents are complete.** The flag-gated beta-flow port
 ([`11-v2-flow-implementation.md`](./11-v2-flow-implementation.md)) shipped Home,
 Our Giving, Events, Give Flow, and My Giving. A follow-up session implemented the
 PRD's ministry-content features — Churches, Promises, Testimonies, Prayer, Contact,
 Programs, Blog, Watch & Listen, and the i18n scaffold — as new, directly-reachable
-`/v2/*.html` pages with full backend + admin support. See
-[`12-phase-0-5-implementation-status.md`](./12-phase-0-5-implementation-status.md)
-for the honest current state: what's built, what isn't, and the production
-migration/deploy status.
+`/v2/*.html` pages with full backend + admin support (see
+[`12-phase-0-5-implementation-status.md`](./12-phase-0-5-implementation-status.md)).
+A third session fixed the specific navigation/rendering bugs found by real
+phone testing, added a Youth Ministry page, populated initial content, redesigned
+the Home hero, and added a real Playwright E2E suite — see
+[`13-overnight-completion-status.md`](./13-overnight-completion-status.md) for the
+honest current state, including what's still not merged/deployed.
 
-**Not yet done:** merging `claude/ljm-v2-production-impl-amrdbz` to `main` (the
-branch that auto-deploys), a Youth Ministry hub page, full Tamil content, and a
-Playwright E2E suite.
+**Not yet done:** merging to `main` (the branch that auto-deploys), applying
+migration 0023's content seed to production D1, and full Tamil content.
 
 Before coding any phase:
 - Read [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) (the zero-breakage rules + test
