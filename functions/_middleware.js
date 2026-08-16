@@ -23,7 +23,12 @@ const ROUTE_MAP = {
   "/promises.html": "/v2/promises.html",
   "/testimonies.html": "/v2/testimonies.html",
   "/pray.html": "/v2/pray.html",
-  "/contact.html": "/v2/contact.html"
+  "/contact.html": "/v2/contact.html",
+  // Milestone v2, Phases 4-5 (docs/milestone-v2/03-app-flow.md S5/S7b/S7a/S8).
+  "/programs.html": "/v2/programs.html",
+  "/blog.html": "/v2/blog.html",
+  "/watch.html": "/v2/watch.html",
+  "/youth.html": "/v2/youth.html"
 };
 
 export async function onRequest(context) {

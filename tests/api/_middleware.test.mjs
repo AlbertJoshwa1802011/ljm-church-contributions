@@ -100,7 +100,11 @@ for (const [oldPath, newPath] of [
   ["/promises.html", "/v2/promises.html"],
   ["/testimonies.html", "/v2/testimonies.html"],
   ["/pray.html", "/v2/pray.html"],
-  ["/contact.html", "/v2/contact.html"]
+  ["/contact.html", "/v2/contact.html"],
+  ["/programs.html", "/v2/programs.html"],
+  ["/blog.html", "/v2/blog.html"],
+  ["/watch.html", "/v2/watch.html"],
+  ["/youth.html", "/v2/youth.html"]
 ]) {
   test(`middleware: eligible tester hitting ${oldPath} is routed to ${newPath}`, async () => {
     const cookie = await signBetaCookie("tester@example.com", SECRET);
