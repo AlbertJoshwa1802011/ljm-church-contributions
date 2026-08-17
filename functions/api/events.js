@@ -24,8 +24,16 @@ function corsHeaders(extra) {
   };
 }
 
+const ALLOWED_PHOTO_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024; // 8 MB decoded
+
 // Store a photo (data URL) in R2 if bound, otherwise fall back to base64-in-D1.
 // Non-data-URL strings are treated as already-hosted external URLs.
+// Rejects (returns null) any data URL whose MIME type isn't an allowed image
+// type, or whose decoded size exceeds MAX_PHOTO_BYTES — without these checks
+// a crafted `data:text/html;base64,...` payload would be stored and later
+// served back through /api/events/photo with that same, attacker-chosen
+// Content-Type (a stored-content-type risk on a public endpoint).
 async function storePhoto(env, eventId, dataUrl) {
   if (!dataUrl || typeof dataUrl !== "string") return null;
 
@@ -33,17 +41,24 @@ async function storePhoto(env, eventId, dataUrl) {
     return { photo_url: dataUrl, storage: "external" };
   }
 
-  if (env.EVENT_PHOTOS) {
-    const match = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
-    if (!match) return { photo_url: dataUrl, storage: "base64" };
+  const match = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
+  if (!match) return null;
 
-    const mime = match[1] || "image/jpeg";
-    const b64 = match[2] || "";
+  const mime = (match[1] || "").toLowerCase();
+  if (!ALLOWED_PHOTO_MIME_TYPES.includes(mime)) return null;
+
+  const b64 = match[2] || "";
+  // base64 decodes to ~3/4 its length; check before decoding to avoid
+  // wasting work on an oversized payload.
+  if (b64.length * 0.75 > MAX_PHOTO_BYTES) return null;
+
+  if (env.EVENT_PHOTOS) {
     const binary = atob(b64);
+    if (binary.length > MAX_PHOTO_BYTES) return null;
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 
-    const ext = (mime.split("/")[1] || "jpg").split("+")[0];
+    const ext = mime.split("/")[1];
     const key = `events/${eventId}/${crypto.randomUUID()}.${ext}`;
 
     await env.EVENT_PHOTOS.put(key, bytes, { httpMetadata: { contentType: mime } });
