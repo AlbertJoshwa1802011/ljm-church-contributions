@@ -1034,7 +1034,7 @@
             <div class="section" id="section-promises">
                 <div class="page-head"><h2>Promises</h2><p>Daily/monthly/yearly promise words — auto-shown on the public Home by date (ministry timezone: IST). See docs/milestone-v2/01-PRD.md §7.2.</p></div>
                 <div class="card">
-                    <h3>Add a promise</h3>
+                    <h3 id="pr_formTitle">Add a promise</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Scope *</label><select class="input" id="pr_scope">
                             <option value="daily">Daily</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option>
@@ -1050,6 +1050,7 @@
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="pr_saveBtn">Add promise</button>
+                        <button class="btn" id="pr_clearBtn" type="button">Clear</button>
                         <span class="msg" id="pr_msg"></span>
                     </div>
                 </div>
@@ -1155,19 +1156,23 @@
             <div class="section" id="section-blog">
                 <div class="page-head"><h2>Blog</h2><p>Teachings, news, and reflections. Tag ministryArea "youth" to also surface a post in Youth Ministry.</p></div>
                 <div class="card">
-                    <h3>Add a post</h3>
+                    <h3 id="bl_formTitle">Add a post</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Title (English) *</label><input class="input" id="bl_titleEn"></div>
+                        <div><label class="f-label">Title (Tamil)</label><input class="input" id="bl_titleTa"></div>
                         <div><label class="f-label">Slug (optional)</label><input class="input" id="bl_slug" placeholder="auto from title if blank"></div>
                         <div><label class="f-label">Category</label><input class="input" id="bl_category"></div>
                         <div><label class="f-label">Ministry area</label><input class="input" id="bl_ministryArea" placeholder="e.g. youth"></div>
                         <div><label class="f-label">Status</label><select class="input" id="bl_status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
                         <div><label class="f-label">Cover image URL</label><input class="input" id="bl_coverUrl"></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Excerpt (English)</label><textarea class="input" id="bl_excerptEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Excerpt (Tamil)</label><textarea class="input" id="bl_excerptTa" rows="2"></textarea></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Body (English) *</label><textarea class="input" id="bl_bodyEn" rows="5"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Body (Tamil)</label><textarea class="input" id="bl_bodyTa" rows="5"></textarea></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="bl_saveBtn">Add post</button>
+                        <button class="btn" id="bl_clearBtn" type="button">Clear</button>
                         <span class="msg" id="bl_msg"></span>
                     </div>
                 </div>
@@ -3083,28 +3088,32 @@
         }
 
         // ═══════════════ Promises ═══════════════
+        state.promisesCache = [];
+        state.editingPromiseId = null;
         function loadPromises() { fetchPromises(); wirePromiseScopeFields(); }
+        function syncPromiseScopeFields() {
+            var scope = $("pr_scope").value;
+            $("pr_dateWrap").style.display = scope === "daily" ? "" : "none";
+            $("pr_monthWrap").style.display = scope === "monthly" ? "" : "none";
+            $("pr_yearWrap").style.display = scope !== "daily" ? "" : "none";
+        }
         function wirePromiseScopeFields() {
-            var syncFields = function () {
-                var scope = $("pr_scope").value;
-                $("pr_dateWrap").style.display = scope === "daily" ? "" : "none";
-                $("pr_monthWrap").style.display = scope === "monthly" ? "" : "none";
-                $("pr_yearWrap").style.display = scope !== "daily" ? "" : "none";
-            };
-            $("pr_scope").onchange = syncFields;
-            syncFields();
+            $("pr_scope").onchange = syncPromiseScopeFields;
+            syncPromiseScopeFields();
         }
         function fetchPromises() {
             api("/api/promises").then(function (d) {
                 if (!d.success) { setMsg("pr_msg", d.message || "No access", "err"); return; }
+                state.promisesCache = d.promises || [];
                 var tb = $("pr_table").querySelector("tbody");
-                tb.innerHTML = (d.promises || []).map(function (p) {
+                tb.innerHTML = state.promisesCache.map(function (p) {
                     var when = p.scope === "daily" ? (p.onDate || "") : p.scope === "monthly" ? (p.month + "/" + p.year) : String(p.year || "");
                     return "<tr><td><span class='pill pill-grey'>" + esc(p.scope) + "</span></td><td>" + esc(when) + "</td>" +
                         "<td style='max-width:340px;'>" + esc((p.textEn || "").substring(0, 90)) + "</td>" +
                         "<td>" + (p.isPublished ? "<span class='pill pill-green'>Yes</span>" : "<span class='pill pill-grey'>Draft</span>") + "</td>" +
-                        '<td><button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
+                        '<td><button class="mini-btn" data-edit="' + p.id + '">Edit</button> <button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
                 }).join("") || '<tr><td colspan="5" class="empty">No promises yet — add one above.</td></tr>';
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editPromise(Number(b.dataset.edit)); }; });
                 tb.querySelectorAll("[data-id]").forEach(function (b) {
                     b.onclick = function () {
                         if (!confirm("Delete this promise?")) return;
@@ -3112,6 +3121,26 @@
                     };
                 });
             }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
+        }
+        function editPromise(id) {
+            var p = state.promisesCache.filter(function (x) { return x.id === id; })[0];
+            if (!p) return;
+            state.editingPromiseId = id;
+            $("pr_formTitle").textContent = "Edit " + p.scope + " promise";
+            $("pr_scope").value = p.scope;
+            syncPromiseScopeFields();
+            $("pr_onDate").value = p.onDate || ""; $("pr_month").value = p.month || ""; $("pr_year").value = p.year || "";
+            $("pr_reference").value = p.reference || ""; $("pr_textEn").value = p.textEn || ""; $("pr_textTa").value = p.textTa || "";
+            $("pr_reflectionEn").value = p.reflectionEn || ""; $("pr_published").value = p.isPublished ? "1" : "0";
+            $("pr_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearPromiseForm() {
+            state.editingPromiseId = null;
+            $("pr_formTitle").textContent = "Add a promise";
+            ["pr_onDate", "pr_month", "pr_year", "pr_reference", "pr_textEn", "pr_textTa", "pr_reflectionEn"].forEach(function (id) { $(id).value = ""; });
+            $("pr_scope").value = "daily"; syncPromiseScopeFields();
+            $("pr_published").value = "1"; $("pr_saveBtn").textContent = "Add promise";
         }
         function savePromise() {
             var scope = $("pr_scope").value;
@@ -3121,12 +3150,11 @@
                 reflectionEn: $("pr_reflectionEn").value.trim(), isPublished: $("pr_published").value === "1"
             };
             if (!body.textEn) { setMsg("pr_msg", "Promise text (English) is required", "err"); return; }
-            api("/api/promises", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+            var isEdit = !!state.editingPromiseId;
+            if (isEdit) body.id = state.editingPromiseId;
+            api("/api/promises", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
                 setMsg("pr_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["pr_onDate", "pr_month", "pr_year", "pr_reference", "pr_textEn", "pr_textTa", "pr_reflectionEn"].forEach(function (id) { $(id).value = ""; });
-                    fetchPromises();
-                }
+                if (d.success) { clearPromiseForm(); fetchPromises(); }
             }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
         }
 
@@ -3311,18 +3339,22 @@
         }
 
         // ═══════════════ Blog ═══════════════
+        state.blogCache = [];
+        state.editingBlogId = null;
         function loadBlog() { fetchBlog(); }
         function fetchBlog() {
             api("/api/blog?all=1").then(function (d) {
                 if (!d.success) { setMsg("bl_msg", d.message || "No access", "err"); return; }
+                state.blogCache = d.posts || [];
                 var tb = $("bl_table").querySelector("tbody");
-                tb.innerHTML = (d.posts || []).map(function (p) {
+                tb.innerHTML = state.blogCache.map(function (p) {
                     return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.category || "—") + "</td>" +
                         "<td><span class='pill " + (p.status === "published" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
-                        '<td>' +
+                        '<td><button class="mini-btn" data-edit="' + p.id + '">Edit</button> ' +
                         (p.status !== "published" ? '<button class="mini-btn" data-pub="' + p.id + '">Publish</button> ' : '<button class="mini-btn" data-unpub="' + p.id + '">Unpublish</button> ') +
                         '<button class="mini-btn danger" data-del="' + p.id + '">Delete</button></td></tr>';
                 }).join("") || '<tr><td colspan="4" class="empty">No posts yet.</td></tr>';
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editBlogPost(Number(b.dataset.edit)); }; });
                 tb.querySelectorAll("[data-pub]").forEach(function (b) { b.onclick = function () { setBlogStatus(b.dataset.pub, "published"); }; });
                 tb.querySelectorAll("[data-unpub]").forEach(function (b) { b.onclick = function () { setBlogStatus(b.dataset.unpub, "draft"); }; });
                 tb.querySelectorAll("[data-del]").forEach(function (b) {
@@ -3337,21 +3369,40 @@
             api("/api/blog", { method: "PUT", body: JSON.stringify({ id: Number(id), status: status }) })
                 .then(function (d) { setMsg("bl_msg", d.message, d.success ? "ok" : "err"); fetchBlog(); });
         }
+        function editBlogPost(id) {
+            var p = state.blogCache.filter(function (x) { return x.id === id; })[0];
+            if (!p) return;
+            state.editingBlogId = id;
+            $("bl_formTitle").textContent = "Edit " + p.titleEn;
+            $("bl_titleEn").value = p.titleEn || ""; $("bl_titleTa").value = p.titleTa || "";
+            $("bl_slug").value = p.slug || ""; $("bl_slug").disabled = true;
+            $("bl_category").value = p.category || ""; $("bl_ministryArea").value = p.ministryArea || "";
+            $("bl_status").value = p.status || "draft"; $("bl_coverUrl").value = p.coverUrl || "";
+            $("bl_excerptEn").value = p.excerptEn || ""; $("bl_excerptTa").value = p.excerptTa || "";
+            $("bl_bodyEn").value = p.bodyEn || ""; $("bl_bodyTa").value = p.bodyTa || "";
+            $("bl_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearBlogForm() {
+            state.editingBlogId = null;
+            $("bl_formTitle").textContent = "Add a post";
+            ["bl_titleEn", "bl_titleTa", "bl_slug", "bl_category", "bl_ministryArea", "bl_coverUrl", "bl_excerptEn", "bl_excerptTa", "bl_bodyEn", "bl_bodyTa"].forEach(function (id) { $(id).value = ""; });
+            $("bl_slug").disabled = false; $("bl_status").value = "draft"; $("bl_saveBtn").textContent = "Add post";
+        }
         function saveBlogPost() {
             var titleEn = $("bl_titleEn").value.trim(), bodyEn = $("bl_bodyEn").value.trim();
             if (!titleEn || !bodyEn) { setMsg("bl_msg", "Title and body are required", "err"); return; }
             var body = {
-                titleEn: titleEn, bodyEn: bodyEn, slug: $("bl_slug").value.trim(), category: $("bl_category").value.trim(),
+                titleEn: titleEn, titleTa: $("bl_titleTa").value.trim(), bodyEn: bodyEn, bodyTa: $("bl_bodyTa").value.trim(),
+                slug: $("bl_slug").value.trim(), category: $("bl_category").value.trim(),
                 ministryArea: $("bl_ministryArea").value.trim(), status: $("bl_status").value,
-                coverUrl: $("bl_coverUrl").value.trim(), excerptEn: $("bl_excerptEn").value.trim()
+                coverUrl: $("bl_coverUrl").value.trim(), excerptEn: $("bl_excerptEn").value.trim(), excerptTa: $("bl_excerptTa").value.trim()
             };
-            api("/api/blog", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+            var isEdit = !!state.editingBlogId;
+            if (isEdit) body.id = state.editingBlogId;
+            api("/api/blog", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
                 setMsg("bl_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["bl_titleEn", "bl_slug", "bl_category", "bl_ministryArea", "bl_coverUrl", "bl_excerptEn", "bl_bodyEn"].forEach(function (id) { $(id).value = ""; });
-                    $("bl_status").value = "draft";
-                    fetchBlog();
-                }
+                if (d.success) { clearBlogForm(); fetchBlog(); }
             }).catch(function (e) { setMsg("bl_msg", e.message, "err"); });
         }
 
@@ -3791,7 +3842,7 @@
                 if (!confirm("Archive this fund? It will be hidden from the public but data is preserved.")) return;
                 api("/api/funds", {
                     method: "PUT",
-                    body: JSON.stringify({ slug: state.editingFundSlug, action: "archive" })
+                    body: JSON.stringify({ slug: state.editingFundSlug, status: "archived" })
                 }).then(function (d) {
                     setMsg("f_msg", d.message, d.success ? "ok" : "err");
                     if (d.success) { clearFundForm(); loadFunds(); state.loaded.overview = false; }
