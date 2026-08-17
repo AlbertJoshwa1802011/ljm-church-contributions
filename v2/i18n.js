@@ -17,7 +17,7 @@
   var DICT = {
     en: {
       "nav.home": "Home", "nav.about": "About", "nav.watch": "Watch & Listen",
-      "nav.events": "Events", "nav.programs": "Programs", "nav.blog": "Blog",
+      "nav.events": "Events", "nav.programs": "Programs", "nav.youth": "Youth", "nav.blog": "Blog",
       "nav.testimonies": "Testimonies", "nav.ourGiving": "Our Giving",
       "nav.pray": "Pray", "nav.contact": "Contact", "nav.give": "Give",
       "cta.give": "Give", "cta.pray": "Pray", "cta.contact": "Contact",
@@ -38,7 +38,7 @@
     },
     ta: {
       "nav.home": "முகப்பு", "nav.about": "எங்களைப் பற்றி", "nav.watch": "பார்க்க & கேட்க",
-      "nav.events": "நிகழ்வுகள்", "nav.programs": "நிகழ்ச்சிகள்", "nav.blog": "வலைப்பதிவு",
+      "nav.events": "நிகழ்வுகள்", "nav.programs": "நிகழ்ச்சிகள்", "nav.youth": "இளையோர்", "nav.blog": "வலைப்பதிவு",
       "nav.testimonies": "சாட்சிகள்", "nav.ourGiving": "எங்கள் காணிக்கை",
       "nav.pray": "ஜெபம்", "nav.contact": "தொடர்பு", "nav.give": "காணிக்கை",
       "cta.give": "காணிக்கை செலுத்த", "cta.pray": "ஜெபத்திற்கு", "cta.contact": "தொடர்பு கொள்ள",

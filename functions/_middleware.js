@@ -19,9 +19,22 @@ const ROUTE_MAP = {
   "/my-giving.html": "/v2/my-giving.html"
 };
 
+// /v2/admin.html has no file of its own — the one real admin console lives at
+// /admin.html (shared by both flows; it has its own Google-Sign-In auth gate,
+// unrelated to the beta cookie above). Redirect unconditionally, for everyone,
+// so following the "v2" URL pattern to the admin console doesn't just 404.
+const ADMIN_ALIAS = "/v2/admin.html";
+
 export async function onRequest(context) {
   const { request, env, next } = context;
   const url = new URL(request.url);
+
+  if (url.pathname === ADMIN_ALIAS) {
+    const dest = new URL("/admin.html", url);
+    dest.search = url.search;
+    return Response.redirect(dest, 302);
+  }
+
   const target = ROUTE_MAP[url.pathname];
 
   if (!target) {
