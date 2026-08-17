@@ -34,7 +34,7 @@ test("seed migration: is idempotent — applying twice does not duplicate rows",
     promises: db._sqlite.prepare("SELECT COUNT(*) AS n FROM promises WHERE created_by='seed:v2-launch-2026'").get().n,
     testimonies: db._sqlite.prepare("SELECT COUNT(*) AS n FROM testimonies WHERE reviewed_by='seed:v2-launch-2026'").get().n,
     blog: db._sqlite.prepare("SELECT COUNT(*) AS n FROM blog_posts").get().n,
-    events: db._sqlite.prepare("SELECT COUNT(*) AS n FROM events WHERE title='Vacation Bible School (VBS) 2026'").get().n
+    events: db._sqlite.prepare("SELECT COUNT(*) AS n FROM events WHERE title LIKE 'Vacation Bible School (VBS) 2026%'").get().n
   };
   assert.equal(counts.promises, 24); // 21 daily + 2 monthly + 1 yearly
   assert.equal(counts.testimonies, 4);
@@ -91,13 +91,14 @@ test("seed migration: churches keep an existing address untouched, only fills in
   assert.match(other.address_en, /coming soon/);
 });
 
-test("seed migration: VBS 2026 event is published, featured, and honest about unknown fields", () => {
+test("seed migration: VBS 2026 event is published, featured, and honest about the unknown month/year", () => {
   const db = seededDb();
-  const row = db._sqlite.prepare("SELECT * FROM events WHERE title='Vacation Bible School (VBS) 2026'").get();
+  const row = db._sqlite.prepare("SELECT * FROM events WHERE title LIKE 'Vacation Bible School (VBS) 2026%'").get();
   assert.ok(row);
   assert.equal(row.status, "published");
   assert.equal(row.featured, 1);
-  assert.equal(row.location, null);
-  assert.match(row.event_date, /to be announced/);
+  assert.match(row.location, /Church of Light/);
+  assert.match(row.event_date, /to be confirmed/);
+  assert.match(row.description, /Journey With Jesus/);
   assert.equal(row.cover_photo, null);
 });

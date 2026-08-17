@@ -264,14 +264,17 @@ UPDATE churches SET
   city = COALESCE(city, 'Coimbatore')
 WHERE slug = 'city-worship-center';
 
--- ── VBS 2026 — real event, honest placeholders for the unknowns ────────────
+-- ── VBS 2026 — real event, honest placeholder only for the still-unknown month/year ─
+-- Known from ministry leadership: theme, venue, and the days-of-month (25th,
+-- 26th, 27th). The month/year those days fall in has not been confirmed, so
+-- it is stated as "to be confirmed" rather than guessed.
 
 INSERT INTO events (title, category, event_date, location, description, status, featured)
 SELECT
-  'Vacation Bible School (VBS) 2026',
+  'Vacation Bible School (VBS) 2026 — Journey With Jesus',
   'VBS',
-  'Summer 2026 — exact dates to be announced',
-  NULL,
-  'A week of Bible stories, songs, games, and crafts for kids across both Church of Light and City Worship Center. Exact dates and location are being finalised — check back here, or watch our Blog and Contact page, for updates. Photos from this year''s VBS will be added here once the event has taken place.',
+  '25th, 26th & 27th — month/year to be confirmed',
+  'Church of Light, PNP, Coimbatore',
+  'Theme: "Journey With Jesus" (Matthew 4:19 — "Follow me, and I will make you fishers of men."). Three days of Bible stories, action songs, games & activities, and creative crafts for kids, growing with Jesus together. Exact month/year is being finalised — check back here, or watch our Blog and Contact page, for updates. Photos from this year''s VBS will be added here once the event has taken place.',
   'published', 1
-WHERE NOT EXISTS (SELECT 1 FROM events WHERE title='Vacation Bible School (VBS) 2026');
+WHERE NOT EXISTS (SELECT 1 FROM events WHERE title LIKE 'Vacation Bible School (VBS) 2026%');
