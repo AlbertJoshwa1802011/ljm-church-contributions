@@ -5,7 +5,7 @@
 // the churches themselves.
 //
 //   GET    /api/churches            → public: active churches, sorted
-//          /api/churches?all=1      → admin (manage_funds): every church
+//          /api/churches?all=1      → admin (manage_content): every church
 //   POST   /api/churches            → admin: create
 //   PUT    /api/churches            → admin: update (body.id)
 //   DELETE /api/churches?id=NN      → admin: archive (soft-delete: status='archived')
@@ -52,7 +52,7 @@ export async function onRequestGet(context) {
 
   try {
     if (wantsAll) {
-      const auth = await requireAuth(context, "manage_funds");
+      const auth = await requireAuth(context, "manage_content");
       if (!auth.ok) return auth.response;
       const q = await db.prepare("SELECT * FROM churches ORDER BY sort_order ASC, id ASC").all();
       return json({ success: true, churches: (q.results || []).map(toChurch) }, 200, corsHeaders({ "Cache-Control": "no-store" }));
@@ -70,7 +70,7 @@ export async function onRequestPost(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "manage_funds");
+  const auth = await requireAuth(context, "manage_content");
   if (!auth.ok) return auth.response;
 
   try {
@@ -108,7 +108,7 @@ export async function onRequestPut(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "manage_funds");
+  const auth = await requireAuth(context, "manage_content");
   if (!auth.ok) return auth.response;
 
   try {
@@ -148,7 +148,7 @@ export async function onRequestDelete(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "manage_funds");
+  const auth = await requireAuth(context, "manage_content");
   if (!auth.ok) return auth.response;
 
   try {

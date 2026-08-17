@@ -33,19 +33,37 @@ test("events: public GET listing shows only published events, with categories", 
   assert.deepEqual(res.categories, ["Youth"]);
 });
 
-test("events: GET ?id= returns any status (not just published) plus its photos", async () => {
+test("events: GET ?id= on a draft event requires manage_events (no unauthenticated draft disclosure)", async () => {
   const db = freshDb();
   const create = await readJson(await events.onRequestPost(makeContext({
     db, method: "POST", url: "https://test.local/api/events",
     body: { title: "Draft Detail", status: "draft" }
   })));
 
-  const res = await readJson(await events.onRequestGet(makeContext({
+  const denied = await readJson(await events.onRequestGet(makeContext({
     db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.equal(denied.success, false, "an anonymous caller must not be able to fetch a draft event by id");
+
+  const res = await readJson(await events.onRequestGet(makeContext({
+    db, url: `https://test.local/api/events?id=${create.id}`
   })));
   assert.equal(res.event.title, "Draft Detail");
   assert.equal(res.event.status, "draft");
   assert.deepEqual(res.photos, []);
+});
+
+test("events: GET ?id= on a published event is public, no auth required", async () => {
+  const db = freshDb();
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Published Detail", status: "published" }
+  })));
+
+  const res = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.equal(res.event.title, "Published Detail");
 });
 
 test("events: GET ?id= for a nonexistent event is a 404", async () => {
@@ -113,7 +131,7 @@ test("events: POST with gallery photos but no cover photo falls back to the firs
   assert.equal(res.success, true, res.message);
 
   const detail = await readJson(await events.onRequestGet(makeContext({
-    db, authToken: null, url: `https://test.local/api/events?id=${res.id}`
+    db, url: `https://test.local/api/events?id=${res.id}`
   })));
   assert.ok(detail.event.coverPhoto, "cover should be backfilled from the first gallery photo");
   assert.equal(detail.photos.length, 2);
@@ -126,7 +144,7 @@ test("events: PUT updates fields, adds and removes photos, and 404s for a nonexi
     db, method: "POST", url: "https://test.local/api/events",
     body: { title: "Original Title", status: "draft", photos: [{ dataUrl: TINY_PNG_DATA_URL, caption: "keep" }] }
   })));
-  let detail = await readJson(await events.onRequestGet(makeContext({ db, authToken: null, url: `https://test.local/api/events?id=${create.id}` })));
+  let detail = await readJson(await events.onRequestGet(makeContext({ db, url: `https://test.local/api/events?id=${create.id}` })));
   const keepPhotoId = detail.photos[0].id;
 
   const update = await readJson(await events.onRequestPut(makeContext({
