@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       migration:
-        description: 'Migration file to apply (0005-0011)'
+        description: 'Migration file to apply (0005-0026)'
         required: true
         default: '0005_purchase_attribution'
         type: choice
@@ -16,7 +16,21 @@ on:
           - 0009_bible_kjv_seed
           - 0010_wishlist_images
           - 0011_events
-          - 0011_member_appearance
+          - 0012_contribution_attribution
+          - 0013_beta_access
+          - 0014_backfill_missed_webhook_payments
+          - 0015_churches
+          - 0016_promises
+          - 0017_testimonies
+          - 0018_prayer_requests
+          - 0019_contact_messages
+          - 0020_programs
+          - 0021_events_church
+          - 0022_blog
+          - 0023_programs_online_recurrence
+          - 0024_seed_prayer_programs
+          - 0025_v2_launch_content_seed
+          - 0026_member_appearance
 
 jobs:
   deploy_migration:
