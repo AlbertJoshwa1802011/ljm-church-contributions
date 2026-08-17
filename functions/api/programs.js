@@ -18,6 +18,16 @@ function corsHeaders(extra) {
   };
 }
 
+// 0=Sunday..6=Saturday, matching the DAYS[] index the public pages render
+// against — an out-of-range value throws inside that render and breaks the
+// entire public programs list, not just the one bad row.
+function parseDayOfWeek(raw) {
+  if (raw === undefined || raw === null || raw === "") return { ok: true, value: null };
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > 6) return { ok: false };
+  return { ok: true, value: n };
+}
+
 function toProgram(row) {
   return {
     id: row.id,
@@ -92,13 +102,16 @@ export async function onRequestPost(context) {
     const titleEn = String(body.titleEn || "").trim();
     if (!titleEn) return json({ success: false, message: "titleEn is required" }, 400);
 
+    const dayOfWeek = parseDayOfWeek(body.dayOfWeek);
+    if (!dayOfWeek.ok) return json({ success: false, message: "dayOfWeek must be 0 (Sunday) through 6 (Saturday)" }, 400);
+
     const res = await db.prepare(
       `INSERT INTO programs (title_en, title_ta, description_en, description_ta, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, location, status, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       titleEn, body.titleTa || null, body.descriptionEn || null, body.descriptionTa || null,
       body.churchId ? Number(body.churchId) : null, body.ministryArea || null,
-      body.dayOfWeek !== undefined && body.dayOfWeek !== null && body.dayOfWeek !== "" ? Number(body.dayOfWeek) : null,
+      dayOfWeek.value,
       body.startTime || null, body.endTime || null, body.recurrence || "weekly",
       body.location || null, body.status === "inactive" ? "inactive" : "active", Number(body.sortOrder) || 0
     ).run();
@@ -131,13 +144,16 @@ export async function onRequestPut(context) {
     const titleEn = String(body.titleEn || "").trim();
     if (!titleEn) return json({ success: false, message: "titleEn is required" }, 400);
 
+    const dayOfWeek = parseDayOfWeek(body.dayOfWeek);
+    if (!dayOfWeek.ok) return json({ success: false, message: "dayOfWeek must be 0 (Sunday) through 6 (Saturday)" }, 400);
+
     const res = await db.prepare(
       `UPDATE programs SET title_en=?, title_ta=?, description_en=?, description_ta=?, church_id=?, ministry_area=?, day_of_week=?, start_time=?, end_time=?, recurrence=?, location=?, status=?, sort_order=?, updated_at=CURRENT_TIMESTAMP
        WHERE id=?`
     ).bind(
       titleEn, body.titleTa || null, body.descriptionEn || null, body.descriptionTa || null,
       body.churchId ? Number(body.churchId) : null, body.ministryArea || null,
-      body.dayOfWeek !== undefined && body.dayOfWeek !== null && body.dayOfWeek !== "" ? Number(body.dayOfWeek) : null,
+      dayOfWeek.value,
       body.startTime || null, body.endTime || null, body.recurrence || "weekly",
       body.location || null, body.status === "inactive" ? "inactive" : "active", Number(body.sortOrder) || 0, id
     ).run();

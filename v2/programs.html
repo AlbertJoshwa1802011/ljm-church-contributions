@@ -133,7 +133,7 @@
 
       function renderList(items) {
         return '<div class="pg-list">' + items.map(function (p) {
-          var when = p.dayOfWeek !== null && p.dayOfWeek !== undefined ? DAYS[p.dayOfWeek].slice(0, 3) : (p.recurrence === 'once' ? 'One-off' : '—');
+          var when = p.dayOfWeek !== null && p.dayOfWeek !== undefined && DAYS[p.dayOfWeek] ? DAYS[p.dayOfWeek].slice(0, 3) : (p.recurrence === 'once' ? 'One-off' : '—');
           var time = [p.startTime, p.endTime].filter(Boolean).join(' – ');
           return '<div class="pg-item"><div class="pg-day">' + esc(when) + '</div><div><h4>' + esc(p.titleEn) + '</h4>' +
             (p.descriptionEn ? '<p>' + esc(p.descriptionEn) + '</p>' : '') + (p.location ? '<p>📍 ' + esc(p.location) + '</p>' : '') + '</div>' +

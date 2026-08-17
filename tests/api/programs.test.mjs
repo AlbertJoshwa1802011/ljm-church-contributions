@@ -79,3 +79,43 @@ test("programs: DELETE requires manage_content", async () => {
   })));
   assert.equal(denied.success, false);
 });
+
+// Regression: an out-of-range dayOfWeek (e.g. 99, sent straight to the API
+// bypassing the admin console's <select>) used to be stored as-is. The
+// public /v2/programs.html renderer does `DAYS[p.dayOfWeek].slice(0, 3)` —
+// DAYS[99] is undefined, so .slice() threw inside the render and broke the
+// *entire* public programs page (every church's schedule) into an error
+// state, confirmed live in a real browser during the adversarial QA session
+// that added this test.
+test("programs: POST rejects an out-of-range dayOfWeek", async () => {
+  const db = freshDb();
+  for (const bad of [7, 99, -1, -99]) {
+    const res = await readJson(await programs.onRequestPost(makeContext({
+      db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "Bad Day", dayOfWeek: bad }
+    })));
+    assert.equal(res.success, false, `dayOfWeek=${bad} must be rejected`);
+    assert.match(res.message, /0 \(Sunday\) through 6 \(Saturday\)/);
+  }
+});
+
+test("programs: POST accepts every valid dayOfWeek (0 Sunday .. 6 Saturday) and null", async () => {
+  const db = freshDb();
+  for (const good of [0, 1, 2, 3, 4, 5, 6, null]) {
+    const res = await readJson(await programs.onRequestPost(makeContext({
+      db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "Good Day " + good, dayOfWeek: good }
+    })));
+    assert.equal(res.success, true, res.message);
+  }
+});
+
+test("programs: PUT also rejects an out-of-range dayOfWeek", async () => {
+  const db = freshDb();
+  const create = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "X", dayOfWeek: 2 }
+  })));
+  const res = await readJson(await programs.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/programs", body: { id: create.id, titleEn: "X", dayOfWeek: 42 }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /0 \(Sunday\) through 6 \(Saturday\)/);
+});

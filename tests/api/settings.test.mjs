@@ -128,3 +128,41 @@ test("settings: GET only returns whitelisted public keys, not every writable key
   const getResult = await readJson(await settings.onRequestGet(makeContext({ db })));
   assert.equal(getResult.settings.tech_goal_amount, undefined, "tech_goal_amount must not leak through the public GET");
 });
+
+// Regression: a javascript:/attribute-breakout payload in sunday_live_url used
+// to be accepted and stored verbatim (v2/watch.html then interpolated it into
+// an unescaped `href`/`iframe src` — see the adversarial QA session that
+// found this). The API must reject anything that isn't an https:// URL.
+test("settings: rejects a non-https sunday_live_url (javascript: scheme)", async () => {
+  const db = freshDb();
+  const res = await readJson(await settings.onRequestPut(makeContext({
+    db, body: { key: "sunday_live_url", value: "javascript:alert(document.cookie)" }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /https:\/\/ URL/);
+});
+
+test("settings: rejects an attribute-breakout payload in daily_prayer_url", async () => {
+  const db = freshDb();
+  const res = await readJson(await settings.onRequestPut(makeContext({
+    db, body: { key: "daily_prayer_url", value: '" onmouseover="alert(1)" x="' }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /https:\/\/ URL/);
+});
+
+test("settings: accepts a valid https podcast_playlist_url", async () => {
+  const db = freshDb();
+  const res = await readJson(await settings.onRequestPut(makeContext({
+    db, body: { key: "podcast_playlist_url", value: "https://www.youtube.com/playlist?list=PL123" }
+  })));
+  assert.equal(res.success, true, res.message);
+});
+
+test("settings: clearing a media URL back to empty string is still allowed", async () => {
+  const db = freshDb();
+  const res = await readJson(await settings.onRequestPut(makeContext({
+    db, body: { key: "sunday_live_url", value: "" }
+  })));
+  assert.equal(res.success, true, res.message);
+});
