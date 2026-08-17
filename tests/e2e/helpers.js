@@ -22,8 +22,26 @@ export async function assertNoHorizontalOverflow(page) {
   return { scrollWidth, clientWidth, overflow: scrollWidth - clientWidth };
 }
 
+// Kept for anything that only needs one viewport per device class (admin
+// mobile/desktop layout-shape assertions, etc.).
 export const VIEWPORTS = {
   mobile: { width: 390, height: 844 },
   tablet: { width: 768, height: 1024 },
   desktop: { width: 1440, height: 900 }
+};
+
+// Full breakpoint matrix the milestone brief asks for (§11/§12): real iPhone
+// widths (320 SE, 375 8/X, 390 12/13/14, 393 Pixel/Android, 430 Pro Max),
+// tablet, and common laptop/desktop widths.
+export const RESPONSIVE_MATRIX = {
+  "320": { width: 320, height: 690 },
+  "360": { width: 360, height: 780 },
+  "375": { width: 375, height: 812 },
+  "390": { width: 390, height: 844 },
+  "393": { width: 393, height: 851 },
+  "430": { width: 430, height: 932 },
+  "768": { width: 768, height: 1024 },
+  "1024": { width: 1024, height: 768 },
+  "1280": { width: 1280, height: 800 },
+  "1440": { width: 1440, height: 900 }
 };
