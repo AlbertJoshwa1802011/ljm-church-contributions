@@ -192,6 +192,10 @@
       "events.noPhotos": "No photos uploaded for this event yet.",
       "events.loadErrorHeading": "Could not load events right now",
       "events.loadErrorBody": "Please try again shortly.",
+      "events.loading": "Loading events…",
+      "events.viewFullGallery": "View full gallery →",
+      "events.photosSuffix.one": " · {{n}} photo",
+      "events.photosSuffix.other": " · {{n}} photos",
 
       "give.eyebrow": "✦ Give",
       "give.heading": "Support the ministry",
@@ -209,7 +213,10 @@
       "give.amount": "Amount",
       "give.emailAddress": "Email Address",
       "give.mobileNumber": "Mobile Number",
-      "give.proceedToPay": "Proceed to Pay"
+      "give.proceedToPay": "Proceed to Pay",
+      "give.giveNowArrow": "Give Now →",
+      "give.comingSoon": "Coming soon*",
+      "give.footerCopyright": "© 2026 Light of Jesus Ministry — same real checkout as always, just a fresh look."
     },
     ta: {
       "nav.home": "முகப்பு", "nav.about": "எங்களைப் பற்றி", "nav.watch": "பார்க்க & கேட்க",
@@ -388,6 +395,10 @@
       "events.noPhotos": "இந்த நிகழ்விற்கு இதுவரை புகைப்படங்கள் பதிவேற்றப்படவில்லை.",
       "events.loadErrorHeading": "இப்போது நிகழ்வுகளை ஏற்ற முடியவில்லை",
       "events.loadErrorBody": "சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்.",
+      "events.loading": "நிகழ்வுகளை ஏற்றுகிறது…",
+      "events.viewFullGallery": "முழு படத்தொகுப்பையும் காண →",
+      "events.photosSuffix.one": " · {{n}} புகைப்படம்",
+      "events.photosSuffix.other": " · {{n}} புகைப்படங்கள்",
 
       "give.eyebrow": "✦ காணிக்கை",
       "give.heading": "ஊழியத்தை ஆதரிக்கவும்",
@@ -405,7 +416,10 @@
       "give.amount": "தொகை",
       "give.emailAddress": "மின்னஞ்சல் முகவரி",
       "give.mobileNumber": "மொபைல் எண்",
-      "give.proceedToPay": "செலுத்த தொடரவும்"
+      "give.proceedToPay": "செலுத்த தொடரவும்",
+      "give.giveNowArrow": "இப்போது கொடுக்க →",
+      "give.comingSoon": "விரைவில் வருகிறது*",
+      "give.footerCopyright": "© 2026 Light of Jesus Ministry — எப்போதும் போல் அதே உண்மையான செக்அவுட், புதிய தோற்றத்துடன்."
     }
   };
 
