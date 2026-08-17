@@ -120,6 +120,7 @@
 </script>
 <script>
   (function () {
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
     // Best-effort YouTube embed URL normalizer — accepts watch/live/playlist
     // URLs and a bare video/playlist id, falls back to a plain link otherwise.
     function toEmbed(url, isPlaylist) {
@@ -147,8 +148,8 @@
       grid.innerHTML = withUrl.map(function (c) {
         var embed = toEmbed(c.url, c.isPlaylist);
         return '<div class="w-card"><div class="embed">' +
-          (embed ? '<iframe src="' + embed + '" title="' + c.title + '" allowfullscreen loading="lazy"></iframe>' : '<a class="btn btn-secondary" href="' + c.url + '" target="_blank" rel="noopener">Open link ↗</a>') +
-          '</div><div class="body"><h3>' + c.title + '</h3><p>' + c.desc + '</p></div></div>';
+          (embed ? '<iframe src="' + esc(embed) + '" title="' + esc(c.title) + '" allowfullscreen loading="lazy"></iframe>' : '<a class="btn btn-secondary" href="' + esc(c.url) + '" target="_blank" rel="noopener">Open link ↗</a>') +
+          '</div><div class="body"><h3>' + esc(c.title) + '</h3><p>' + esc(c.desc) + '</p></div></div>';
       }).join('');
     }).catch(function () { document.getElementById('watchGrid').innerHTML = '<div class="w-empty" style="grid-column:1/-1;">Couldn\'t load right now — please try again shortly.</div>'; });
   })();
