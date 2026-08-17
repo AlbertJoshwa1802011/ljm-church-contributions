@@ -181,6 +181,14 @@ button { font-family: inherit; cursor: pointer; }
 .brand-mark { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 34px; height: 34px; }
 .brand-mark svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 2px rgba(0,0,0,.15)); }
 .brand small { display: block; font-family: var(--sans); font-weight: 500; font-size: .66rem; color: var(--text-faint); letter-spacing: .02em; }
+/* Below 980px the header keeps only the brand + hamburger (see the
+   .header-actions rule further down). The brand's "Coimbatore · Worldwide"
+   subtitle is decorative, not navigational, so drop it on narrow viewports
+   to guarantee the hamburger button -- the only way to reach the nav
+   drawer at this width -- has room and isn't clipped by .site-header's
+   overflow:hidden (real bug found via mobile QA: at 375px wide the button
+   was ~87% off-screen and untappable). */
+@media (max-width: 980px) { .brand small { display: none; } }
 .primary-nav { display: flex; gap: 14px; flex: 1; min-width: 0; }
 .primary-nav a { font-size: .83rem; font-weight: 500; color: var(--text-soft); white-space: nowrap; }
 .primary-nav a:hover, .primary-nav a.current { color: var(--accent); }
