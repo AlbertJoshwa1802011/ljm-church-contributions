@@ -1117,7 +1117,7 @@
                         <div><label class="f-label">Title (English) *</label><input class="input" id="pg_titleEn"></div>
                         <div><label class="f-label">Title (Tamil)</label><input class="input" id="pg_titleTa"></div>
                         <div><label class="f-label">Church</label><select class="input" id="pg_churchId"><option value="">Ministry-wide</option></select></div>
-                        <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. prayer, service, youth"></div>
+                        <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. prayer, service, youth" list="ministryAreaOptions"><span style="font-size:11px;color:var(--text-faint);display:block;margin-top:4px;">Exact value "youth" (lowercase) is what the Youth page filters on.</span></div>
                         <div><label class="f-label">Recurrence</label><select class="input" id="pg_recurrence">
                             <option value="weekly">Weekly</option><option value="daily">Daily</option>
                             <option value="monthly">Monthly (nth weekday)</option><option value="once">One-off / other</option>
@@ -1162,7 +1162,8 @@
                         <div><label class="f-label">Title (Tamil)</label><input class="input" id="bl_titleTa"></div>
                         <div><label class="f-label">Slug (optional)</label><input class="input" id="bl_slug" placeholder="auto from title if blank"></div>
                         <div><label class="f-label">Category</label><input class="input" id="bl_category"></div>
-                        <div><label class="f-label">Ministry area</label><input class="input" id="bl_ministryArea" placeholder="e.g. youth"></div>
+                        <div><label class="f-label">Ministry area</label><input class="input" id="bl_ministryArea" placeholder="e.g. youth" list="ministryAreaOptions"><span style="font-size:11px;color:var(--text-faint);display:block;margin-top:4px;">Exact value "youth" (lowercase) is what the Youth page filters on.</span></div>
+                        <datalist id="ministryAreaOptions"><option value="youth"></option></datalist>
                         <div><label class="f-label">Status</label><select class="input" id="bl_status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
                         <div><label class="f-label">Cover image URL</label><input class="input" id="bl_coverUrl"></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Excerpt (English)</label><textarea class="input" id="bl_excerptEn" rows="2"></textarea></div>
@@ -3363,7 +3364,7 @@
                 dayOfWeek: $("pg_dayOfWeek").value === "" ? null : Number($("pg_dayOfWeek").value),
                 monthOrdinal: $("pg_monthOrdinal").value === "" ? null : Number($("pg_monthOrdinal").value),
                 startTime: $("pg_startTime").value, endTime: $("pg_endTime").value,
-                ministryArea: $("pg_ministryArea").value.trim(), location: $("pg_location").value.trim(),
+                ministryArea: $("pg_ministryArea").value.trim().toLowerCase(), location: $("pg_location").value.trim(),
                 meetingUrl: $("pg_meetingUrl").value.trim(), status: $("pg_status").value,
                 descriptionEn: $("pg_descriptionEn").value.trim(), descriptionTa: $("pg_descriptionTa").value.trim()
             };
@@ -3432,7 +3433,7 @@
             var body = {
                 titleEn: titleEn, titleTa: $("bl_titleTa").value.trim(), bodyEn: bodyEn, bodyTa: $("bl_bodyTa").value.trim(),
                 slug: $("bl_slug").value.trim(), category: $("bl_category").value.trim(),
-                ministryArea: $("bl_ministryArea").value.trim(), status: $("bl_status").value,
+                ministryArea: $("bl_ministryArea").value.trim().toLowerCase(), status: $("bl_status").value,
                 coverUrl: $("bl_coverUrl").value.trim(), excerptEn: $("bl_excerptEn").value.trim(), excerptTa: $("bl_excerptTa").value.trim()
             };
             var isEdit = !!state.editingBlogId;
