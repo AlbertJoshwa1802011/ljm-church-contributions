@@ -216,7 +216,21 @@
       "give.proceedToPay": "Proceed to Pay",
       "give.giveNowArrow": "Give Now →",
       "give.comingSoon": "Coming soon*",
-      "give.footerCopyright": "© 2026 Light of Jesus Ministry — same real checkout as always, just a fresh look."
+      "give.footerCopyright": "© 2026 Light of Jesus Ministry — same real checkout as always, just a fresh look.",
+
+      "watch.eyebrow": "📺 Watch & Listen",
+      "watch.heading": "Join us — live, or whenever you can.",
+      "watch.lede": "Sunday worship, daily morning prayer, and the full archive — wherever you are in the world.",
+      "watch.empty": "Livestream links haven't been set up yet — check back soon.",
+      "watch.loadError": "Couldn't load right now — please try again shortly.",
+      "watch.openLink": "Open link ↗",
+      "watch.linkUnavailable": "Link not available",
+      "watch.sundayTitle": "🔴 Sunday Live Worship",
+      "watch.sundayDesc": "Join our Sunday service live, from anywhere in the world.",
+      "watch.dailyTitle": "🌅 Daily Morning Prayer",
+      "watch.dailyDesc": "Start your day in prayer with us.",
+      "watch.podcastTitle": "🎙️ Podcast Archive",
+      "watch.podcastDesc": "Missed a service? Catch up on the full archive."
     },
     ta: {
       "nav.home": "முகப்பு", "nav.about": "எங்களைப் பற்றி", "nav.watch": "பார்க்க & கேட்க",
@@ -419,7 +433,21 @@
       "give.proceedToPay": "செலுத்த தொடரவும்",
       "give.giveNowArrow": "இப்போது கொடுக்க →",
       "give.comingSoon": "விரைவில் வருகிறது*",
-      "give.footerCopyright": "© 2026 Light of Jesus Ministry — எப்போதும் போல் அதே உண்மையான செக்அவுட், புதிய தோற்றத்துடன்."
+      "give.footerCopyright": "© 2026 Light of Jesus Ministry — எப்போதும் போல் அதே உண்மையான செக்அவுட், புதிய தோற்றத்துடன்.",
+
+      "watch.eyebrow": "📺 பார்க்க & கேட்க",
+      "watch.heading": "எங்களுடன் இணையுங்கள் — நேரலை, அல்லது உங்களால் முடியும்போது.",
+      "watch.lede": "ஞாயிறு ஆராதனை, தினசரி காலை ஜெபம், மற்றும் முழு காப்பகம் — நீங்கள் உலகின் எங்கிருந்தாலும்.",
+      "watch.empty": "நேரலை இணைப்புகள் இன்னும் அமைக்கப்படவில்லை — விரைவில் சரிபார்க்கவும்.",
+      "watch.loadError": "இப்போது ஏற்ற முடியவில்லை — சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்.",
+      "watch.openLink": "இணைப்பைத் திற ↗",
+      "watch.linkUnavailable": "இணைப்பு கிடைக்கவில்லை",
+      "watch.sundayTitle": "🔴 ஞாயிறு நேரலை ஆராதனை",
+      "watch.sundayDesc": "உலகின் எங்கிருந்தும் எங்கள் ஞாயிறு ஆராதனையில் நேரலையாக இணையுங்கள்.",
+      "watch.dailyTitle": "🌅 தினசரி காலை ஜெபம்",
+      "watch.dailyDesc": "எங்களுடன் ஜெபத்துடன் உங்கள் நாளைத் தொடங்குங்கள்.",
+      "watch.podcastTitle": "🎙️ பாட்காஸ்ட் காப்பகம்",
+      "watch.podcastDesc": "ஒரு ஆராதனையை தவறவிட்டீர்களா? முழு காப்பகத்தையும் காணுங்கள்."
     }
   };
 
