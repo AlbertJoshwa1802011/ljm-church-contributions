@@ -133,13 +133,13 @@
 })();
 </script>
 
-<div id="pageRoot"><section class="tight"><div class="wrap"><p style="color:var(--text-faint)">Loading…</p></div></section></div>
+<div id="pageRoot"><section class="tight"><div class="wrap"><p style="color:var(--text-faint)" data-i18n="mg.loading">Loading…</p></div></section></div>
 
 <footer class="site-footer">
   <div class="wrap">
     <div class="footer-bottom">
-      <span>© 2026 Light of Jesus Ministry</span>
-      <a href="/" style="font-weight:700;color:var(--accent)">← Back to Home</a>
+      <span data-i18n="footer.copyright">© 2026 Light of Jesus Ministry</span>
+      <a href="/" style="font-weight:700;color:var(--accent)" data-i18n="footer.backToHome">← Back to Home</a>
     </div>
   </div>
 </footer>
@@ -176,10 +176,11 @@
   }
 
   function renderSignedOut() {
+    var I = window.LJM_I18N;
     document.getElementById("pageRoot").innerHTML =
       '<section class="tight"><div class="wrap"><div class="gate-card">' +
-      '<div class="ic">🔒</div><h2>Sign in to see your giving</h2>' +
-      '<p>Your personal giving history is private to your account. Sign in with the same Google account you used to give.</p>' +
+      '<div class="ic">🔒</div><h2>' + I.t("mg.signInHeading") + '</h2>' +
+      '<p>' + I.t("mg.signInBody") + '</p>' +
       '<div class="signin-slot-wrap"><div id="gateSigninBtn"></div></div>' +
       '</div></div></section>';
     // Reuse the same GIS init auth.js already ran — just render one more button here.
@@ -191,15 +192,17 @@
   }
 
   function renderUnlinked(profile) {
+    var I = window.LJM_I18N;
     document.getElementById("pageRoot").innerHTML =
       '<section class="tight"><div class="wrap"><div class="gate-card">' +
-      '<div class="ic">👋</div><h2>Hi ' + esc(profile.name || "") + '!</h2>' +
-      '<p>We couldn\'t find a giving record linked to this Google account yet. If you\'ve given before under a different name or email, contact the church office to get it linked — once linked, your history will show up here automatically.</p>' +
-      '<div class="signin-slot-wrap"><a href="/v2/give-flow.html" class="btn btn-primary">Make your first gift</a></div>' +
+      '<div class="ic">👋</div><h2>' + I.t("mg.hi", { name: esc(profile.name || "") }) + '</h2>' +
+      '<p>' + I.t("mg.unlinkedBody") + '</p>' +
+      '<div class="signin-slot-wrap"><a href="/v2/give-flow.html" class="btn btn-primary">' + I.t("mg.makeFirstGift") + '</a></div>' +
       '</div></div></section>';
   }
 
   function renderHistory(profile, gifts) {
+    var I = window.LJM_I18N;
     var total = gifts.reduce(function (s, g) { return s + (Number(g.Amount) || 0); }, 0);
     var thisYear = new Date().getFullYear();
     var yearGifts = gifts.filter(function (g) { var d = parseDate(g.Date); return d && d.getFullYear() === thisYear; });
@@ -208,30 +211,30 @@
 
     var html = '';
     html += '<section class="mg-hero"><div class="wrap"><span class="mg-avatar">' + esc(initials(profile.member)) + '</span>' +
-      '<div><h1>Welcome back, ' + esc((profile.member || profile.name || "").split(" ")[0]) + '.</h1><p>' + esc(profile.member) + '</p></div>' +
-      '<a href="/v2/give-flow.html" class="btn btn-primary">Give Again</a></div></section>';
+      '<div><h1>' + I.t("mg.welcomeBack", { name: esc((profile.member || profile.name || "").split(" ")[0]) }) + '</h1><p>' + esc(profile.member) + '</p></div>' +
+      '<a href="/v2/give-flow.html" class="btn btn-primary">' + I.t("mg.giveAgain") + '</a></div></section>';
 
     html += '<section class="tight"><div class="wrap"><div class="mg-stats">' +
-      '<div class="mg-stat-card"><div class="lbl">All-Time Total</div><div class="val tabular">' + inr(total) + '</div><div class="sub">Across ' + gifts.length + ' gift' + (gifts.length === 1 ? "" : "s") + '</div></div>' +
-      '<div class="mg-stat-card"><div class="lbl">This Year</div><div class="val tabular">' + inr(yearTotal) + '</div><div class="sub">' + yearGifts.length + ' gift' + (yearGifts.length === 1 ? "" : "s") + ' in ' + thisYear + '</div></div>' +
+      '<div class="mg-stat-card"><div class="lbl">' + I.t("mg.allTimeTotal") + '</div><div class="val tabular">' + inr(total) + '</div><div class="sub">' + I.tn("mg.acrossGifts", gifts.length) + '</div></div>' +
+      '<div class="mg-stat-card"><div class="lbl">' + I.t("mg.thisYear") + '</div><div class="val tabular">' + inr(yearTotal) + '</div><div class="sub">' + I.tn("mg.giftsInYear", yearGifts.length, { year: thisYear }) + '</div></div>' +
       '</div></div></section>';
 
     html += '<section class="tight" style="padding-top:0"><div class="wrap"><div class="mg-history">' +
-      '<div class="mg-history-head"><h3>Your Giving History</h3><span style="font-size:.78rem;color:var(--text-faint)">' + gifts.length + ' gift' + (gifts.length === 1 ? "" : "s") + '</span></div>' +
+      '<div class="mg-history-head"><h3>' + I.t("mg.history") + '</h3><span style="font-size:.78rem;color:var(--text-faint)">' + I.tn("mg.giftsCount", gifts.length) + '</span></div>' +
       (sorted.length ? sorted.map(function (g) {
         var d = parseDate(g.Date);
-        var dateStr = d ? d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) : "Unknown date";
-        return '<div class="mg-row"><span class="fund-dot"></span><div class="main"><b>' + inr(g.Amount) + '</b><span>' + esc(g.fundLabel) + ' · ' + esc(/verified|online/i.test(g.Category || "") ? "Online" : (g.Category || "Manual")) + ' · ' + dateStr + '</span></div></div>';
-      }).join("") : '<div class="mg-row"><span style="color:var(--text-faint)">No gifts recorded yet.</span></div>') +
+        var dateStr = d ? d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) : I.t("mg.unknownDate");
+        return '<div class="mg-row"><span class="fund-dot"></span><div class="main"><b>' + inr(g.Amount) + '</b><span>' + esc(g.fundLabel) + ' · ' + esc(/verified|online/i.test(g.Category || "") ? I.t("og.online") : (g.Category || I.t("og.manual"))) + ' · ' + dateStr + '</span></div></div>';
+      }).join("") : '<div class="mg-row"><span style="color:var(--text-faint)">' + I.t("mg.noGifts") + '</span></div>') +
       '</div></div></section>';
 
-    html += '<section class="mg-cta-band"><div class="wrap"><h2>Keep the light shining.</h2><p>Every gift — big or small — helps both churches serve Coimbatore and beyond.</p><a href="/v2/give-flow.html" class="btn btn-primary">Give Now</a></div></section>';
+    html += '<section class="mg-cta-band"><div class="wrap"><h2>' + I.t("mg.ctaHeading") + '</h2><p>' + I.t("mg.ctaBody") + '</p><a href="/v2/give-flow.html" class="btn btn-primary">' + I.t("mg.giveNow") + '</a></div></section>';
 
     document.getElementById("pageRoot").innerHTML = html;
   }
 
   function loadHistory(profile) {
-    document.getElementById("pageRoot").innerHTML = '<section class="tight"><div class="wrap"><p style="color:var(--text-faint)">Loading your giving history…</p></div></section>';
+    document.getElementById("pageRoot").innerHTML = '<section class="tight"><div class="wrap"><p style="color:var(--text-faint)">' + window.LJM_I18N.t("mg.loadingHistory") + '</p></div></section>';
     Promise.all([
       fetch("/api/contributions?fund=tech-contributions&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
       fetch("/api/contributions?fund=christmas-fund&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); })
@@ -245,15 +248,30 @@
       });
       renderHistory(profile, gifts);
     }).catch(function () {
-      document.getElementById("pageRoot").innerHTML = '<section class="tight"><div class="wrap"><p style="color:var(--text-faint)">Could not load your giving history right now — please try again shortly.</p></div></section>';
+      document.getElementById("pageRoot").innerHTML = '<section class="tight"><div class="wrap"><p style="color:var(--text-faint)">' + window.LJM_I18N.t("mg.loadError") + '</p></div></section>';
     });
   }
 
+  var currentProfile = null;
+  var authResolved = false;
   window.addEventListener("ljm-auth-ready", function (e) {
     var profile = e.detail;
+    currentProfile = profile;
+    authResolved = true;
     if (!profile) { renderSignedOut(); return; }
     if (!profile.member) { renderUnlinked(profile); return; }
     loadHistory(profile);
+  });
+
+  // Re-render the JS-generated page state when the language toggle fires --
+  // data-i18n only covers the static "Loading…" placeholder and footer.
+  // Before auth resolves, applyDom()'s data-i18n pass already covers the
+  // "Loading…" text, so there's nothing to re-render yet.
+  window.addEventListener("ljm-lang-changed", function () {
+    if (!authResolved) return;
+    if (!currentProfile) { renderSignedOut(); return; }
+    if (!currentProfile.member) { renderUnlinked(currentProfile); return; }
+    loadHistory(currentProfile);
   });
 })();
 </script>
