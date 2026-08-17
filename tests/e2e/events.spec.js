@@ -11,7 +11,7 @@ test.describe("Events", () => {
 
     const card = page.locator(".event-card", { hasText: "Vacation Bible School (VBS) 2026" });
     await expect(card).toBeVisible({ timeout: 10000 });
-    await expect(card).toContainText("to be announced");
+    await expect(card).toContainText("to be confirmed");
 
     // No <img> with a broken/missing src — the placeholder tile is a styled div.
     await expect(card.locator("img")).toHaveCount(0);
