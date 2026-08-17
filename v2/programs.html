@@ -12,11 +12,13 @@
   .pg-church-block { margin-bottom: 40px; }
   .pg-church-block h2 { font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
   .pg-list { display: grid; gap: 12px; margin-top: 16px; }
-  .pg-item { display: flex; align-items: center; gap: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
-  .pg-day { min-width: 64px; font-weight: 700; color: var(--accent); font-size: .82rem; text-transform: uppercase; }
+  .pg-item { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+  .pg-item-main { flex: 1 1 220px; min-width: 0; }
   .pg-item h4 { font-size: .98rem; }
   .pg-item p { font-size: .84rem; color: var(--text-soft); margin-top: 2px; }
-  .pg-time { margin-left: auto; font-family: var(--serif); font-weight: 700; color: var(--text); white-space: nowrap; }
+  .pg-schedule { font-size: .82rem; font-weight: 700; color: var(--accent); margin-top: 6px; }
+  .pg-online-badge { margin-top: 6px; }
+  .pg-item .btn { flex: 0 0 auto; white-space: nowrap; }
   .pg-empty { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 24px; text-align: center; color: var(--text-faint); }
 </style>
 </head>
@@ -120,8 +122,10 @@
 </script>
 <script>
   (function () {
-    var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    function t(key) { return window.LJM_I18N ? window.LJM_I18N.t(key) : key; }
+    function bi(row, field) { return window.LJM_I18N ? window.LJM_I18N.bi(row, field) : row[field + 'En']; }
+
     Promise.all([
       fetch('/api/churches?_t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }),
       fetch('/api/programs?_t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); })
@@ -133,11 +137,15 @@
 
       function renderList(items) {
         return '<div class="pg-list">' + items.map(function (p) {
-          var when = p.dayOfWeek !== null && p.dayOfWeek !== undefined ? DAYS[p.dayOfWeek].slice(0, 3) : (p.recurrence === 'once' ? 'One-off' : '—');
-          var time = [p.startTime, p.endTime].filter(Boolean).join(' – ');
-          return '<div class="pg-item"><div class="pg-day">' + esc(when) + '</div><div><h4>' + esc(p.titleEn) + '</h4>' +
-            (p.descriptionEn ? '<p>' + esc(p.descriptionEn) + '</p>' : '') + (p.location ? '<p>📍 ' + esc(p.location) + '</p>' : '') + '</div>' +
-            (time ? '<div class="pg-time">' + esc(time) + '</div>' : '') + '</div>';
+          var schedule = window.LJM_I18N && window.LJM_I18N.lang() === 'ta' ? p.scheduleLabelTa : p.scheduleLabelEn;
+          return '<div class="pg-item"><div class="pg-item-main"><h4>' + esc(bi(p, 'title')) + '</h4>' +
+            (bi(p, 'description') ? '<p>' + esc(bi(p, 'description')) + '</p>' : '') +
+            (schedule ? '<div class="pg-schedule">' + esc(schedule) + '</div>' : '') +
+            (p.location ? '<p>📍 ' + esc(p.location) + '</p>' : '') +
+            (p.meetingUrl ? '<div class="pg-online-badge badge badge-info">💻 ' + esc(t('programs.onlineViaMeet')) + '</div>' : '') +
+            '</div>' +
+            (p.meetingUrl ? '<a class="btn btn-primary btn-sm" href="' + esc(p.meetingUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(t('cta.joinOnline')) + '</a>' : '') +
+            '</div>';
         }).join('') + '</div>';
       }
 
@@ -147,12 +155,16 @@
         return { church: c, items: items };
       }).filter(function (g) { return g.items.length; });
 
-      var html = '';
-      byChurch.forEach(function (g) {
-        html += '<div class="pg-church-block"><h2>⛪ ' + esc(g.church.nameEn) + (g.church.isMotherChurch ? ' <span class="badge badge-gold">Mother church</span>' : '') + '</h2>' + renderList(g.items) + '</div>';
-      });
-      if (ministryWide.length) html += '<div class="pg-church-block"><h2>🕊️ Ministry-wide</h2>' + renderList(ministryWide) + '</div>';
-      wrap.innerHTML = html || '<div class="pg-empty">No programs published yet — check back soon.</div>';
+      function render() {
+        var html = '';
+        byChurch.forEach(function (g) {
+          html += '<div class="pg-church-block"><h2>⛪ ' + esc(g.church.nameEn) + (g.church.isMotherChurch ? ' <span class="badge badge-gold">Mother church</span>' : '') + '</h2>' + renderList(g.items) + '</div>';
+        });
+        if (ministryWide.length) html += '<div class="pg-church-block"><h2>🕊️ Ministry-wide</h2>' + renderList(ministryWide) + '</div>';
+        wrap.innerHTML = html || '<div class="pg-empty">No programs published yet — check back soon.</div>';
+      }
+      render();
+      window.addEventListener('ljm-lang-changed', render);
     }).catch(function () { document.getElementById('programsWrap').innerHTML = '<div class="pg-empty">Couldn\'t load programs right now — please try again shortly.</div>'; });
   })();
 </script>

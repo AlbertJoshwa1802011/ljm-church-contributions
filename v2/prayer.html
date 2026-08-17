@@ -27,6 +27,15 @@
   .success-card { text-align: center; padding: 40px 24px; }
   .success-card .icon { font-size: 2.4rem; }
   @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+
+  .join-prayer-section { padding: 48px 0 8px; border-top: 1px solid var(--border); margin-top: 48px; }
+  .join-prayer-list { display: grid; gap: 12px; margin-top: 18px; max-width: 640px; margin-left: auto; margin-right: auto; }
+  .join-prayer-item { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+  .join-prayer-item-main { flex: 1 1 220px; min-width: 0; }
+  .join-prayer-item h4 { font-size: .96rem; }
+  .join-prayer-item .schedule { font-size: .82rem; font-weight: 700; color: var(--accent); margin-top: 4px; }
+  .join-prayer-item .btn { flex: 0 0 auto; white-space: nowrap; }
+  .join-prayer-empty { text-align: center; color: var(--text-faint); font-size: .88rem; padding: 12px; }
 </style>
 </head>
 <body>
@@ -151,6 +160,14 @@
   </div>
 </section>
 
+<section class="join-prayer-section">
+  <div class="wrap" style="max-width:720px;text-align:center;">
+    <div class="eyebrow gold" data-i18n="prayer.joinUsHeading">Join Us in Prayer</div>
+    <p class="lede" style="margin-top:8px;" data-i18n="prayer.joinUsSub">Scheduled prayer gatherings you can join — online or in person.</p>
+    <div id="joinPrayerWrap"><div class="join-prayer-empty">Loading…</div></div>
+  </div>
+</section>
+
 <footer class="site-footer">
   <div class="wrap">
     <div class="footer-grid">
@@ -224,6 +241,33 @@
         msg.className = 'form-msg err';
       });
     });
+  })();
+</script>
+<script>
+  (function () {
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    function t(key) { return window.LJM_I18N ? window.LJM_I18N.t(key) : key; }
+    function bi(row, field) { return window.LJM_I18N ? window.LJM_I18N.bi(row, field) : row[field + 'En']; }
+    var wrap = document.getElementById('joinPrayerWrap');
+
+    fetch('/api/programs?ministryArea=prayer&_t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var programsList = (d && d.programs) || [];
+        function render() {
+          if (!programsList.length) { wrap.innerHTML = '<div class="join-prayer-empty">No prayer gatherings published yet — check back soon.</div>'; return; }
+          wrap.innerHTML = '<div class="join-prayer-list">' + programsList.map(function (p) {
+            var schedule = window.LJM_I18N && window.LJM_I18N.lang() === 'ta' ? p.scheduleLabelTa : p.scheduleLabelEn;
+            return '<div class="join-prayer-item"><div class="join-prayer-item-main"><h4>' + esc(bi(p, 'title')) + '</h4>' +
+              (schedule ? '<div class="schedule">' + esc(schedule) + '</div>' : '') + '</div>' +
+              (p.meetingUrl ? '<a class="btn btn-primary btn-sm" href="' + esc(p.meetingUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(t('cta.joinOnline')) + '</a>' : '') +
+              '</div>';
+          }).join('') + '</div>';
+        }
+        render();
+        window.addEventListener('ljm-lang-changed', render);
+      })
+      .catch(function () { wrap.innerHTML = '<div class="join-prayer-empty">Couldn\'t load the prayer schedule right now.</div>'; });
   })();
 </script>
 </body>

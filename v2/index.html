@@ -108,11 +108,22 @@
   .event-body p { font-size: .84rem; }
   .events-empty { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 32px; text-align: center; color: var(--text-faint); font-size: .9rem; }
 
+  .schedule-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+  .schedule-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+  .schedule-card h4 { font-size: .96rem; }
+  .schedule-card .when { font-size: .82rem; font-weight: 700; color: var(--accent); }
+  .schedule-card .btn { margin-top: 8px; align-self: flex-start; }
+  .schedule-cta-row { text-align: center; margin-top: 24px; }
+
   @media (max-width: 980px) {
     .hero .wrap { grid-template-columns: 1fr; }
     .actions-grid { grid-template-columns: 1fr; }
     .glance-stats { grid-template-columns: 1fr 1fr; }
     .events-grid { grid-template-columns: 1fr; }
+    .schedule-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .schedule-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -365,6 +376,18 @@
   </div>
 </section>
 
+<section class="tight" id="prayerSchedule" style="display:none;">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow gold" data-i18n="home.scheduleEyebrow">Prayer &amp; Weekly Schedule</div>
+      <h2 data-i18n="home.scheduleHeading">Join us in prayer and worship</h2>
+      <p data-i18n="home.scheduleSub">Daily prayer, Sunday services, and monthly gatherings — online or in person.</p>
+    </div>
+    <div class="schedule-grid" id="scheduleGrid"></div>
+    <div class="schedule-cta-row"><a href="/v2/programs.html" class="btn btn-secondary" data-i18n="cta.viewAllPrograms">View all programs</a></div>
+  </div>
+</section>
+
 <section class="tight" id="latestTestimonyWrap" style="display:none;">
   <div class="wrap">
     <div class="section-head">
@@ -559,6 +582,51 @@
       .catch(function () {
         document.getElementById("eventsGrid").innerHTML = '<div class="events-empty" style="grid-column:1/-1">See the full <a href="/events.html">Events page</a>.</div>';
       });
+  })();
+</script>
+<script>
+  (function () {
+    // Compact "Prayer & Weekly Schedule" teaser — real programs from
+    // /api/programs, not a fabricated schedule. Hidden entirely if none are
+    // published yet, so Home never shows a placeholder card.
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    function t(key) { return window.LJM_I18N ? window.LJM_I18N.t(key) : key; }
+    function bi(row, field) { return window.LJM_I18N ? window.LJM_I18N.bi(row, field) : row[field + 'En']; }
+
+    fetch("/api/programs?_t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var programsList = (data && data.programs) || [];
+        var section = document.getElementById("prayerSchedule");
+        var grid = document.getElementById("scheduleGrid");
+        if (!programsList.length) return;
+
+        // Show the daily prayer + Sunday services first (the ministry's
+        // steady rhythm), then monthly gatherings — capped to keep Home tidy.
+        var order = ["Daily Morning Prayer", "Daily Night Prayer", "Sunday First Service", "Sunday Second Service", "Youth Prayer", "Full Night Prayer"];
+        var featured = programsList.slice().sort(function (a, b) {
+          var ia = order.indexOf(a.titleEn), ib = order.indexOf(b.titleEn);
+          if (ia === -1 && ib === -1) return (a.sortOrder || 0) - (b.sortOrder || 0);
+          if (ia === -1) return 1;
+          if (ib === -1) return -1;
+          return ia - ib;
+        }).slice(0, 6);
+        if (!featured.length) return;
+
+        function render() {
+          grid.innerHTML = featured.map(function (p) {
+            var schedule = window.LJM_I18N && window.LJM_I18N.lang() === "ta" ? p.scheduleLabelTa : p.scheduleLabelEn;
+            return '<div class="schedule-card"><h4>' + esc(bi(p, "title")) + "</h4>" +
+              (schedule ? '<div class="when">' + esc(schedule) + "</div>" : "") +
+              (p.meetingUrl ? '<a class="btn btn-primary btn-sm" href="' + esc(p.meetingUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(t("cta.joinOnline")) + "</a>" : "") +
+              "</div>";
+          }).join("");
+        }
+        render();
+        section.style.display = "";
+        window.addEventListener("ljm-lang-changed", render);
+      })
+      .catch(function () {});
   })();
 </script>
 <script>
