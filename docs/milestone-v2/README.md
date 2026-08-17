@@ -47,23 +47,28 @@ the owner's sign-off before implementation planning continues** — see §3 of t
 
 ---
 
-## 👉 Current status — Phases 0–5 implemented + populated, awaiting production cutover
+## 👉 Current status — see [`14-milestone-completion-status.md`](./14-milestone-completion-status.md)
 
 **All six planning documents are complete.** The flag-gated beta-flow port
 ([`11-v2-flow-implementation.md`](./11-v2-flow-implementation.md)) shipped Home,
-Our Giving, Events, Give Flow, and My Giving. A follow-up session implemented the
+Our Giving, Events, Give Flow, and My Giving. Follow-up sessions implemented the
 PRD's ministry-content features — Churches, Promises, Testimonies, Prayer, Contact,
-Programs, Blog, Watch & Listen, and the i18n scaffold — as new, directly-reachable
-`/v2/*.html` pages with full backend + admin support (see
-[`12-phase-0-5-implementation-status.md`](./12-phase-0-5-implementation-status.md)).
-A third session fixed the specific navigation/rendering bugs found by real
-phone testing, added a Youth Ministry page, populated initial content, redesigned
-the Home hero, and added a real Playwright E2E suite — see
-[`13-overnight-completion-status.md`](./13-overnight-completion-status.md) for the
-honest current state, including what's still not merged/deployed.
+Programs (with real recurrence + Google Meet), Blog, Youth Ministry, Watch &
+Listen, and a persisted Playwright E2E suite — with full backend + admin support.
 
-**Not yet done:** merging to `main` (the branch that auto-deploys), applying
-migration 0023's content seed to production D1, and full Tamil content.
+[`14-milestone-completion-status.md`](./14-milestone-completion-status.md) is the
+current authoritative source of truth: the 11-block roadmap mapping, what's
+real vs. scaffolded per block, confirmed-fixed QA findings, and the branch
+reconciliation record — several prior sessions' branches sat unmerged on
+`origin/*` for a long time before this session reconciled them, so
+[`12-phase-0-5-implementation-status.md`](./12-phase-0-5-implementation-status.md)
+and [`13-overnight-completion-status.md`](./13-overnight-completion-status.md)
+are both now superseded/stale.
+
+**Not yet done:** merging to `main` (the branch that auto-deploys, requires
+owner authorization), applying migration `0024`/`0025`'s content seed to
+production D1, and full Tamil content on the giving-analytics pages (see the
+current status doc's Remaining Work section).
 
 Before coding any phase:
 - Read [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) (the zero-breakage rules + test
