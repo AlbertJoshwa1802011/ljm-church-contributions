@@ -1,4 +1,4 @@
--- Migration 0023: initial ministry content for the v2 public site launch.
+-- Migration 0025: initial ministry content for the v2 public site launch.
 --
 -- Purely a DATA seed — no schema changes. Every INSERT is guarded with
 -- `WHERE NOT EXISTS (...)` (or COALESCE for in-place church updates), so this
@@ -27,9 +27,10 @@
 --     'seed:v2-launch-2026' — so nobody can mistake these for a real
 --     person's story. One is left `pending` on purpose, to demonstrate the
 --     admin moderation queue.
---   * Programs: generic, plausible recurring-service content (Sunday
---     worship, prayer meeting, bible study, youth, children's, outreach,
---     cell group) — no specific real-world claims.
+--   * Programs: NOT seeded here — the real ministry schedule (Sunday First/
+--     Second Service, Daily Morning/Night Prayer, Full Night Prayer, Youth
+--     Prayer) is seeded by migrations/0024_seed_prayer_programs.sql. This
+--     migration must not add fictional programs alongside real ones.
 --   * Blog posts: original ministry-life editorial copy, author 'LJM
 --     Ministry Team' (not attributed to any specific real named person).
 --     One is left in `draft` status to demonstrate the publish flow.
@@ -198,39 +199,9 @@ SELECT
   (SELECT id FROM churches WHERE slug='city-worship-center'), 'pending', CURRENT_TIMESTAMP, 'seed:v2-launch-2026'
 WHERE NOT EXISTS (SELECT 1 FROM testimonies WHERE title_en='Our Family, Restored');
 
--- ── Programs — generic, real recurring-service content ─────────────────────
-
-INSERT INTO programs (title_en, description_en, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, status, sort_order)
-SELECT 'Sunday Worship Service', 'Our main weekly gathering — worship, the Word, and communion as one church family.', (SELECT id FROM churches WHERE slug='church-of-light'), 'worship', 0, '09:00', '11:00', 'weekly', 'active', 0
-WHERE NOT EXISTS (SELECT 1 FROM programs WHERE title_en='Sunday Worship Service' AND church_id=(SELECT id FROM churches WHERE slug='church-of-light'));
-
-INSERT INTO programs (title_en, description_en, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, status, sort_order)
-SELECT 'Sunday Worship Service', 'Our main weekly gathering — worship, the Word, and communion as one church family.', (SELECT id FROM churches WHERE slug='city-worship-center'), 'worship', 0, '09:30', '11:30', 'weekly', 'active', 1
-WHERE NOT EXISTS (SELECT 1 FROM programs WHERE title_en='Sunday Worship Service' AND church_id=(SELECT id FROM churches WHERE slug='city-worship-center'));
-
-INSERT INTO programs (title_en, description_en, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, status, sort_order)
-SELECT 'Wednesday Prayer Meeting', 'A midweek gathering devoted to corporate prayer and intercession — open to everyone, no matter how new.', (SELECT id FROM churches WHERE slug='church-of-light'), 'prayer', 3, '18:30', '19:30', 'weekly', 'active', 2
-WHERE NOT EXISTS (SELECT 1 FROM programs WHERE title_en='Wednesday Prayer Meeting');
-
-INSERT INTO programs (title_en, description_en, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, status, sort_order)
-SELECT 'Friday Bible Study', 'A weekly deep-dive into Scripture together, working through a book of the Bible chapter by chapter.', (SELECT id FROM churches WHERE slug='city-worship-center'), 'bible-study', 5, '18:00', '19:15', 'weekly', 'active', 3
-WHERE NOT EXISTS (SELECT 1 FROM programs WHERE title_en='Friday Bible Study');
-
-INSERT INTO programs (title_en, description_en, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, status, sort_order)
-SELECT 'Youth Fellowship', 'A weekly gathering for teens and young adults — worship, games, and real conversations about faith and life.', (SELECT id FROM churches WHERE slug='church-of-light'), 'youth', 6, '16:00', '17:30', 'weekly', 'active', 4
-WHERE NOT EXISTS (SELECT 1 FROM programs WHERE title_en='Youth Fellowship');
-
-INSERT INTO programs (title_en, description_en, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, status, sort_order)
-SELECT 'Children''s Sunday School', 'Age-appropriate Bible teaching, worship, and activities for kids while Sunday service is underway.', (SELECT id FROM churches WHERE slug='city-worship-center'), 'children', 0, '09:00', '10:00', 'weekly', 'active', 5
-WHERE NOT EXISTS (SELECT 1 FROM programs WHERE title_en='Children''s Sunday School');
-
-INSERT INTO programs (title_en, description_en, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, status, sort_order)
-SELECT 'Community Outreach', 'Monthly outreach into the neighbourhoods around us — practical help, good deeds, and sharing the gospel in word and action.', (SELECT id FROM churches WHERE slug='church-of-light'), 'outreach', NULL, NULL, NULL, 'monthly', 'active', 6
-WHERE NOT EXISTS (SELECT 1 FROM programs WHERE title_en='Community Outreach');
-
-INSERT INTO programs (title_en, description_en, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, status, sort_order)
-SELECT 'Cell Group / Home Fellowship', 'Small-group fellowship in homes across the city — prayer, Bible discussion, and community in a smaller setting.', (SELECT id FROM churches WHERE slug='city-worship-center'), 'fellowship', 2, '19:00', '20:00', 'weekly', 'active', 7
-WHERE NOT EXISTS (SELECT 1 FROM programs WHERE title_en='Cell Group / Home Fellowship');
+-- Programs are intentionally NOT seeded here — see migrations/0024_seed_prayer_programs.sql
+-- for the real ministry prayer/service schedule. Seeding fictional programs
+-- alongside real ones would misrepresent the ministry's actual schedule.
 
 -- ── Blog posts — original ministry-life editorial copy ──────────────────────
 

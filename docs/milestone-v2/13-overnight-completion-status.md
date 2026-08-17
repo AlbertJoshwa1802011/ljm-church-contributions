@@ -59,7 +59,7 @@ coverage.
 
 ## 2. Content populated (migration 0023)
 
-`migrations/0023_v2_launch_content_seed.sql` — additive data only, every
+`migrations/0025_v2_launch_content_seed.sql` — additive data only, every
 statement guarded (`WHERE NOT EXISTS` / `COALESCE`) so a second run is a
 no-op. **Deliberately not mirrored into `schema.sql`** (unlike every prior
 migration) because it seeds real 2026 calendar dates for "today's promise,"
@@ -166,6 +166,6 @@ explicitly stops short of opening the checkout modal.
 
 1. Review this branch's diff.
 2. Merge to `main` (deploys via `.github/workflows/deploy.yml`).
-3. Dispatch `migrations/0023_v2_launch_content_seed.sql` against production
+3. Dispatch `migrations/0025_v2_launch_content_seed.sql` against production
    D1 via the existing `apply-d1-migration.yml` `workflow_dispatch`.
 4. Spot-check the production URLs listed in the session's final report.

@@ -1,4 +1,4 @@
-// Validates migrations/0023_v2_launch_content_seed.sql — the initial-content
+// Validates migrations/0025_v2_launch_content_seed.sql — the initial-content
 // seed for the v2 public site launch (promises/testimonies/programs/blog/
 // churches/VBS 2026). This is deliberately NOT mirrored into schema.sql (see
 // that migration's header comment): it seeds real calendar dates for
@@ -15,7 +15,7 @@ import { freshDb } from "../helpers/mock-d1.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
-const SEED_SQL = readFileSync(path.join(REPO_ROOT, "migrations", "0023_v2_launch_content_seed.sql"), "utf8");
+const SEED_SQL = readFileSync(path.join(REPO_ROOT, "migrations", "0025_v2_launch_content_seed.sql"), "utf8");
 
 function seededDb() {
   const db = freshDb();
@@ -33,13 +33,11 @@ test("seed migration: is idempotent — applying twice does not duplicate rows",
   const counts = {
     promises: db._sqlite.prepare("SELECT COUNT(*) AS n FROM promises WHERE created_by='seed:v2-launch-2026'").get().n,
     testimonies: db._sqlite.prepare("SELECT COUNT(*) AS n FROM testimonies WHERE reviewed_by='seed:v2-launch-2026'").get().n,
-    programs: db._sqlite.prepare("SELECT COUNT(*) AS n FROM programs").get().n,
     blog: db._sqlite.prepare("SELECT COUNT(*) AS n FROM blog_posts").get().n,
     events: db._sqlite.prepare("SELECT COUNT(*) AS n FROM events WHERE title='Vacation Bible School (VBS) 2026'").get().n
   };
   assert.equal(counts.promises, 24); // 21 daily + 2 monthly + 1 yearly
   assert.equal(counts.testimonies, 4);
-  assert.equal(counts.programs, 8);
   assert.equal(counts.blog, 5);
   assert.equal(counts.events, 1);
 });
@@ -70,14 +68,6 @@ test("seed migration: testimonies are clearly marked as sample content, one left
   const published = rows.filter((r) => r.status === "published");
   assert.equal(pending.length, 1);
   assert.equal(published.length, 3);
-});
-
-test("seed migration: programs are attached to real churches", () => {
-  const db = seededDb();
-  const orphaned = db._sqlite.prepare(
-    "SELECT COUNT(*) AS n FROM programs p LEFT JOIN churches c ON c.id = p.church_id WHERE c.id IS NULL"
-  ).get().n;
-  assert.equal(orphaned, 0);
 });
 
 test("seed migration: blog posts include exactly one draft (publish-flow demo) and the rest published", () => {
