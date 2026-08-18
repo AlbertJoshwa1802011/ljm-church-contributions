@@ -47,7 +47,7 @@ the owner's sign-off before implementation planning continues** — see §3 of t
 
 ---
 
-## 👉 Current status — see [`14-milestone-completion-status.md`](./14-milestone-completion-status.md)
+## 👉 Current status — see [`15-major-milestone-status.md`](./15-major-milestone-status.md)
 
 **All six planning documents are complete.** The flag-gated beta-flow port
 ([`11-v2-flow-implementation.md`](./11-v2-flow-implementation.md)) shipped Home,
@@ -55,20 +55,25 @@ Our Giving, Events, Give Flow, and My Giving. Follow-up sessions implemented the
 PRD's ministry-content features — Churches, Promises, Testimonies, Prayer, Contact,
 Programs (with real recurrence + Google Meet), Blog, Youth Ministry, Watch &
 Listen, and a persisted Playwright E2E suite — with full backend + admin support.
+The most recent session closed the two largest remaining gaps: full i18n
+across Our Giving/My Giving/Home/Events/Give Flow/Watch & Listen, and a
+complete Events & VBS admin console section (the backend/DB/public page were
+already done, but there was no admin UI for it at all — a real gap this
+session's own audit found).
 
-[`14-milestone-completion-status.md`](./14-milestone-completion-status.md) is the
+[`15-major-milestone-status.md`](./15-major-milestone-status.md) is the
 current authoritative source of truth: the 11-block roadmap mapping, what's
-real vs. scaffolded per block, confirmed-fixed QA findings, and the branch
-reconciliation record — several prior sessions' branches sat unmerged on
-`origin/*` for a long time before this session reconciled them, so
-[`12-phase-0-5-implementation-status.md`](./12-phase-0-5-implementation-status.md)
+real vs. scaffolded per block, confirmed-fixed bugs, security/migration
+audit results, and the branch reconciliation record.
+[`14-milestone-completion-status.md`](./14-milestone-completion-status.md),
+[`12-phase-0-5-implementation-status.md`](./12-phase-0-5-implementation-status.md),
 and [`13-overnight-completion-status.md`](./13-overnight-completion-status.md)
-are both now superseded/stale.
+are all now superseded/stale.
 
 **Not yet done:** merging to `main` (the branch that auto-deploys, requires
 owner authorization), applying migration `0024`/`0025`'s content seed to
-production D1, and full Tamil content on the giving-analytics pages (see the
-current status doc's Remaining Work section).
+production D1, and About/Churches/Testimonies/Blog page-content Tamil
+translation (see the current status doc's Remaining Work section).
 
 Before coding any phase:
 - Read [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) (the zero-breakage rules + test
