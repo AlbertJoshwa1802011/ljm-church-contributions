@@ -24,3 +24,7 @@ PURCHASES_SHEET_SETUP.md
 # Node (only used to run the test suite — see TESTING.md)
 node_modules/
 package-lock.json
+
+# Playwright e2e suite output — see TESTING.md
+test-results/
+playwright-report/

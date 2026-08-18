@@ -1120,6 +1120,16 @@
                             <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
                             <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
                         </select></div>
+                        <div><label class="f-label">Recurrence</label><select class="input" id="pg_recurrence">
+                            <option value="weekly">Every week</option>
+                            <option value="daily">Every day</option>
+                            <option value="monthly">Monthly — a specific week</option>
+                            <option value="once">One-off</option>
+                        </select></div>
+                        <div id="pg_weekOfMonthWrap" style="display:none;"><label class="f-label">Which week of the month</label><select class="input" id="pg_weekOfMonth">
+                            <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option>
+                            <option value="4">4th</option><option value="5">5th</option>
+                        </select></div>
                         <div><label class="f-label">Start time</label><input class="input" type="time" id="pg_startTime"></div>
                         <div><label class="f-label">End time</label><input class="input" type="time" id="pg_endTime"></div>
                         <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. youth"></div>
@@ -3202,14 +3212,25 @@
         }
 
         // ═══════════════ Programs ═══════════════
+        var PG_ORDINALS = ["", "1st", "2nd", "3rd", "4th", "5th"];
+        var PG_DAYS_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        function programWhenLabel(p) {
+            var dayName = (p.dayOfWeek !== null && p.dayOfWeek !== undefined) ? PG_DAYS_FULL[p.dayOfWeek] : null;
+            var when;
+            if (p.recurrence === "monthly" && p.weekOfMonth && dayName) when = (PG_ORDINALS[p.weekOfMonth] || p.weekOfMonth + "th") + " " + dayName + " of every month";
+            else if (p.recurrence === "daily") when = "Every day";
+            else if (p.recurrence === "once") when = "One-off";
+            else if (dayName) when = "Every " + dayName;
+            else when = "—";
+            return when + (p.startTime ? " · " + p.startTime : "");
+        }
         function loadPrograms() { if (state.churchesCache && state.churchesCache.length) populateChurchSelect(); else fetchChurches(); fetchPrograms(); }
         function fetchPrograms() {
             api("/api/programs?all=1").then(function (d) {
                 if (!d.success) { setMsg("pg_msg", d.message || "No access", "err"); return; }
-                var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                 var tb = $("pg_table").querySelector("tbody");
                 tb.innerHTML = (d.programs || []).map(function (p) {
-                    var when = (p.dayOfWeek !== null && p.dayOfWeek !== undefined ? days[p.dayOfWeek] + " " : "") + (p.startTime || "");
+                    var when = programWhenLabel(p);
                     return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.churchNameEn || "Ministry-wide") + "</td>" +
                         "<td>" + esc(when || "—") + "</td>" +
                         "<td><span class='pill " + (p.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
@@ -3226,18 +3247,25 @@
         function saveProgram() {
             var titleEn = $("pg_titleEn").value.trim();
             if (!titleEn) { setMsg("pg_msg", "Title is required", "err"); return; }
+            var recurrence = $("pg_recurrence").value;
             var body = {
                 titleEn: titleEn, churchId: $("pg_churchId").value || null,
                 dayOfWeek: $("pg_dayOfWeek").value === "" ? null : Number($("pg_dayOfWeek").value),
+                recurrence: recurrence,
+                weekOfMonth: recurrence === "monthly" ? Number($("pg_weekOfMonth").value) : null,
                 startTime: $("pg_startTime").value, endTime: $("pg_endTime").value,
                 ministryArea: $("pg_ministryArea").value.trim(), location: $("pg_location").value.trim(),
                 descriptionEn: $("pg_descriptionEn").value.trim()
             };
+            if (recurrence === "monthly" && (body.dayOfWeek === null || body.dayOfWeek === undefined)) {
+                setMsg("pg_msg", "Pick a day of week for a monthly recurrence", "err"); return;
+            }
             api("/api/programs", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
                 setMsg("pg_msg", d.message, d.success ? "ok" : "err");
                 if (d.success) {
                     ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn"].forEach(function (id) { $(id).value = ""; });
-                    $("pg_dayOfWeek").value = ""; $("pg_churchId").value = "";
+                    $("pg_dayOfWeek").value = ""; $("pg_churchId").value = ""; $("pg_recurrence").value = "weekly";
+                    $("pg_weekOfMonthWrap").style.display = "none";
                     fetchPrograms();
                 }
             }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
@@ -3768,6 +3796,7 @@
             $("pq_filter").onchange = fetchPrayer; $("pq_refreshBtn").onclick = fetchPrayer;
             $("cm_filter").onchange = fetchContactMsgs; $("cm_refreshBtn").onclick = fetchContactMsgs;
             $("pg_saveBtn").onclick = saveProgram;
+            $("pg_recurrence").onchange = function () { $("pg_weekOfMonthWrap").style.display = $("pg_recurrence").value === "monthly" ? "" : "none"; };
             $("bl_saveBtn").onclick = saveBlogPost;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };

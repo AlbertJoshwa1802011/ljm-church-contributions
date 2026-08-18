@@ -69,6 +69,40 @@ test("programs: PUT/DELETE on a nonexistent id is a 404", async () => {
   assert.equal(delRes.success, false);
 });
 
+test("programs: a monthly recurrence stores and returns weekOfMonth for ordinal-day rendering (e.g. \"2nd Friday of every month\")", async () => {
+  const db = freshDb();
+  const create = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs",
+    body: { titleEn: "Full Night Prayer", dayOfWeek: 5, recurrence: "monthly", weekOfMonth: 2, startTime: "22:00", endTime: "05:00" }
+  })));
+  assert.equal(create.success, true);
+
+  const pub = await readJson(await programs.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/programs" })));
+  const p = pub.programs.find(x => x.id === create.id);
+  assert.equal(p.recurrence, "monthly");
+  assert.equal(p.weekOfMonth, 2);
+  assert.equal(p.dayOfWeek, 5);
+
+  await programs.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/programs",
+    body: { id: create.id, titleEn: "Full Night Prayer", dayOfWeek: 5, recurrence: "monthly", weekOfMonth: 3, startTime: "22:00", endTime: "05:00" }
+  }));
+  const pub2 = await readJson(await programs.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/programs" })));
+  assert.equal(pub2.programs.find(x => x.id === create.id).weekOfMonth, 3);
+});
+
+test("programs: a plain weekly program has no weekOfMonth set", async () => {
+  const db = freshDb();
+  const create = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs",
+    body: { titleEn: "Sunday First Service", dayOfWeek: 0, startTime: "06:00" }
+  })));
+  const pub = await readJson(await programs.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/programs" })));
+  const p = pub.programs.find(x => x.id === create.id);
+  assert.equal(p.recurrence, "weekly");
+  assert.equal(p.weekOfMonth, null);
+});
+
 test("programs: DELETE requires manage_content", async () => {
   const db = freshDb();
   const create = await readJson(await programs.onRequestPost(makeContext({

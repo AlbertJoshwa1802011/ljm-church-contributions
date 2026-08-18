@@ -33,6 +33,7 @@ function toProgram(row) {
     startTime: row.start_time,
     endTime: row.end_time,
     recurrence: row.recurrence,
+    weekOfMonth: row.week_of_month,
     location: row.location,
     status: row.status,
     sortOrder: row.sort_order
@@ -93,13 +94,14 @@ export async function onRequestPost(context) {
     if (!titleEn) return json({ success: false, message: "titleEn is required" }, 400);
 
     const res = await db.prepare(
-      `INSERT INTO programs (title_en, title_ta, description_en, description_ta, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, location, status, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO programs (title_en, title_ta, description_en, description_ta, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, week_of_month, location, status, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       titleEn, body.titleTa || null, body.descriptionEn || null, body.descriptionTa || null,
       body.churchId ? Number(body.churchId) : null, body.ministryArea || null,
       body.dayOfWeek !== undefined && body.dayOfWeek !== null && body.dayOfWeek !== "" ? Number(body.dayOfWeek) : null,
       body.startTime || null, body.endTime || null, body.recurrence || "weekly",
+      body.weekOfMonth !== undefined && body.weekOfMonth !== null && body.weekOfMonth !== "" ? Number(body.weekOfMonth) : null,
       body.location || null, body.status === "inactive" ? "inactive" : "active", Number(body.sortOrder) || 0
     ).run();
 
@@ -132,13 +134,14 @@ export async function onRequestPut(context) {
     if (!titleEn) return json({ success: false, message: "titleEn is required" }, 400);
 
     const res = await db.prepare(
-      `UPDATE programs SET title_en=?, title_ta=?, description_en=?, description_ta=?, church_id=?, ministry_area=?, day_of_week=?, start_time=?, end_time=?, recurrence=?, location=?, status=?, sort_order=?, updated_at=CURRENT_TIMESTAMP
+      `UPDATE programs SET title_en=?, title_ta=?, description_en=?, description_ta=?, church_id=?, ministry_area=?, day_of_week=?, start_time=?, end_time=?, recurrence=?, week_of_month=?, location=?, status=?, sort_order=?, updated_at=CURRENT_TIMESTAMP
        WHERE id=?`
     ).bind(
       titleEn, body.titleTa || null, body.descriptionEn || null, body.descriptionTa || null,
       body.churchId ? Number(body.churchId) : null, body.ministryArea || null,
       body.dayOfWeek !== undefined && body.dayOfWeek !== null && body.dayOfWeek !== "" ? Number(body.dayOfWeek) : null,
       body.startTime || null, body.endTime || null, body.recurrence || "weekly",
+      body.weekOfMonth !== undefined && body.weekOfMonth !== null && body.weekOfMonth !== "" ? Number(body.weekOfMonth) : null,
       body.location || null, body.status === "inactive" ? "inactive" : "active", Number(body.sortOrder) || 0, id
     ).run();
 

@@ -32,8 +32,9 @@ npx wrangler d1 execute ljm-contributions-db --remote --file=./schema.sql
 ```
 
 ## 4. Local Development (Optional)
-If you are running the project locally using Wrangler pages dev, Wrangler will automatically create a local D1 SQLite file. Run:
+If you are running the project locally using Wrangler pages dev, Wrangler will automatically create a local D1 SQLite file. First apply the schema to it, then run `pages dev` with **no `--d1` flag** — `wrangler.jsonc` already declares the `DB` binding, and passing `--d1 DB=ljm-contributions-db` explicitly makes Wrangler create a *second*, separate local SQLite file keyed by that override instead of reusing the one `wrangler d1 execute ... --local` just seeded, so the site loads with "no such table" errors even though the schema really was applied:
 ```bash
-npx wrangler pages dev . --d1 DB=ljm-contributions-db
+npx wrangler d1 execute DB --local --file=./schema.sql
+npx wrangler pages dev .
 ```
 Inside the local app, Wrangler will run the database migrations automatically or prompt you to run them.

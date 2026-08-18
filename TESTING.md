@@ -65,6 +65,48 @@ This predates the `node --test` suite and covers the live deployment specificall
 
 A separate, read-only data-integrity/reconciliation endpoint (`GET /api/verify`) — schema sanity checks, orphan-reference checks, etc. Never writes to data tables. Worth extending when you add a new foreign-key-like relationship this schema doesn't enforce at the database level (this project has almost no real `FOREIGN KEY` constraints — see the comment at the top of `functions/api/verify.js`).
 
+## Browser / e2e suite (`tests/e2e/`, Playwright)
+
+A real-browser layer for the `/v2/*` ministry pages and admin console, on top
+of the offline `node --test` suite above — real `wrangler pages dev` +
+real local D1 + real Chromium, not a DOM mock. **Not part of `npm test` or
+CI** (`.github/workflows/test.yml` only runs the offline suite); run it
+separately with:
+
+```bash
+npm run test:e2e
+```
+
+`playwright.config.js`'s `webServer` applies `schema.sql` + `tests/e2e/seed.sql`
+to a local D1 and starts `wrangler pages dev` automatically — no manual setup
+needed. `tests/e2e/seed.sql` is deterministic, e2e-only content (an `INSERT`,
+not a migration) that specs assert against by name; extend it instead of
+hardcoding new fixtures per-spec.
+
+**⚠️ If you write a spec that opens `admin.html`:** `theme.js` monkey-patches
+`window.fetch` so that on `localhost`/`127.0.0.1` every `/api/*` call is
+silently redirected to the **real production site** ("Global API Redirect
+for Local Preview to Live Production" — intentional, so a plain static
+preview with no local Functions runtime still shows live data). Unguarded,
+that means an admin e2e test would perform real mutations against live
+production data on every run. Always call
+`guardAdminApiFromProduction(context, baseURL)` from `tests/e2e/helpers.mjs`
+first — it bounces those calls back to the local dev server instead. See
+`tests/e2e/admin.spec.mjs` for the pattern. Every other spec's external-host
+blocking (Google Sign-In/Fonts/Chart.js CDN — unreachable in most CI
+sandboxes and irrelevant to the assertions) is applied uniformly via the
+`context` fixture in `tests/e2e/fixtures.mjs`; import `test`/`expect` from
+there rather than `@playwright/test` directly so new specs get it for free.
+
+If your environment's installed Chromium revision doesn't match the pinned
+`@playwright/test` version (this sandbox's pre-installed browser didn't),
+set `E2E_CHROMIUM_PATH=/path/to/chrome` rather than running
+`npx playwright install`.
+
 ## Manual UI verification
 
-There's no automated browser/UI test suite. `.agents/workflows/verify-portal.md` documents the manual checklist (viewport sizes, dark mode, console errors) to run through after a UI-affecting change — `verify-portal.js` is a browser-console script for a quick DOM-presence smoke check on a live page.
+`.agents/workflows/verify-portal.md` documents the manual checklist (viewport
+sizes, dark mode, console errors) to run through after a UI-affecting change
+on the legacy (pre-v2) pages — `verify-portal.js` is a browser-console script
+for a quick DOM-presence smoke check on a live page. Prefer extending
+`tests/e2e/` for anything on the `/v2/*` pages or admin console.

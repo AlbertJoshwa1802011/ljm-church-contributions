@@ -630,6 +630,10 @@ CREATE TABLE IF NOT EXISTS programs (
   updated_at     DATETIME
 );
 CREATE INDEX IF NOT EXISTS idx_programs_church ON programs(church_id, day_of_week);
+-- week_of_month (see migrations/0023_program_week_of_month.sql): which week
+-- (1-5) a recurrence='monthly' program falls on, e.g. day_of_week=5 (Friday)
+-- + week_of_month=2 -> "2nd Friday of every month". Null for weekly/daily/once.
+ALTER TABLE programs ADD COLUMN week_of_month INTEGER;
 
 -- 25. Events church/beneficiary extension (see migrations/0021_events_church.sql)
 ALTER TABLE events ADD COLUMN church_id INTEGER;
