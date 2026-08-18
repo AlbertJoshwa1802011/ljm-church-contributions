@@ -121,6 +121,34 @@ test("settings: PUT with an empty updates object is rejected", async () => {
   assert.match(res.message, /No updates/);
 });
 
+test("settings: rejects a non-http(s) scheme for a media URL key (XSS/open-redirect guard)", async () => {
+  const db = freshDb();
+  const badSchemes = ["javascript:alert(1)", "data:text/html,<script>alert(1)</script>", "\"><script>alert(1)</script>"];
+  for (const value of badSchemes) {
+    const res = await readJson(await settings.onRequestPut(makeContext({
+      db, body: { key: "sunday_live_url", value }
+    })));
+    assert.equal(res.success, false, `expected rejection for ${value}`);
+    assert.match(res.message, /http/);
+  }
+
+  // A real https:// URL is still accepted for every media key.
+  for (const key of ["sunday_live_url", "daily_prayer_url", "podcast_playlist_url"]) {
+    const ok = await readJson(await settings.onRequestPut(makeContext({
+      db, body: { key, value: "https://www.youtube.com/watch?v=abc123" }
+    })));
+    assert.equal(ok.success, true, ok.message);
+  }
+});
+
+test("settings: an empty media URL value is still accepted (clears the field)", async () => {
+  const db = freshDb();
+  const res = await readJson(await settings.onRequestPut(makeContext({
+    db, body: { key: "daily_prayer_url", value: "" }
+  })));
+  assert.equal(res.success, true, res.message);
+});
+
 test("settings: GET only returns whitelisted public keys, not every writable key", async () => {
   const db = freshDb();
   // tech_goal_amount is WRITABLE but not in PUBLIC_KEYS.

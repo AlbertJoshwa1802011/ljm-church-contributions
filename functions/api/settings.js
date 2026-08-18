@@ -81,6 +81,9 @@ export async function onRequestPut(context) {
       if (key === "pastor_email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         return json({ success: false, message: "pastor_email must be a valid email address" }, 400);
       }
+      if (MEDIA_KEYS.includes(key) && value && !/^https?:\/\//i.test(value)) {
+        return json({ success: false, message: `'${key}' must be an http:// or https:// URL` }, 400);
+      }
       if (key === "about_content" && value) {
         try { JSON.parse(value); } catch (_) {
           return json({ success: false, message: "about_content must be valid JSON" }, 400);

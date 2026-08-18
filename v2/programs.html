@@ -13,9 +13,10 @@
   .pg-church-block h2 { font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
   .pg-list { display: grid; gap: 12px; margin-top: 16px; }
   .pg-item { display: flex; align-items: center; gap: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+  .pg-body { min-width: 0; }
   .pg-day { min-width: 64px; font-weight: 700; color: var(--accent); font-size: .82rem; text-transform: uppercase; }
-  .pg-item h4 { font-size: .98rem; }
-  .pg-item p { font-size: .84rem; color: var(--text-soft); margin-top: 2px; }
+  .pg-item h4 { font-size: .98rem; overflow-wrap: anywhere; }
+  .pg-item p { font-size: .84rem; color: var(--text-soft); margin-top: 2px; overflow-wrap: anywhere; }
   .pg-time { margin-left: auto; font-family: var(--serif); font-weight: 700; color: var(--text); white-space: nowrap; }
   .pg-empty { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 24px; text-align: center; color: var(--text-faint); }
 </style>
@@ -135,7 +136,7 @@
         return '<div class="pg-list">' + items.map(function (p) {
           var when = p.dayOfWeek !== null && p.dayOfWeek !== undefined ? DAYS[p.dayOfWeek].slice(0, 3) : (p.recurrence === 'once' ? 'One-off' : '—');
           var time = [p.startTime, p.endTime].filter(Boolean).join(' – ');
-          return '<div class="pg-item"><div class="pg-day">' + esc(when) + '</div><div><h4>' + esc(p.titleEn) + '</h4>' +
+          return '<div class="pg-item"><div class="pg-day">' + esc(when) + '</div><div class="pg-body"><h4>' + esc(p.titleEn) + '</h4>' +
             (p.descriptionEn ? '<p>' + esc(p.descriptionEn) + '</p>' : '') + (p.location ? '<p>📍 ' + esc(p.location) + '</p>' : '') + '</div>' +
             (time ? '<div class="pg-time">' + esc(time) + '</div>' : '') + '</div>';
         }).join('') + '</div>';

@@ -149,6 +149,71 @@ offline harness and are tracked here so nobody re-discovers them as a surprise:
   trigger in a single-threaded mock-D1 test. The idempotency guarantee itself
   (duplicate delivery stored once) IS covered via the pre-check path.
 
+## Ministry-content endpoints (churches/promises/testimonies/prayer/contact/programs/blog) — found during 2026-08 full-system QA
+
+These endpoints already have happy-path/permission/visibility tests (see
+`tests/api/{churches,promises,testimonies,prayer,contact,programs,blog}.test.mjs`).
+The gaps below are real-input findings from a live browser + adversarial-input
+pass against a local `wrangler pages dev`, not from reading the test files:
+
+- [x] `v2/testimonies.html`'s default ("All") list fetch was
+  `'/api/testimonies' + (currentKind ? '?kind=...' : '') + '&_t=' + Date.now()`
+  — with the default empty `currentKind`, that builds `/api/testimonies&_t=...`
+  (no `?`), which Cloudflare Pages Functions doesn't route to
+  `functions/api/testimonies.js` at all; it fell through to static-asset
+  serving and got the legacy homepage's HTML back at `200`, which
+  `.then(r => r.json())` then threw on. **Every first-time visitor landing on
+  `/v2/testimonies.html` saw "Couldn't load testimonies right now" instead of
+  the real testimonies** — reproduced live (Playwright, real render, not just
+  a code read) against a local `wrangler pages dev`. Fixed (always start the
+  query string with `?`) — `tests/frontend/testimonies-query-string.test.mjs`.
+- [x] `settings.js` `sunday_live_url`/`daily_prayer_url`/`podcast_playlist_url`
+  reject non-http(s) schemes — **found as a live stored-XSS**: an unvalidated
+  `"><img src=x onerror=...>` value round-tripped through `PUT /api/settings`
+  and executed in a real browser on `/v2/watch.html` (the value was
+  interpolated unescaped into an `<a href="...">`). Fixed in both
+  `functions/api/settings.js` (server-side scheme allow-list) and
+  `v2/watch.html` (HTML-escaping + http(s)-only rendering) — see
+  `tests/api/settings.test.mjs` ("rejects a non-http(s) scheme...").
+- [ ] `programs.js`/`testimonies.js`/`blog.js`/`prayer.js`/`contact.js`/
+  `promises.js`/`churches.js` have **no server-side length cap** on free-text
+  fields (unlike `settings.js`'s `MAX_VALUE_LEN`) — confirmed a 50,000-char
+  `titleEn` is accepted by `POST /api/programs` with `200 OK`. Combined with
+  the layout bug below, this let one admin input make `/v2/programs.html`
+  render ~2.26 million px wide. Not fixed (needs a chosen limit per field,
+  product decision) — flagged here so it isn't rediscovered as new.
+- [x] `v2/programs.html` — `.pg-item`'s title/description text has no
+  `overflow-wrap`, and its flex-child wrapper had no `min-width: 0`, so an
+  unbroken long string forces the whole page to grow instead of wrapping.
+  Fixed (`.pg-body { min-width: 0 }` + `overflow-wrap: anywhere` on the title/
+  description) — `tests/frontend/programs-overflow-guard.test.mjs`.
+- [ ] `programs.js`'s `recurrence` model (`'weekly' | 'monthly' | 'once'` +
+  a single `day_of_week` int, see `migrations/0020_programs.sql`) cannot
+  express "daily" (every day — e.g. Daily Morning/Night Prayer, which render
+  as a bare "—" with no schedule info) or "Nth weekday of the month" (e.g.
+  Full Night Prayer/Youth Prayer render as a bare "Fri"/"Sun", indistinguishable
+  from a plain weekly service). Reproduced live with the real ministry
+  schedule. This is a schema/product decision (a `week_of_month` or
+  free-text `recurrence_note` field), not a one-line fix — documented, not
+  fixed. See the full-system QA report for screenshots.
+- [ ] No dedicated Google Meet link field for **Daily Night Prayer** — only
+  one `daily_prayer_url` setting exists (labeled "Daily Morning Prayer" on
+  `/v2/watch.html`); there's no column/setting anywhere for the night
+  prayer's link. Product decision (add a second `MEDIA_KEYS` entry).
+- [ ] Malformed/empty JSON body on POST/PUT returns `500`, not `400`, across
+  every one of these handlers (the generic `try { await request.json() }
+  catch` returns the parse error via the outer 500 catch) — a pre-existing
+  pattern shared by nearly every handler in this codebase, not unique to
+  the ministry-content phase. Not fixed here (cross-cutting; would touch
+  every `functions/api/*.js` file for a one-line status-code change).
+- [ ] Nonexistent `/v2/*.html` routes and `/api/does-not-exist` return `200`
+  with the **legacy root `index.html`** instead of a real 404 (Cloudflare
+  Pages' default static-asset fallback — no `not_found_handling` is set in
+  `wrangler.jsonc` and there's no custom `404.html`). Confirmed against the
+  local `wrangler pages dev` server; **not** verified against production
+  (deliberately not touched). Recommend adding `not_found_handling` (or a
+  real `404.html`) and re-checking against the live deployment.
+
 ---
 
 ## How to use this tracker

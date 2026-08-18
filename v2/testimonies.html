@@ -179,7 +179,7 @@
     function load() {
       var grid = document.getElementById('tsGrid');
       grid.innerHTML = '<div class="ts-empty">Loading…</div>';
-      fetch('/api/testimonies' + (currentKind ? '?kind=' + currentKind : '') + '&_t=' + Date.now(), { cache: 'no-store' })
+      fetch('/api/testimonies?' + (currentKind ? 'kind=' + currentKind + '&' : '') + '_t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { return r.json(); })
         .then(function (d) {
           var items = (d && d.testimonies) || [];

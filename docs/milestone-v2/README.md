@@ -63,6 +63,16 @@ migration/deploy status.
 branch that auto-deploys), a Youth Ministry hub page, full Tamil content, and a
 Playwright E2E suite.
 
+A full adversarial QA pass of everything above — real browser testing, live
+XSS/injection attempts, the real ministry schedule seeded end-to-end — found
+and fixed two P1 bugs (the Testimonies page's default view was completely
+broken for every visitor; a stored XSS in Watch & Listen) plus a layout bug,
+and documented several gaps needing a product decision before they can be
+fixed (the recurring-schedule model can't express "second Friday of every
+month"; a local-dev safety hazard in `theme.js`). See
+[`15-full-system-breaker-qa-2026-08-18.md`](./15-full-system-breaker-qa-2026-08-18.md)
+for the full report.
+
 Before coding any phase:
 - Read [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) (the zero-breakage rules + test
   net) and [`05-backend-schema.md`](./05-backend-schema.md) (additive tables + API
