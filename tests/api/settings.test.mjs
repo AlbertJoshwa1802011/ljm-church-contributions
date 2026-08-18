@@ -121,6 +121,55 @@ test("settings: PUT with an empty updates object is rejected", async () => {
   assert.match(res.message, /No updates/);
 });
 
+// A caller with only manage_content (no manage_funds) — e.g. a content
+// editor role, distinct from the finance/super-admin roles schema.sql
+// seeds by default.
+async function makeContentOnlyContext(db, opts) {
+  await db.prepare("INSERT OR IGNORE INTO roles (role_name, permissions) VALUES (?, ?)")
+    .bind("content_editor", JSON.stringify(["manage_content"])).run();
+  await db.prepare("INSERT OR IGNORE INTO member_roles (email, role_name) VALUES (?, ?)")
+    .bind("editor@example.com", "content_editor").run();
+  return makeContext({
+    db, authToken: "editor@example.com",
+    env: { ALLOW_LEGACY_EMAIL_TOKEN: "true" },
+    ...opts
+  });
+}
+
+test("settings: a manage_content-only caller can write Watch & Listen media links", async () => {
+  const db = freshDb();
+  const res = await readJson(await settings.onRequestPut(await makeContentOnlyContext(db, {
+    body: { key: "sunday_live_url", value: "https://youtube.com/watch?v=abc123" }
+  })));
+  assert.equal(res.success, true, res.message);
+
+  const getResult = await readJson(await settings.onRequestGet(makeContext({ db })));
+  assert.equal(getResult.settings.sunday_live_url, "https://youtube.com/watch?v=abc123");
+});
+
+test("settings: a manage_content-only caller cannot write a financial key (tech_goal_amount)", async () => {
+  const db = freshDb();
+  const res = await readJson(await settings.onRequestPut(await makeContentOnlyContext(db, {
+    body: { key: "tech_goal_amount", value: "50000" }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /manage_funds/);
+});
+
+test("settings: a manage_content-only caller cannot smuggle a financial key into a batch update with content keys", async () => {
+  const db = freshDb();
+  const res = await readJson(await settings.onRequestPut(await makeContentOnlyContext(db, {
+    body: { updates: { pastor_name: "Pastor Kumar", tech_goal_amount: "1" } }
+  })));
+  assert.equal(res.success, false);
+  assert.match(res.message, /manage_funds/);
+
+  // Confirm the batch was rejected atomically -- pastor_name must not have
+  // been written either.
+  const getResult = await readJson(await settings.onRequestGet(makeContext({ db })));
+  assert.notEqual(getResult.settings.pastor_name, "Pastor Kumar");
+});
+
 test("settings: GET only returns whitelisted public keys, not every writable key", async () => {
   const db = freshDb();
   // tech_goal_amount is WRITABLE but not in PUBLIC_KEYS.

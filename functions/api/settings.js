@@ -21,6 +21,11 @@ const CONTENT_KEYS = ["about_content"];
 const MEDIA_KEYS = ["sunday_live_url", "daily_prayer_url", "podcast_playlist_url"];
 const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS, ...MEDIA_KEYS];
 const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS, ...MEDIA_KEYS];
+// Money-moving keys stay manage_funds-only. Everything else here (verses,
+// pastor/About info, Watch & Listen media links, force_login) is ministry
+// content, not a financial control, so a manage_content-only editor should
+// be able to write it too — see onRequestPut's permission check below.
+const FINANCIAL_KEYS = ["tech_goal_amount", "christmas_goal_amount", "sandha_amount"];
 
 const MAX_VALUE_LEN = 1000;
 // about_content is a whole page's worth of JSON (hero, mission cards, verses,
@@ -55,8 +60,19 @@ export async function onRequestPut(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "manage_funds");
-  if (!auth.ok) return auth.response;
+  // manage_funds can write everything (unchanged from before). A caller with
+  // only manage_content can still write the non-financial keys -- Watch &
+  // Listen links, verses, pastor/About info -- which used to be wrongly
+  // gated behind the finance permission even though they're ministry
+  // content, not a money control. Financial keys always require manage_funds.
+  let auth = await requireAuth(context, "manage_funds");
+  let contentOnly = false;
+  if (!auth.ok) {
+    const contentAuth = await requireAuth(context, "manage_content");
+    if (!contentAuth.ok) return auth.response;
+    auth = contentAuth;
+    contentOnly = true;
+  }
 
   try {
     const body = await request.json();
@@ -69,6 +85,13 @@ export async function onRequestPut(context) {
 
     const entries = Object.entries(updates);
     if (entries.length === 0) return json({ success: false, message: "No updates provided" }, 400);
+
+    if (contentOnly) {
+      const deniedKey = entries.map(([key]) => key).find((key) => FINANCIAL_KEYS.includes(key));
+      if (deniedKey) {
+        return json({ success: false, message: `'${deniedKey}' requires manage_funds permission` }, 403);
+      }
+    }
 
     for (const [key, raw] of entries) {
       const value = String(raw ?? "");
