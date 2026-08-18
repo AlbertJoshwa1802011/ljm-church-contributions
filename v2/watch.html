@@ -131,6 +131,14 @@
       }
       return m ? 'https://www.youtube.com/embed/' + m[1] : null;
     }
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    // The plain-link fallback below writes c.url straight into an href
+    // attribute — only http(s) may reach it, so an admin-configured
+    // sunday_live_url/daily_prayer_url/podcast_playlist_url of javascript:/
+    // data:/vbscript: (etc.) can never execute for a visitor.
+    function isSafeHttpUrl(url) {
+      try { return /^https?:$/i.test(new URL(url, location.href).protocol); } catch (_) { return false; }
+    }
     fetch('/api/settings?_t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       var s = (d && d.settings) || {};
       var cards = [
@@ -146,9 +154,12 @@
       }
       grid.innerHTML = withUrl.map(function (c) {
         var embed = toEmbed(c.url, c.isPlaylist);
+        var link = !embed && isSafeHttpUrl(c.url)
+          ? '<a class="btn btn-secondary" href="' + esc(c.url) + '" target="_blank" rel="noopener">Open link ↗</a>'
+          : (!embed ? '<span class="w-empty">Link not available.</span>' : '');
         return '<div class="w-card"><div class="embed">' +
-          (embed ? '<iframe src="' + embed + '" title="' + c.title + '" allowfullscreen loading="lazy"></iframe>' : '<a class="btn btn-secondary" href="' + c.url + '" target="_blank" rel="noopener">Open link ↗</a>') +
-          '</div><div class="body"><h3>' + c.title + '</h3><p>' + c.desc + '</p></div></div>';
+          (embed ? '<iframe src="' + esc(embed) + '" title="' + esc(c.title) + '" allowfullscreen loading="lazy"></iframe>' : link) +
+          '</div><div class="body"><h3>' + esc(c.title) + '</h3><p>' + esc(c.desc) + '</p></div></div>';
       }).join('');
     }).catch(function () { document.getElementById('watchGrid').innerHTML = '<div class="w-empty" style="grid-column:1/-1;">Couldn\'t load right now — please try again shortly.</div>'; });
   })();
