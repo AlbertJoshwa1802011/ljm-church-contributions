@@ -53,15 +53,25 @@ test.describe("Watch & Listen", () => {
     await expect(page.locator("#watchGrid")).toContainText("Podcast Archive");
   });
 
-  test("a non-http(s) URL (e.g. javascript:) never reaches an href or iframe src", async ({ page }) => {
+  test("a non-http(s) URL (e.g. javascript:) is rejected server-side and never reaches the public page", async ({ page, request }) => {
+    // functions/api/settings.js now validates media URL keys server-side
+    // (defense in depth alongside v2/watch.html's client-side esc()/safeUrl()),
+    // so the malicious value can never be persisted in the first place — the
+    // admin save itself must fail, not merely render safely.
     await saveMediaLinks(page, { sunday: "javascript:alert(1)" });
+    await expect(page.locator("#s_mediaMsg")).toHaveClass(/err/);
+    await expect(page.locator("#s_mediaMsg")).toContainText(/http/i);
+
+    const settingsRes = await request.get("/api/settings");
+    const settingsBody = await settingsRes.json();
+    expect(settingsBody.settings.sunday_live_url || "").not.toMatch(/^javascript:/i);
 
     await page.goto("/v2/watch.html");
-    await expect(page.locator(".w-card").first()).toBeVisible({ timeout: 10000 });
-    // No iframe (nothing safe to embed) and no anchor carrying the raw scheme.
+    // Nothing was saved (afterEach of the prior test already cleared state),
+    // so the honest empty state renders — no iframe, no anchor carrying the
+    // raw scheme, regardless.
     await expect(page.locator("#watchGrid iframe")).toHaveCount(0);
     await expect(page.locator("#watchGrid a[href^='javascript:']")).toHaveCount(0);
-    await expect(page.locator(".w-card")).toContainText("Link not available");
   });
 
   test("page has consistent nav/footer and translates on language toggle", async ({ page }) => {

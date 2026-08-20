@@ -105,18 +105,37 @@ test.describe("Responsive — mobile header/hamburger shape at real narrow width
 });
 
 test.describe("No console/page errors on any v2 page", () => {
+  // Hosts this suite's own fixtures.js (see BLOCKED_HOSTS there) deliberately
+  // aborts — Google Sign-In / fonts / a CDN this suite never needs — which
+  // Chromium always echoes to the console as a generic
+  // "Failed to load resource: net::ERR_FAILED" line with no distinguishing
+  // detail. That line is test-harness noise, not a page bug, so long as
+  // every failed request it corresponds to actually targets one of these
+  // hosts (checked below, not just assumed).
+  const EXPECTED_BLOCKED_HOSTS = ["accounts.google.com", "fonts.googleapis.com", "fonts.gstatic.com", "cdn.jsdelivr.net"];
+
   for (const path of PAGES) {
     test(`${path} loads with zero console errors and zero uncaught page errors`, async ({ page }) => {
       const consoleErrors = [];
       const pageErrors = [];
+      const unexpectedFailedRequests = [];
       page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
       page.on("pageerror", (e) => pageErrors.push(e.message));
+      page.on("requestfailed", (req) => {
+        let host = "";
+        try { host = new URL(req.url()).hostname; } catch (_) { /* ignore */ }
+        if (!EXPECTED_BLOCKED_HOSTS.includes(host)) {
+          unexpectedFailedRequests.push(`${req.url()} (${req.failure() && req.failure().errorText})`);
+        }
+      });
 
       await page.goto(path);
       await page.waitForTimeout(500); // let async fetch()/render callbacks settle
 
-      expect(consoleErrors, `${path} logged console errors: ${consoleErrors.join(" | ")}`).toEqual([]);
+      const realConsoleErrors = consoleErrors.filter((m) => !/^Failed to load resource:/.test(m));
+      expect(realConsoleErrors, `${path} logged console errors: ${realConsoleErrors.join(" | ")}`).toEqual([]);
       expect(pageErrors, `${path} threw uncaught errors: ${pageErrors.join(" | ")}`).toEqual([]);
+      expect(unexpectedFailedRequests, `${path} had unexpected failed network requests: ${unexpectedFailedRequests.join(" | ")}`).toEqual([]);
     });
   }
 });
