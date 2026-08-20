@@ -30,6 +30,12 @@ test.describe("Language (EN / Tamil)", () => {
   test("switching to Tamil never leaks an untranslated placeholder, and html[lang] tracks the toggle", async ({ page }) => {
     for (const path of ["/v2/index.html", "/v2/prayer.html", "/v2/programs.html", "/v2/about.html"]) {
       await page.goto(path);
+      // The language choice persists in localStorage across page loads (see
+      // the reload test above), so a page after the first in this loop may
+      // already load in Tamil — reset to English first so the toggle click
+      // below deterministically switches TO Tamil, not away from it.
+      await page.evaluate(() => localStorage.removeItem("ljmLang"));
+      await page.reload();
       await page.locator(".lang-toggle").first().click();
       await expect(page.locator("html")).toHaveAttribute("lang", "ta");
       await page.waitForTimeout(200);
