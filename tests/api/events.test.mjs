@@ -328,3 +328,13 @@ test("events: allowed image MIME types (jpeg, webp, gif) are all stored", async 
   })));
   assert.ok(detail.event.coverPhoto && detail.event.coverPhoto.startsWith("data:image/gif;base64,"));
 });
+
+test("events: malformed JSON body returns 400, not a 500 with a leaked parser error", async () => {
+  const db = freshDb();
+  const ctx = makeContext({ db, method: "POST", url: "https://test.local/api/events" });
+  ctx.request.json = async () => { throw new SyntaxError("Unexpected token"); };
+  const res = await events.onRequestPost(ctx);
+  assert.equal(res.status, 400);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+});

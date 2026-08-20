@@ -60,3 +60,13 @@ test("contact: inbox (GET) and status update (PUT) require manage_content", asyn
   const filtered = await readJson(await contact.onRequestGet(makeContext({ db, url: "https://test.local/api/contact?status=replied" })));
   assert.equal(filtered.messages.length, 1);
 });
+
+test("contact: malformed JSON body returns 400, not a 500 with a leaked parser error", async () => {
+  const db = freshDb();
+  const ctx = makeContext({ db, method: "POST", url: "https://test.local/api/contact", authToken: null });
+  ctx.request.json = async () => { throw new SyntaxError("Unexpected token"); };
+  const res = await contact.onRequestPost(ctx);
+  assert.equal(res.status, 400);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+});

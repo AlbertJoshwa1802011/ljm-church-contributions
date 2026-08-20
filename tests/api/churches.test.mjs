@@ -73,3 +73,13 @@ test("churches: ?all=1 requires manage_content", async () => {
   const res = await readJson(await churches.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/churches?all=1" })));
   assert.equal(res.success, false);
 });
+
+test("churches: malformed JSON body returns 400, not a 500 with a leaked parser error", async () => {
+  const db = freshDb();
+  const ctx = makeContext({ db, method: "POST", url: "https://test.local/api/churches" });
+  ctx.request.json = async () => { throw new SyntaxError("Unexpected token"); };
+  const res = await churches.onRequestPost(ctx);
+  assert.equal(res.status, 400);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+});

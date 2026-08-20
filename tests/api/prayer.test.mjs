@@ -71,3 +71,13 @@ test("prayer: PUT rejects an invalid status", async () => {
   })));
   assert.equal(res.success, false);
 });
+
+test("prayer: malformed JSON body returns 400, not a 500 with a leaked parser error", async () => {
+  const db = freshDb();
+  const ctx = makeContext({ db, method: "POST", url: "https://test.local/api/prayer", authToken: null });
+  ctx.request.json = async () => { throw new SyntaxError("Unexpected token"); };
+  const res = await prayer.onRequestPost(ctx);
+  assert.equal(res.status, 400);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+});

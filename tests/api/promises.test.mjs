@@ -114,3 +114,13 @@ test("promises: PUT edits and DELETE removes", async () => {
   const after = await readJson(await promises.onRequestGet(makeContext({ db, url: "https://test.local/api/promises" })));
   assert.equal(after.promises.length, 0);
 });
+
+test("promises: malformed JSON body returns 400, not a 500 with a leaked parser error", async () => {
+  const db = freshDb();
+  const ctx = makeContext({ db, method: "POST", url: "https://test.local/api/promises" });
+  ctx.request.json = async () => { throw new SyntaxError("Unexpected token"); };
+  const res = await promises.onRequestPost(ctx);
+  assert.equal(res.status, 400);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+});

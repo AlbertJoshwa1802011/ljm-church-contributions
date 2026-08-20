@@ -65,3 +65,13 @@ test("blog: duplicate slugs are rejected with a friendly message", async () => {
   })));
   assert.equal(dup.success, false);
 });
+
+test("blog: malformed JSON body returns 400, not a 500 with a leaked parser error", async () => {
+  const db = freshDb();
+  const ctx = makeContext({ db, method: "POST", url: "https://test.local/api/blog" });
+  ctx.request.json = async () => { throw new SyntaxError("Unexpected token"); };
+  const res = await blog.onRequestPost(ctx);
+  assert.equal(res.status, 400);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+});

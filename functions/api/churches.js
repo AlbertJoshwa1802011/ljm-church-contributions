@@ -74,7 +74,8 @@ export async function onRequestPost(context) {
   if (!auth.ok) return auth.response;
 
   try {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ success: false, message: "Invalid JSON body" }, 400); }
     const slug = String(body.slug || "").trim().toLowerCase();
     const nameEn = String(body.nameEn || "").trim();
     if (!slug || !nameEn) return json({ success: false, message: "slug and nameEn are required" }, 400);
@@ -112,7 +113,8 @@ export async function onRequestPut(context) {
   if (!auth.ok) return auth.response;
 
   try {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ success: false, message: "Invalid JSON body" }, 400); }
     const id = Number(body.id);
     if (!id) return json({ success: false, message: "Church id is required" }, 400);
 

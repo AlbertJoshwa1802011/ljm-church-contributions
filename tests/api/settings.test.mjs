@@ -205,3 +205,13 @@ test("settings: GET only returns whitelisted public keys, not every writable key
   const getResult = await readJson(await settings.onRequestGet(makeContext({ db })));
   assert.equal(getResult.settings.tech_goal_amount, undefined, "tech_goal_amount must not leak through the public GET");
 });
+
+test("settings: malformed JSON body returns 400, not a 500 with a leaked parser error", async () => {
+  const db = freshDb();
+  const ctx = makeContext({ db, method: "PUT", url: "https://test.local/api/settings" });
+  ctx.request.json = async () => { throw new SyntaxError("Unexpected token"); };
+  const res = await settings.onRequestPut(ctx);
+  assert.equal(res.status, 400);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+});

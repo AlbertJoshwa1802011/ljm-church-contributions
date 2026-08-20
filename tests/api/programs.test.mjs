@@ -307,3 +307,13 @@ test("programs: re-applying the seed (fresh schema load) does not duplicate the 
     assert.equal(titleCounts[title], 1, `${title} should appear exactly once`);
   }
 });
+
+test("programs: malformed JSON body returns 400, not a 500 with a leaked parser error", async () => {
+  const db = freshDb();
+  const ctx = makeContext({ db, method: "POST", url: "https://test.local/api/programs" });
+  ctx.request.json = async () => { throw new SyntaxError("Unexpected token"); };
+  const res = await programs.onRequestPost(ctx);
+  assert.equal(res.status, 400);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+});

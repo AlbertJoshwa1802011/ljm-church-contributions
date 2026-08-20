@@ -75,7 +75,8 @@ export async function onRequestPut(context) {
   }
 
   try {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ success: false, message: "Invalid JSON body" }, 400); }
 
     // Accept either a single { key, value } or a batch { updates: { k: v, ... } }
     // so multi-field forms (like the verse editor) save in one request.

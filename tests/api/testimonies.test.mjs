@@ -93,3 +93,13 @@ test("testimonies: DELETE requires manage_content", async () => {
   })));
   assert.equal(res.success, true);
 });
+
+test("testimonies: malformed JSON body returns 400, not a 500 with a leaked parser error", async () => {
+  const db = freshDb();
+  const ctx = makeContext({ db, method: "POST", url: "https://test.local/api/testimonies", authToken: null });
+  ctx.request.json = async () => { throw new SyntaxError("Unexpected token"); };
+  const res = await testimonies.onRequestPost(ctx);
+  assert.equal(res.status, 400);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+});
