@@ -3,7 +3,7 @@
 // the public portal reads published events only.
 //
 //   GET    /api/events              → public: published events + distinct categories
-//          /api/events?id=NN        → single event (any status) + its photos
+//          /api/events?id=NN        → published: public detail + photos; draft/other: admin (manage_events) only
 //          /api/events?all=1        → admin (manage_events): every event, all statuses
 //   POST   /api/events              → admin: create (with optional cover + gallery photos)
 //   PUT    /api/events              → admin: update (body.id), add/remove photos
@@ -13,7 +13,7 @@
 // through /api/events/photo?key=... . Without an R2 binding, photos fall back to
 // base64 data URLs stored directly in D1 (see storePhoto()).
 
-import { requireAuth, audit, json } from "./_lib.js";
+import { requireAuth, audit, json, errorResponse } from "./_lib.js";
 
 function corsHeaders(extra) {
   return {
@@ -115,6 +115,16 @@ export async function onRequestGet(context) {
       ).bind(Number(id)).first();
       if (!eventRow) return json({ success: false, message: "Event not found" }, 404);
 
+      // Unpublished events (draft/other) are admin-only — an anonymous or
+      // unprivileged caller must not be able to read draft content (internal
+      // descriptions, beneficiary counts, unreleased gallery photos) just by
+      // guessing/incrementing the numeric id. Respond identically to the
+      // not-found case so existence of a draft isn't leaked either.
+      if (eventRow.status !== "published") {
+        const auth = await requireAuth(context, "manage_events");
+        if (!auth.ok) return json({ success: false, message: "Event not found" }, 404);
+      }
+
       const photosQ = await db.prepare(
         "SELECT id, photo_url AS photoUrl, caption, sort_order AS sortOrder FROM event_photos WHERE event_id = ? ORDER BY sort_order ASC, id ASC"
       ).bind(Number(id)).all();
@@ -197,7 +207,10 @@ export async function onRequestPost(context) {
     const eventDate = body.eventDate || null;
     const location = body.location || null;
     const description = body.description || null;
-    const status = body.status === "published" ? "published" : (body.status || "draft");
+    // Only 'draft'/'published' are real statuses (schema.sql's documented
+    // enum) — anything else collapses to 'draft' rather than being stored
+    // verbatim, matching blog.js's create pattern.
+    const status = body.status === "published" ? "published" : "draft";
     const featured = body.featured ? 1 : 0;
     const extra = JSON.stringify(body.extra || {});
     const churchId = body.churchId ? Number(body.churchId) : null;
@@ -252,7 +265,7 @@ export async function onRequestPost(context) {
 
     return json({ success: true, id, message: `Event '${title}' added` }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 
@@ -269,6 +282,9 @@ export async function onRequestPut(context) {
     const id = Number(body.id);
     if (!id) return json({ success: false, message: "Event id is required" }, 400);
 
+    const existing = await db.prepare("SELECT * FROM events WHERE id = ?").bind(id).first();
+    if (!existing) return json({ success: false, message: "Event not found" }, 404);
+
     const title = String(body.title || "").trim();
     if (!title) return json({ success: false, message: "Title is required" }, 400);
 
@@ -276,7 +292,11 @@ export async function onRequestPut(context) {
     const eventDate = body.eventDate || null;
     const location = body.location || null;
     const description = body.description || null;
-    const status = body.status === "published" ? "published" : (body.status || "draft");
+    // A caller updating unrelated fields (e.g. just adding/removing photos)
+    // must not silently unpublish (or un-draft) the event by omitting
+    // `status` — only an explicit 'published'/'draft' changes it, otherwise
+    // the existing status carries forward. Matches blog.js's PUT pattern.
+    const status = body.status === "published" ? "published" : (body.status === "draft" ? "draft" : existing.status);
     const featured = body.featured ? 1 : 0;
     const extra = JSON.stringify(body.extra || {});
     const churchId = body.churchId ? Number(body.churchId) : null;
@@ -337,7 +357,7 @@ export async function onRequestPut(context) {
 
     return json({ success: true, message: "Event updated" }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 
