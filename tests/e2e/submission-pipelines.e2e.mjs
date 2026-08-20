@@ -67,23 +67,42 @@ test("prayer: submitting an HTML payload in the request text is safely stored an
   await page.goto(BASE_URL + "/v2/prayer.html", { waitUntil: "networkidle" });
   await page.fill("#pf_request", "Please pray for my family. " + XSS_PAYLOAD);
   await page.fill("#pf_name", "Visitor");
-  await page.fill("#pf_email", "not-a-real-address"); // malformed email, optional field
+  // Email is optional here — leave it blank rather than fighting the browser's
+  // own type="email" constraint validation (see the contact test below for
+  // that behavior specifically).
 
   const [postRes] = await Promise.all([
     page.waitForResponse((r) => r.url().includes("/api/prayer") && r.request().method() === "POST"),
     page.click("#pf_submitBtn")
   ]);
   const body = await postRes.json();
-  // Prayer requests never require a valid email (it's optional) — this should succeed.
-  assert.equal(body.success, true, `prayer submit should succeed even with a malformed optional email: ${JSON.stringify(body)}`);
+  assert.equal(body.success, true, `prayer submit should succeed: ${JSON.stringify(body)}`);
   await context.close();
 });
 
-test("contact: rejects a malformed email before/at the API and never renders raw HTML from a message", async () => {
+test("contact: the browser's own type=\"email\" validation blocks a malformed email before any network call (native constraint validation, not a bug)", async () => {
   const context = await newGuardedContext(browser);
   const page = await context.newPage();
   await page.goto(BASE_URL + "/v2/contact.html", { waitUntil: "networkidle" });
   await page.fill("#cf_email", "not-an-email");
+  await page.fill("#cf_message", "Hello " + XSS_PAYLOAD);
+
+  let posted = false;
+  page.on("request", (req) => { if (req.url().includes("/api/contact") && req.method() === "POST") posted = true; });
+  await page.click("#cf_submitBtn");
+  await page.waitForTimeout(300);
+
+  assert.equal(posted, false, "a malformed type=\"email\" value should be blocked by native browser validation before any fetch fires");
+  const emailIsValid = await page.locator("#cf_email").evaluate((el) => el.validity.valid);
+  assert.equal(emailIsValid, false, "the browser should report the email field as invalid");
+  await context.close();
+});
+
+test("contact: a valid submission with an HTML payload in the message succeeds and is never rendered raw", async () => {
+  const context = await newGuardedContext(browser);
+  const page = await context.newPage();
+  await page.goto(BASE_URL + "/v2/contact.html", { waitUntil: "networkidle" });
+  await page.fill("#cf_email", "visitor@example.com");
   await page.fill("#cf_message", "Hello " + XSS_PAYLOAD);
 
   const [postRes] = await Promise.all([
@@ -91,17 +110,7 @@ test("contact: rejects a malformed email before/at the API and never renders raw
     page.click("#cf_submitBtn")
   ]);
   const body = await postRes.json();
-  assert.equal(body.success, false, "an invalid email should be rejected by the API");
-  assert.match(body.message, /valid email/i);
-
-  // Now with a real email — should succeed and store the payload inertly.
-  await page.fill("#cf_email", "visitor@example.com");
-  const [postRes2] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes("/api/contact") && r.request().method() === "POST"),
-    page.click("#cf_submitBtn")
-  ]);
-  const body2 = await postRes2.json();
-  assert.equal(body2.success, true, `valid contact submit should succeed: ${JSON.stringify(body2)}`);
+  assert.equal(body.success, true, `valid contact submit should succeed: ${JSON.stringify(body)}`);
   await context.close();
 });
 
