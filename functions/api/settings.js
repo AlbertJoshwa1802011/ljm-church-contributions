@@ -81,6 +81,12 @@ export async function onRequestPut(context) {
       if (key === "pastor_email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         return json({ success: false, message: "pastor_email must be a valid email address" }, 400);
       }
+      // Watch & Listen URLs are rendered on a public page (v2/watch.html) as a
+      // clickable link/iframe src — only allow http(s) so a javascript:/data:
+      // payload can never be stored here in the first place.
+      if (MEDIA_KEYS.includes(key) && value && !/^https?:\/\//i.test(value)) {
+        return json({ success: false, message: `${key} must be a valid http:// or https:// URL` }, 400);
+      }
       if (key === "about_content" && value) {
         try { JSON.parse(value); } catch (_) {
           return json({ success: false, message: "about_content must be valid JSON" }, 400);

@@ -48,6 +48,28 @@ test("testimonies: validation rejects missing required fields", async () => {
   assert.equal(res.success, false);
 });
 
+test("testimonies: rejects extremely long text (regression: no length cap previously existed)", async () => {
+  const db = freshDb();
+  const tooLongTitle = await readJson(await testimonies.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/testimonies",
+    body: { titleEn: "x".repeat(301), bodyEn: "A normal testimony." }
+  })));
+  assert.equal(tooLongTitle.success, false);
+
+  const tooLongBody = await readJson(await testimonies.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/testimonies",
+    body: { titleEn: "Healed", bodyEn: "x".repeat(10001) }
+  })));
+  assert.equal(tooLongBody.success, false);
+
+  // A generous but reasonable submission is still accepted.
+  const ok = await readJson(await testimonies.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/testimonies",
+    body: { titleEn: "Healed", bodyEn: "x".repeat(9000) }
+  })));
+  assert.equal(ok.success, true, ok.message);
+});
+
 test("testimonies: ?all=1 (admin queue) requires manage_content and shows every status", async () => {
   const db = freshDb();
   await testimonies.onRequestPost(makeContext({

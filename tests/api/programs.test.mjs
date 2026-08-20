@@ -69,6 +69,43 @@ test("programs: PUT/DELETE on a nonexistent id is a 404", async () => {
   assert.equal(delRes.success, false);
 });
 
+test("programs: POST/PUT reject an out-of-range dayOfWeek (regression: 7/99/-1 crashed v2/programs.html's DAYS[] lookup)", async () => {
+  const db = freshDb();
+  for (const bad of [7, 99, -1, 1.5]) {
+    const res = await readJson(await programs.onRequestPost(makeContext({
+      db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "Bad Day", dayOfWeek: bad }
+    })));
+    assert.equal(res.success, false, `dayOfWeek=${bad} should be rejected`);
+  }
+
+  const create = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "Sunday Service", dayOfWeek: 0 }
+  })));
+  assert.equal(create.success, true);
+
+  const putRes = await readJson(await programs.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/programs", body: { id: create.id, titleEn: "Sunday Service", dayOfWeek: 99 }
+  })));
+  assert.equal(putRes.success, false);
+});
+
+test("programs: POST/PUT accept a null/empty dayOfWeek (one-off programs) and valid 0-6", async () => {
+  const db = freshDb();
+  const create = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "Full Night Prayer", dayOfWeek: null, recurrence: "monthly-2nd-friday" }
+  })));
+  assert.equal(create.success, true);
+
+  const six = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "Saturday Service", dayOfWeek: 6 }
+  })));
+  assert.equal(six.success, true);
+
+  const all = await readJson(await programs.onRequestGet(makeContext({ db, url: "https://test.local/api/programs?all=1" })));
+  const saved = all.programs.find(p => p.titleEn === "Full Night Prayer");
+  assert.equal(saved.dayOfWeek, null);
+});
+
 test("programs: DELETE requires manage_content", async () => {
   const db = freshDb();
   const create = await readJson(await programs.onRequestPost(makeContext({

@@ -34,6 +34,27 @@ test("contact: validation rejects an invalid email or empty message", async () =
   assert.equal(emptyMessage.success, false);
 });
 
+test("contact: rejects extremely long text (regression: no length cap previously existed)", async () => {
+  const db = freshDb();
+  const tooLongSubject = await readJson(await contact.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/contact",
+    body: { email: "visitor@example.com", subject: "x".repeat(301), message: "Hello there" }
+  })));
+  assert.equal(tooLongSubject.success, false);
+
+  const tooLongMessage = await readJson(await contact.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/contact",
+    body: { email: "visitor@example.com", message: "x".repeat(10001) }
+  })));
+  assert.equal(tooLongMessage.success, false);
+
+  const ok = await readJson(await contact.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/contact",
+    body: { email: "visitor@example.com", message: "x".repeat(9000) }
+  })));
+  assert.equal(ok.success, true, ok.message);
+});
+
 test("contact: PUT on a nonexistent id is a 404", async () => {
   const db = freshDb();
   const res = await readJson(await contact.onRequestPut(makeContext({

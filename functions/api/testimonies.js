@@ -22,6 +22,14 @@ function corsHeaders(extra) {
 const KINDS = ["testimony", "miracle"];
 const STATUSES = ["pending", "published", "rejected"];
 
+// No length cap existed here at all — an unbounded public POST body is a
+// storage/DoS surface (see CONTRIBUTING.md's "extremely long text" test
+// case). Short display fields vs. the long-form testimony body get separate
+// budgets, mirroring settings.js's MAX_VALUE_LEN pattern.
+const MAX_SHORT_LEN = 300;
+const MAX_BODY_LEN = 10000;
+function tooLong(value, max) { return typeof value === "string" && value.length > max; }
+
 function toTestimony(row) {
   return {
     id: row.id,
@@ -82,6 +90,15 @@ export async function onRequestPost(context) {
     const bodyEn = String(body.bodyEn || "").trim();
     if (!titleEn) return json({ success: false, message: "titleEn is required" }, 400);
     if (!bodyEn) return json({ success: false, message: "bodyEn is required" }, 400);
+
+    if (tooLong(titleEn, MAX_SHORT_LEN) || tooLong(body.titleTa, MAX_SHORT_LEN)
+      || tooLong(body.authorName, MAX_SHORT_LEN) || tooLong(body.place, MAX_SHORT_LEN)
+      || tooLong(body.mediaUrl, MAX_SHORT_LEN * 4)) {
+      return json({ success: false, message: `Title/author/place must be ${MAX_SHORT_LEN} characters or fewer` }, 400);
+    }
+    if (tooLong(bodyEn, MAX_BODY_LEN) || tooLong(body.bodyTa, MAX_BODY_LEN)) {
+      return json({ success: false, message: `Testimony text must be ${MAX_BODY_LEN} characters or fewer` }, 400);
+    }
 
     const kind = KINDS.includes(body.kind) ? body.kind : "testimony";
     const ip = request.headers.get("CF-Connecting-IP") || null;
