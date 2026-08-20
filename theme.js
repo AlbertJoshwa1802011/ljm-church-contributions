@@ -3,12 +3,17 @@
 // applied before first paint — avoids a flash of the wrong theme.
 (function () {
     // ---- Global API Redirect for Local Preview to Live Production ----
+    // Read-only only: a local admin session (e.g. testing the Ministry panels
+    // in admin.html) must never have its POST/PUT/PATCH/DELETE calls silently
+    // land on real production data. GET/HEAD previews are unaffected.
     var isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     if (isLocalhost) {
         var originalFetch = window.fetch;
         window.fetch = function (input, init) {
             var url = typeof input === "string" ? input : (input instanceof Request ? input.url : "");
-            if (url && url.startsWith("/api/")) {
+            var method = ((init && init.method) || (input instanceof Request ? input.method : "") || "GET").toUpperCase();
+            var isSafeRead = method === "GET" || method === "HEAD";
+            if (url && isSafeRead && url.startsWith("/api/")) {
                 url = "https://light-of-jesus-ministry-contributions.pages.dev" + url;
             }
             return originalFetch.call(this, url, init);

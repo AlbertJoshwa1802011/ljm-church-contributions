@@ -109,6 +109,9 @@ export async function onRequestPut(context) {
           return json({ success: false, message: "about_content must be valid JSON" }, 400);
         }
       }
+      if (MEDIA_KEYS.includes(key) && value && !/^https?:\/\//i.test(value)) {
+        return json({ success: false, message: `${key} must be a valid http(s) URL` }, 400);
+      }
       const maxLen = MAX_VALUE_LEN_BY_KEY[key] || MAX_VALUE_LEN;
       if (value.length > maxLen) {
         return json({ success: false, message: `Value for '${key}' exceeds ${maxLen} characters` }, 400);
