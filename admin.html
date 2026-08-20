@@ -1034,7 +1034,7 @@
             <div class="section" id="section-promises">
                 <div class="page-head"><h2>Promises</h2><p>Daily/monthly/yearly promise words — auto-shown on the public Home by date (ministry timezone: IST). See docs/milestone-v2/01-PRD.md §7.2.</p></div>
                 <div class="card">
-                    <h3>Add a promise</h3>
+                    <h3 id="pr_formTitle">Add a promise</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Scope *</label><select class="input" id="pr_scope">
                             <option value="daily">Daily</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option>
@@ -1050,6 +1050,7 @@
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="pr_saveBtn">Add promise</button>
+                        <button class="btn" id="pr_clearBtn" type="button">Clear</button>
                         <span class="msg" id="pr_msg"></span>
                     </div>
                 </div>
@@ -1109,31 +1110,45 @@
 
             <!-- PROGRAMS -->
             <div class="section" id="section-programs">
-                <div class="page-head"><h2>Programs &amp; service times</h2><p>Weekly/recurring programs, shown per church on the public site.</p></div>
+                <div class="page-head"><h2>Programs &amp; service times</h2><p>Recurring ministry programs — service times, daily prayer, monthly gatherings — shown on the public Programs, Prayer, and Home pages. This is <strong>not</strong> the Prayer Requests inbox (see the "Prayer" tab for that) — this is the schedule of when prayer/services happen.</p></div>
                 <div class="card">
-                    <h3>Add a program</h3>
+                    <h3 id="pg_formTitle">Add a program</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Title (English) *</label><input class="input" id="pg_titleEn"></div>
+                        <div><label class="f-label">Title (Tamil)</label><input class="input" id="pg_titleTa"></div>
                         <div><label class="f-label">Church</label><select class="input" id="pg_churchId"><option value="">Ministry-wide</option></select></div>
+                        <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. prayer, service, youth" list="ministryAreaOptions"><span style="font-size:11px;color:var(--text-faint);display:block;margin-top:4px;">Exact value "youth" (lowercase) is what the Youth page filters on.</span></div>
+                        <div><label class="f-label">Recurrence</label><select class="input" id="pg_recurrence">
+                            <option value="weekly">Weekly</option><option value="daily">Daily</option>
+                            <option value="monthly">Monthly (nth weekday)</option><option value="once">One-off / other</option>
+                        </select></div>
+                        <div><label class="f-label">Which occurrence (monthly only)</label><select class="input" id="pg_monthOrdinal">
+                            <option value="">—</option>
+                            <option value="1">First</option><option value="2">Second</option><option value="3">Third</option>
+                            <option value="4">Fourth</option><option value="5">Fifth</option>
+                        </select></div>
                         <div><label class="f-label">Day of week</label><select class="input" id="pg_dayOfWeek">
-                            <option value="">One-off / other</option>
+                            <option value="">—</option>
                             <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
                             <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
                         </select></div>
                         <div><label class="f-label">Start time</label><input class="input" type="time" id="pg_startTime"></div>
                         <div><label class="f-label">End time</label><input class="input" type="time" id="pg_endTime"></div>
-                        <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. youth"></div>
-                        <div><label class="f-label">Location</label><input class="input" id="pg_location"></div>
+                        <div><label class="f-label">Location</label><input class="input" id="pg_location" placeholder="Leave blank if online-only"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="pg_status"><option value="active">Active (published)</option><option value="inactive">Inactive (hidden)</option></select></div>
+                        <div class="span-all"><label class="f-label">Google Meet / online join URL (https:// only)</label><input class="input" id="pg_meetingUrl" placeholder="https://meet.google.com/..."></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Description (English)</label><textarea class="input" id="pg_descriptionEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Description (Tamil)</label><textarea class="input" id="pg_descriptionTa" rows="2"></textarea></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="pg_saveBtn">Add program</button>
+                        <button class="btn btn-outline" id="pg_clearBtn" type="button">Clear</button>
                         <span class="msg" id="pg_msg"></span>
                     </div>
                 </div>
                 <div class="card">
                     <h3>All programs</h3>
-                    <div class="table-wrap"><table id="pg_table"><thead><tr><th>Title</th><th>Church</th><th>When</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-wrap"><table id="pg_table"><thead><tr><th>Title</th><th>Church</th><th>Schedule</th><th>Online</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
                 </div>
             </div>
 
@@ -1141,25 +1156,66 @@
             <div class="section" id="section-blog">
                 <div class="page-head"><h2>Blog</h2><p>Teachings, news, and reflections. Tag ministryArea "youth" to also surface a post in Youth Ministry.</p></div>
                 <div class="card">
-                    <h3>Add a post</h3>
+                    <h3 id="bl_formTitle">Add a post</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Title (English) *</label><input class="input" id="bl_titleEn"></div>
+                        <div><label class="f-label">Title (Tamil)</label><input class="input" id="bl_titleTa"></div>
                         <div><label class="f-label">Slug (optional)</label><input class="input" id="bl_slug" placeholder="auto from title if blank"></div>
                         <div><label class="f-label">Category</label><input class="input" id="bl_category"></div>
-                        <div><label class="f-label">Ministry area</label><input class="input" id="bl_ministryArea" placeholder="e.g. youth"></div>
+                        <div><label class="f-label">Ministry area</label><input class="input" id="bl_ministryArea" placeholder="e.g. youth" list="ministryAreaOptions"><span style="font-size:11px;color:var(--text-faint);display:block;margin-top:4px;">Exact value "youth" (lowercase) is what the Youth page filters on.</span></div>
+                        <datalist id="ministryAreaOptions"><option value="youth"></option></datalist>
                         <div><label class="f-label">Status</label><select class="input" id="bl_status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
                         <div><label class="f-label">Cover image URL</label><input class="input" id="bl_coverUrl"></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Excerpt (English)</label><textarea class="input" id="bl_excerptEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Excerpt (Tamil)</label><textarea class="input" id="bl_excerptTa" rows="2"></textarea></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Body (English) *</label><textarea class="input" id="bl_bodyEn" rows="5"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Body (Tamil)</label><textarea class="input" id="bl_bodyTa" rows="5"></textarea></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="bl_saveBtn">Add post</button>
+                        <button class="btn" id="bl_clearBtn" type="button">Clear</button>
                         <span class="msg" id="bl_msg"></span>
                     </div>
                 </div>
                 <div class="card">
                     <h3>All posts</h3>
                     <div class="table-wrap"><table id="bl_table"><thead><tr><th>Title</th><th>Category</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- EVENTS & VBS -->
+            <div class="section" id="section-events">
+                <div class="page-head"><h2>Events &amp; VBS</h2><p>Church gatherings, outreach, celebrations, and VBS — shown with photos on the public Events page and, if featured, on Home.</p></div>
+                <div class="card">
+                    <h3 id="ev_formTitle">Add an event</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Title *</label><input class="input" id="ev_title"></div>
+                        <div><label class="f-label">Category</label><input class="input" id="ev_category" placeholder="e.g. VBS, Outreach, Celebration"></div>
+                        <div><label class="f-label">Date</label><input class="input" id="ev_eventDate" placeholder="e.g. 25-27 (month/year TBC)"></div>
+                        <div><label class="f-label">Location</label><input class="input" id="ev_location"></div>
+                        <div><label class="f-label">Church</label><select class="input" id="ev_churchId"><option value="">Ministry-wide</option></select></div>
+                        <div><label class="f-label">Status</label><select class="input" id="ev_status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
+                        <div><label class="f-label">Featured on Home</label><select class="input" id="ev_featured"><option value="">No</option><option value="1">Yes</option></select></div>
+                        <div><label class="f-label">Beneficiaries reached (optional)</label><input class="input" id="ev_beneficiariesCount" type="number" min="0"></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Description</label><textarea class="input" id="ev_description" rows="3"></textarea></div>
+                        <div><label class="f-label">Cover photo</label><input class="input" id="ev_coverFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"></div>
+                        <div id="ev_coverPreviewContainer" style="display:none;"><img id="ev_coverPreview" style="max-width:160px;max-height:160px;border-radius:8px;"></div>
+                        <div class="span-all"><label class="f-label">Add gallery photos (multiple allowed)</label><input class="input" id="ev_galleryFiles" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></div>
+                        <div class="span-all" id="ev_galleryPreview" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+                        <div class="span-all" id="ev_existingPhotos" style="display:none;">
+                            <label class="f-label">Existing gallery photos (click to remove)</label>
+                            <div id="ev_existingPhotosGrid" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="ev_saveBtn">Add event</button>
+                        <button class="btn btn-outline" id="ev_clearBtn" type="button">Clear</button>
+                        <span class="msg" id="ev_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>All events</h3>
+                    <div class="table-wrap"><table id="ev_table"><thead><tr><th>Title</th><th>Category</th><th>Date</th><th>Photos</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
                 </div>
             </div>
 
@@ -1394,7 +1450,8 @@
                 ["prayer", "🕯️", "Prayer requests"],
                 ["contactmsgs", "✉️", "Contact messages"],
                 ["programs", "🗓️", "Programs"],
-                ["blog", "📝", "Blog"]
+                ["blog", "📝", "Blog"],
+                ["events", "🎁", "Events & VBS"]
             ] },
             { id: "admin", icon: "🛡️", label: "Admin", items: [
                 ["roles", "🛡️", "Roles"],
@@ -3005,7 +3062,7 @@
         state.churchesCache = [];
         function loadChurches() { fetchChurches(); }
         function fetchChurches() {
-            api("/api/churches?all=1").then(function (d) {
+            return api("/api/churches?all=1").then(function (d) {
                 if (!d.success) { setMsg("ch_msg", d.message || "No access", "err"); return; }
                 state.churchesCache = d.churches || [];
                 var tb = $("ch_table").querySelector("tbody");
@@ -3069,28 +3126,32 @@
         }
 
         // ═══════════════ Promises ═══════════════
+        state.promisesCache = [];
+        state.editingPromiseId = null;
         function loadPromises() { fetchPromises(); wirePromiseScopeFields(); }
+        function syncPromiseScopeFields() {
+            var scope = $("pr_scope").value;
+            $("pr_dateWrap").style.display = scope === "daily" ? "" : "none";
+            $("pr_monthWrap").style.display = scope === "monthly" ? "" : "none";
+            $("pr_yearWrap").style.display = scope !== "daily" ? "" : "none";
+        }
         function wirePromiseScopeFields() {
-            var syncFields = function () {
-                var scope = $("pr_scope").value;
-                $("pr_dateWrap").style.display = scope === "daily" ? "" : "none";
-                $("pr_monthWrap").style.display = scope === "monthly" ? "" : "none";
-                $("pr_yearWrap").style.display = scope !== "daily" ? "" : "none";
-            };
-            $("pr_scope").onchange = syncFields;
-            syncFields();
+            $("pr_scope").onchange = syncPromiseScopeFields;
+            syncPromiseScopeFields();
         }
         function fetchPromises() {
             api("/api/promises").then(function (d) {
                 if (!d.success) { setMsg("pr_msg", d.message || "No access", "err"); return; }
+                state.promisesCache = d.promises || [];
                 var tb = $("pr_table").querySelector("tbody");
-                tb.innerHTML = (d.promises || []).map(function (p) {
+                tb.innerHTML = state.promisesCache.map(function (p) {
                     var when = p.scope === "daily" ? (p.onDate || "") : p.scope === "monthly" ? (p.month + "/" + p.year) : String(p.year || "");
                     return "<tr><td><span class='pill pill-grey'>" + esc(p.scope) + "</span></td><td>" + esc(when) + "</td>" +
                         "<td style='max-width:340px;'>" + esc((p.textEn || "").substring(0, 90)) + "</td>" +
                         "<td>" + (p.isPublished ? "<span class='pill pill-green'>Yes</span>" : "<span class='pill pill-grey'>Draft</span>") + "</td>" +
-                        '<td><button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
+                        '<td><button class="mini-btn" data-edit="' + p.id + '">Edit</button> <button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
                 }).join("") || '<tr><td colspan="5" class="empty">No promises yet — add one above.</td></tr>';
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editPromise(Number(b.dataset.edit)); }; });
                 tb.querySelectorAll("[data-id]").forEach(function (b) {
                     b.onclick = function () {
                         if (!confirm("Delete this promise?")) return;
@@ -3098,6 +3159,26 @@
                     };
                 });
             }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
+        }
+        function editPromise(id) {
+            var p = state.promisesCache.filter(function (x) { return x.id === id; })[0];
+            if (!p) return;
+            state.editingPromiseId = id;
+            $("pr_formTitle").textContent = "Edit " + p.scope + " promise";
+            $("pr_scope").value = p.scope;
+            syncPromiseScopeFields();
+            $("pr_onDate").value = p.onDate || ""; $("pr_month").value = p.month || ""; $("pr_year").value = p.year || "";
+            $("pr_reference").value = p.reference || ""; $("pr_textEn").value = p.textEn || ""; $("pr_textTa").value = p.textTa || "";
+            $("pr_reflectionEn").value = p.reflectionEn || ""; $("pr_published").value = p.isPublished ? "1" : "0";
+            $("pr_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearPromiseForm() {
+            state.editingPromiseId = null;
+            $("pr_formTitle").textContent = "Add a promise";
+            ["pr_onDate", "pr_month", "pr_year", "pr_reference", "pr_textEn", "pr_textTa", "pr_reflectionEn"].forEach(function (id) { $(id).value = ""; });
+            $("pr_scope").value = "daily"; syncPromiseScopeFields();
+            $("pr_published").value = "1"; $("pr_saveBtn").textContent = "Add promise";
         }
         function savePromise() {
             var scope = $("pr_scope").value;
@@ -3107,12 +3188,11 @@
                 reflectionEn: $("pr_reflectionEn").value.trim(), isPublished: $("pr_published").value === "1"
             };
             if (!body.textEn) { setMsg("pr_msg", "Promise text (English) is required", "err"); return; }
-            api("/api/promises", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+            var isEdit = !!state.editingPromiseId;
+            if (isEdit) body.id = state.editingPromiseId;
+            api("/api/promises", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
                 setMsg("pr_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["pr_onDate", "pr_month", "pr_year", "pr_reference", "pr_textEn", "pr_textTa", "pr_reflectionEn"].forEach(function (id) { $(id).value = ""; });
-                    fetchPromises();
-                }
+                if (d.success) { clearPromiseForm(); fetchPromises(); }
             }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
         }
 
@@ -3202,60 +3282,117 @@
         }
 
         // ═══════════════ Programs ═══════════════
+        state.programsCache = [];
+        state.editingProgramId = null;
         function loadPrograms() { if (state.churchesCache && state.churchesCache.length) populateChurchSelect(); else fetchChurches(); fetchPrograms(); }
         function fetchPrograms() {
             api("/api/programs?all=1").then(function (d) {
                 if (!d.success) { setMsg("pg_msg", d.message || "No access", "err"); return; }
-                var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                state.programsCache = d.programs || [];
                 var tb = $("pg_table").querySelector("tbody");
-                tb.innerHTML = (d.programs || []).map(function (p) {
-                    var when = (p.dayOfWeek !== null && p.dayOfWeek !== undefined ? days[p.dayOfWeek] + " " : "") + (p.startTime || "");
+                tb.innerHTML = state.programsCache.map(function (p) {
                     return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.churchNameEn || "Ministry-wide") + "</td>" +
-                        "<td>" + esc(when || "—") + "</td>" +
+                        "<td>" + esc(p.scheduleLabelEn || "—") + "</td>" +
+                        "<td>" + (p.meetingUrl ? "<span class='pill pill-green'>Google Meet</span>" : "—") + "</td>" +
                         "<td><span class='pill " + (p.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
-                        '<td><button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
-                }).join("") || '<tr><td colspan="5" class="empty">No programs yet.</td></tr>';
+                        '<td><button class="mini-btn" data-edit="' + p.id + '">Edit</button> ' +
+                        '<button class="mini-btn" data-toggle="' + p.id + '">' + (p.status === "active" ? "Unpublish" : "Publish") + '</button> ' +
+                        '<button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="6" class="empty">No programs yet.</td></tr>';
                 tb.querySelectorAll("[data-id]").forEach(function (b) {
                     b.onclick = function () {
                         if (!confirm("Delete this program?")) return;
                         api("/api/programs?id=" + b.dataset.id, { method: "DELETE" }).then(function (d2) { setMsg("pg_msg", d2.message, d2.success ? "ok" : "err"); fetchPrograms(); });
                     };
                 });
+                tb.querySelectorAll("[data-edit]").forEach(function (b) {
+                    b.onclick = function () { editProgram(Number(b.dataset.edit)); };
+                });
+                tb.querySelectorAll("[data-toggle]").forEach(function (b) {
+                    b.onclick = function () {
+                        var p = state.programsCache.filter(function (x) { return x.id === Number(b.dataset.toggle); })[0];
+                        if (!p) return;
+                        var body = programToBody(p);
+                        body.id = p.id;
+                        body.status = p.status === "active" ? "inactive" : "active";
+                        api("/api/programs", { method: "PUT", body: JSON.stringify(body) }).then(function (d2) { setMsg("pg_msg", d2.message, d2.success ? "ok" : "err"); fetchPrograms(); });
+                    };
+                });
             }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
+        }
+        function programToBody(p) {
+            return {
+                titleEn: p.titleEn, titleTa: p.titleTa || "", descriptionEn: p.descriptionEn || "", descriptionTa: p.descriptionTa || "",
+                churchId: p.churchId || null, ministryArea: p.ministryArea || "", recurrence: p.recurrence || "weekly",
+                dayOfWeek: p.dayOfWeek === null || p.dayOfWeek === undefined ? null : p.dayOfWeek,
+                monthOrdinal: p.monthOrdinal === null || p.monthOrdinal === undefined ? null : p.monthOrdinal,
+                startTime: p.startTime || "", endTime: p.endTime || "", location: p.location || "",
+                meetingUrl: p.meetingUrl || "", status: p.status
+            };
+        }
+        function editProgram(id) {
+            var p = state.programsCache.filter(function (x) { return x.id === id; })[0];
+            if (!p) return;
+            state.editingProgramId = id;
+            $("pg_formTitle").textContent = "Edit " + p.titleEn;
+            $("pg_titleEn").value = p.titleEn || ""; $("pg_titleTa").value = p.titleTa || "";
+            $("pg_churchId").value = p.churchId || ""; $("pg_ministryArea").value = p.ministryArea || "";
+            $("pg_recurrence").value = p.recurrence || "weekly";
+            $("pg_monthOrdinal").value = p.monthOrdinal === null || p.monthOrdinal === undefined ? "" : p.monthOrdinal;
+            $("pg_dayOfWeek").value = p.dayOfWeek === null || p.dayOfWeek === undefined ? "" : p.dayOfWeek;
+            $("pg_startTime").value = p.startTime || ""; $("pg_endTime").value = p.endTime || "";
+            $("pg_location").value = p.location || ""; $("pg_status").value = p.status || "active";
+            $("pg_meetingUrl").value = p.meetingUrl || "";
+            $("pg_descriptionEn").value = p.descriptionEn || ""; $("pg_descriptionTa").value = p.descriptionTa || "";
+            $("pg_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearProgramForm() {
+            state.editingProgramId = null;
+            $("pg_formTitle").textContent = "Add a program";
+            ["pg_titleEn", "pg_titleTa", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_meetingUrl", "pg_descriptionEn", "pg_descriptionTa"].forEach(function (id) { $(id).value = ""; });
+            $("pg_dayOfWeek").value = ""; $("pg_monthOrdinal").value = ""; $("pg_churchId").value = "";
+            $("pg_recurrence").value = "weekly"; $("pg_status").value = "active";
+            $("pg_saveBtn").textContent = "Add program";
         }
         function saveProgram() {
             var titleEn = $("pg_titleEn").value.trim();
             if (!titleEn) { setMsg("pg_msg", "Title is required", "err"); return; }
             var body = {
-                titleEn: titleEn, churchId: $("pg_churchId").value || null,
+                titleEn: titleEn, titleTa: $("pg_titleTa").value.trim(), churchId: $("pg_churchId").value || null,
+                recurrence: $("pg_recurrence").value,
                 dayOfWeek: $("pg_dayOfWeek").value === "" ? null : Number($("pg_dayOfWeek").value),
+                monthOrdinal: $("pg_monthOrdinal").value === "" ? null : Number($("pg_monthOrdinal").value),
                 startTime: $("pg_startTime").value, endTime: $("pg_endTime").value,
-                ministryArea: $("pg_ministryArea").value.trim(), location: $("pg_location").value.trim(),
-                descriptionEn: $("pg_descriptionEn").value.trim()
+                ministryArea: $("pg_ministryArea").value.trim().toLowerCase(), location: $("pg_location").value.trim(),
+                meetingUrl: $("pg_meetingUrl").value.trim(), status: $("pg_status").value,
+                descriptionEn: $("pg_descriptionEn").value.trim(), descriptionTa: $("pg_descriptionTa").value.trim()
             };
-            api("/api/programs", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+            var isEdit = !!state.editingProgramId;
+            if (isEdit) body.id = state.editingProgramId;
+            api("/api/programs", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
                 setMsg("pg_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn"].forEach(function (id) { $(id).value = ""; });
-                    $("pg_dayOfWeek").value = ""; $("pg_churchId").value = "";
-                    fetchPrograms();
-                }
+                if (d.success) { clearProgramForm(); fetchPrograms(); }
             }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
         }
 
         // ═══════════════ Blog ═══════════════
+        state.blogCache = [];
+        state.editingBlogId = null;
         function loadBlog() { fetchBlog(); }
         function fetchBlog() {
             api("/api/blog?all=1").then(function (d) {
                 if (!d.success) { setMsg("bl_msg", d.message || "No access", "err"); return; }
+                state.blogCache = d.posts || [];
                 var tb = $("bl_table").querySelector("tbody");
-                tb.innerHTML = (d.posts || []).map(function (p) {
+                tb.innerHTML = state.blogCache.map(function (p) {
                     return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.category || "—") + "</td>" +
                         "<td><span class='pill " + (p.status === "published" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
-                        '<td>' +
+                        '<td><button class="mini-btn" data-edit="' + p.id + '">Edit</button> ' +
                         (p.status !== "published" ? '<button class="mini-btn" data-pub="' + p.id + '">Publish</button> ' : '<button class="mini-btn" data-unpub="' + p.id + '">Unpublish</button> ') +
                         '<button class="mini-btn danger" data-del="' + p.id + '">Delete</button></td></tr>';
                 }).join("") || '<tr><td colspan="4" class="empty">No posts yet.</td></tr>';
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editBlogPost(Number(b.dataset.edit)); }; });
                 tb.querySelectorAll("[data-pub]").forEach(function (b) { b.onclick = function () { setBlogStatus(b.dataset.pub, "published"); }; });
                 tb.querySelectorAll("[data-unpub]").forEach(function (b) { b.onclick = function () { setBlogStatus(b.dataset.unpub, "draft"); }; });
                 tb.querySelectorAll("[data-del]").forEach(function (b) {
@@ -3270,22 +3407,202 @@
             api("/api/blog", { method: "PUT", body: JSON.stringify({ id: Number(id), status: status }) })
                 .then(function (d) { setMsg("bl_msg", d.message, d.success ? "ok" : "err"); fetchBlog(); });
         }
+        function editBlogPost(id) {
+            var p = state.blogCache.filter(function (x) { return x.id === id; })[0];
+            if (!p) return;
+            state.editingBlogId = id;
+            $("bl_formTitle").textContent = "Edit " + p.titleEn;
+            $("bl_titleEn").value = p.titleEn || ""; $("bl_titleTa").value = p.titleTa || "";
+            $("bl_slug").value = p.slug || ""; $("bl_slug").disabled = true;
+            $("bl_category").value = p.category || ""; $("bl_ministryArea").value = p.ministryArea || "";
+            $("bl_status").value = p.status || "draft"; $("bl_coverUrl").value = p.coverUrl || "";
+            $("bl_excerptEn").value = p.excerptEn || ""; $("bl_excerptTa").value = p.excerptTa || "";
+            $("bl_bodyEn").value = p.bodyEn || ""; $("bl_bodyTa").value = p.bodyTa || "";
+            $("bl_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearBlogForm() {
+            state.editingBlogId = null;
+            $("bl_formTitle").textContent = "Add a post";
+            ["bl_titleEn", "bl_titleTa", "bl_slug", "bl_category", "bl_ministryArea", "bl_coverUrl", "bl_excerptEn", "bl_excerptTa", "bl_bodyEn", "bl_bodyTa"].forEach(function (id) { $(id).value = ""; });
+            $("bl_slug").disabled = false; $("bl_status").value = "draft"; $("bl_saveBtn").textContent = "Add post";
+        }
         function saveBlogPost() {
             var titleEn = $("bl_titleEn").value.trim(), bodyEn = $("bl_bodyEn").value.trim();
             if (!titleEn || !bodyEn) { setMsg("bl_msg", "Title and body are required", "err"); return; }
             var body = {
-                titleEn: titleEn, bodyEn: bodyEn, slug: $("bl_slug").value.trim(), category: $("bl_category").value.trim(),
-                ministryArea: $("bl_ministryArea").value.trim(), status: $("bl_status").value,
-                coverUrl: $("bl_coverUrl").value.trim(), excerptEn: $("bl_excerptEn").value.trim()
+                titleEn: titleEn, titleTa: $("bl_titleTa").value.trim(), bodyEn: bodyEn, bodyTa: $("bl_bodyTa").value.trim(),
+                slug: $("bl_slug").value.trim(), category: $("bl_category").value.trim(),
+                ministryArea: $("bl_ministryArea").value.trim().toLowerCase(), status: $("bl_status").value,
+                coverUrl: $("bl_coverUrl").value.trim(), excerptEn: $("bl_excerptEn").value.trim(), excerptTa: $("bl_excerptTa").value.trim()
             };
-            api("/api/blog", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+            var isEdit = !!state.editingBlogId;
+            if (isEdit) body.id = state.editingBlogId;
+            api("/api/blog", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
                 setMsg("bl_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["bl_titleEn", "bl_slug", "bl_category", "bl_ministryArea", "bl_coverUrl", "bl_excerptEn", "bl_bodyEn"].forEach(function (id) { $(id).value = ""; });
-                    $("bl_status").value = "draft";
-                    fetchBlog();
-                }
+                if (d.success) { clearBlogForm(); fetchBlog(); }
             }).catch(function (e) { setMsg("bl_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Events & VBS ═══════════════
+        state.eventsCache = [];
+        state.editingEventId = null;
+        state.eventNewGalleryFiles = []; // [{dataUrl, name}] staged before save
+        state.eventRemovePhotoIds = [];  // existing photo ids marked for removal (edit mode)
+        state.eventExistingPhotos = [];  // photos of the event currently being edited
+
+        function readFileAsDataURL(file) {
+            return new Promise(function (resolve, reject) {
+                var reader = new FileReader();
+                reader.onload = function (e) { resolve(e.target.result); };
+                reader.onerror = function () { reject(new Error("Failed to read " + file.name)); };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function loadEvents() {
+            if (state.churchesCache && state.churchesCache.length) populateEventChurchSelect(); else fetchChurches().then(populateEventChurchSelect);
+            fetchEvents();
+        }
+        function populateEventChurchSelect() {
+            var sel = $("ev_churchId"); if (!sel) return;
+            var current = sel.value;
+            sel.innerHTML = '<option value="">Ministry-wide</option>' + (state.churchesCache || []).map(function (c) {
+                return '<option value="' + c.id + '">' + esc(c.nameEn) + "</option>";
+            }).join("");
+            sel.value = current;
+        }
+        function fetchEvents() {
+            api("/api/events?all=1").then(function (d) {
+                if (!d.events) { setMsg("ev_msg", d.message || "No access", "err"); return; }
+                state.eventsCache = d.events || [];
+                var tb = $("ev_table").querySelector("tbody");
+                tb.innerHTML = state.eventsCache.map(function (e) {
+                    return "<tr><td><strong>" + esc(e.title) + "</strong>" + (e.featured ? " <span class='pill pill-accent'>Featured</span>" : "") + "</td>" +
+                        "<td>" + esc(e.category || "—") + "</td><td>" + esc(e.eventDate || "—") + "</td>" +
+                        "<td>" + ((e.coverPhoto ? 1 : 0) + (e.photoCount || 0)) + "</td>" +
+                        "<td><span class='pill " + (e.status === "published" ? "pill-green" : "pill-grey") + "'>" + esc(e.status) + "</span></td>" +
+                        '<td><button class="mini-btn" data-edit="' + e.id + '">Edit</button> ' +
+                        (e.status !== "published" ? '<button class="mini-btn" data-pub="' + e.id + '">Publish</button> ' : '<button class="mini-btn" data-unpub="' + e.id + '">Unpublish</button> ') +
+                        '<button class="mini-btn danger" data-del="' + e.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="6" class="empty">No events yet.</td></tr>';
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editEvent(Number(b.dataset.edit)); }; });
+                tb.querySelectorAll("[data-pub]").forEach(function (b) { b.onclick = function () { setEventStatus(b.dataset.pub, "published"); }; });
+                tb.querySelectorAll("[data-unpub]").forEach(function (b) { b.onclick = function () { setEventStatus(b.dataset.unpub, "draft"); }; });
+                tb.querySelectorAll("[data-del]").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Delete this event and all its photos permanently?")) return;
+                        api("/api/events?id=" + b.dataset.del, { method: "DELETE" }).then(function (d2) {
+                            setMsg("ev_msg", d2.message, d2.success ? "ok" : "err");
+                            if (d2.success) { if (state.editingEventId === Number(b.dataset.del)) clearEventForm(); fetchEvents(); }
+                        });
+                    };
+                });
+            }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+        }
+        function setEventStatus(id, status) {
+            var ev = state.eventsCache.filter(function (x) { return x.id === Number(id); })[0];
+            var body = { id: Number(id), title: ev ? ev.title : "", status: status };
+            api("/api/events", { method: "PUT", body: JSON.stringify(body) })
+                .then(function (d) { setMsg("ev_msg", d.message, d.success ? "ok" : "err"); fetchEvents(); });
+        }
+        function renderEventGalleryPreview() {
+            $("ev_galleryPreview").innerHTML = state.eventNewGalleryFiles.map(function (f, i) {
+                return '<div style="position:relative;"><img src="' + f.dataUrl + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">' +
+                    '<button type="button" data-remove-new="' + i + '" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:0;background:var(--danger,#c0392b);color:#fff;cursor:pointer;line-height:1;">×</button></div>';
+            }).join("");
+            $("ev_galleryPreview").querySelectorAll("[data-remove-new]").forEach(function (b) {
+                b.onclick = function () { state.eventNewGalleryFiles.splice(Number(b.dataset.removeNew), 1); renderEventGalleryPreview(); };
+            });
+        }
+        function renderEventExistingPhotos() {
+            var wrap = $("ev_existingPhotos");
+            if (!state.eventExistingPhotos.length) { wrap.style.display = "none"; return; }
+            wrap.style.display = "block";
+            $("ev_existingPhotosGrid").innerHTML = state.eventExistingPhotos.map(function (p) {
+                var marked = state.eventRemovePhotoIds.indexOf(p.id) !== -1;
+                return '<div data-photo-id="' + p.id + '" style="cursor:pointer;position:relative;opacity:' + (marked ? "0.35" : "1") + ';">' +
+                    '<img src="' + esc(p.photoUrl) + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">' +
+                    (marked ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.35);border-radius:8px;">Remove</div>' : "") +
+                    "</div>";
+            }).join("");
+            $("ev_existingPhotosGrid").querySelectorAll("[data-photo-id]").forEach(function (el) {
+                el.onclick = function () {
+                    var id = Number(el.dataset.photoId);
+                    var idx = state.eventRemovePhotoIds.indexOf(id);
+                    if (idx === -1) state.eventRemovePhotoIds.push(id); else state.eventRemovePhotoIds.splice(idx, 1);
+                    renderEventExistingPhotos();
+                };
+            });
+        }
+        function editEvent(id) {
+            var e = state.eventsCache.filter(function (x) { return x.id === id; })[0];
+            if (!e) return;
+            state.editingEventId = id;
+            state.eventNewGalleryFiles = [];
+            state.eventRemovePhotoIds = [];
+            $("ev_formTitle").textContent = "Edit " + e.title;
+            $("ev_title").value = e.title || ""; $("ev_category").value = e.category || "";
+            $("ev_eventDate").value = e.eventDate || ""; $("ev_location").value = e.location || "";
+            $("ev_churchId").value = e.churchId || ""; $("ev_status").value = e.status || "draft";
+            $("ev_featured").value = e.featured ? "1" : ""; $("ev_beneficiariesCount").value = e.beneficiariesCount != null ? e.beneficiariesCount : "";
+            $("ev_description").value = e.description || "";
+            $("ev_coverFile").value = "";
+            if (e.coverPhoto) { $("ev_coverPreview").src = e.coverPhoto; $("ev_coverPreviewContainer").style.display = "block"; }
+            else { $("ev_coverPreviewContainer").style.display = "none"; }
+            $("ev_galleryFiles").value = "";
+            renderEventGalleryPreview();
+            $("ev_saveBtn").textContent = "Save changes";
+            api("/api/events?id=" + id).then(function (d) {
+                state.eventExistingPhotos = (d && d.photos) || [];
+                renderEventExistingPhotos();
+            }).catch(function () { state.eventExistingPhotos = []; renderEventExistingPhotos(); });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearEventForm() {
+            state.editingEventId = null;
+            state.eventNewGalleryFiles = [];
+            state.eventRemovePhotoIds = [];
+            state.eventExistingPhotos = [];
+            $("ev_formTitle").textContent = "Add an event";
+            ["ev_title", "ev_category", "ev_eventDate", "ev_location", "ev_description", "ev_beneficiariesCount"].forEach(function (id) { $(id).value = ""; });
+            $("ev_churchId").value = ""; $("ev_status").value = "draft"; $("ev_featured").value = "";
+            $("ev_coverFile").value = ""; $("ev_coverPreviewContainer").style.display = "none";
+            $("ev_galleryFiles").value = "";
+            renderEventGalleryPreview();
+            renderEventExistingPhotos();
+            $("ev_saveBtn").textContent = "Add event";
+        }
+        function saveEvent() {
+            var title = $("ev_title").value.trim();
+            if (!title) { setMsg("ev_msg", "Title is required", "err"); return; }
+            var body = {
+                title: title, category: $("ev_category").value.trim() || null,
+                eventDate: $("ev_eventDate").value.trim() || null, location: $("ev_location").value.trim() || null,
+                description: $("ev_description").value.trim() || null, status: $("ev_status").value,
+                featured: $("ev_featured").value === "1", churchId: $("ev_churchId").value || null,
+                beneficiariesCount: $("ev_beneficiariesCount").value === "" ? null : Number($("ev_beneficiariesCount").value)
+            };
+            var isEdit = !!state.editingEventId;
+            if (isEdit) { body.id = state.editingEventId; body.removePhotoIds = state.eventRemovePhotoIds; }
+
+            // Gallery files are already staged into state.eventNewGalleryFiles by
+            // the file-input's onchange handler (so the live preview/remove-before-
+            // save UI has something to render against) -- only the cover photo still
+            // needs reading here, since it has no staging step of its own.
+            var coverFile = $("ev_coverFile").files[0];
+            var work = coverFile
+                ? readFileAsDataURL(coverFile).then(function (dataUrl) { body.coverPhoto = dataUrl; })
+                : Promise.resolve();
+
+            work.then(function () {
+                var newPhotos = state.eventNewGalleryFiles.map(function (f) { return { dataUrl: f.dataUrl }; });
+                if (isEdit) body.addPhotos = newPhotos; else body.photos = newPhotos;
+                return api("/api/events", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) });
+            }).then(function (d) {
+                setMsg("ev_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearEventForm(); fetchEvents(); }
+            }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
         }
 
         // ═══════════════ Audit log ═══════════════
@@ -3630,7 +3947,8 @@
             roles: loadRoles, audit: loadAudit, beta: loadBeta,
             verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {},
             churches: loadChurches, promises: loadPromises, testimonies: loadTestimonies,
-            prayer: loadPrayer, contactmsgs: loadContactMsgs, programs: loadPrograms, blog: loadBlog
+            prayer: loadPrayer, contactmsgs: loadContactMsgs, programs: loadPrograms, blog: loadBlog,
+            events: loadEvents
         };
 
         function wireThemeToggle() {
@@ -3724,7 +4042,7 @@
                 if (!confirm("Archive this fund? It will be hidden from the public but data is preserved.")) return;
                 api("/api/funds", {
                     method: "PUT",
-                    body: JSON.stringify({ slug: state.editingFundSlug, action: "archive" })
+                    body: JSON.stringify({ slug: state.editingFundSlug, status: "archived" })
                 }).then(function (d) {
                     setMsg("f_msg", d.message, d.success ? "ok" : "err");
                     if (d.success) { clearFundForm(); loadFunds(); state.loaded.overview = false; }
@@ -3767,8 +4085,25 @@
             $("ts_filter").onchange = fetchTestimonies; $("ts_refreshBtn").onclick = fetchTestimonies;
             $("pq_filter").onchange = fetchPrayer; $("pq_refreshBtn").onclick = fetchPrayer;
             $("cm_filter").onchange = fetchContactMsgs; $("cm_refreshBtn").onclick = fetchContactMsgs;
-            $("pg_saveBtn").onclick = saveProgram;
+            $("pg_saveBtn").onclick = saveProgram; $("pg_clearBtn").onclick = clearProgramForm;
             $("bl_saveBtn").onclick = saveBlogPost;
+            $("ev_saveBtn").onclick = saveEvent; $("ev_clearBtn").onclick = clearEventForm;
+            $("ev_coverFile").onchange = function () {
+                var file = this.files[0];
+                if (!file) return;
+                readFileAsDataURL(file).then(function (dataUrl) {
+                    $("ev_coverPreview").src = dataUrl;
+                    $("ev_coverPreviewContainer").style.display = "block";
+                }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+            };
+            $("ev_galleryFiles").onchange = function () {
+                var files = Array.from(this.files || []);
+                Promise.all(files.map(readFileAsDataURL)).then(function (dataUrls) {
+                    dataUrls.forEach(function (dataUrl) { state.eventNewGalleryFiles.push({ dataUrl: dataUrl }); });
+                    renderEventGalleryPreview();
+                    $("ev_galleryFiles").value = "";
+                }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+            };
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };
             $("a_nextBtn").onclick = function () { state.auditOffset += 50; fetchAudit(); };

@@ -33,19 +33,37 @@ test("events: public GET listing shows only published events, with categories", 
   assert.deepEqual(res.categories, ["Youth"]);
 });
 
-test("events: GET ?id= returns any status (not just published) plus its photos", async () => {
+test("events: GET ?id= on a draft event requires manage_events (no unauthenticated draft disclosure)", async () => {
   const db = freshDb();
   const create = await readJson(await events.onRequestPost(makeContext({
     db, method: "POST", url: "https://test.local/api/events",
     body: { title: "Draft Detail", status: "draft" }
   })));
 
-  const res = await readJson(await events.onRequestGet(makeContext({
+  const denied = await readJson(await events.onRequestGet(makeContext({
     db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.equal(denied.success, false, "an anonymous caller must not be able to fetch a draft event by id");
+
+  const res = await readJson(await events.onRequestGet(makeContext({
+    db, url: `https://test.local/api/events?id=${create.id}`
   })));
   assert.equal(res.event.title, "Draft Detail");
   assert.equal(res.event.status, "draft");
   assert.deepEqual(res.photos, []);
+});
+
+test("events: GET ?id= on a published event is public, no auth required", async () => {
+  const db = freshDb();
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Published Detail", status: "published" }
+  })));
+
+  const res = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.equal(res.event.title, "Published Detail");
 });
 
 test("events: GET ?id= for a nonexistent event is a 404", async () => {
@@ -113,7 +131,7 @@ test("events: POST with gallery photos but no cover photo falls back to the firs
   assert.equal(res.success, true, res.message);
 
   const detail = await readJson(await events.onRequestGet(makeContext({
-    db, authToken: null, url: `https://test.local/api/events?id=${res.id}`
+    db, url: `https://test.local/api/events?id=${res.id}`
   })));
   assert.ok(detail.event.coverPhoto, "cover should be backfilled from the first gallery photo");
   assert.equal(detail.photos.length, 2);
@@ -126,7 +144,7 @@ test("events: PUT updates fields, adds and removes photos, and 404s for a nonexi
     db, method: "POST", url: "https://test.local/api/events",
     body: { title: "Original Title", status: "draft", photos: [{ dataUrl: TINY_PNG_DATA_URL, caption: "keep" }] }
   })));
-  let detail = await readJson(await events.onRequestGet(makeContext({ db, authToken: null, url: `https://test.local/api/events?id=${create.id}` })));
+  let detail = await readJson(await events.onRequestGet(makeContext({ db, url: `https://test.local/api/events?id=${create.id}` })));
   const keepPhotoId = detail.photos[0].id;
 
   const update = await readJson(await events.onRequestPut(makeContext({
@@ -197,4 +215,116 @@ test("events: DELETE requires manage_events", async () => {
     db, authToken: null, method: "DELETE", url: `https://test.local/api/events?id=${create.id}`
   })));
   assert.equal(res.success, false);
+});
+
+test("events: a non-image data URL (e.g. text/html) is silently rejected, not stored", async () => {
+  const db = freshDb();
+  const hostileDataUrl = "data:text/html;base64," + Buffer.from("<script>alert(1)</script>").toString("base64");
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Hostile Cover", status: "published", coverPhoto: hostileDataUrl }
+  })));
+  assert.equal(create.success, true);
+
+  const detail = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.equal(detail.event.coverPhoto, null, "a disallowed MIME type must never be stored as the cover photo");
+});
+
+test("events: an oversized photo data URL is rejected, not stored", async () => {
+  const db = freshDb();
+  // ~9 MB of base64 (over the 8 MB decoded limit).
+  const oversizedBase64 = "A".repeat(Math.ceil((9 * 1024 * 1024) / 0.75));
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Oversized Cover", status: "published", coverPhoto: "data:image/png;base64," + oversizedBase64 }
+  })));
+  assert.equal(create.success, true);
+
+  const detail = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.equal(detail.event.coverPhoto, null, "an oversized payload must never be stored as the cover photo");
+});
+
+// ── R2-bound branch of storePhoto()/deletePhotoObject() — previously a
+// tracked, accepted gap (no R2 mock existed). This fake bucket is a minimal
+// in-memory Map standing in for the real R2 binding's put/get/delete.
+function fakeR2Bucket() {
+  const store = new Map();
+  return {
+    _store: store,
+    put: async (key, bytes, opts) => { store.set(key, { bytes, contentType: opts && opts.httpMetadata && opts.httpMetadata.contentType }); },
+    get: async (key) => store.has(key) ? { body: store.get(key).bytes, httpMetadata: { contentType: store.get(key).contentType } } : null,
+    delete: async (key) => { store.delete(key); }
+  };
+}
+
+test("events: POST with EVENT_PHOTOS bound stores the cover photo in R2, not base64-in-D1", async () => {
+  const db = freshDb();
+  const bucket = fakeR2Bucket();
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "R2 Cover", status: "published", coverPhoto: TINY_PNG_DATA_URL },
+    env: { EVENT_PHOTOS: bucket }
+  })));
+  assert.equal(create.success, true);
+
+  const detail = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.match(detail.event.coverPhoto, /^\/api\/events\/photo\?key=events%2F/, "cover should be an R2-served URL, not a data: URL");
+  assert.equal(bucket._store.size, 1, "the fake R2 bucket should have received exactly one put()");
+});
+
+test("events: PUT addPhotos with EVENT_PHOTOS bound stores gallery photos in R2", async () => {
+  const db = freshDb();
+  const bucket = fakeR2Bucket();
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events", body: { title: "R2 Gallery" }
+  })));
+  const put = await readJson(await events.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/events",
+    body: { id: create.id, title: "R2 Gallery", addPhotos: [{ dataUrl: TINY_PNG_DATA_URL, caption: "r2 one" }] },
+    env: { EVENT_PHOTOS: bucket }
+  })));
+  assert.equal(put.success, true);
+  assert.equal(bucket._store.size, 1);
+
+  const row = await db.prepare("SELECT storage FROM event_photos WHERE event_id = ?").bind(create.id).first();
+  assert.equal(row.storage, "r2");
+});
+
+test("events: DELETE with EVENT_PHOTOS bound removes the R2 object, not just the D1 row", async () => {
+  const db = freshDb();
+  const bucket = fakeR2Bucket();
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "R2 Delete Me", photos: [{ dataUrl: TINY_PNG_DATA_URL }] },
+    env: { EVENT_PHOTOS: bucket }
+  })));
+  assert.equal(bucket._store.size, 1, "sanity check: the photo landed in R2 during creation");
+
+  const del = await readJson(await events.onRequestDelete(makeContext({
+    db, method: "DELETE", url: `https://test.local/api/events?id=${create.id}`,
+    env: { EVENT_PHOTOS: bucket }
+  })));
+  assert.equal(del.success, true);
+  assert.equal(bucket._store.size, 0, "the R2 object must be deleted alongside the event, not orphaned");
+});
+
+test("events: allowed image MIME types (jpeg, webp, gif) are all stored", async () => {
+  const db = freshDb();
+  const TINY_GIF_DATA_URL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7";
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "GIF Cover", status: "published", coverPhoto: TINY_GIF_DATA_URL }
+  })));
+  assert.equal(create.success, true);
+
+  const detail = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.ok(detail.event.coverPhoto && detail.event.coverPhoto.startsWith("data:image/gif;base64,"));
 });

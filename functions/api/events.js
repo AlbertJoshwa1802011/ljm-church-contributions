@@ -24,8 +24,16 @@ function corsHeaders(extra) {
   };
 }
 
+const ALLOWED_PHOTO_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024; // 8 MB decoded
+
 // Store a photo (data URL) in R2 if bound, otherwise fall back to base64-in-D1.
 // Non-data-URL strings are treated as already-hosted external URLs.
+// Rejects (returns null) any data URL whose MIME type isn't an allowed image
+// type, or whose decoded size exceeds MAX_PHOTO_BYTES — without these checks
+// a crafted `data:text/html;base64,...` payload would be stored and later
+// served back through /api/events/photo with that same, attacker-chosen
+// Content-Type (a stored-content-type risk on a public endpoint).
 async function storePhoto(env, eventId, dataUrl) {
   if (!dataUrl || typeof dataUrl !== "string") return null;
 
@@ -33,17 +41,24 @@ async function storePhoto(env, eventId, dataUrl) {
     return { photo_url: dataUrl, storage: "external" };
   }
 
-  if (env.EVENT_PHOTOS) {
-    const match = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
-    if (!match) return { photo_url: dataUrl, storage: "base64" };
+  const match = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
+  if (!match) return null;
 
-    const mime = match[1] || "image/jpeg";
-    const b64 = match[2] || "";
+  const mime = (match[1] || "").toLowerCase();
+  if (!ALLOWED_PHOTO_MIME_TYPES.includes(mime)) return null;
+
+  const b64 = match[2] || "";
+  // base64 decodes to ~3/4 its length; check before decoding to avoid
+  // wasting work on an oversized payload.
+  if (b64.length * 0.75 > MAX_PHOTO_BYTES) return null;
+
+  if (env.EVENT_PHOTOS) {
     const binary = atob(b64);
+    if (binary.length > MAX_PHOTO_BYTES) return null;
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 
-    const ext = (mime.split("/")[1] || "jpg").split("+")[0];
+    const ext = mime.split("/")[1];
     const key = `events/${eventId}/${crypto.randomUUID()}.${ext}`;
 
     await env.EVENT_PHOTOS.put(key, bytes, { httpMetadata: { contentType: mime } });
@@ -114,6 +129,15 @@ export async function onRequestGet(context) {
          FROM events e LEFT JOIN churches c ON c.id = e.church_id WHERE e.id = ?`
       ).bind(Number(id)).first();
       if (!eventRow) return json({ success: false, message: "Event not found" }, 404);
+
+      // Only published events are visible to unauthenticated callers (this
+      // is the public event-detail lookup used by v2/events.html). A
+      // draft/unpublished event requires the same manage_events permission
+      // as the admin listing/mutation endpoints below.
+      if (eventRow.status !== "published") {
+        const auth = await requireAuth(context, "manage_events");
+        if (!auth.ok) return json({ success: false, message: "Event not found" }, 404);
+      }
 
       const photosQ = await db.prepare(
         "SELECT id, photo_url AS photoUrl, caption, sort_order AS sortOrder FROM event_photos WHERE event_id = ? ORDER BY sort_order ASC, id ASC"
@@ -272,11 +296,17 @@ export async function onRequestPut(context) {
     const title = String(body.title || "").trim();
     if (!title) return json({ success: false, message: "Title is required" }, 400);
 
+    // A caller that omits status (e.g. only adding/removing photos) must not
+    // silently unpublish a live event — fall back to the existing status,
+    // not "draft".
+    const existing = await db.prepare("SELECT status FROM events WHERE id = ?").bind(id).first();
+    if (!existing) return json({ success: false, message: "Event not found" }, 404);
+
     const category = body.category || null;
     const eventDate = body.eventDate || null;
     const location = body.location || null;
     const description = body.description || null;
-    const status = body.status === "published" ? "published" : (body.status || "draft");
+    const status = body.status === "published" ? "published" : (body.status === "draft" ? "draft" : existing.status);
     const featured = body.featured ? 1 : 0;
     const extra = JSON.stringify(body.extra || {});
     const churchId = body.churchId ? Number(body.churchId) : null;

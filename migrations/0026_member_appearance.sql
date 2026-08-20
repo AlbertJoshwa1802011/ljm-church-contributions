@@ -1,4 +1,7 @@
--- Migration 0011: Per-member appearance preferences (accent-color themes).
+-- Migration 0026: Per-member appearance preferences (accent-color themes).
+-- (Originally numbered 0011; renumbered to resolve a collision with
+-- 0011_events.sql -- both existed at 0011 in different unmerged branches.
+-- Content is unchanged; only the file number and this header line moved.)
 -- Purely additive and idempotent. Safe to run on the live database.
 --
 -- Stores each signed-in member's chosen accent palette id, independently for
