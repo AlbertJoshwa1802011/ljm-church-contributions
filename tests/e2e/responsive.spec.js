@@ -104,6 +104,23 @@ test.describe("Responsive — mobile header/hamburger shape at real narrow width
   });
 });
 
+test.describe("No console/page errors on any v2 page", () => {
+  for (const path of PAGES) {
+    test(`${path} loads with zero console errors and zero uncaught page errors`, async ({ page }) => {
+      const consoleErrors = [];
+      const pageErrors = [];
+      page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
+      page.on("pageerror", (e) => pageErrors.push(e.message));
+
+      await page.goto(path);
+      await page.waitForTimeout(500); // let async fetch()/render callbacks settle
+
+      expect(consoleErrors, `${path} logged console errors: ${consoleErrors.join(" | ")}`).toEqual([]);
+      expect(pageErrors, `${path} threw uncaught errors: ${pageErrors.join(" | ")}`).toEqual([]);
+    });
+  }
+});
+
 test.describe("Responsive — cards never wider than the viewport", () => {
   const CASES = [
     { path: "/v2/blog.html", selector: ".blog-card, .card" },

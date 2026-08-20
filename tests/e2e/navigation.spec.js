@@ -66,6 +66,23 @@ test.describe("Cross-page navigation", () => {
     await expect(page).toHaveTitle(/Our Giving/);
   });
 
+  test("no v2 page links to the beta-gated root paths that fall through to the old homepage", async ({ page }) => {
+    // Exhaustive regression check for the "root-relative link silently serves
+    // the legacy site" class of bug (see the test above): every v2 page must
+    // link to the /v2/ variant of give-flow/our-giving/my-giving/events, never
+    // the bare root path.
+    const V2_PAGES = ["/v2/index.html", "/v2/prayer.html", "/v2/testimonies.html", "/v2/programs.html", "/v2/youth.html", "/v2/blog.html", "/v2/about.html", "/v2/watch.html"];
+    const BAD_HREFS = ["/give-flow.html", "/our-giving.html", "/my-giving.html", "/events.html"];
+
+    for (const path of V2_PAGES) {
+      await page.goto(path);
+      for (const bad of BAD_HREFS) {
+        const count = await page.locator(`a[href='${bad}']`).count();
+        expect(count, `${path} must not link to root-relative ${bad}`).toBe(0);
+      }
+    }
+  });
+
   test("admin console is reachable from the /v2/ URL pattern", async ({ page, request }) => {
     const res = await request.get("/v2/admin.html", { maxRedirects: 0 });
     expect([301, 302, 303, 307, 308]).toContain(res.status());

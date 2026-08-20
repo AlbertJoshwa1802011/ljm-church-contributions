@@ -21,4 +21,13 @@ test.describe("Blog", () => {
     await expect(page.locator("#articleWrap h1")).toHaveText("Getting Ready for VBS 2026");
     await expect(page.locator("#articleWrap")).toContainText("Back to Blog");
   });
+
+  test("the draft post is blocked even via a direct ?slug= URL, not just absent from the listing", async ({ request }) => {
+    // Listing-only checks can miss an IDOR: the public API might still
+    // resolve a draft by slug for anyone who guesses/shares the URL.
+    const apiRes = await request.get("/api/blog?slug=behind-the-scenes-sunday-worship-planning");
+    expect(apiRes.status(), "draft post must 404 by slug for an unauthenticated caller, not resolve").toBe(404);
+    const body = await apiRes.json();
+    expect(body.success).toBe(false);
+  });
 });

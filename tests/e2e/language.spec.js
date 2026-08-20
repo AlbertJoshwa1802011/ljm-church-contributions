@@ -26,4 +26,18 @@ test.describe("Language (EN / Tamil)", () => {
       await expect(page.locator(".lang-toggle").first()).toBeVisible();
     }
   });
+
+  test("switching to Tamil never leaks an untranslated placeholder, and html[lang] tracks the toggle", async ({ page }) => {
+    for (const path of ["/v2/index.html", "/v2/prayer.html", "/v2/programs.html", "/v2/about.html"]) {
+      await page.goto(path);
+      await page.locator(".lang-toggle").first().click();
+      await expect(page.locator("html")).toHaveAttribute("lang", "ta");
+      await page.waitForTimeout(200);
+
+      const bodyText = await page.locator("body").innerText();
+      for (const leak of ["undefined", "null", "[object Object]"]) {
+        expect(bodyText, `${path} leaked "${leak}" into visible text after switching to Tamil`).not.toContain(leak);
+      }
+    }
+  });
 });
