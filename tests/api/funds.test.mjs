@@ -100,6 +100,66 @@ test("funds: GET ?slug= detail returns the legacy-shape payload with assignedMem
   assert.deepEqual(detail.assignedMembers, []);
 });
 
+// SECURITY regression (docs/audits/2026-08-21-production-hardening.md): the
+// public fund-detail endpoint (no auth required for a non-members-only fund)
+// used to unconditionally return each contributor's raw Email/Phone, a full
+// memberEmails/memberPhones directory with real values for every member, and
+// assignedMembers rows carrying each assigned member's real email — none of
+// which the only real consumer (script.js) renders; it only checks presence
+// as a boolean. An anonymous caller must get booleans/omitted fields; an
+// authenticated admin (manage_funds) must still get the real values.
+test("funds: an anonymous caller gets presence booleans and no raw PII on a public fund's detail", async () => {
+  const db = freshDb();
+  await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Public Giver','pub@example.com','555',1)").run();
+  await db.prepare(
+    "INSERT INTO contributions (member_name, amount, date, category, proof_id, fund, email, phone) VALUES ('Public Giver', 100, '2026-07-01', 'Direct Cash', 'proof-fund-1', 'tech-contributions', 'pub@example.com', '555')"
+  ).run();
+
+  const anon = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=tech-contributions"
+  })));
+  assert.equal(anon.memberEmails["Public Giver"], true, "anonymous caller gets a boolean, not the real email");
+  assert.equal(anon.memberPhones["Public Giver"], true, "anonymous caller gets a boolean, not the real phone");
+  const row = anon.contributions.find((c) => c.Member === "Public Giver");
+  assert.ok(row, "the contribution itself is still public (transparency-by-design)");
+  assert.equal(row.Email, undefined, "an anonymous caller must never see a contributor's raw email");
+  assert.equal(row.Phone, undefined, "an anonymous caller must never see a contributor's raw phone");
+
+  const admin = await readJson(await funds.onRequestGet(makeContext({
+    db, url: "https://test.local/api/funds?slug=tech-contributions"
+  })));
+  assert.equal(admin.memberEmails["Public Giver"], "pub@example.com", "an admin caller still gets the real email");
+  const adminRow = admin.contributions.find((c) => c.Member === "Public Giver");
+  assert.equal(adminRow.Email, "pub@example.com");
+});
+
+test("funds: assignedMembers omits each member's email for an anonymous caller (members-only fund, viewed by an assigned member)", async () => {
+  const db = freshDb();
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Deacons Fund", visibility: "members" }
+  }));
+  await db.prepare("INSERT INTO members (name, email) VALUES ('Deacon Person','deacon@example.com')").run();
+  const member = await db.prepare("SELECT id FROM members WHERE name='Deacon Person'").first();
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { action: "add_member", slug: "deacons-fund", memberId: member.id }
+  }));
+
+  const context = {
+    env: { DB: db, ALLOW_LEGACY_EMAIL_TOKEN: "true" },
+    request: {
+      url: "https://test.local/api/funds?slug=deacons-fund", method: "GET",
+      headers: { get: (k) => (k === "Authorization" ? "Bearer deacon@example.com" : null) }
+    }
+  };
+  const asAssignedMember = await readJson(await funds.onRequestGet(context));
+  assert.equal(asAssignedMember.fund.slug, "deacons-fund", "the assigned member can see the fund");
+  assert.equal(asAssignedMember.assignedMembers.length, 1);
+  assert.equal(asAssignedMember.assignedMembers[0].email, undefined, "a non-admin assigned member must not see other assignees' raw emails");
+  assert.equal(asAssignedMember.assignedMembers[0].name, "Deacon Person", "the name is still shown");
+});
+
 test("funds: GET ?slug= for a nonexistent fund is a 404", async () => {
   const db = freshDb();
   const res = await readJson(await funds.onRequestGet(makeContext({

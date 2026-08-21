@@ -96,13 +96,26 @@ export async function onRequestGet(context) {
     }
 
     // 3. Fetch Contributions for this fund
-    // includeDeleted is only honored for a recognized admin — public dashboard
-    // callers never see soft-deleted rows even if they happen to pass the flag.
-    let includeDeleted = false;
-    if (url.searchParams.get("includeDeleted") === "1") {
-      const viewerAuth = await requireAuth(context);
-      includeDeleted = viewerAuth.ok;
-    }
+    // SECURITY (see docs/audits/2026-08-21-production-hardening.md): this
+    // endpoint has no auth requirement — it's the public giving-transparency
+    // dashboard's data source, and Member/Amount/Date/Category being public
+    // is the product's intentional "every gift tracked openly" design. But
+    // it was also unconditionally selecting each contributor's raw personal
+    // Email and Phone, plus a full memberEmails/memberPhones directory for
+    // EVERY member (not just contributors to this fund) below — none of
+    // which any public page actually renders (script.js only ever reads
+    // memberEmails/memberPhones as a truthy presence check for a "Verified"
+    // badge, never displays the value; nothing reads a contribution's
+    // Email/Phone in v2/our-giving.html or script.js at all). That made this
+    // one unauthenticated GET a full name→email→phone directory dump of the
+    // entire congregation, plus each person's individual giving history.
+    // admin.html *does* need the real values (contribution-edit form
+    // prefill) — isAdmin below gates that, reusing the exact same
+    // `requireAuth(context)` (no specific permission) that includeDeleted
+    // already used to distinguish "any recognized admin" from "the public".
+    const viewerAuth = await requireAuth(context);
+    const isAdmin = viewerAuth.ok;
+    const includeDeleted = isAdmin && url.searchParams.get("includeDeleted") === "1";
 
     // The created_by/updated_by/is_deleted columns come from migration 0012.
     // If that migration hasn't been applied to this database yet, selecting or
@@ -131,6 +144,16 @@ export async function onRequestGet(context) {
       contributions = legacyQuery.results || [];
     }
 
+    // Public callers never receive a contributor's raw Email/Phone (see the
+    // note above requireAuth) — only admin.html's edit-contribution form
+    // prefill needs the real values.
+    if (!isAdmin) {
+      contributions = contributions.map((c) => {
+        const { Email, Phone, ...rest } = c;
+        return rest;
+      });
+    }
+
     // 4. Fetch Member Profiles (emails, phones, verified statuses)
     const membersQuery = await db.prepare(
       "SELECT name, email, phone, is_verified FROM members"
@@ -140,11 +163,16 @@ export async function onRequestGet(context) {
     const memberEmails = {};
     const memberPhones = {};
     const memberStatus = {};
-    
+
     membersList.forEach(m => {
       if (m.name) {
-        if (m.email) memberEmails[m.name] = m.email;
-        if (m.phone) memberPhones[m.name] = m.phone;
+        // memberEmails/memberPhones are consumed publicly only as a truthy
+        // presence check (script.js's "Verified Profile" badge) — never
+        // rendered — so the public response carries `true`, not the real
+        // address/number. Admins (e.g. a future admin feature) still get
+        // the real values.
+        if (m.email) memberEmails[m.name] = isAdmin ? m.email : true;
+        if (m.phone) memberPhones[m.name] = isAdmin ? m.phone : true;
         memberStatus[m.name] = m.is_verified === 1;
       }
     });

@@ -56,7 +56,11 @@ export async function onRequestPost(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "view_members");
+  // manage_members, not view_members — a role scoped to read-only member
+  // lookup must not also be able to create member records. families.js's
+  // write endpoints already gate on manage_members correctly; this write
+  // endpoint used the read scope by mistake (docs/audits/2026-08-21-production-hardening.md).
+  const auth = await requireAuth(context, "manage_members");
   if (!auth.ok) return auth.response;
 
   try {
@@ -93,7 +97,8 @@ export async function onRequestPut(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "view_members");
+  // manage_members, not view_members — see the note in onRequestPost above.
+  const auth = await requireAuth(context, "manage_members");
   if (!auth.ok) return auth.response;
 
   try {

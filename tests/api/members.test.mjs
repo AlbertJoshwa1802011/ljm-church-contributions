@@ -7,6 +7,21 @@ import * as members from "../../functions/api/members.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
 
+// makeContext()'s ADMIN_API_TOKEN default gives wildcard permissions, so it
+// can't test a *specific* permission scope. Build a raw context with the
+// legacy email-token path enabled instead, to authenticate as an email that
+// only holds the exact role permissions this test wires up.
+function emailCtx(db, email, { method = "GET", url = "https://test.local/api/members", body } = {}) {
+  return {
+    env: { DB: db, ALLOW_LEGACY_EMAIL_TOKEN: "true" },
+    request: {
+      url, method,
+      headers: { get: (k) => (k === "Authorization" ? "Bearer " + email : null) },
+      json: async () => body ?? {}
+    }
+  };
+}
+
 test("members: GET aggregates each member's contribution totals", async () => {
   const db = freshDb();
   await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Alice','a@x.com','111',1)").run();
@@ -58,7 +73,7 @@ test("members: GET requires view_members permission", async () => {
   assert.equal(res.success, false);
 });
 
-test("members: POST requires view_members permission", async () => {
+test("members: POST requires credentials", async () => {
   const db = freshDb();
   const res = await readJson(await members.onRequestPost(makeContext({
     db, authToken: null, method: "POST", url: "https://test.local/api/members", body: { name: "Nope" }
@@ -66,13 +81,63 @@ test("members: POST requires view_members permission", async () => {
   assert.equal(res.success, false);
 });
 
-test("members: PUT requires view_members permission", async () => {
+test("members: PUT requires credentials", async () => {
   const db = freshDb();
   const add = await readJson(await members.onRequestPost(makeContext({ db, method: "POST", url: "https://test.local/api/members", body: { name: "Guarded" } })));
   const res = await readJson(await members.onRequestPut(makeContext({
     db, authToken: null, method: "PUT", url: "https://test.local/api/members", body: { id: add.id, email: "x@x.com" }
   })));
   assert.equal(res.success, false);
+});
+
+// SECURITY regression (docs/audits/2026-08-21-production-hardening.md):
+// POST/PUT used to gate on "view_members" — a READ-scoped permission — so a
+// role granted only read-only member lookup could still create/edit member
+// records. families.js's own write endpoints already correctly require
+// "manage_members"; this endpoint used the wrong scope by mistake.
+test("members: POST requires manage_members, not just view_members", async () => {
+  const db = freshDb();
+  db._sqlite.exec(
+    `INSERT INTO roles (role_name, permissions) VALUES ('read_only_members', '["view_members"]');
+     INSERT INTO member_roles (email, role_name) VALUES ('reader@example.com', 'read_only_members');`
+  );
+  const res = await readJson(await members.onRequestPost(emailCtx(db, "reader@example.com", {
+    method: "POST", body: { name: "Should Not Be Created" }
+  })));
+  assert.equal(res.success, false, "view_members alone must not be able to create a member");
+
+  const row = await db.prepare("SELECT id FROM members WHERE name = 'Should Not Be Created'").first();
+  assert.equal(row, null);
+});
+
+test("members: PUT requires manage_members, not just view_members", async () => {
+  const db = freshDb();
+  const add = await readJson(await members.onRequestPost(makeContext({ db, method: "POST", url: "https://test.local/api/members", body: { name: "Untouchable" } })));
+  db._sqlite.exec(
+    `INSERT INTO roles (role_name, permissions) VALUES ('read_only_members2', '["view_members"]');
+     INSERT INTO member_roles (email, role_name) VALUES ('reader2@example.com', 'read_only_members2');`
+  );
+  const res = await readJson(await members.onRequestPut(emailCtx(db, "reader2@example.com", {
+    method: "PUT", body: { id: add.id, email: "hacked@example.com" }
+  })));
+  assert.equal(res.success, false, "view_members alone must not be able to edit a member");
+});
+
+test("members: manage_members alone (without view_members) can create and edit a member", async () => {
+  const db = freshDb();
+  db._sqlite.exec(
+    `INSERT INTO roles (role_name, permissions) VALUES ('member_editor', '["manage_members"]');
+     INSERT INTO member_roles (email, role_name) VALUES ('editor@example.com', 'member_editor');`
+  );
+  const add = await readJson(await members.onRequestPost(emailCtx(db, "editor@example.com", {
+    method: "POST", body: { name: "Editable" }
+  })));
+  assert.equal(add.success, true, add.message);
+
+  const upd = await readJson(await members.onRequestPut(emailCtx(db, "editor@example.com", {
+    method: "PUT", body: { id: add.id, email: "editable@example.com" }
+  })));
+  assert.equal(upd.success, true, upd.message);
 });
 
 test("members: POST requires a name", async () => {

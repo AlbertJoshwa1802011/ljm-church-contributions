@@ -100,6 +100,28 @@ test("purchases: fund/external contribution defaults from cost when not explicit
   assert.equal(row.external_contribution, 0);
 });
 
+// SECURITY regression (docs/audits/2026-08-21-production-hardening.md): the
+// public /impact.html page hits this same unauthenticated listing, and
+// never renders createdBy (the staff email who logged the purchase) — only
+// admin.html's purchases table does. An anonymous caller must not receive it.
+test("purchases: an unauthenticated (public) caller does not see createdBy, an authenticated admin still does", async () => {
+  const db = freshDb();
+  const addParams = new URLSearchParams({
+    action: "add_purchase", productName: "Amplifier", cost: "8000",
+    purchaseDate: "2026-07-01", fundSource: "tech-contributions"
+  });
+  const addRes = await readJson(await purchases.onRequestGet(makeContext({ db, url: "https://test.local/api/purchases?" + addParams.toString() })));
+
+  const publicRes = await readJson(await purchases.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/purchases" })));
+  const publicRow = publicRes.purchases.find((p) => p.id === addRes.id);
+  assert.ok(publicRow, "the purchase itself is still public (transparency-by-design)");
+  assert.equal(publicRow.createdBy, undefined, "an anonymous caller must never see who logged the purchase");
+
+  const adminRes = await readJson(await purchases.onRequestGet(makeContext({ db, url: "https://test.local/api/purchases" })));
+  const adminRow = adminRes.purchases.find((p) => p.id === addRes.id);
+  assert.equal(adminRow.createdBy, "api-token", "admin.html's purchases table still needs the real value");
+});
+
 test("purchases: default public listing (no action) aggregates totalSpent and totalCost", async () => {
   const db = freshDb();
   const params = new URLSearchParams({

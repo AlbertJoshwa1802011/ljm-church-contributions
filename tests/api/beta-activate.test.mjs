@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { freshDb } from "../helpers/mock-d1.mjs";
 import * as betaActivate from "../../functions/api/beta-activate.js";
 import { verifyBetaCookie, BETA_COOKIE_NAME, DEFAULT_BETA_COOKIE_SECRET } from "../../functions/api/_beta.js";
+import { DEFAULT_GOOGLE_CLIENT_ID } from "../../functions/api/_lib.js";
 
 const SECRET = "test-beta-secret";
 
@@ -36,7 +37,7 @@ test("beta-activate: missing DB binding returns 500", async () => {
 });
 
 test("beta-activate: no BETA_COOKIE_SECRET configured still works via the built-in default secret", withGoogleStub(
-  { email: "albertjoshrock101@gmail.com", name: "Seeded Admin" },
+  { email: "albertjoshrock101@gmail.com", name: "Seeded Admin", aud: DEFAULT_GOOGLE_CLIENT_ID },
   async () => {
     const db = freshDb();
     const res = await betaActivate.onRequestPost({
@@ -73,7 +74,7 @@ test("beta-activate: invalid Google token returns 401", withGoogleStub(null, asy
 }));
 
 test("beta-activate: valid token but email not on the allowlist returns 403, no cookie", withGoogleStub(
-  { email: "not-a-tester@example.com", name: "Nobody" },
+  { email: "not-a-tester@example.com", name: "Nobody", aud: DEFAULT_GOOGLE_CLIENT_ID },
   async () => {
     const db = freshDb();
     const res = await betaActivate.onRequestPost({
@@ -86,7 +87,7 @@ test("beta-activate: valid token but email not on the allowlist returns 403, no 
 ));
 
 test("beta-activate: valid token + allowlisted email mints a cookie that verifies back to that email", withGoogleStub(
-  { email: "Beta.Tester@Example.com", name: "Beta Tester" },
+  { email: "Beta.Tester@Example.com", name: "Beta Tester", aud: DEFAULT_GOOGLE_CLIENT_ID },
   async () => {
     const db = freshDb();
     await db.prepare("INSERT INTO beta_testers (email, added_by) VALUES ('beta.tester@example.com', 'test')").run();
@@ -113,7 +114,7 @@ test("beta-activate: valid token + allowlisted email mints a cookie that verifie
 ));
 
 test("beta-activate: the pre-seeded requester email (from migration 0012) is on the allowlist by default", withGoogleStub(
-  { email: "albertjoshrock101@gmail.com", name: "Seeded Admin" },
+  { email: "albertjoshrock101@gmail.com", name: "Seeded Admin", aud: DEFAULT_GOOGLE_CLIENT_ID },
   async () => {
     const db = freshDb();
     const res = await betaActivate.onRequestPost({

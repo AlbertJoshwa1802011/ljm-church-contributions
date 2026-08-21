@@ -8,7 +8,16 @@ import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
 import * as contributions from "../../functions/api/contributions.js";
 
 async function readJson(response) { return JSON.parse(await response.text()); }
-function ctx(db, url) { return { env: { DB: db }, request: { url } }; }
+// A real Cloudflare Pages Request always has `.headers` — onRequestGet now
+// unconditionally calls requireAuth(context), which reads
+// request.headers.get("Authorization"), so the fixture must carry a real
+// (empty) headers stub to match production shape.
+function ctx(db, url, authHeader) {
+  return {
+    env: { DB: db, ADMIN_API_TOKEN: "test-admin-token" },
+    request: { url, headers: { get: (k) => (k === "Authorization" ? (authHeader ? "Bearer " + authHeader : null) : null) } }
+  };
+}
 
 async function addContribution(db, name, amount, proof, fund = "tech-contributions", category = "Direct Cash") {
   await db.prepare(
@@ -67,16 +76,50 @@ test("contributions: an unknown fund falls back to tech-contributions", async ()
   assert.equal(body.goalAmount, 50000);
 });
 
-test("contributions: memberEmails/memberPhones/memberStatus dictionaries are populated from the members table", async () => {
+test("contributions: memberEmails/memberPhones/memberStatus dictionaries are populated from the members table (admin caller sees real values)", async () => {
   const db = freshDb();
   await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Verified Giver','v@x.com','111',1)").run();
   await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Unverified Giver','u@x.com','222',0)").run();
 
-  const body = await readJson(await contributions.onRequestGet(ctx(db, "https://test.local/api/contributions")));
+  const body = await readJson(await contributions.onRequestGet(ctx(db, "https://test.local/api/contributions", "test-admin-token")));
   assert.equal(body.memberEmails["Verified Giver"], "v@x.com");
   assert.equal(body.memberPhones["Verified Giver"], "111");
   assert.equal(body.memberStatus["Verified Giver"], true);
   assert.equal(body.memberStatus["Unverified Giver"], false);
+});
+
+// SECURITY regression (docs/audits/2026-08-21-production-hardening.md): this
+// endpoint has no auth requirement at all — it's the public dashboard's data
+// source — so it must never leak a real congregant's email/phone (or a
+// contribution's own Email/Phone) to an unauthenticated caller. Only a
+// truthy presence flag is public; the public UI (script.js) only ever reads
+// these as a boolean "Verified" badge check, never displays the value.
+test("contributions: an unauthenticated (public) caller gets presence booleans, never real emails/phones", async () => {
+  const db = freshDb();
+  await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Verified Giver','v@x.com','111',1)").run();
+  await addContribution(db, "Verified Giver", 250, "pub-proof-1");
+  await db.prepare("UPDATE contributions SET email = 'v@x.com', phone = '111' WHERE member_name = 'Verified Giver'").run();
+
+  const body = await readJson(await contributions.onRequestGet(ctx(db, "https://test.local/api/contributions")));
+  assert.equal(body.memberEmails["Verified Giver"], true, "public caller gets a boolean, not the real email");
+  assert.equal(body.memberPhones["Verified Giver"], true, "public caller gets a boolean, not the real phone");
+  assert.equal(body.memberStatus["Verified Giver"], true, "the already-public verified flag is unaffected");
+
+  const row = body.contributions.find((c) => c.Member === "Verified Giver");
+  assert.ok(row, "the contribution itself is still public (transparency-by-design)");
+  assert.equal(row.Email, undefined, "a public caller must never see a contributor's raw email");
+  assert.equal(row.Phone, undefined, "a public caller must never see a contributor's raw phone");
+});
+
+test("contributions: an authenticated admin caller still gets the real Email/Phone on each contribution (admin.html's edit-form prefill depends on this)", async () => {
+  const db = freshDb();
+  await addContribution(db, "Grace", 400, "adm-proof-1");
+  await db.prepare("UPDATE contributions SET email = 'grace@example.com', phone = '9999' WHERE member_name = 'Grace'").run();
+
+  const body = await readJson(await contributions.onRequestGet(ctx(db, "https://test.local/api/contributions", "test-admin-token")));
+  const row = body.contributions.find((c) => c.Member === "Grace");
+  assert.equal(row.Email, "grace@example.com");
+  assert.equal(row.Phone, "9999");
 });
 
 test("contributions: falls back to the config table when the funds row/goal is missing (pre-0002 compatibility path)", async () => {

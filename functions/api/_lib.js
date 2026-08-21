@@ -8,6 +8,17 @@ export const HARDCODED_SUPER_ADMINS = [
   "augustinraja261@gmail.com"
 ];
 
+// The Google OAuth client ID every "Sign in with Google" button in this app
+// uses (admin.html, v2/auth.js) — a public value by design, already embedded
+// in client-side JS. env.GOOGLE_CLIENT_ID (if configured as a Pages var) can
+// override it, but the audience check itself must never be optional: without
+// it, any valid Google ID token minted for a *different* OAuth client
+// (issued to the same user by some unrelated "Sign in with Google" site)
+// would be accepted here as proof of identity, since Google's tokeninfo
+// endpoint only certifies "a real Google user signed into *some* app", not
+// "signed into this one".
+export const DEFAULT_GOOGLE_CLIENT_ID = "915064946962-eohgis92a3jmfk3fi7hkh8uc21971clo.apps.googleusercontent.com";
+
 export function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -24,8 +35,8 @@ export async function verifyGoogleToken(token, env) {
     if (!res.ok) return null;
     const payload = await res.json();
 
-    const clientID = env.GOOGLE_CLIENT_ID;
-    if (clientID && payload.aud !== clientID) return null;
+    const clientID = env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+    if (payload.aud !== clientID) return null;
     if (!payload.email) return null;
 
     return {

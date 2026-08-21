@@ -68,6 +68,7 @@ export async function onRequestGet(context) {
     }
 
     // members-only funds: viewer must be assigned, or hold manage_funds
+    let isAdminViewer = false;
     if (fund.visibility === "members") {
       const viewer = await resolveViewer(context);
       let allowed = false;
@@ -83,8 +84,14 @@ export async function onRequestGet(context) {
         // may view members-only funds even without an assignment.
         const auth = await requireAuth(context, "manage_funds");
         allowed = auth.ok;
+        isAdminViewer = auth.ok;
       }
       if (!allowed) return json({ error: "This fund is restricted to assigned members. Please sign in." }, 403);
+    } else {
+      // Public fund — still need to know if the caller is an admin, purely to
+      // decide whether raw PII is safe to include below (see the note there).
+      const auth = await requireAuth(context, "manage_funds").catch(() => null);
+      isAdminViewer = !!(auth && auth.ok);
     }
 
     const contributionsQuery = await db.prepare(
@@ -92,14 +99,22 @@ export async function onRequestGet(context) {
               notes AS Notes, email AS Email, phone AS Phone, proof_id AS ProofID
        FROM contributions WHERE fund = ? ORDER BY date DESC`
     ).bind(fund.slug).all();
-    const contributions = contributionsQuery.results || [];
+    // SECURITY (docs/audits/2026-08-21-production-hardening.md): same leak as
+    // /api/contributions — a contributor's raw Email/Phone, and the
+    // memberEmails/memberPhones directory below, must never reach a public
+    // (non-admin) caller. script.js (the only consumer of this legacy
+    // contract) only ever reads memberEmails/memberPhones as a truthy
+    // presence check for a "Verified" badge, never the value.
+    const contributions = isAdminViewer
+      ? contributionsQuery.results || []
+      : (contributionsQuery.results || []).map((c) => { const { Email, Phone, ...rest } = c; return rest; });
 
     const membersQuery = await db.prepare("SELECT name, email, phone, is_verified FROM members").all();
     const memberEmails = {}, memberPhones = {}, memberStatus = {};
     (membersQuery.results || []).forEach(m => {
       if (!m.name) return;
-      if (m.email) memberEmails[m.name] = m.email;
-      if (m.phone) memberPhones[m.name] = m.phone;
+      if (m.email) memberEmails[m.name] = isAdminViewer ? m.email : true;
+      if (m.phone) memberPhones[m.name] = isAdminViewer ? m.phone : true;
       memberStatus[m.name] = m.is_verified === 1;
     });
 
@@ -109,8 +124,12 @@ export async function onRequestGet(context) {
     const spentOnProducts = spentQuery?.total || 0;
     const productsBoughtCount = spentQuery?.count || 0;
 
+    // assignedMembers carries each assigned member's real email too — same
+    // rule: only an admin caller gets it.
     const assignedQuery = await db.prepare(
-      `SELECT m.id, m.name, m.email FROM fund_members fm JOIN members m ON m.id = fm.member_id WHERE fm.fund_id = ?`
+      isAdminViewer
+        ? `SELECT m.id, m.name, m.email FROM fund_members fm JOIN members m ON m.id = fm.member_id WHERE fm.fund_id = ?`
+        : `SELECT m.id, m.name FROM fund_members fm JOIN members m ON m.id = fm.member_id WHERE fm.fund_id = ?`
     ).bind(fund.id).all();
 
     const totalCollected = contributions.reduce((s, c) => s + (Number(c.Amount) || 0), 0);

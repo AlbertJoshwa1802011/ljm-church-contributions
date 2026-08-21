@@ -118,7 +118,21 @@ export async function onRequestGet(context) {
   // Default Listing (Public)
   try {
     const query = await db.prepare("SELECT id, name, amount AS cost, date, fund, photo, vendor, description, status, fund_contribution AS fundContribution, external_contribution AS externalContribution, external_sources AS externalSources, created_by AS createdBy FROM purchases ORDER BY date DESC").all();
-    const purchases = query.results || [];
+    let purchases = query.results || [];
+    // SECURITY (docs/audits/2026-08-21-production-hardening.md): this listing
+    // has no auth requirement (the public /impact.html page reads it
+    // directly), but createdBy is the staff email that logged the purchase —
+    // never rendered on any public page (only admin.html's purchases table
+    // shows it) — so an anonymous caller must not receive it. admin.html
+    // calls this exact endpoint too, with its real Bearer token attached, so
+    // gate on a best-effort auth check rather than stripping unconditionally.
+    const viewerAuth = await requireAuth(context);
+    if (!viewerAuth.ok) {
+      purchases = purchases.map((p) => {
+        const { createdBy, ...rest } = p;
+        return rest;
+      });
+    }
     const totalSpent = purchases.reduce((sum, p) => sum + (p.fundContribution || 0), 0);
     const totalCost = purchases.reduce((sum, p) => sum + (p.cost || 0), 0);
 
