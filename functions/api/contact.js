@@ -70,18 +70,23 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const email = String(body.email || "").trim();
-    const message = String(body.message || "").trim();
+    // ADVERSARIAL-PASS FIX (docs/audits/2026-08-21-production-hardening.md):
+    // public, unauthenticated, no rate limiting — cap field lengths like
+    // contributions.js's manual-entry endpoint already does.
+    const email = String(body.email || "").trim().substring(0, 200);
+    const message = String(body.message || "").trim().substring(0, 5000);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ success: false, message: "A valid email is required" }, 400);
     if (!message) return json({ success: false, message: "Please include a message" }, 400);
 
     const ip = request.headers.get("CF-Connecting-IP") || null;
+    const name = body.name != null ? String(body.name).trim().substring(0, 120) : null;
+    const subject = body.subject != null ? String(body.subject).trim().substring(0, 200) : null;
 
     const res = await db.prepare(
       `INSERT INTO contact_messages (name, email, subject, message, church_id, language, submitted_ip)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).bind(
-      body.name || null, email, body.subject || null, message,
+      name, email, subject, message,
       body.churchId ? Number(body.churchId) : null, body.language === "ta" ? "ta" : "en", ip
     ).run();
 

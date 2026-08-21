@@ -76,6 +76,24 @@ test("testimonies: PUT/DELETE on a nonexistent id is a 404", async () => {
   assert.equal(delRes.success, false);
 });
 
+test("testimonies: oversized public submission is truncated, not rejected or stored unbounded", async () => {
+  const db = freshDb();
+  const huge = "A".repeat(2_000_000);
+  const submit = await readJson(await testimonies.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/testimonies",
+    body: { titleEn: huge, bodyEn: huge, authorName: huge, place: huge, mediaUrl: huge }
+  })));
+  assert.equal(submit.success, true);
+
+  const res = await readJson(await testimonies.onRequestGet(makeContext({ db, url: "https://test.local/api/testimonies?all=1" })));
+  const row = res.testimonies.find((t) => t.id === submit.id);
+  assert.ok(row.titleEn.length <= 200, "titleEn must be capped");
+  assert.ok(row.bodyEn.length <= 5000, "bodyEn must be capped");
+  assert.ok(row.authorName.length <= 120, "authorName must be capped");
+  assert.ok(row.place.length <= 120, "place must be capped");
+  assert.ok(row.mediaUrl.length <= 500, "mediaUrl must be capped");
+});
+
 test("testimonies: DELETE requires manage_content", async () => {
   const db = freshDb();
   const submit = await readJson(await testimonies.onRequestPost(makeContext({

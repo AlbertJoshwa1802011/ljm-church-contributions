@@ -32,10 +32,32 @@ export async function onRequestGet(context) {
       const P = (key) => url.searchParams.get(key) || "";
 
       if (action === "add_purchase") {
-        const id = P("id") || "P" + String(Date.now()).substring(7);
         const cost = Number(P("cost") || 0);
         const fundContrib = P("fundContribution") !== "" ? Number(P("fundContribution")) : cost;
         const extContrib = P("externalContribution") !== "" ? Number(P("externalContribution")) : 0;
+
+        // ADVERSARIAL-PASS FIX (docs/audits/2026-08-21-production-hardening.md):
+        // a double-click / stale-tab resubmit of this form silently created
+        // two independent purchase rows for the same real-world purchase
+        // (confirmed live) — nothing dedupes it. Mirrors the same cheap
+        // same-actor/same-fields dedupe logs.js already uses for view-event
+        // ingestion, and the matching fix just applied to contributions.js's
+        // manual entry endpoint.
+        if (!P("id")) {
+          const dupe = await db.prepare(
+            `SELECT id FROM purchases
+             WHERE name = ? AND amount = ? AND date = ? AND fund = ? AND created_by = ?
+               AND created_at > datetime('now', '-10 seconds')
+             LIMIT 1`
+          ).bind(P("productName"), cost, P("purchaseDate"), P("fundSource"), auth.email || "").first();
+          if (dupe) {
+            return new Response(JSON.stringify({ success: true, message: "Purchase added to D1 successfully", id: dupe.id, deduped: true }), {
+              headers: { "Content-Type": "application/json" }
+            });
+          }
+        }
+
+        const id = P("id") || "P" + String(Date.now()).substring(7);
 
         await db.prepare(
           "INSERT INTO purchases (id, name, amount, date, fund, photo, vendor, description, status, fund_contribution, external_contribution, external_sources, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -126,8 +148,15 @@ export async function onRequestGet(context) {
     // shows it) — so an anonymous caller must not receive it. admin.html
     // calls this exact endpoint too, with its real Bearer token attached, so
     // gate on a best-effort auth check rather than stripping unconditionally.
+    //
+    // ADVERSARIAL-PASS FIX: require edit_purchases specifically (the
+    // permission that actually governs this endpoint's writes), not "any
+    // recognized role holder" — a caller authenticated with an unrelated
+    // permission (e.g. edit_wishlist) must not see who logged a purchase.
     const viewerAuth = await requireAuth(context);
-    if (!viewerAuth.ok) {
+    const viewerPerms = viewerAuth.permissions || [];
+    const canSeeCreatedBy = viewerAuth.ok && (viewerPerms.includes("*") || viewerPerms.includes("edit_purchases"));
+    if (!canSeeCreatedBy) {
       purchases = purchases.map((p) => {
         const { createdBy, ...rest } = p;
         return rest;

@@ -78,27 +78,37 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const titleEn = String(body.titleEn || "").trim();
-    const bodyEn = String(body.bodyEn || "").trim();
+    // ADVERSARIAL-PASS FIX (docs/audits/2026-08-21-production-hardening.md):
+    // this is a public, unauthenticated endpoint with no rate limiting — a
+    // 2MB titleEn was accepted and stored unmodified. Cap every field like
+    // contributions.js's own manual-entry endpoint already does, so a single
+    // submission can't dump unbounded text into D1.
+    const titleEn = String(body.titleEn || "").trim().substring(0, 200);
+    const bodyEn = String(body.bodyEn || "").trim().substring(0, 5000);
     if (!titleEn) return json({ success: false, message: "titleEn is required" }, 400);
     if (!bodyEn) return json({ success: false, message: "bodyEn is required" }, 400);
 
     const kind = KINDS.includes(body.kind) ? body.kind : "testimony";
     const ip = request.headers.get("CF-Connecting-IP") || null;
+    const titleTa = body.titleTa != null ? String(body.titleTa).trim().substring(0, 200) : null;
+    const bodyTa = body.bodyTa != null ? String(body.bodyTa).trim().substring(0, 5000) : null;
+    const authorName = body.authorName != null ? String(body.authorName).trim().substring(0, 120) : null;
+    const place = body.place != null ? String(body.place).trim().substring(0, 120) : null;
+    const mediaUrl = body.mediaUrl != null ? String(body.mediaUrl).trim().substring(0, 500) : null;
 
     const res = await db.prepare(
       `INSERT INTO testimonies (title_en, title_ta, body_en, body_ta, author_name, place, kind, media_url, church_id, status, submitted_ip)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
     ).bind(
-      titleEn, body.titleTa || null, bodyEn, body.bodyTa || null,
-      body.authorName || null, body.place || null, kind,
-      body.mediaUrl || null, body.churchId ? Number(body.churchId) : null, ip
+      titleEn, titleTa, bodyEn, bodyTa,
+      authorName, place, kind,
+      mediaUrl, body.churchId ? Number(body.churchId) : null, ip
     ).run();
 
     const id = res.meta && res.meta.last_row_id;
 
     await audit(context, {
-      actorEmail: body.authorName || "anonymous", actorType: "public", verified: false,
+      actorEmail: authorName || "anonymous", actorType: "public", verified: false,
       action: "testimonies.submit", entityType: "testimony", entityId: id, details: { kind }
     });
 

@@ -53,6 +53,22 @@ test("prayer: inbox (GET) and status update (PUT) require manage_content", async
   assert.equal(filtered.requests.length, 1);
 });
 
+test("prayer: oversized public submission is truncated, not rejected or stored unbounded", async () => {
+  const db = freshDb();
+  const huge = "C".repeat(2_000_000);
+  const submit = await readJson(await prayer.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/prayer",
+    body: { name: huge, email: "attacker@example.com", phone: huge, request: huge }
+  })));
+  assert.equal(submit.success, true);
+
+  const res = await readJson(await prayer.onRequestGet(makeContext({ db, url: "https://test.local/api/prayer" })));
+  const row = res.requests.find((r) => r.id === submit.id);
+  assert.ok(row.name.length <= 120, "name must be capped");
+  assert.ok(row.phone.length <= 40, "phone must be capped");
+  assert.ok(row.request.length <= 5000, "request must be capped");
+});
+
 test("prayer: PUT on a nonexistent id is a 404", async () => {
   const db = freshDb();
   const res = await readJson(await prayer.onRequestPut(makeContext({

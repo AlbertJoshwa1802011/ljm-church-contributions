@@ -311,3 +311,208 @@ unchanged** (verified via `git diff --stat`).
   production deployment (out of scope — "do not touch production").
   Findings are based on source review and local `wrangler pages dev`
   testing only.
+
+---
+
+## 8. Addendum — adversarial attack pass (same session, follow-on)
+
+A second, explicitly adversarial pass was run against the same branch:
+attack as a low-privilege authenticated user, then an unauthenticated
+attacker, then a legitimate admin accidentally destroying production data —
+all via raw `curl`/direct handler calls against `wrangler pages dev`, never
+through the UI. Method: seed an attacker identity directly via
+`npx wrangler d1 execute` (test setup only, never used to grant real access),
+attack via forged `Authorization: Bearer <email>` headers on the legacy
+email-token path, and via unauthenticated raw requests.
+
+### 8.1 Low-privilege authenticated attacker — 24 scenarios attempted
+
+ID manipulation, permission/role manipulation, resource enumeration,
+unauthorized CRUD/delete/publish/settings/member/contribution/logs access —
+all attempted directly against the API with a token scoped only to
+`edit_wishlist`. 22/24 were correctly blocked outright. The remaining 2
+uncovered a real gap, fixed below (§8.2).
+
+### 8.2 HIGH — the session's own PII-view gate was escalatable by an unrelated permission
+**Files:** `functions/api/contributions.js`, `functions/api/purchases.js`
+(both frozen).
+
+§2.3/§2.5 above gated contribution PII and purchase `createdBy` behind
+`requireAuth(context)` with **no permission argument** — which, per
+`_lib.js`, means "any recognized role holder, whatever permission they
+actually hold, passes." Confirmed live: a token scoped only to
+`edit_wishlist` (a real, narrowly-scoped volunteer role — manages the public
+wishlist page, nothing else) could still read real member emails/phones via
+`/api/contributions`, including soft-deleted rows via `?includeDeleted=1`,
+and see `createdBy` on `/api/purchases`. The fix in §2.3/§2.5 correctly
+distinguished "public" from "authenticated," but not "authenticated" from
+"authorized for *this* data" — the exact escalation this adversarial pass
+was designed to catch.
+
+**Fix:** both now require a permission actually relevant to the data being
+protected — `view_members`, `manage_funds`, or `*` for contributions;
+`edit_purchases` or `*` for purchases — matching the pattern `funds.js` used
+correctly from the start (`requireAuth(context, "manage_funds")`).
+
+**Tests:** 1 new test each in `tests/api/contributions.test.mjs` and
+`tests/api/purchases.test.mjs` (an `edit_wishlist`-only token gets
+public-shaped data, never PII, never soft-deleted rows). Mutation-tested:
+reverted to the broad no-argument check, confirmed both new tests fail,
+restored, confirmed green.
+
+### 8.3 Unauthenticated attacker — 20 scenarios attempted
+
+Missing/malformed auth, SQLi in query params and POST bodies, XSS payloads,
+prototype pollution, oversized payloads, direct webhook calls with no/forged
+signatures, path traversal, CORS/host header injection, HTTP verb
+tampering, IDOR enumeration. 19/20 were correctly blocked or handled
+inertly (parameterized queries throughout; webhook signature verification
+holds; malformed JWTs rejected; path traversal returns "Photo not found").
+The remaining 1 uncovered a real gap, fixed below (§8.4).
+
+### 8.4 MEDIUM — public submission endpoints accepted unbounded field lengths
+**Files:** `functions/api/testimonies.js`, `functions/api/contact.js`,
+`functions/api/prayer.js` (none frozen).
+
+All three public, unauthenticated, unrate-limited submission endpoints
+stored every field verbatim with only `.trim()` — no length cap. Confirmed
+live: a 2MB `titleEn` on `/api/testimonies` was accepted and stored
+unmodified (`{"success":true,"id":...}`). `functions/api/contributions.js`'s
+own manual-entry endpoint already establishes the repo's convention for this
+(`.substring(N)` on every field) — these three endpoints just never got it.
+
+**Impact:** unbounded storage growth from repeated spam/abuse submissions
+(no auth or rate limit gates these endpoints at all), and unbounded text
+flowing into `activity_logs.actor_email` via `testimonies.js`'s audit call
+(which used the raw, untruncated `body.authorName`).
+
+**Fix:** capped every field to match the field's realistic use (titles 200
+chars, bodies/messages/requests 5000, names/places 120, emails 200, phone
+40, media URLs 500) — same `.substring(N)` pattern as `contributions.js`.
+Also fixed `testimonies.js`'s audit call to use the now-truncated
+`authorName` variable instead of the raw, unbounded `body.authorName`.
+
+**Tests:** 1 new test per file (`tests/api/testimonies.test.mjs`,
+`tests/api/contact.test.mjs`, `tests/api/prayer.test.mjs`) — each POSTs a
+2MB field and asserts every stored field is capped. Mutation-tested: all
+three source files reverted, confirmed all 3 new tests fail (15/18 pass),
+restored, confirmed 18/18 green.
+
+**Investigated, not a bug:** item 2.13 of the unauthenticated battery
+(submitting the same prayer request twice with different forged
+`CF-Connecting-IP` headers) succeeded both times with no dedup. Unlike
+`logs.js`'s page-view counter (where duplicate events skew an analytics
+number meaninglessly, hence its 10-second same-IP dedupe), a prayer request
+is a meaningful, reviewable submission — a real person resubmitting with
+different wording is legitimate, and `CF-Connecting-IP` cannot actually be
+forged past Cloudflare's edge in production regardless (this only "worked"
+because local `wrangler pages dev` isn't behind that edge). No rate limiting
+was ever intended for prayer/contact/testimonies — spam is handled by the
+moderation queue (`pending` status, admin review before anything goes
+public). Not fixed; documented per SCOPE CONTROL ("if there is no clear
+production risk removed, do not make the change").
+
+### 8.5 Legitimate-admin accidental data destruction — scenarios attempted
+
+Duplicate submissions, rapid repeated clicks, stale browser state,
+concurrent updates, delete/recreate, publish/unpublish races, environment
+confusion. Delete-by-id endpoints are idempotent (a second delete is a
+harmless 404, no corruption). Publish/unpublish and concurrent-edit races
+are ordinary last-write-wins semantics for a single small-team admin
+console — no evidence of actual data loss beyond an expected "last edit
+wins," so left alone (no speculative optimistic-locking machinery added).
+Environment confusion (local dev writing to production) was already closed
+in the prior UI/UX session (`theme.js`'s GET-only redirect guard) and this
+session's own §2.1 fix — re-confirmed both still intact. The remaining two
+scenarios uncovered a real, severe gap, fixed below (§8.6).
+
+### 8.6 HIGH — double-click / stale-tab resubmit silently double-counted real money
+**Files:** `functions/api/contributions.js`, `functions/api/purchases.js`
+(both frozen).
+
+Both manual-entry admin endpoints had no protection against a duplicate
+submission. Confirmed live with two concurrent, byte-identical requests
+(simulating a double-click or a stale browser tab whose first submit
+appeared to not register):
+
+- `contributions.js`'s manual cash-gift entry: two identical `POST`s created
+  **two independent rows** for the same $5000 gift — no error, no warning,
+  silently double-counted. Unlike Razorpay-verified rows, manual entries
+  have `proof_id = NULL`, so the `contributions.proof_id UNIQUE` constraint
+  (the idempotency guarantee §2.3/§4 describe) does not apply here at all.
+- `purchases.js`'s `add_purchase`: two identical requests **less than a
+  millisecond apart** collide on the auto-generated `id` (`"P" +
+  Date.now().substring(7)`) and the second fails safely on the `PRIMARY KEY`
+  constraint — but two requests a few milliseconds apart (a realistic human
+  double-click, confirmed with an explicit 5ms-gap test) get **different**
+  generated ids and both succeed, creating two independent purchase rows
+  that both feed into `totalSpent`/`totalCost`.
+
+**Fix:** both now run a cheap same-fields, same-actor, 10-second dedupe
+check before inserting — mirroring the exact pattern `functions/api/logs.js`
+already uses for view-event ingestion (`WHERE ... AND created_at >
+datetime('now', '-10 seconds')`). A resubmit of the identical fields within
+that window returns the original row's id (`{"success":true,"deduped":true,
+"id":<original>}`) instead of creating a new one. A genuinely different
+submission (different amount/cost) is unaffected and still succeeds.
+`purchases.js`'s explicit-`id` legacy callers bypass the dedupe check
+entirely (unchanged behavior for that path).
+
+**Residual risk, stated plainly:** this is a `SELECT`-then-`INSERT` check,
+not an atomic constraint — two requests landing in the exact same
+sub-millisecond window (true parallel delivery, not a human double-click)
+could both pass the `SELECT` before either `INSERT` completes, reproducing
+the original race. A fully atomic guarantee would need a schema-level
+uniqueness constraint (e.g. a request-idempotency-key column), which is a
+migration to a frozen, money-adjacent table — not justified here without
+stronger evidence of that narrower race actually occurring, per SCOPE
+CONTROL's "don't change database structure without demonstrated need."
+Recorded as a non-blocking residual risk, not silently claimed as fully
+closed.
+
+**Tests:** 1 new test each in `tests/api/contributions.test.mjs` and
+`tests/api/purchases.test.mjs` (identical resubmit within 10s is deduped to
+the same id, not duplicated; a genuinely different submission still
+succeeds). Mutation-tested: the dedupe block was surgically removed from
+both files (keeping every other change intact), confirmed both new tests
+fail (29/31 pass) and nothing else regressed, restored, confirmed 31/31
+green.
+
+### 8.7 Test suite after the adversarial pass
+
+- Before this addendum: 412/412 (§5's count).
+- After: **420/420**, run twice, clean. 8 new tests this addendum: 2 from
+  §8.2 (unrelated-permission tests in `contributions.test.mjs` and
+  `purchases.test.mjs`), 3 from §8.4 (one oversized-payload test per public
+  submission endpoint), 3 from §8.6 (dedupe tests in `contributions.test.mjs`
+  and `purchases.test.mjs`, plus `purchases.test.mjs`'s explicit-id-bypasses-
+  dedup test).
+- Every fix in this addendum was mutation-tested per the same discipline as
+  §2: revert → confirm new test fails → restore → confirm green.
+
+### 8.8 Frozen-file compliance (this addendum)
+
+Files touched: `functions/api/contributions.js`, `functions/api/purchases.js`
+(both already on the frozen list, both already touched earlier in this same
+session for §2.3/§2.5 — this addendum's changes are additional, documented
+fixes on top of those, not new frozen-file exceptions). `testimonies.js`,
+`contact.js`, `prayer.js` are not frozen. `functions/api/webhook.js`,
+`functions/api/verify.js`, `razorpay-checkout.js`, `functions/api/_lib.js`,
+`functions/api/auth.js`, and `functions/api/roles.js` are **unchanged** in
+this addendum.
+
+### 8.9 Final tally
+
+51 attack scenarios were attempted (24 low-privilege authenticated + 20
+unauthenticated + 7 accidental-admin-destruction). 48 were blocked or
+verified already-safe. 3 vulnerabilities were found and fixed: §8.2
+(permission escalation on the session's own PII gate — surfaced by 2 of the
+24 low-privilege scenarios), §8.4 (unbounded public input length — surfaced
+by 1 of the 20 unauthenticated scenarios), §8.6 (duplicate-submission
+double-counting — surfaced by 3 of the 7 accidental-destruction scenarios:
+duplicate submissions, rapid repeated clicks, stale browser state). 0
+scenarios remain unverified. The one disclosed residual risk (§8.6's
+sub-millisecond true-parallel-delivery race, distinct from the human-paced
+double-click/stale-tab case the fix actually closes) is not one of the 51
+attempted scenarios — it is called out above as an explicit limitation of
+the fix, not left unchecked.

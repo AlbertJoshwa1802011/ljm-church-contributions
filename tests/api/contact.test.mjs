@@ -34,6 +34,22 @@ test("contact: validation rejects an invalid email or empty message", async () =
   assert.equal(emptyMessage.success, false);
 });
 
+test("contact: oversized public submission is truncated, not rejected or stored unbounded", async () => {
+  const db = freshDb();
+  const huge = "B".repeat(2_000_000);
+  const submit = await readJson(await contact.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/contact",
+    body: { name: huge, email: "attacker@example.com", subject: huge, message: huge }
+  })));
+  assert.equal(submit.success, true);
+
+  const res = await readJson(await contact.onRequestGet(makeContext({ db, url: "https://test.local/api/contact" })));
+  const row = res.messages.find((m) => m.id === submit.id);
+  assert.ok(row.name.length <= 120, "name must be capped");
+  assert.ok(row.subject.length <= 200, "subject must be capped");
+  assert.ok(row.message.length <= 5000, "message must be capped");
+});
+
 test("contact: PUT on a nonexistent id is a 404", async () => {
   const db = freshDb();
   const res = await readJson(await contact.onRequestPut(makeContext({

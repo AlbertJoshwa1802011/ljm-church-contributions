@@ -14,7 +14,7 @@ async function readJson(response) { return JSON.parse(await response.text()); }
 // (empty) headers stub to match production shape.
 function ctx(db, url, authHeader) {
   return {
-    env: { DB: db, ADMIN_API_TOKEN: "test-admin-token" },
+    env: { DB: db, ADMIN_API_TOKEN: "test-admin-token", ALLOW_LEGACY_EMAIL_TOKEN: "true" },
     request: { url, headers: { get: (k) => (k === "Authorization" ? (authHeader ? "Bearer " + authHeader : null) : null) } }
   };
 }
@@ -111,6 +111,35 @@ test("contributions: an unauthenticated (public) caller gets presence booleans, 
   assert.equal(row.Phone, undefined, "a public caller must never see a contributor's raw phone");
 });
 
+// ADVERSARIAL-PASS regression (docs/audits/2026-08-21-production-hardening.md):
+// the first version of the PII fix used requireAuth(context) with no
+// permission argument — "any recognized role holder" — so a caller
+// authenticated with an unrelated, narrowly-scoped permission (e.g.
+// edit_wishlist, meant only for managing the public wishlist page) was
+// treated as a full PII-viewing admin. Confirmed live against a real
+// low-privilege token: it could read real member emails/phones AND
+// soft-deleted contributions via includeDeleted=1.
+test("contributions: a caller with an unrelated permission (edit_wishlist only) gets public-shaped data, not admin PII or soft-deleted rows", async () => {
+  const db = freshDb();
+  db._sqlite.exec(
+    `INSERT INTO roles (role_name, permissions) VALUES ('wishlist_only', '["edit_wishlist"]');
+     INSERT INTO member_roles (email, role_name) VALUES ('wishlist-volunteer@example.com', 'wishlist_only');`
+  );
+  await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Target Giver','target@example.com','777',1)").run();
+  await addContribution(db, "Target Giver", 300, "wishlist-attack-proof");
+  await db.prepare("UPDATE contributions SET email = 'target@example.com', phone = '777' WHERE member_name = 'Target Giver'").run();
+  await db.prepare("INSERT INTO contributions (member_name, amount, date, category, proof_id, fund, is_deleted) VALUES ('Hidden Giver', 999, '2026-07-01', 'Direct Cash', 'hidden-proof', 'tech-contributions', 1)").run();
+
+  const body = await readJson(await contributions.onRequestGet(ctx(db, "https://test.local/api/contributions?fund=tech-contributions&includeDeleted=1", "wishlist-volunteer@example.com")));
+
+  assert.equal(body.memberEmails["Target Giver"], true, "an unrelated permission must not unlock real member emails");
+  assert.equal(body.memberPhones["Target Giver"], true, "an unrelated permission must not unlock real member phones");
+  const row = body.contributions.find((c) => c.Member === "Target Giver");
+  assert.equal(row.Email, undefined, "an unrelated permission must not unlock a contribution's raw email");
+  assert.equal(row.Phone, undefined, "an unrelated permission must not unlock a contribution's raw phone");
+  assert.ok(!body.contributions.find((c) => c.Member === "Hidden Giver"), "an unrelated permission must not unlock includeDeleted=1 (soft-deleted rows)");
+});
+
 test("contributions: an authenticated admin caller still gets the real Email/Phone on each contribution (admin.html's edit-form prefill depends on this)", async () => {
   const db = freshDb();
   await addContribution(db, "Grace", 400, "adm-proof-1");
@@ -144,6 +173,34 @@ test("contributions: add records created_by and defaults category to Direct Cash
   assert.equal(row.category, "Direct Cash");
   assert.equal(row.proof_id, null);
   assert.equal(row.is_deleted, 0);
+});
+
+// ADVERSARIAL-PASS regression (docs/audits/2026-08-21-production-hardening.md):
+// this manual-entry insert has no proof_id (NULL, unlike Razorpay-verified
+// rows) and no natural collision to catch a double-click / stale-tab
+// resubmit — confirmed live: two identical POSTs silently created two
+// independent contribution rows, double-counting a real cash gift. A
+// resubmit of the identical fields within 10s must now return the original
+// row instead of creating a duplicate.
+test("contributions: a resubmit of the identical manual entry within 10s is deduped, not duplicated", async () => {
+  const db = freshDb();
+  const body = { member_name: "Cash Giver", amount: 5000, date: "2026-08-21", fund: "tech-contributions", category: "Direct Cash" };
+  const r1 = await readJson(await contributions.onRequestPost(makeContext({ db, method: "POST", body })));
+  const r2 = await readJson(await contributions.onRequestPost(makeContext({ db, method: "POST", body })));
+  assert.equal(r1.success, true, r1.message);
+  assert.equal(r2.success, true, r2.message);
+  assert.equal(r2.id, r1.id, "the resubmit must return the original id, not create a new row");
+  assert.equal(r2.deduped, true);
+
+  const rows = await db.prepare("SELECT id FROM contributions WHERE member_name = 'Cash Giver'").all();
+  assert.equal(rows.results.length, 1, "only one row should exist for the duplicated submission");
+
+  // a genuinely different contribution (different amount) must still go through
+  const r3 = await readJson(await contributions.onRequestPost(makeContext({
+    db, method: "POST", body: { ...body, amount: 750 }
+  })));
+  assert.equal(r3.success, true);
+  assert.notEqual(r3.id, r1.id, "a genuinely different contribution must not be deduped away");
 });
 
 test("contributions: add rejects missing required fields", async () => {
