@@ -181,6 +181,21 @@ button { font-family: inherit; cursor: pointer; }
 .brand-mark { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 34px; height: 34px; }
 .brand-mark svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 2px rgba(0,0,0,.15)); }
 .brand small { display: block; font-family: var(--sans); font-weight: 500; font-size: .66rem; color: var(--text-faint); letter-spacing: .02em; }
+/* .site-header has overflow:hidden, and .brand/.hamburger-btn both refuse to
+   shrink (flex-shrink:0) — below ~400px, "Light of Jesus Ministry" plus the
+   "Coimbatore · Worldwide" subtitle plus the hamburger no longer fit on one
+   row. Because the header clips overflow instead of wrapping it, the excess
+   doesn't just look bad — it hides content off the clipped edge with no
+   visual trace, and at the narrowest phones (320-390px) that excess reaches
+   all the way to the hamburger button itself, making the *only* way to open
+   the mobile nav invisible and unreachable. Drop the subtitle, shrink the
+   icon, and tighten the title so the whole brand block plus the hamburger
+   reliably fit inside a 320px viewport. */
+@media (max-width: 400px) {
+  .brand small { display: none; }
+  .brand { gap: 6px; font-size: .88rem; }
+  .brand-mark { width: 24px; height: 24px; }
+}
 .primary-nav { display: flex; gap: 14px; flex: 1; min-width: 0; }
 .primary-nav a { font-size: .83rem; font-weight: 500; color: var(--text-soft); white-space: nowrap; }
 .primary-nav a:hover, .primary-nav a.current { color: var(--accent); }
@@ -285,6 +300,12 @@ body.drawer-open { overflow: hidden; }
     padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
     gap: 10px;
   }
+  /* The bar is fixed and ~64-98px tall (button + its own padding + the home
+     indicator safe area), but nothing reserved that space at the bottom of
+     the page — the last ~30-45px of every footer (copyright line, last
+     quick link) sat permanently underneath it, unreachable, on every phone
+     this wide. */
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
   .mobile-actions .btn { flex: 1; }
   /* Demo-only chrome (not part of the real site) must not collide with the
      real mobile sticky action bar it sits above — move it up to the top on
