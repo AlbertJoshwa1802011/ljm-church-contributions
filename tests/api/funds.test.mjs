@@ -52,6 +52,35 @@ test("funds: system funds reject rename but allow goal changes (and keep the leg
   assert.equal(cfg.value, "75000", "legacy config fallback stays consistent");
 });
 
+test("funds: archiving a custom fund via status:'archived' works and hides it from the public listing", async () => {
+  const db = freshDb();
+  await funds.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/funds",
+    body: { name: "Building Fund", goal_amount: 50000 }
+  }));
+
+  const archive = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "building-fund", status: "archived" }
+  })));
+  assert.equal(archive.success, true, archive.message);
+
+  const row = await db.prepare("SELECT status FROM funds WHERE slug='building-fund'").first();
+  assert.equal(row.status, "archived");
+
+  const list = await readJson(await funds.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/funds" })));
+  assert.ok(!list.funds.find(f => f.slug === "building-fund"), "archived fund is hidden from the public listing");
+});
+
+test("funds: system funds cannot be archived (goal-amount-only edits)", async () => {
+  const db = freshDb();
+  const res = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "tech-contributions", status: "archived" }
+  })));
+  assert.equal(res.success, false, "archiving a system fund must be refused");
+});
+
 test("funds: system funds cannot be deleted", async () => {
   const db = freshDb();
   const res = await readJson(await funds.onRequestDelete(makeContext({

@@ -129,3 +129,19 @@ test("middleware: never touches /admin.html even with a valid cookie", async () 
   assert.equal(calls.next, 1);
   assert.equal(calls.assetsFetch.length, 0);
 });
+
+test("middleware: /v2/admin.html redirects to /admin.html, unconditionally (no beta cookie needed)", async () => {
+  const { context, calls } = makeMiddlewareContext({ path: "/v2/admin.html" });
+  const res = await middleware.onRequest(context);
+  assert.equal(calls.next, 0);
+  assert.equal(calls.assetsFetch.length, 0);
+  assert.equal(res.status, 302);
+  assert.match(res.headers.get("location"), /\/admin\.html$/);
+});
+
+test("middleware: /v2/admin.html redirect preserves the query string", async () => {
+  const { context } = makeMiddlewareContext({ path: "/v2/admin.html", search: "?section=events" });
+  const res = await middleware.onRequest(context);
+  assert.equal(res.status, 302);
+  assert.match(res.headers.get("location"), /\/admin\.html\?section=events$/);
+});

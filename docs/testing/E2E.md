@@ -34,7 +34,7 @@ session should silently wire into the deploy gate.
    # .dev.vars: ADMIN_API_TOKEN=<any test value>, ALLOW_LEGACY_EMAIL_TOKEN=true
    npx wrangler pages dev . --local --persist-to=.wrangler/state --port=8788 --ip=127.0.0.1 --compatibility-date=2026-06-01
    ```
-3. Run: `E2E_BASE_URL=http://127.0.0.1:8788 npm run test:e2e`
+3. Run: `E2E_BASE_URL=http://127.0.0.1:8788 npm run test:e2e:legacy`
 
 ## Hard network guard
 

@@ -85,7 +85,8 @@ export async function onRequestPost(context) {
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
   try {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ success: false, message: "Invalid JSON body" }, 400); }
     const titleEn = String(body.titleEn || "").trim();
     const bodyEn = String(body.bodyEn || "").trim();
     if (!titleEn) return json({ success: false, message: "titleEn is required" }, 400);
@@ -139,7 +140,8 @@ export async function onRequestPut(context) {
   if (!auth.ok) return auth.response;
 
   try {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ success: false, message: "Invalid JSON body" }, 400); }
     const id = Number(body.id);
     if (!id) return json({ success: false, message: "Testimony id is required" }, 400);
 

@@ -21,7 +21,7 @@ const REQUIRED = {
   testimonies: ["id", "title_en", "body_en", "kind", "status"],
   prayer_requests: ["id", "request", "status", "is_private"],
   contact_messages: ["id", "email", "message", "status"],
-  programs: ["id", "title_en", "church_id", "status"],
+  programs: ["id", "title_en", "church_id", "status", "recurrence", "day_of_week", "month_ordinal", "meeting_url"],
   blog_posts: ["id", "slug", "title_en", "body_en", "status"]
 };
 

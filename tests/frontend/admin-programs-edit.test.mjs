@@ -36,17 +36,24 @@ test("admin.html: saveProgram() sends a PUT (not another POST) while editing", (
   const end = adminSource.indexOf("\n        }", start);
   const body = adminSource.slice(start, end);
   assert.match(body, /state\.editingProgramId/, "saveProgram() must branch on an editing-id");
-  assert.match(body, /method:\s*"PUT"/, "editing an existing program must PUT, not create a duplicate");
+  assert.match(body, /method:\s*isEdit\s*\?\s*"PUT"\s*:\s*"POST"/, "editing an existing program must PUT, not create a duplicate");
 });
 
 test("admin.html: editing a program preserves its current status instead of silently re-activating it", () => {
   // /api/programs PUT defaults status to "active" when the body omits it —
-  // editProgram() must carry the row's real status through, or fixing a typo
-  // on a deactivated program would silently republish it.
-  const start = adminSource.indexOf("function saveProgram(");
-  const end = adminSource.indexOf("\n        }", start);
-  const body = adminSource.slice(start, end);
-  assert.match(body, /body\.status\s*=\s*\(existing\s*&&\s*existing\.status\)\s*\|\|\s*"active"/);
+  // the form has an explicit Status field (pg_status), and editProgram() must
+  // populate it with the row's real status so saveProgram()'s body carries it
+  // through, or fixing a typo on a deactivated program would silently
+  // republish it.
+  const editStart = adminSource.indexOf("function editProgram(");
+  const editEnd = adminSource.indexOf("\n        }", editStart);
+  const editBody = adminSource.slice(editStart, editEnd);
+  assert.match(editBody, /\$\("pg_status"\)\.value\s*=\s*p\.status\s*\|\|\s*"active"/, "editProgram() must populate pg_status from the row being edited");
+
+  const saveStart = adminSource.indexOf("function saveProgram(");
+  const saveEnd = adminSource.indexOf("\n        }", saveStart);
+  const saveBody = adminSource.slice(saveStart, saveEnd);
+  assert.match(saveBody, /status:\s*\$\("pg_status"\)\.value/, "saveProgram() must send the form's actual status field, not a hardcoded default");
 });
 
 test("admin.html: state carries a programsCache for editProgram() to read rows from", () => {

@@ -5,9 +5,15 @@
   "type": "module",
   "scripts": {
     "test": "node --test 'tests/**/*.test.mjs'",
-    "test:e2e": "node --test 'tests/e2e/**/*.e2e.mjs'"
+    "db:local:setup": "rm -rf .wrangler/state/v3/d1 && npx wrangler d1 execute ljm-contributions-db --local --file=./schema.sql && npx wrangler d1 execute ljm-contributions-db --local --file=./migrations/0024_seed_prayer_programs.sql && npx wrangler d1 execute ljm-contributions-db --local --file=./migrations/0025_v2_launch_content_seed.sql",
+    "e2e:server": "npm run db:local:setup && npx wrangler pages dev . --port 8788 --ip 127.0.0.1",
+    "test:e2e": "playwright test",
+    "test:e2e:legacy": "node --test 'tests/e2e/**/*.e2e.mjs'"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
   }
 }

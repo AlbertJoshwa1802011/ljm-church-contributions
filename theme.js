@@ -18,7 +18,8 @@
         window.fetch = function (input, init) {
             var method = ((init && init.method) || (input instanceof Request ? input.method : "GET") || "GET").toUpperCase();
             var url = typeof input === "string" ? input : (input instanceof Request ? input.url : "");
-            if (method === "GET" && url && url.startsWith("/api/")) {
+            var isSafeRead = method === "GET" || method === "HEAD";
+            if (url && isSafeRead && url.startsWith("/api/")) {
                 url = "https://light-of-jesus-ministry-contributions.pages.dev" + url;
             }
             return originalFetch.call(this, url, init);

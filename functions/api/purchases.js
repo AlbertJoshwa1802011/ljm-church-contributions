@@ -57,7 +57,12 @@ export async function onRequestGet(context) {
           }
         }
 
-        const id = P("id") || "P" + String(Date.now()).substring(7);
+        // Date.now() alone collides when two purchases are added within the
+        // same millisecond (real risk: confirmed live under fast concurrent
+        // admin activity, and in this repo's own test suite) — id is a TEXT
+        // PRIMARY KEY, so a collision fails the whole insert with a raw
+        // UNIQUE constraint error instead of creating the second purchase.
+        const id = P("id") || "P" + Date.now() + Math.floor(Math.random() * 1000);
 
         await db.prepare(
           "INSERT INTO purchases (id, name, amount, date, fund, photo, vendor, description, status, fund_contribution, external_contribution, external_sources, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"

@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Prayer — Light of Jesus Ministry</title>
-<link rel="stylesheet" href="shared.css" />
+<link rel="stylesheet" href="/v2/shared.css" />
 <style>
   .prayer-hero { padding: 56px 0 40px; background: radial-gradient(1100px 420px at 84% -10%, var(--gold-soft), transparent 60%), var(--bg); border-bottom: 1px solid var(--border); }
   .prayer-hero .wrap { max-width: 720px; text-align: center; }
@@ -27,6 +27,15 @@
   .success-card { text-align: center; padding: 40px 24px; }
   .success-card .icon { font-size: 2.4rem; }
   @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+
+  .join-prayer-section { padding: 48px 0 8px; border-top: 1px solid var(--border); margin-top: 48px; }
+  .join-prayer-list { display: grid; gap: 12px; margin-top: 18px; max-width: 640px; margin-left: auto; margin-right: auto; }
+  .join-prayer-item { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+  .join-prayer-item-main { flex: 1 1 220px; min-width: 0; }
+  .join-prayer-item h4 { font-size: .96rem; }
+  .join-prayer-item .schedule { font-size: .82rem; font-weight: 700; color: var(--accent); margin-top: 4px; }
+  .join-prayer-item .btn { flex: 0 0 auto; white-space: nowrap; }
+  .join-prayer-empty { text-align: center; color: var(--text-faint); font-size: .88rem; padding: 12px; }
 </style>
 </head>
 <body>
@@ -39,7 +48,7 @@
       <a href="/v2/about.html" data-i18n="nav.about">About</a>
       <a href="/v2/watch.html" data-i18n="nav.watch">Watch &amp; Listen</a>
       <a href="/v2/events.html" data-i18n="nav.events">Events</a>
-      <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a>
+      <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a><a href="/v2/youth.html" data-i18n="nav.youth">Youth</a>
       <a href="/v2/blog.html" data-i18n="nav.blog">Blog</a>
       <a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a>
       <a href="/v2/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a>
@@ -77,7 +86,7 @@
     <a href="/v2/about.html" data-i18n="nav.about">About</a>
     <a href="/v2/watch.html" data-i18n="nav.watch">Watch &amp; Listen</a>
     <a href="/v2/events.html" data-i18n="nav.events">Events</a>
-    <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a>
+    <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a><a href="/v2/youth.html" data-i18n="nav.youth">Youth</a>
     <a href="/v2/blog.html" data-i18n="nav.blog">Blog</a>
     <a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a>
     <a href="/v2/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a>
@@ -151,6 +160,14 @@
   </div>
 </section>
 
+<section class="join-prayer-section">
+  <div class="wrap" style="max-width:720px;text-align:center;">
+    <div class="eyebrow gold" data-i18n="prayer.joinUsHeading">Join Us in Prayer</div>
+    <p class="lede" style="margin-top:8px;" data-i18n="prayer.joinUsSub">Scheduled prayer gatherings you can join — online or in person.</p>
+    <div id="joinPrayerWrap"><div class="join-prayer-empty">Loading…</div></div>
+  </div>
+</section>
+
 <footer class="site-footer">
   <div class="wrap">
     <div class="footer-grid">
@@ -160,7 +177,7 @@
       </div>
       <div><h4>Church of Light</h4><ul><li>Mother Church</li><li>Coimbatore, Tamil Nadu</li></ul></div>
       <div><h4>City Worship Center</h4><ul><li>Coimbatore, Tamil Nadu</li></ul></div>
-      <div><h4>Quick Links</h4><ul><li><a href="/v2/give-flow.html">Give</a></li><li><a href="/v2/prayer.html">Pray</a></li><li><a href="/v2/contact.html">Contact</a></li><li><a href="/v2/our-giving.html">Our Giving</a></li></ul></div>
+      <div><h4>Explore</h4><ul><li><a href="/v2/about.html">About &amp; Churches</a></li><li><a href="/v2/programs.html">Programs</a></li><li><a href="/v2/youth.html">Youth</a></li><li><a href="/v2/blog.html">Blog</a></li><li><a href="/v2/testimonies.html">Testimonies</a></li><li><a href="/v2/watch.html">Watch &amp; Listen</a></li></ul></div><div><h4>Quick Links</h4><ul><li><a href="/v2/give-flow.html">Give</a></li><li><a href="/v2/prayer.html">Pray</a></li><li><a href="/v2/contact.html">Contact</a></li><li><a href="/v2/our-giving.html">Our Giving</a></li></ul></div>
     </div>
     <div class="footer-bottom"><span>© 2026 Light of Jesus Ministry</span></div>
   </div>
@@ -177,8 +194,8 @@
 </button>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="auth.js"></script>
-<script src="i18n.js"></script>
+<script src="/v2/auth.js"></script>
+<script src="/v2/i18n.js"></script>
 <script>
   (function () {
     var root = document.documentElement;
@@ -224,6 +241,33 @@
         msg.className = 'form-msg err';
       });
     });
+  })();
+</script>
+<script>
+  (function () {
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    function t(key) { return window.LJM_I18N ? window.LJM_I18N.t(key) : key; }
+    function bi(row, field) { return window.LJM_I18N ? window.LJM_I18N.bi(row, field) : row[field + 'En']; }
+    var wrap = document.getElementById('joinPrayerWrap');
+
+    fetch('/api/programs?ministryArea=prayer&_t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var programsList = (d && d.programs) || [];
+        function render() {
+          if (!programsList.length) { wrap.innerHTML = '<div class="join-prayer-empty">No prayer gatherings published yet — check back soon.</div>'; return; }
+          wrap.innerHTML = '<div class="join-prayer-list">' + programsList.map(function (p) {
+            var schedule = window.LJM_I18N && window.LJM_I18N.lang() === 'ta' ? p.scheduleLabelTa : p.scheduleLabelEn;
+            return '<div class="join-prayer-item"><div class="join-prayer-item-main"><h4>' + esc(bi(p, 'title')) + '</h4>' +
+              (schedule ? '<div class="schedule">' + esc(schedule) + '</div>' : '') + '</div>' +
+              (p.meetingUrl ? '<a class="btn btn-primary btn-sm" href="' + esc(p.meetingUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(t('cta.joinOnline')) + '</a>' : '') +
+              '</div>';
+          }).join('') + '</div>';
+        }
+        render();
+        window.addEventListener('ljm-lang-changed', render);
+      })
+      .catch(function () { wrap.innerHTML = '<div class="join-prayer-empty">Couldn\'t load the prayer schedule right now.</div>'; });
   })();
 </script>
 </body>

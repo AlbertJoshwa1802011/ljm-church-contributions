@@ -14,7 +14,7 @@ test("churches: public GET lists the two seeded active churches", async () => {
   assert.ok(res.churches.some(c => c.slug === "city-worship-center"));
 });
 
-test("churches: POST requires manage_funds permission", async () => {
+test("churches: POST requires manage_content permission", async () => {
   const db = freshDb();
   const res = await readJson(await churches.onRequestPost(makeContext({
     db, authToken: null, method: "POST", url: "https://test.local/api/churches",
@@ -92,7 +92,7 @@ test("churches: malformed JSON body on POST/PUT is a 400, not a 500", async () =
   assert.equal(put.status, 400);
 });
 
-test("churches: ?all=1 requires manage_funds", async () => {
+test("churches: ?all=1 requires manage_content", async () => {
   const db = freshDb();
   const res = await readJson(await churches.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/churches?all=1" })));
   assert.equal(res.success, false);

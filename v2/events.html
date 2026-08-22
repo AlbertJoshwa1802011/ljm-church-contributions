@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Events &amp; Photos — Light of Jesus Ministry</title>
-<link rel="stylesheet" href="shared.css" />
+<link rel="stylesheet" href="/v2/shared.css" />
 <style>
   .page-hero { padding: 56px 0 32px; text-align: center; background: var(--bg-soft); border-bottom: 1px solid var(--border); }
   .page-hero h1 { font-size: 2.1rem; }
@@ -67,7 +67,7 @@
       <a href="/v2/events.html" class="current" data-i18n="nav.events">Events</a>
       <a href="/v2/blog.html" data-i18n="nav.blog">Blog</a>
       <a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a>
-      <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a>
+      <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a><a href="/v2/youth.html" data-i18n="nav.youth">Youth</a>
       <a href="/v2/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a>
     </nav>
     <div class="header-actions">
@@ -104,7 +104,7 @@
     <a href="/v2/events.html" class="current" data-i18n="nav.events">Events</a>
     <a href="/v2/blog.html" data-i18n="nav.blog">Blog</a>
     <a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a>
-    <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a>
+    <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a><a href="/v2/youth.html" data-i18n="nav.youth">Youth</a>
     <a href="/v2/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a>
   </nav>
   <div class="nav-drawer-section"><button class="lang-toggle" type="button" style="display:block;width:100%;">TA</button></div>
@@ -147,21 +147,30 @@
 
 <section class="page-hero">
   <div class="wrap">
-    <div class="eyebrow">🎁 Sharing Every Moment</div>
-    <h1 style="margin-top:8px">Events &amp; Photos</h1>
-    <p>Every gathering, outreach, and celebration across both churches — shared here like a gift, so everyone can see what God is doing among us, wherever they are.</p>
+    <div class="eyebrow" data-i18n="events.eyebrow">🎁 Sharing Every Moment</div>
+    <h1 style="margin-top:8px" data-i18n="events.heading">Events &amp; Photos</h1>
+    <p data-i18n="events.lede">Every gathering, outreach, and celebration across both churches — shared here like a gift, so everyone can see what God is doing among us, wherever they are.</p>
   </div>
 </section>
 
 <section class="tight"><div class="wrap" id="eventsRoot">
-  <div class="loading-note">Loading events…</div>
+  <div class="loading-note" data-i18n="events.loading">Loading events…</div>
 </div></section>
 
 <footer class="site-footer">
   <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="/" style="margin-bottom:10px">Light of Jesus Ministry</a>
+        <p style="font-size:.86rem;margin-top:10px;max-width:32ch" data-i18n="footer.tagline">Giving with faith, transparency &amp; purpose — for Coimbatore, and for the world.</p>
+      </div>
+      <div><h4 data-i18n="footer.churchOfLight">Church of Light</h4><ul><li data-i18n="footer.motherChurch">Mother Church</li><li data-i18n="footer.coimbatoreTN">Coimbatore, Tamil Nadu</li></ul></div>
+      <div><h4 data-i18n="footer.cityWorshipCenter">City Worship Center</h4><ul><li data-i18n="footer.coimbatoreTN">Coimbatore, Tamil Nadu</li></ul></div>
+      <div><h4 data-i18n="footer.explore">Explore</h4><ul><li><a href="/v2/about.html" data-i18n="footer.aboutChurches">About &amp; Churches</a></li><li><a href="/v2/programs.html" data-i18n="nav.programs">Programs</a></li><li><a href="/v2/youth.html" data-i18n="nav.youth">Youth</a></li><li><a href="/v2/blog.html" data-i18n="nav.blog">Blog</a></li><li><a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a></li><li><a href="/v2/watch.html" data-i18n="nav.watch">Watch &amp; Listen</a></li></ul></div>
+      <div><h4 data-i18n="footer.quickLinks">Quick Links</h4><ul><li><a href="/v2/give-flow.html" data-i18n="cta.give">Give</a></li><li><a href="/v2/prayer.html" data-i18n="cta.pray">Pray</a></li><li><a href="/v2/contact.html" data-i18n="cta.contact">Contact</a></li><li><a href="/v2/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a></li></ul></div>
+    </div>
     <div class="footer-bottom">
-      <span>© 2026 Light of Jesus Ministry</span>
-      <a href="/" style="font-weight:700;color:var(--accent)">← Back to Home</a>
+      <span data-i18n="footer.copyright">© 2026 Light of Jesus Ministry</span>
     </div>
   </div>
 </footer>
@@ -174,7 +183,7 @@
 <div class="gallery-modal-backdrop" id="galleryModalBackdrop">
   <div class="gallery-modal">
     <div class="gallery-modal-head">
-      <h3 id="galleryModalTitle">Gallery</h3>
+      <h3 id="galleryModalTitle" data-i18n="events.galleryModal">Gallery</h3>
       <button class="gallery-modal-close" id="galleryModalClose" aria-label="Close">✕</button>
     </div>
     <div class="gallery-modal-grid" id="galleryModalGrid"></div>
@@ -182,8 +191,8 @@
 </div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="auth.js"></script>
-<script src="i18n.js"></script>
+<script src="/v2/auth.js"></script>
+<script src="/v2/i18n.js"></script>
 <script>
   (function () {
     var root = document.documentElement;
@@ -208,11 +217,12 @@
   var activeCategory = "All";
 
   function renderList() {
+    var I = window.LJM_I18N;
     var root = document.getElementById("eventsRoot");
     var visible = activeCategory === "All" ? allEvents : allEvents.filter(function (e) { return e.category === activeCategory; });
 
     if (!allEvents.length) {
-      root.innerHTML = '<div class="empty-state"><div class="ic">🎁</div><h3>No events posted yet</h3><p>Once services, outreach, and celebrations are added from the admin console, they\'ll appear here with photos — shared like a gift, for anyone to see.</p></div>';
+      root.innerHTML = '<div class="empty-state"><div class="ic">🎁</div><h3>' + I.t("events.noEventsHeading") + '</h3><p>' + I.t("events.noEventsBody") + '</p></div>';
       return;
     }
 
@@ -221,19 +231,19 @@
       return '<span class="chip' + (c === activeCategory ? " active" : "") + '" data-cat="' + esc(c) + '">' + esc(c) + '</span>';
     }).join("") + '</div>';
     var totalPhotos = allEvents.reduce(function (s, e) { return s + (e.photoCount || 0); }, 0);
-    var meta = '<span style="font-size:.8rem;color:var(--text-faint)">' + allEvents.length + ' event' + (allEvents.length === 1 ? "" : "s") + ' · ' + totalPhotos + ' photos</span>';
+    var meta = '<span style="font-size:.8rem;color:var(--text-faint)">' + I.tn("events.eventsCountPhotos", allEvents.length, { photos: totalPhotos }) + '</span>';
 
     var cards = visible.map(function (e, i) {
       var tags = '<div class="event-tags">' + (e.category ? '<span class="badge badge-gold">' + esc(e.category) + '</span>' : "") + (e.location ? '<span class="badge badge-info">' + esc(e.location) + '</span>' : "") + '</div>';
-      var when = esc(e.eventDate || "") + (e.photoCount ? ' · ' + e.photoCount + ' photo' + (e.photoCount === 1 ? "" : "s") : "");
+      var when = esc(e.eventDate || "") + (e.photoCount ? I.tn("events.photosSuffix", e.photoCount) : "");
       return '<div class="event-card">' + tile(e.coverPhoto, i, "event-cover") +
         '<div class="event-info">' + tags + '<h3>' + esc(e.title) + '</h3><div class="when">' + when + '</div>' +
         (e.description ? '<p class="desc">' + esc(e.description.slice(0, 110)) + '</p>' : "") +
-        (e.photoCount > 0 ? '<button class="event-link" data-id="' + e.id + '">View full gallery →</button>' : "") +
+        (e.photoCount > 0 ? '<button class="event-link" data-id="' + e.id + '">' + I.t("events.viewFullGallery") + '</button>' : "") +
         '</div></div>';
     }).join("");
 
-    root.innerHTML = '<div class="filters">' + chips + meta + '</div><div class="event-grid">' + (cards || '<p style="color:var(--text-faint)">No events in this category yet.</p>') + '</div>';
+    root.innerHTML = '<div class="filters">' + chips + meta + '</div><div class="event-grid">' + (cards || '<p style="color:var(--text-faint)">' + I.t("events.noneInCategory") + '</p>') + '</div>';
 
     root.querySelectorAll(".chip").forEach(function (el) {
       el.addEventListener("click", function () { activeCategory = el.dataset.cat; renderList(); });
@@ -242,6 +252,8 @@
       el.addEventListener("click", function () { openGallery(el.dataset.id); });
     });
   }
+  var eventsLoaded = false;
+  window.addEventListener("ljm-lang-changed", function () { if (eventsLoaded) renderList(); });
 
   function openGallery(id) {
     fetch("/api/events?id=" + encodeURIComponent(id) + "&_t=" + Date.now(), { cache: "no-store" })
@@ -252,7 +264,7 @@
         var photos = data.photos || [];
         document.getElementById("galleryModalGrid").innerHTML = photos.length
           ? photos.map(function (p, i) { return tile(p.photoUrl, i); }).join("")
-          : '<p style="color:var(--text-faint);grid-column:1/-1">No photos uploaded for this event yet.</p>';
+          : '<p style="color:var(--text-faint);grid-column:1/-1">' + window.LJM_I18N.t("events.noPhotos") + '</p>';
         document.getElementById("galleryModalBackdrop").classList.add("open");
         document.body.classList.add("drawer-open");
       })
@@ -270,10 +282,11 @@
     .then(function (r) { return r.json(); })
     .then(function (data) {
       allEvents = (data && data.events) || [];
+      eventsLoaded = true;
       renderList();
     })
     .catch(function () {
-      document.getElementById("eventsRoot").innerHTML = '<div class="empty-state"><div class="ic">⚠️</div><h3>Could not load events right now</h3><p>Please try again shortly.</p></div>';
+      document.getElementById("eventsRoot").innerHTML = '<div class="empty-state"><div class="ic">⚠️</div><h3>' + window.LJM_I18N.t("events.loadErrorHeading") + '</h3><p>' + window.LJM_I18N.t("events.loadErrorBody") + '</p></div>';
     });
 })();
 </script>

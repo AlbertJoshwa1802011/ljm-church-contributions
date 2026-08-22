@@ -118,7 +118,8 @@ export async function onRequestPost(context) {
   if (!auth.ok) return auth.response;
 
   try {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ success: false, message: "Invalid JSON body" }, 400); }
     const scope = SCOPES.includes(body.scope) ? body.scope : null;
     const textEn = String(body.textEn || "").trim();
     if (!scope) return json({ success: false, message: "scope must be one of daily/monthly/yearly" }, 400);
@@ -161,7 +162,8 @@ export async function onRequestPut(context) {
   if (!auth.ok) return auth.response;
 
   try {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ success: false, message: "Invalid JSON body" }, 400); }
     const id = Number(body.id);
     if (!id) return json({ success: false, message: "Promise id is required" }, 400);
     const scope = SCOPES.includes(body.scope) ? body.scope : null;

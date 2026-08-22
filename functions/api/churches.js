@@ -5,7 +5,7 @@
 // the churches themselves.
 //
 //   GET    /api/churches            → public: active churches, sorted
-//          /api/churches?all=1      → admin (manage_funds): every church
+//          /api/churches?all=1      → admin (manage_content): every church
 //   POST   /api/churches            → admin: create
 //   PUT    /api/churches            → admin: update (body.id)
 //   DELETE /api/churches?id=NN      → admin: archive (soft-delete: status='archived')
@@ -52,7 +52,7 @@ export async function onRequestGet(context) {
 
   try {
     if (wantsAll) {
-      const auth = await requireAuth(context, "manage_funds");
+      const auth = await requireAuth(context, "manage_content");
       if (!auth.ok) return auth.response;
       const q = await db.prepare("SELECT * FROM churches ORDER BY sort_order ASC, id ASC").all();
       return json({ success: true, churches: (q.results || []).map(toChurch) }, 200, corsHeaders({ "Cache-Control": "no-store" }));
@@ -70,11 +70,12 @@ export async function onRequestPost(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "manage_funds");
+  const auth = await requireAuth(context, "manage_content");
   if (!auth.ok) return auth.response;
 
   try {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ success: false, message: "Invalid JSON body" }, 400); }
     const slug = String(body.slug || "").trim().toLowerCase();
     const nameEn = String(body.nameEn || "").trim();
     if (!slug || !nameEn) return json({ success: false, message: "slug and nameEn are required" }, 400);
@@ -108,11 +109,12 @@ export async function onRequestPut(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "manage_funds");
+  const auth = await requireAuth(context, "manage_content");
   if (!auth.ok) return auth.response;
 
   try {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ success: false, message: "Invalid JSON body" }, 400); }
     const id = Number(body.id);
     if (!id) return json({ success: false, message: "Church id is required" }, 400);
 
@@ -148,7 +150,7 @@ export async function onRequestDelete(context) {
   const db = env.DB;
   if (!db) return json({ error: "D1 database binding missing" }, 500);
 
-  const auth = await requireAuth(context, "manage_funds");
+  const auth = await requireAuth(context, "manage_content");
   if (!auth.ok) return auth.response;
 
   try {

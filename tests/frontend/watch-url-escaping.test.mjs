@@ -32,9 +32,9 @@ function extractScriptBlocks(html) {
   return blocks;
 }
 
-test("v2/watch.html: defines esc() and safeHref() helpers", () => {
+test("v2/watch.html: defines esc() and safeUrl() helpers", () => {
   assert.match(source, /function esc\(/, "Expected an esc() HTML-escaping helper in v2/watch.html");
-  assert.match(source, /function safeHref\(/, "Expected a safeHref() protocol allowlist helper in v2/watch.html");
+  assert.match(source, /function safeUrl\(/, "Expected a safeUrl() protocol allowlist helper in v2/watch.html");
 });
 
 test("v2/watch.html: rendering a hostile Watch & Listen URL never produces unescaped attribute breakout or a javascript:/data: href (regression)", async () => {
@@ -52,6 +52,14 @@ test("v2/watch.html: rendering a hostile Watch & Listen URL never produces unesc
     getElementById: (id) => elements[id] || { innerHTML: "" }
   };
 
+  // The real code reads window.LJM_I18N.t(key) for every label and listens
+  // for a language-change event — a passthrough stub is enough to exercise
+  // the actual escaping/URL-safety logic, which doesn't depend on real copy.
+  const fakeWindow = {
+    LJM_I18N: { t: (key) => key },
+    addEventListener: () => {}
+  };
+
   const hostileSettings = {
     sunday_live_url: '"><img src=x onerror=alert(document.cookie)>',
     daily_prayer_url: "javascript:alert(1)",
@@ -60,10 +68,10 @@ test("v2/watch.html: rendering a hostile Watch & Listen URL never produces unesc
   const fakeFetch = () => Promise.resolve({ json: () => Promise.resolve({ settings: hostileSettings }) });
 
   // Run the file's real IIFE body (unwrapped) — it kicks off the real
-  // fetch().then().then() chain against our fake fetch/DOM above.
+  // fetch().then().then() chain against our fake fetch/DOM/window above.
   const body = cardScript.replace(/^\s*\(function\s*\(\)\s*\{/, "").replace(/\}\)\(\);\s*$/, "");
-  const fn = new Function("document", "fetch", body);
-  fn(fakeDoc, fakeFetch);
+  const fn = new Function("document", "fetch", "window", body);
+  fn(fakeDoc, fakeFetch, fakeWindow);
 
   // Poll for the async chain to finish populating the grid (bounded wait).
   const deadline = Date.now() + 1000;
