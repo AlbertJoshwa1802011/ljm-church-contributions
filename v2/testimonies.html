@@ -175,6 +175,15 @@
 <script>
   (function () {
     function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    // Cuts at the last whole word before the limit so a testimony excerpt
+    // never ends mid-word on the card.
+    function truncate(s, limit) {
+      if (!s || s.length <= limit) return s || "";
+      var cut = s.slice(0, limit);
+      var lastSpace = cut.lastIndexOf(" ");
+      if (lastSpace > limit * 0.6) cut = cut.slice(0, lastSpace);
+      return cut + "…";
+    }
     var currentKind = "";
     function load() {
       var grid = document.getElementById('tsGrid');
@@ -189,7 +198,7 @@
             var title = (lang === 'ta' && t.titleTa) ? t.titleTa : t.titleEn;
             var body = (lang === 'ta' && t.bodyTa) ? t.bodyTa : t.bodyEn;
             return '<div class="ts-card"><span class="badge ' + (t.kind === 'miracle' ? 'badge-gold' : 'badge-info') + '">' + esc(t.kind) + '</span>' +
-              '<h3>' + esc(title) + '</h3><p>' + esc((body || '').slice(0, 160)) + (body && body.length > 160 ? '…' : '') + '</p>' +
+              '<h3>' + esc(title) + '</h3><p>' + esc(truncate(body || '', 160)) + '</p>' +
               '<div class="ts-meta">' + esc(t.authorName || 'Anonymous') + (t.place ? ' · ' + esc(t.place) : '') + '</div></div>';
           }).join('');
         }).catch(function () { grid.innerHTML = '<div class="ts-empty">Couldn\'t load testimonies right now — please try again shortly.</div>'; });
