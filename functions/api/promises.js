@@ -9,7 +9,7 @@
 //   PUT    /api/promises              → admin: update (body.id)
 //   DELETE /api/promises?id=NN        → admin: delete
 
-import { requireAuth, audit, json } from "./_lib.js";
+import { requireAuth, audit, json, errorResponse } from "./_lib.js";
 
 function corsHeaders(extra) {
   return {
@@ -148,7 +148,7 @@ export async function onRequestPost(context) {
 
     return json({ success: true, id, message: "Promise added" }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 
@@ -190,7 +190,7 @@ export async function onRequestPut(context) {
 
     return json({ success: true, message: "Promise updated" }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 

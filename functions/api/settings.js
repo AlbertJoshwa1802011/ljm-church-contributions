@@ -2,7 +2,7 @@
 // GET — public read of safe config flags (force_login) so pages can honor them.
 // PUT — admin write (manage_funds) restricted to a whitelist of keys, audited.
 
-import { requireAuth, audit, json } from "./_lib.js";
+import { requireAuth, audit, json, errorResponse } from "./_lib.js";
 
 // Pastor-curated "verse card" content (Verse of the Month / Year), shown on the
 // public dashboard. Stored as plain config rows so no schema change is needed.
@@ -113,7 +113,7 @@ export async function onRequestPut(context) {
 
     return json({ success: true, message: `Updated ${entries.length} setting${entries.length !== 1 ? "s" : ""}` });
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 

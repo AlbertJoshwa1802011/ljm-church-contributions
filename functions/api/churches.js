@@ -10,7 +10,7 @@
 //   PUT    /api/churches            → admin: update (body.id)
 //   DELETE /api/churches?id=NN      → admin: archive (soft-delete: status='archived')
 
-import { requireAuth, audit, json } from "./_lib.js";
+import { requireAuth, audit, json, errorResponse } from "./_lib.js";
 
 function corsHeaders(extra) {
   return {
@@ -98,8 +98,8 @@ export async function onRequestPost(context) {
 
     return json({ success: true, id, message: `Church '${nameEn}' added` }, 200, corsHeaders());
   } catch (err) {
-    const message = /UNIQUE/.test(err.message) ? "A church with that slug already exists" : err.message;
-    return json({ success: false, message }, 500);
+    if (/UNIQUE/.test(err.message)) return json({ success: false, message: "A church with that slug already exists" }, 409);
+    return errorResponse(err);
   }
 }
 
@@ -139,7 +139,7 @@ export async function onRequestPut(context) {
 
     return json({ success: true, message: "Church updated" }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 

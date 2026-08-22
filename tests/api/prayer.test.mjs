@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
+import { freshDb, makeContext, makeBadJsonContext } from "../helpers/mock-d1.mjs";
 import * as prayer from "../../functions/api/prayer.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
@@ -70,4 +70,12 @@ test("prayer: PUT rejects an invalid status", async () => {
     db, method: "PUT", url: "https://test.local/api/prayer", body: { id: submit.id, status: "bogus" }
   })));
   assert.equal(res.success, false);
+});
+
+test("prayer: malformed JSON body on POST/PUT is a 400, not a 500", async () => {
+  const db = freshDb();
+  const post = await prayer.onRequestPost(makeBadJsonContext({ db, authToken: null, method: "POST", url: "https://test.local/api/prayer" }));
+  assert.equal(post.status, 400);
+  const put = await prayer.onRequestPut(makeBadJsonContext({ db, method: "PUT", url: "https://test.local/api/prayer" }));
+  assert.equal(put.status, 400);
 });

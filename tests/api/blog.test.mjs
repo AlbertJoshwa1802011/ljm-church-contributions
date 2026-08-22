@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
+import { freshDb, makeContext, makeBadJsonContext } from "../helpers/mock-d1.mjs";
 import * as blog from "../../functions/api/blog.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
@@ -60,8 +60,18 @@ test("blog: duplicate slugs are rejected with a friendly message", async () => {
   await blog.onRequestPost(makeContext({
     db, method: "POST", url: "https://test.local/api/blog", body: { slug: "same-slug", titleEn: "One", bodyEn: "A" }
   }));
-  const dup = await readJson(await blog.onRequestPost(makeContext({
+  const dupRes = await blog.onRequestPost(makeContext({
     db, method: "POST", url: "https://test.local/api/blog", body: { slug: "same-slug", titleEn: "Two", bodyEn: "B" }
-  })));
+  }));
+  assert.equal(dupRes.status, 409, "a duplicate slug is a client-caused conflict, not a server error");
+  const dup = await readJson(dupRes);
   assert.equal(dup.success, false);
+});
+
+test("blog: malformed JSON body on POST/PUT is a 400, not a 500", async () => {
+  const db = freshDb();
+  const post = await blog.onRequestPost(makeBadJsonContext({ db, method: "POST", url: "https://test.local/api/blog" }));
+  assert.equal(post.status, 400);
+  const put = await blog.onRequestPut(makeBadJsonContext({ db, method: "PUT", url: "https://test.local/api/blog" }));
+  assert.equal(put.status, 400);
 });

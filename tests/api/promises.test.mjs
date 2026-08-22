@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
+import { freshDb, makeContext, makeBadJsonContext } from "../helpers/mock-d1.mjs";
 import * as promises from "../../functions/api/promises.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
@@ -113,4 +113,12 @@ test("promises: PUT edits and DELETE removes", async () => {
 
   const after = await readJson(await promises.onRequestGet(makeContext({ db, url: "https://test.local/api/promises" })));
   assert.equal(after.promises.length, 0);
+});
+
+test("promises: malformed JSON body on POST/PUT is a 400, not a 500", async () => {
+  const db = freshDb();
+  const post = await promises.onRequestPost(makeBadJsonContext({ db, method: "POST", url: "https://test.local/api/promises" }));
+  assert.equal(post.status, 400);
+  const put = await promises.onRequestPut(makeBadJsonContext({ db, method: "PUT", url: "https://test.local/api/promises" }));
+  assert.equal(put.status, 400);
 });

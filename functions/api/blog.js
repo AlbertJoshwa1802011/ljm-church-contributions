@@ -8,7 +8,7 @@
 //   PUT    /api/blog               → admin: update (body.id)
 //   DELETE /api/blog?id=NN         → admin: delete
 
-import { requireAuth, audit, json } from "./_lib.js";
+import { requireAuth, audit, json, errorResponse } from "./_lib.js";
 
 function corsHeaders(extra) {
   return {
@@ -119,8 +119,8 @@ export async function onRequestPost(context) {
 
     return json({ success: true, id, slug, message: `Post '${titleEn}' saved` }, 200, corsHeaders());
   } catch (err) {
-    const message = /UNIQUE/.test(err.message) ? "A post with that slug already exists" : err.message;
-    return json({ success: false, message }, 500);
+    if (/UNIQUE/.test(err.message)) return json({ success: false, message: "A post with that slug already exists" }, 409);
+    return errorResponse(err);
   }
 }
 
@@ -163,7 +163,7 @@ export async function onRequestPut(context) {
 
     return json({ success: true, message: "Post updated" }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 

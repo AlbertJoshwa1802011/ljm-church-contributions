@@ -79,3 +79,19 @@ export function makeContext({ db, method = "GET", url = "https://test.local/api/
   };
   return { env, request };
 }
+
+// Like makeContext, but request.json() throws a SyntaxError — simulates a
+// real client sending a malformed JSON body (what request.json() actually
+// throws on real invalid JSON), for error-contract regression tests.
+export function makeBadJsonContext({ db, method = "POST", url = "https://test.local/api/x", authToken = "test-admin-token" } = {}) {
+  const env = { DB: db, ADMIN_API_TOKEN: "test-admin-token" };
+  const reqHeaders = new Map();
+  if (authToken) reqHeaders.set("Authorization", "Bearer " + authToken);
+  const request = {
+    url,
+    method,
+    headers: { get: (k) => reqHeaders.get(k) ?? null },
+    json: async () => { throw new SyntaxError("Unexpected token in JSON"); }
+  };
+  return { env, request };
+}

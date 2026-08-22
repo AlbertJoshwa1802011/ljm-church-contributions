@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
+import { freshDb, makeContext, makeBadJsonContext } from "../helpers/mock-d1.mjs";
 import * as contact from "../../functions/api/contact.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
@@ -59,4 +59,12 @@ test("contact: inbox (GET) and status update (PUT) require manage_content", asyn
 
   const filtered = await readJson(await contact.onRequestGet(makeContext({ db, url: "https://test.local/api/contact?status=replied" })));
   assert.equal(filtered.messages.length, 1);
+});
+
+test("contact: malformed JSON body on POST/PUT is a 400, not a 500", async () => {
+  const db = freshDb();
+  const post = await contact.onRequestPost(makeBadJsonContext({ db, authToken: null, method: "POST", url: "https://test.local/api/contact" }));
+  assert.equal(post.status, 400);
+  const put = await contact.onRequestPut(makeBadJsonContext({ db, method: "PUT", url: "https://test.local/api/contact" }));
+  assert.equal(put.status, 400);
 });

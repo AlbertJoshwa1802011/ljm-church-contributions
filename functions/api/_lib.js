@@ -15,6 +15,19 @@ export function json(data, status = 200, extraHeaders = {}) {
   });
 }
 
+// A malformed request body (bad JSON) is a client mistake, not a server
+// failure — it must come back as 400, not 500. Handlers wrap their whole
+// body-parse + business-logic block in one try/catch, so the catch clause
+// can't tell "JSON.parse blew up" apart from "a real server error happened"
+// without this: request.json() throws a SyntaxError specifically for
+// malformed JSON, so that's the one case worth special-casing on the way out.
+export function errorResponse(err) {
+  if (err instanceof SyntaxError) {
+    return json({ success: false, message: "Malformed JSON request body" }, 400);
+  }
+  return json({ success: false, message: err.message }, 500);
+}
+
 // Verify a Google Identity Services ID token. Returns { email, name, picture } or null.
 export async function verifyGoogleToken(token, env) {
   try {

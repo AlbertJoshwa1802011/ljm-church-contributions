@@ -6,7 +6,7 @@
 //   GET  /api/prayer              → admin (manage_content): inbox, newest first (?status=)
 //   PUT  /api/prayer              → admin: update status (body.id, status)
 
-import { requireAuth, audit, json } from "./_lib.js";
+import { requireAuth, audit, json, errorResponse } from "./_lib.js";
 import { sendMail, teamNotifyAddress, ackEmailHtml, teamNotifyHtml } from "./_mail.js";
 
 function corsHeaders(extra) {
@@ -104,7 +104,7 @@ export async function onRequestPost(context) {
 
     return json({ success: true, id, message: "Thank you — our team will be praying for you." }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 
@@ -135,7 +135,7 @@ export async function onRequestPut(context) {
 
     return json({ success: true, message: "Prayer request updated" }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 

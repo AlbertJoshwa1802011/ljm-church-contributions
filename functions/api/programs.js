@@ -7,7 +7,7 @@
 //   PUT    /api/programs           → admin: update (body.id)
 //   DELETE /api/programs?id=NN     → admin: delete
 
-import { requireAuth, audit, json } from "./_lib.js";
+import { requireAuth, audit, json, errorResponse } from "./_lib.js";
 
 function corsHeaders(extra) {
   return {
@@ -16,6 +16,19 @@ function corsHeaders(extra) {
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     ...(extra || {})
   };
+}
+
+// day_of_week is rendered by the public Programs page as DAYS[dayOfWeek]
+// (a fixed 7-entry array — see v2/programs.html) with no bounds check there.
+// An out-of-range value stored here (e.g. 999) makes that array index come
+// back undefined and crashes the render for EVERY visitor, not just this
+// program — so it must be rejected here, at the write boundary.
+const DAY_OF_WEEK_ERROR = "dayOfWeek must be an integer between 0 (Sunday) and 6 (Saturday), or omitted for a one-off/other program";
+function parseDayOfWeek(raw) {
+  if (raw === undefined || raw === null || raw === "") return { ok: true, value: null };
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > 6) return { ok: false, value: null };
+  return { ok: true, value: n };
 }
 
 function toProgram(row) {
@@ -92,13 +105,16 @@ export async function onRequestPost(context) {
     const titleEn = String(body.titleEn || "").trim();
     if (!titleEn) return json({ success: false, message: "titleEn is required" }, 400);
 
+    const dayOfWeek = parseDayOfWeek(body.dayOfWeek);
+    if (!dayOfWeek.ok) return json({ success: false, message: DAY_OF_WEEK_ERROR }, 400);
+
     const res = await db.prepare(
       `INSERT INTO programs (title_en, title_ta, description_en, description_ta, church_id, ministry_area, day_of_week, start_time, end_time, recurrence, location, status, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       titleEn, body.titleTa || null, body.descriptionEn || null, body.descriptionTa || null,
       body.churchId ? Number(body.churchId) : null, body.ministryArea || null,
-      body.dayOfWeek !== undefined && body.dayOfWeek !== null && body.dayOfWeek !== "" ? Number(body.dayOfWeek) : null,
+      dayOfWeek.value,
       body.startTime || null, body.endTime || null, body.recurrence || "weekly",
       body.location || null, body.status === "inactive" ? "inactive" : "active", Number(body.sortOrder) || 0
     ).run();
@@ -112,7 +128,7 @@ export async function onRequestPost(context) {
 
     return json({ success: true, id, message: `Program '${titleEn}' added` }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 
@@ -131,13 +147,16 @@ export async function onRequestPut(context) {
     const titleEn = String(body.titleEn || "").trim();
     if (!titleEn) return json({ success: false, message: "titleEn is required" }, 400);
 
+    const dayOfWeek = parseDayOfWeek(body.dayOfWeek);
+    if (!dayOfWeek.ok) return json({ success: false, message: DAY_OF_WEEK_ERROR }, 400);
+
     const res = await db.prepare(
       `UPDATE programs SET title_en=?, title_ta=?, description_en=?, description_ta=?, church_id=?, ministry_area=?, day_of_week=?, start_time=?, end_time=?, recurrence=?, location=?, status=?, sort_order=?, updated_at=CURRENT_TIMESTAMP
        WHERE id=?`
     ).bind(
       titleEn, body.titleTa || null, body.descriptionEn || null, body.descriptionTa || null,
       body.churchId ? Number(body.churchId) : null, body.ministryArea || null,
-      body.dayOfWeek !== undefined && body.dayOfWeek !== null && body.dayOfWeek !== "" ? Number(body.dayOfWeek) : null,
+      dayOfWeek.value,
       body.startTime || null, body.endTime || null, body.recurrence || "weekly",
       body.location || null, body.status === "inactive" ? "inactive" : "active", Number(body.sortOrder) || 0, id
     ).run();
@@ -151,7 +170,7 @@ export async function onRequestPut(context) {
 
     return json({ success: true, message: "Program updated" }, 200, corsHeaders());
   } catch (err) {
-    return json({ success: false, message: err.message }, 500);
+    return errorResponse(err);
   }
 }
 

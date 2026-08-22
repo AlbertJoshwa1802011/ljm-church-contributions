@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
+import { freshDb, makeContext, makeBadJsonContext } from "../helpers/mock-d1.mjs";
 import * as settings from "../../functions/api/settings.js";
 
 async function readJson(response) {
@@ -127,4 +127,10 @@ test("settings: GET only returns whitelisted public keys, not every writable key
   await settings.onRequestPut(makeContext({ db, body: { key: "tech_goal_amount", value: "77777" } }));
   const getResult = await readJson(await settings.onRequestGet(makeContext({ db })));
   assert.equal(getResult.settings.tech_goal_amount, undefined, "tech_goal_amount must not leak through the public GET");
+});
+
+test("settings: malformed JSON body on PUT is a 400, not a 500", async () => {
+  const db = freshDb();
+  const put = await settings.onRequestPut(makeBadJsonContext({ db, method: "PUT", url: "https://test.local/api/settings" }));
+  assert.equal(put.status, 400);
 });

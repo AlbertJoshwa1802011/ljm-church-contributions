@@ -113,6 +113,72 @@ Closed alongside the Aug 2026 incident in which no online payment reached D1 for
 - [x] `verify.js` requires `view_members`, `?skipRemote=1` D1-only path — `tests/api/verify.test.mjs`
 - [x] `verify.js` catches a deliberately-seeded orphan/integrity anomaly (proves the checker actually works, not just that it runs) — `tests/api/verify.test.mjs`
 
+## Security audit — milestone-v2 content APIs (2026-08-20)
+
+Findings from a targeted authorization/IDOR/mass-assignment/validation/error-contract
+audit of `churches.js`, `promises.js`, `testimonies.js`, `prayer.js`, `contact.js`,
+`programs.js`, `blog.js`, `events.js` + `events/photo.js`, `settings.js`. All fixes
+mutation-tested per `CONTRIBUTING.md` §5.
+
+- [x] **IDOR (P0):** `events.js` `GET ?id=` returned a draft/unpublished event's full
+  content (description, `extra` JSON, beneficiary counts, gallery photos) to ANY
+  unauthenticated caller — the id lookup wasn't gated by status at all, unlike the
+  public listing. Fixed to require `manage_events` for any non-`published` status,
+  responding 404 either way so a probe can't confirm a draft exists —
+  `tests/api/events.test.mjs` ("IDOR fix" test).
+- [x] **State machine (P1):** `events.js` `PUT` silently unpublished a `published`
+  event whenever the request body omitted `status` (e.g. a photo-only edit) — it
+  treated "no status supplied" as "set to draft" instead of "leave as-is", unlike
+  `blog.js`'s PUT which correctly falls back to the existing row's status. Fixed to
+  fetch the existing row and only change status on an explicit
+  `'published'`/`'draft'` — `tests/api/events.test.mjs` ("omits status" test).
+- [x] **Validation/availability (P1):** `programs.js` POST/PUT accepted any
+  `dayOfWeek` value (e.g. `999`, `-1`, `NaN`) with no range check. The public
+  Programs page (`v2/programs.html`) renders `DAYS[dayOfWeek]` from a fixed 7-entry
+  array with no bounds check — an out-of-range stored value throws inside that
+  render loop and breaks the ENTIRE public programs list for every visitor, not
+  just the bad row. Fixed to reject non-integer/out-of-range values with 400 —
+  `tests/api/programs.test.mjs` (`dayOfWeek` tests).
+- [x] **Validation (P2):** `events.js` POST/PUT stored an arbitrary string for
+  `status` verbatim (only `"published"` was special-cased) instead of collapsing
+  to the documented `draft`/`published` enum, unlike `blog.js`'s equivalent
+  pattern. Fixed to normalize the same way `blog.js` does —
+  `tests/api/events.test.mjs` (status-normalization tests).
+- [x] **Error contract (P2, repo-wide across the 9 audited endpoints):** a
+  malformed JSON request body on POST/PUT returned 500 (server error) instead of
+  400 (client error) — `request.json()`'s `SyntaxError` was caught by the same
+  broad `catch` as real server errors. Added `errorResponse()` to `_lib.js`
+  (distinguishes `SyntaxError` from other errors) and wired it into
+  `churches.js`/`promises.js`/`testimonies.js`/`prayer.js`/`contact.js`/
+  `programs.js`/`blog.js`/`events.js`/`settings.js` — one
+  `malformed JSON body ... is a 400, not a 500` test added per file.
+- [x] **Error contract cleanup:** `churches.js`/`blog.js` POST returned 500 for a
+  duplicate slug (a client-caused conflict). Changed to 409, matching the
+  established convention already used by `funds.js` — `tests/api/churches.test.mjs`,
+  `tests/api/blog.test.mjs`.
+- Reviewed, no fix needed (documented here so the next audit doesn't re-derive
+  these from scratch):
+  - `churches.js`/`settings.js` using `manage_funds` instead of `manage_content`
+    is a deliberate, documented choice (`docs/milestone-v2/02-TRD.md` calls
+    churches/settings "config-level"), not an oversight — left as-is.
+  - Testimony/blog/contact/prayer status transitions (e.g. `rejected` →
+    `published`) are intentionally unrestricted — no restricted transition graph
+    is documented anywhere in the milestone-v2 docs, and moderation needs full
+    admin control. Not a bug.
+  - R2 object keys in `events.js`'s `storePhoto()` are server-generated
+    (`events/${id}/${crypto.randomUUID()}.${ext}`), never derived from
+    user-controlled filenames — no path-traversal or filename-collision surface
+    found.
+  - `__proto__` as a settings key: `request.json()` produces a normal own
+    property (JSON.parse doesn't trigger the object-literal `__proto__` setter
+    exotic behavior), so it's caught by the ordinary `WRITABLE_KEYS` allowlist
+    check like any other unrecognized key. No prototype-pollution path found.
+  - Cross-table foreign keys (`church_id` on programs/events/testimonies/etc.)
+    are not FK-enforced — D1's `foreign_keys` pragma isn't set anywhere in this
+    repo (pre-existing, repo-wide, `events.js` already has a comment
+    acknowledging it). Out of scope to change unilaterally; flagged for
+    awareness, not fixed.
+
 ## `_lib.js` direct unit coverage
 
 - [x] `getPermissions` DB-role-resolution path: missing role row, malformed permissions JSON fallback — `tests/api/_lib.test.mjs`

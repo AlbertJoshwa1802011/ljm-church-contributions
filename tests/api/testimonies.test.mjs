@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
+import { freshDb, makeContext, makeBadJsonContext } from "../helpers/mock-d1.mjs";
 import * as testimonies from "../../functions/api/testimonies.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
@@ -92,4 +92,12 @@ test("testimonies: DELETE requires manage_content", async () => {
     db, method: "DELETE", url: `https://test.local/api/testimonies?id=${submit.id}`
   })));
   assert.equal(res.success, true);
+});
+
+test("testimonies: malformed JSON body on POST/PUT is a 400, not a 500", async () => {
+  const db = freshDb();
+  const post = await testimonies.onRequestPost(makeBadJsonContext({ db, authToken: null, method: "POST", url: "https://test.local/api/testimonies" }));
+  assert.equal(post.status, 400);
+  const put = await testimonies.onRequestPut(makeBadJsonContext({ db, method: "PUT", url: "https://test.local/api/testimonies" }));
+  assert.equal(put.status, 400);
 });

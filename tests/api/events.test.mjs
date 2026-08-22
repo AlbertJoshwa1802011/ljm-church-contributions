@@ -6,7 +6,7 @@
 // accepted gap (needs an R2 mock helper that doesn't exist yet).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
+import { freshDb, makeContext, makeBadJsonContext } from "../helpers/mock-d1.mjs";
 import * as events from "../../functions/api/events.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
@@ -33,19 +33,45 @@ test("events: public GET listing shows only published events, with categories", 
   assert.deepEqual(res.categories, ["Youth"]);
 });
 
-test("events: GET ?id= returns any status (not just published) plus its photos", async () => {
+test("events: GET ?id= for a published event is public (no auth required)", async () => {
   const db = freshDb();
   const create = await readJson(await events.onRequestPost(makeContext({
     db, method: "POST", url: "https://test.local/api/events",
-    body: { title: "Draft Detail", status: "draft" }
+    body: { title: "Published Detail", status: "published" }
   })));
 
   const res = await readJson(await events.onRequestGet(makeContext({
     db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
   })));
-  assert.equal(res.event.title, "Draft Detail");
-  assert.equal(res.event.status, "draft");
+  assert.equal(res.event.title, "Published Detail");
+  assert.equal(res.event.status, "published");
   assert.deepEqual(res.photos, []);
+});
+
+// IDOR regression: this used to return a draft event's full content (title,
+// description, extra JSON, beneficiary counts, gallery photos) to ANY
+// unauthenticated caller who guessed/incremented the numeric id — the id
+// wasn't gated by status at all. Only the public listing filtered by
+// status='published'; the single-event lookup didn't. Fixed to require
+// manage_events for any non-published status, responding 404 either way so
+// a probe can't even confirm a draft exists.
+test("events: GET ?id= for a draft event requires manage_events (IDOR fix) — anonymous gets 404, admin sees it", async () => {
+  const db = freshDb();
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Secret Draft", status: "draft", description: "internal planning notes" }
+  })));
+
+  const anon = await readJson(await events.onRequestGet(makeContext({
+    db, authToken: null, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.equal(anon.success, false, "an anonymous caller must not see draft content");
+  assert.equal(anon.event, undefined);
+
+  const admin = await readJson(await events.onRequestGet(makeContext({
+    db, url: `https://test.local/api/events?id=${create.id}`
+  })));
+  assert.equal(admin.event.title, "Secret Draft", "an authorized manage_events caller can still preview the draft");
 });
 
 test("events: GET ?id= for a nonexistent event is a 404", async () => {
@@ -112,8 +138,9 @@ test("events: POST with gallery photos but no cover photo falls back to the firs
   })));
   assert.equal(res.success, true, res.message);
 
+  // No explicit status was supplied, so this event is a draft (manage_events-only detail lookup).
   const detail = await readJson(await events.onRequestGet(makeContext({
-    db, authToken: null, url: `https://test.local/api/events?id=${res.id}`
+    db, url: `https://test.local/api/events?id=${res.id}`
   })));
   assert.ok(detail.event.coverPhoto, "cover should be backfilled from the first gallery photo");
   assert.equal(detail.photos.length, 2);
@@ -126,7 +153,8 @@ test("events: PUT updates fields, adds and removes photos, and 404s for a nonexi
     db, method: "POST", url: "https://test.local/api/events",
     body: { title: "Original Title", status: "draft", photos: [{ dataUrl: TINY_PNG_DATA_URL, caption: "keep" }] }
   })));
-  let detail = await readJson(await events.onRequestGet(makeContext({ db, authToken: null, url: `https://test.local/api/events?id=${create.id}` })));
+  // Still a draft at this point, so the detail lookup needs manage_events auth (see IDOR test above).
+  let detail = await readJson(await events.onRequestGet(makeContext({ db, url: `https://test.local/api/events?id=${create.id}` })));
   const keepPhotoId = detail.photos[0].id;
 
   const update = await readJson(await events.onRequestPut(makeContext({
@@ -156,6 +184,52 @@ test("events: PUT updates fields, adds and removes photos, and 404s for a nonexi
     db, method: "PUT", url: "https://test.local/api/events", body: { id: 999999, title: "Nope" }
   })));
   assert.equal(missing.success, false);
+});
+
+test("events: POST normalizes an arbitrary/garbage status to 'draft' instead of storing it verbatim", async () => {
+  const db = freshDb();
+  const res = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Weird Status Event", status: "totally_not_a_real_status" }
+  })));
+  assert.equal(res.success, true, res.message);
+
+  const detail = await readJson(await events.onRequestGet(makeContext({ db, url: `https://test.local/api/events?id=${res.id}` })));
+  assert.equal(detail.event.status, "draft", "an unrecognized status must collapse to 'draft', not be stored as-is");
+});
+
+// Regression: a PUT that only touches photos (no `status` field in the body)
+// used to silently flip a published event back to 'draft', because the old
+// code treated a missing status as "set to draft" instead of "leave as-is".
+test("events: PUT that omits `status` preserves the event's current status (does not silently unpublish)", async () => {
+  const db = freshDb();
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events",
+    body: { title: "Published Event", status: "published" }
+  })));
+
+  const photoOnlyUpdate = await readJson(await events.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/events",
+    body: { id: create.id, title: "Published Event", addPhotos: [{ dataUrl: TINY_PNG_DATA_URL }] }
+  })));
+  assert.equal(photoOnlyUpdate.success, true, photoOnlyUpdate.message);
+
+  const detail = await readJson(await events.onRequestGet(makeContext({ db, url: `https://test.local/api/events?id=${create.id}` })));
+  assert.equal(detail.event.status, "published", "omitting `status` on an update must not unpublish the event");
+});
+
+test("events: PUT also normalizes an arbitrary/garbage status the same way POST does", async () => {
+  const db = freshDb();
+  const create = await readJson(await events.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/events", body: { title: "T", status: "draft" }
+  })));
+  const res = await readJson(await events.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/events",
+    body: { id: create.id, title: "T", status: "totally_not_a_real_status" }
+  })));
+  assert.equal(res.success, true, res.message);
+  const detail = await readJson(await events.onRequestGet(makeContext({ db, url: `https://test.local/api/events?id=${create.id}` })));
+  assert.equal(detail.event.status, "draft");
 });
 
 test("events: PUT requires manage_events", async () => {
@@ -188,6 +262,14 @@ test("events: DELETE removes the event and its photos, and 404s for a nonexisten
     db, method: "DELETE", url: "https://test.local/api/events?id=999999"
   })));
   assert.equal(missing.success, false);
+});
+
+test("events: malformed JSON body on POST/PUT is a 400, not a 500", async () => {
+  const db = freshDb();
+  const post = await events.onRequestPost(makeBadJsonContext({ db, method: "POST", url: "https://test.local/api/events" }));
+  assert.equal(post.status, 400);
+  const put = await events.onRequestPut(makeBadJsonContext({ db, method: "PUT", url: "https://test.local/api/events" }));
+  assert.equal(put.status, 400);
 });
 
 test("events: DELETE requires manage_events", async () => {

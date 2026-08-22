@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
+import { freshDb, makeContext, makeBadJsonContext } from "../helpers/mock-d1.mjs";
 import * as churches from "../../functions/api/churches.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
@@ -66,6 +66,30 @@ test("churches: PUT/DELETE on a nonexistent id is a 404", async () => {
     db, method: "DELETE", url: "https://test.local/api/churches?id=999999"
   })));
   assert.equal(delRes.success, false);
+});
+
+test("churches: POST with a duplicate slug is a clean 409, not a 500", async () => {
+  const db = freshDb();
+  await churches.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/churches", body: { slug: "dup", nameEn: "First" }
+  }));
+  const res = await churches.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/churches", body: { slug: "dup", nameEn: "Second" }
+  }));
+  assert.equal(res.status, 409);
+  const result = await readJson(res);
+  assert.equal(result.success, false);
+  assert.match(result.message, /already exists/);
+});
+
+// Error-contract regression: a malformed JSON body is a client mistake, not
+// a server failure — it must come back as 400, not 500.
+test("churches: malformed JSON body on POST/PUT is a 400, not a 500", async () => {
+  const db = freshDb();
+  const post = await churches.onRequestPost(makeBadJsonContext({ db, method: "POST", url: "https://test.local/api/churches" }));
+  assert.equal(post.status, 400);
+  const put = await churches.onRequestPut(makeBadJsonContext({ db, method: "PUT", url: "https://test.local/api/churches" }));
+  assert.equal(put.status, 400);
 });
 
 test("churches: ?all=1 requires manage_funds", async () => {

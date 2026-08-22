@@ -56,6 +56,57 @@ test("programs: inactive programs are excluded from the public listing but visib
   assert.equal(all.programs.length, 1);
 });
 
+// Regression: the public Programs page (v2/programs.html) renders
+// DAYS[dayOfWeek] from a fixed 7-entry array with no bounds check. An
+// out-of-range dayOfWeek stored via the API (previously accepted with no
+// validation at all) makes that array index undefined and throws inside the
+// page's render loop — breaking the ENTIRE public programs list for every
+// visitor, not just the one bad row.
+test("programs: POST rejects an out-of-range dayOfWeek instead of storing it", async () => {
+  const db = freshDb();
+  for (const bad of [999, -1, 7, 3.5, NaN]) {
+    const res = await readJson(await programs.onRequestPost(makeContext({
+      db, method: "POST", url: "https://test.local/api/programs",
+      body: { titleEn: "Bad Day", dayOfWeek: bad }
+    })));
+    assert.equal(res.success, false, `dayOfWeek=${bad} must be rejected`);
+  }
+  const all = await readJson(await programs.onRequestGet(makeContext({ db, url: "https://test.local/api/programs?all=1" })));
+  assert.equal(all.programs.length, 0, "no program should have been created with an invalid dayOfWeek");
+});
+
+test("programs: POST accepts every in-range dayOfWeek (0-6) and null/omitted for one-off programs", async () => {
+  const db = freshDb();
+  for (const good of [0, 1, 6]) {
+    const res = await readJson(await programs.onRequestPost(makeContext({
+      db, method: "POST", url: "https://test.local/api/programs",
+      body: { titleEn: `Day ${good}`, dayOfWeek: good }
+    })));
+    assert.equal(res.success, true, res.message);
+  }
+  const omitted = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "One-off" }
+  })));
+  assert.equal(omitted.success, true, omitted.message);
+  const all = await readJson(await programs.onRequestGet(makeContext({ db, url: "https://test.local/api/programs?all=1" })));
+  assert.equal(all.programs.find(p => p.titleEn === "One-off").dayOfWeek, null);
+});
+
+test("programs: PUT rejects an out-of-range dayOfWeek", async () => {
+  const db = freshDb();
+  const create = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "X", dayOfWeek: 2 }
+  })));
+  const res = await readJson(await programs.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/programs",
+    body: { id: create.id, titleEn: "X", dayOfWeek: 999 }
+  })));
+  assert.equal(res.success, false);
+
+  const all = await readJson(await programs.onRequestGet(makeContext({ db, url: "https://test.local/api/programs?all=1" })));
+  assert.equal(all.programs.find(p => p.id === create.id).dayOfWeek, 2, "the original valid value must be untouched by the rejected update");
+});
+
 test("programs: PUT/DELETE on a nonexistent id is a 404", async () => {
   const db = freshDb();
   const putRes = await readJson(await programs.onRequestPut(makeContext({
