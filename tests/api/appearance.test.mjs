@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
 import * as appearance from "../../functions/api/appearance.js";
+import { DEFAULT_GOOGLE_CLIENT_ID } from "../../functions/api/_lib.js";
 
 async function readJson(response) {
   return JSON.parse(await response.text());
@@ -16,7 +17,7 @@ function withVerifiedMember(email, fn) {
     const realFetch = globalThis.fetch;
     globalThis.fetch = async (url) => {
       if (String(url).includes("tokeninfo")) {
-        return { ok: true, json: async () => ({ email, name: "Test Member" }) };
+        return { ok: true, json: async () => ({ email, name: "Test Member", aud: DEFAULT_GOOGLE_CLIENT_ID }) };
       }
       return realFetch(url);
     };

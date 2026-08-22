@@ -89,6 +89,56 @@ test("webhook: an invalid signature is rejected (400) and writes nothing", async
   assert.equal(n, 0);
 });
 
+// Phase 5 payment-integrity audit (docs/audits/2026-08-21-production-hardening.md):
+// webhook.js was already correct here — these three scenarios were reachable
+// through existing code paths but not explicitly locked in by a test.
+test("webhook: a missing signature header is rejected (400) and writes nothing", async () => {
+  const db = freshDb();
+  const res = await webhook.onRequestPost(makeWebhookContext(db, capturedPayment(), { signature: "" }));
+  assert.equal(res.status, 400);
+  const n = (await db.prepare("SELECT COUNT(*) AS n FROM contributions").first()).n;
+  assert.equal(n, 0);
+});
+
+test("webhook: a tampered payload (signature valid for a different body) is rejected", async () => {
+  const db = freshDb();
+  const original = capturedPayment({ amount: 50000 }); // ₹500, correctly signed
+  const rawOriginal = JSON.stringify(original);
+  const validSigForOriginal = sign(rawOriginal);
+
+  // Attacker changes the amount after the signature was computed, but replays
+  // the original (now-mismatched) signature.
+  const tampered = capturedPayment({ amount: 5000000 }); // ₹50,000 — a 100x amount tamper
+  const ctx = {
+    env: { DB: db, RAZORPAY_WEBHOOK_SECRET: SECRET, GOOGLE_SHEETS_WEBAPP_URL: "" },
+    request: {
+      text: async () => JSON.stringify(tampered),
+      headers: { get: (k) => (k === "x-razorpay-signature" ? validSigForOriginal : null) }
+    },
+    waitUntil: () => {}
+  };
+  const res = await webhook.onRequestPost(ctx);
+  assert.equal(res.status, 400, "a signature computed over a different body must not verify");
+  const n = (await db.prepare("SELECT COUNT(*) AS n FROM contributions").first()).n;
+  assert.equal(n, 0, "a tampered payload must never be recorded, at any amount");
+});
+
+test("webhook: two concurrent deliveries of the same payment still record exactly one contribution", async () => {
+  const db = freshDb();
+  const payment = capturedPayment({ id: "pay_CONCURRENT" });
+  const [res1, res2] = await Promise.all([
+    webhook.onRequestPost(makeWebhookContext(db, payment)),
+    webhook.onRequestPost(makeWebhookContext(db, payment))
+  ]);
+  // Both requests must be acknowledged 200 (Razorpay must never see a 500 and
+  // retry an already-recorded payment) — one records it, the other hits
+  // either the idempotency SELECT or the proof_id UNIQUE constraint catch.
+  assert.equal(res1.status, 200);
+  assert.equal(res2.status, 200);
+  const n = (await db.prepare("SELECT COUNT(*) AS n FROM contributions WHERE proof_id = ?").bind("pay_CONCURRENT").first()).n;
+  assert.equal(n, 1, "a race between two simultaneous deliveries must not double-record the gift");
+});
+
 test("webhook: a non payment.captured event is acknowledged but writes nothing", async () => {
   const db = freshDb();
   const res = await webhook.onRequestPost(makeWebhookContext(db, capturedPayment({ event: "payment.authorized" })));

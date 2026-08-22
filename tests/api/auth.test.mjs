@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { freshDb } from "../helpers/mock-d1.mjs";
 import * as auth from "../../functions/api/auth.js";
+import { DEFAULT_GOOGLE_CLIENT_ID } from "../../functions/api/_lib.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
 
@@ -42,7 +43,7 @@ test("auth: a missing DB binding returns 500", async () => {
 });
 
 test("auth: POST resolves a signed-in member by matching Google email", withGoogleStub(
-  { email: "linked@example.com", name: "Linked Person" },
+  { email: "linked@example.com", name: "Linked Person", aud: DEFAULT_GOOGLE_CLIENT_ID },
   async () => {
     const db = freshDb();
     await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Linked Person','linked@example.com','111',1)").run();
@@ -56,7 +57,7 @@ test("auth: POST resolves a signed-in member by matching Google email", withGoog
 ));
 
 test("auth: POST with no email match falls back to a name match and offers the unclaimed-member picker", withGoogleStub(
-  { email: "newgoogle@example.com", name: "Unclaimed Believer" },
+  { email: "newgoogle@example.com", name: "Unclaimed Believer", aud: DEFAULT_GOOGLE_CLIENT_ID },
   async () => {
     const db = freshDb();
     await db.prepare("INSERT INTO members (name) VALUES ('Unclaimed Believer')").run();
@@ -71,7 +72,7 @@ test("auth: POST with no email match falls back to a name match and offers the u
 ));
 
 test("auth: POST reports isAdmin/permissions for a hardcoded super admin email", withGoogleStub(
-  { email: "albertjoshrock101@gmail.com", name: "Super Admin" },
+  { email: "albertjoshrock101@gmail.com", name: "Super Admin", aud: DEFAULT_GOOGLE_CLIENT_ID },
   async () => {
     const db = freshDb();
     const res = await readJson(await auth.onRequestPost({ env: { DB: db }, request: { json: async () => ({ token: "fake" }) } }));

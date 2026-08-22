@@ -49,3 +49,14 @@ test("v2/*.html: no page links to a beta-gated old root path instead of its real
 
   assert.deepEqual(offenders, [], `Found broken links to beta-gated old paths:\n${offenders.join("\n")}`);
 });
+
+test("v2 pages: the give/events/my-giving/our-giving CTAs point at their real /v2/ pages", () => {
+  const index = readFileSync(path.join(V2_DIR, "index.html"), "utf8");
+  for (const oldPath of BETA_GATED_OLD_PATHS) {
+    assert.match(
+      index,
+      new RegExp(`href="/v2/${oldPath.replace(".", "\\.")}"`),
+      `v2/index.html should have at least one link to /v2/${oldPath}`
+    );
+  }
+});

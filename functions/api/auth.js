@@ -1,7 +1,7 @@
 // Cloudflare Pages Function: /api/auth
 // Receives a Google Identity Service JWT token, verifies it, and links/maps it to a member profile.
 
-import { getPermissions } from "./_lib.js";
+import { getPermissions, DEFAULT_GOOGLE_CLIENT_ID } from "./_lib.js";
 
 export async function onRequestPost(context) {
   const { env, request } = context;
@@ -25,9 +25,9 @@ export async function onRequestPost(context) {
 
     const payload = await googleRes.json();
     
-    // Verify client ID matches if configured
-    const clientID = env.GOOGLE_CLIENT_ID;
-    if (clientID && payload.aud !== clientID) {
+    // Audience check must never be optional — see _lib.js's DEFAULT_GOOGLE_CLIENT_ID note.
+    const clientID = env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+    if (payload.aud !== clientID) {
       return new Response(JSON.stringify({ error: "Audience mismatch / invalid client ID" }), { status: 401 });
     }
 

@@ -8,10 +8,11 @@
 // church's schedule, not just one row) because the throw happened inside the
 // single `.then()` that builds all of `#programsWrap`'s innerHTML.
 //
-// This test statically extracts the DAYS array and the day-name computation
-// from v2/programs.html and actually executes it (not just structural regex
-// matching) against the exact hostile inputs CLAUDE.md's milestone brief
-// calls out, asserting it never throws and degrades to a safe fallback.
+// This test statically extracts the DAYS array and the day-name/cadence
+// computation from v2/programs.html and actually executes it (not just
+// structural regex matching) against the exact hostile inputs CLAUDE.md's
+// milestone brief calls out, asserting it never throws and degrades to a
+// safe fallback.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -22,20 +23,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const source = readFileSync(path.join(REPO_ROOT, "v2", "programs.html"), "utf8");
 
-test("v2/programs.html: DAYS array and day-name computation are present", () => {
+test("v2/programs.html: DAYS array and day-name/cadence computation are present", () => {
   assert.match(source, /var DAYS = \[[^\]]+\];/, "Expected the DAYS weekday-name array in v2/programs.html");
-  assert.match(source, /var dayName = [^\n]+;\s*\n\s*var when = [^\n]+;/, "Expected the dayName/when computation in renderList()");
+  assert.match(source, /var dayName = [^\n]+;\s*\n\s*var day = [^\n]+;/, "Expected the dayName/day computation in renderList()");
+  assert.match(source, /var when;\s*\n\s*if \(p\.recurrence/, "Expected the cadence-aware `when` computation in renderList()");
 });
 
 test("v2/programs.html: an out-of-range/invalid dayOfWeek does not throw when computing the display label (regression)", () => {
   const daysMatch = source.match(/var DAYS = (\[[^\]]+\]);/);
-  const whenMatch = source.match(/var dayName = ([^\n]+);\s*\n\s*var when = ([^\n]+);/);
-  assert.ok(daysMatch && whenMatch, "Could not locate the day-name computation to test — has v2/programs.html's renderList() changed shape?");
+  const bodyMatch = source.match(/var dayName = [^\n]+;\s*\n\s*var day = [^\n]+;[\s\S]*?\n\s*else when = day \|\| 'Weekly';/);
+  assert.ok(daysMatch && bodyMatch, "Could not locate the day-name/cadence computation to test — has v2/programs.html's renderList() changed shape?");
 
   const DAYS = new Function(`return ${daysMatch[1]}`)();
   const computeWhen = new Function("p", "DAYS", `
-    var dayName = ${whenMatch[1]};
-    var when = ${whenMatch[2]};
+    ${bodyMatch[0]}
     return when;
   `);
 
@@ -51,5 +52,7 @@ test("v2/programs.html: an out-of-range/invalid dayOfWeek does not throw when co
   assert.equal(computeWhen({ dayOfWeek: 6, recurrence: "weekly" }, DAYS), "Sat");
   // null/undefined (one-off/other programs) still fall back correctly.
   assert.equal(computeWhen({ dayOfWeek: null, recurrence: "once" }, DAYS), "One-off");
-  assert.equal(computeWhen({ dayOfWeek: null, recurrence: "monthly-2nd-friday" }, DAYS), "—");
+  // An out-of-range dayOfWeek degrades to a safe cadence-only label instead of throwing.
+  assert.equal(computeWhen({ dayOfWeek: 99, recurrence: "weekly" }, DAYS), "Weekly");
+  assert.equal(computeWhen({ dayOfWeek: "not-a-number", recurrence: "monthly" }, DAYS), "Monthly");
 });

@@ -100,6 +100,100 @@ test("purchases: fund/external contribution defaults from cost when not explicit
   assert.equal(row.external_contribution, 0);
 });
 
+// SECURITY regression (docs/audits/2026-08-21-production-hardening.md): the
+// public /impact.html page hits this same unauthenticated listing, and
+// never renders createdBy (the staff email who logged the purchase) — only
+// admin.html's purchases table does. An anonymous caller must not receive it.
+test("purchases: an unauthenticated (public) caller does not see createdBy, an authenticated admin still does", async () => {
+  const db = freshDb();
+  const addParams = new URLSearchParams({
+    action: "add_purchase", productName: "Amplifier", cost: "8000",
+    purchaseDate: "2026-07-01", fundSource: "tech-contributions"
+  });
+  const addRes = await readJson(await purchases.onRequestGet(makeContext({ db, url: "https://test.local/api/purchases?" + addParams.toString() })));
+
+  const publicRes = await readJson(await purchases.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/purchases" })));
+  const publicRow = publicRes.purchases.find((p) => p.id === addRes.id);
+  assert.ok(publicRow, "the purchase itself is still public (transparency-by-design)");
+  assert.equal(publicRow.createdBy, undefined, "an anonymous caller must never see who logged the purchase");
+
+  const adminRes = await readJson(await purchases.onRequestGet(makeContext({ db, url: "https://test.local/api/purchases" })));
+  const adminRow = adminRes.purchases.find((p) => p.id === addRes.id);
+  assert.equal(adminRow.createdBy, "api-token", "admin.html's purchases table still needs the real value");
+});
+
+// ADVERSARIAL-PASS regression (docs/audits/2026-08-21-production-hardening.md):
+// the first version of this fix used requireAuth(context) with no permission
+// argument, so a caller authenticated with an unrelated permission (e.g.
+// edit_wishlist) was treated as a full admin and could see createdBy. Now
+// requires edit_purchases specifically.
+test("purchases: a caller with an unrelated permission (edit_wishlist only) does not see createdBy", async () => {
+  const db = freshDb();
+  db._sqlite.exec(
+    `INSERT INTO roles (role_name, permissions) VALUES ('wishlist_only2', '["edit_wishlist"]');
+     INSERT INTO member_roles (email, role_name) VALUES ('wishlist-volunteer2@example.com', 'wishlist_only2');`
+  );
+  const addParams = new URLSearchParams({
+    action: "add_purchase", productName: "Drum Kit", cost: "12000",
+    purchaseDate: "2026-07-01", fundSource: "tech-contributions"
+  });
+  const addRes = await readJson(await purchases.onRequestGet(makeContext({ db, url: "https://test.local/api/purchases?" + addParams.toString() })));
+
+  const context = {
+    env: { DB: db, ALLOW_LEGACY_EMAIL_TOKEN: "true" },
+    request: {
+      url: "https://test.local/api/purchases", method: "GET",
+      headers: { get: (k) => (k === "Authorization" ? "Bearer wishlist-volunteer2@example.com" : null) }
+    }
+  };
+  const res = await readJson(await purchases.onRequestGet(context));
+  const row = res.purchases.find((p) => p.id === addRes.id);
+  assert.equal(row.createdBy, undefined, "an unrelated permission must not unlock who logged the purchase");
+});
+
+// ADVERSARIAL-PASS regression (docs/audits/2026-08-21-production-hardening.md):
+// a double-click / stale-tab resubmit of the "add purchase" form silently
+// created two independent rows for the same real-world purchase (confirmed
+// live, no id collision to catch it since the id was auto-generated fresh
+// each time). Resubmitting the identical fields within 10s must now return
+// the original row instead of creating a duplicate.
+test("purchases: a resubmit of the identical add_purchase within 10s is deduped, not duplicated", async () => {
+  const db = freshDb();
+  const params = new URLSearchParams({
+    action: "add_purchase", productName: "Drum Kit", cost: "12000",
+    purchaseDate: "2026-07-01", fundSource: "tech-contributions"
+  });
+  const r1 = await readJson(await purchases.onRequestGet(makeContext({ db, url: "https://test.local/api/purchases?" + params.toString() })));
+  const r2 = await readJson(await purchases.onRequestGet(makeContext({ db, url: "https://test.local/api/purchases?" + params.toString() })));
+  assert.equal(r1.success, true);
+  assert.equal(r2.success, true);
+  assert.equal(r2.id, r1.id, "the resubmit must return the original id, not create a new one");
+  assert.equal(r2.deduped, true);
+
+  const rows = await db.prepare("SELECT id FROM purchases WHERE name = 'Drum Kit'").all();
+  assert.equal(rows.results.length, 1, "only one row should exist for the duplicated submission");
+
+  // a genuinely different purchase (different cost) must still go through
+  const params2 = new URLSearchParams({
+    action: "add_purchase", productName: "Drum Kit", cost: "999",
+    purchaseDate: "2026-07-01", fundSource: "tech-contributions"
+  });
+  const r3 = await readJson(await purchases.onRequestGet(makeContext({ db, url: "https://test.local/api/purchases?" + params2.toString() })));
+  assert.equal(r3.success, true);
+  assert.notEqual(r3.id, r1.id, "a genuinely different purchase must not be deduped away");
+});
+
+test("purchases: an explicit id bypasses dedup (legacy/explicit-id callers keep their own semantics)", async () => {
+  const db = freshDb();
+  const params = new URLSearchParams({
+    action: "add_purchase", id: "P-explicit-1", productName: "Cables", cost: "500",
+    purchaseDate: "2026-07-01", fundSource: "tech-contributions"
+  });
+  const res = await readJson(await purchases.onRequestGet(makeContext({ db, url: "https://test.local/api/purchases?" + params.toString() })));
+  assert.equal(res.success, true);
+  assert.equal(res.id, "P-explicit-1");
+});
+
 test("purchases: default public listing (no action) aggregates totalSpent and totalCost", async () => {
   const db = freshDb();
   const params = new URLSearchParams({

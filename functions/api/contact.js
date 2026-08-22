@@ -89,12 +89,14 @@ export async function onRequestPost(context) {
     }
 
     const ip = request.headers.get("CF-Connecting-IP") || null;
+    const name = body.name != null ? String(body.name).trim().substring(0, 120) : null;
+    const subject = body.subject != null ? String(body.subject).trim().substring(0, 200) : null;
 
     const res = await db.prepare(
       `INSERT INTO contact_messages (name, email, subject, message, church_id, language, submitted_ip)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).bind(
-      body.name || null, email, body.subject || null, message,
+      name, email, subject, message,
       body.churchId ? Number(body.churchId) : null, body.language === "ta" ? "ta" : "en", ip
     ).run();
 

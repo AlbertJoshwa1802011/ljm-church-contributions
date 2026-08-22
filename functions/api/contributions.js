@@ -96,13 +96,39 @@ export async function onRequestGet(context) {
     }
 
     // 3. Fetch Contributions for this fund
-    // includeDeleted is only honored for a recognized admin — public dashboard
-    // callers never see soft-deleted rows even if they happen to pass the flag.
-    let includeDeleted = false;
-    if (url.searchParams.get("includeDeleted") === "1") {
-      const viewerAuth = await requireAuth(context);
-      includeDeleted = viewerAuth.ok;
-    }
+    // SECURITY (see docs/audits/2026-08-21-production-hardening.md): this
+    // endpoint has no auth requirement — it's the public giving-transparency
+    // dashboard's data source, and Member/Amount/Date/Category being public
+    // is the product's intentional "every gift tracked openly" design. But
+    // it was also unconditionally selecting each contributor's raw personal
+    // Email and Phone, plus a full memberEmails/memberPhones directory for
+    // EVERY member (not just contributors to this fund) below — none of
+    // which any public page actually renders (script.js only ever reads
+    // memberEmails/memberPhones as a truthy presence check for a "Verified"
+    // badge, never displays the value; nothing reads a contribution's
+    // Email/Phone in v2/our-giving.html or script.js at all). That made this
+    // one unauthenticated GET a full name→email→phone directory dump of the
+    // entire congregation, plus each person's individual giving history.
+    // admin.html *does* need the real values (contribution-edit form
+    // prefill) — isAdmin below gates that.
+    //
+    // ADVERSARIAL-PASS FIX: the first version of this fix used
+    // `requireAuth(context)` with no permission argument, which per _lib.js
+    // means "any recognized role holder, whatever their permissions" — so a
+    // caller authenticated with an unrelated, narrowly-scoped permission
+    // (e.g. edit_wishlist, granted to a volunteer who manages the public
+    // wishlist page) was treated as a full PII-viewing admin, including
+    // soft-deleted rows via includeDeleted. Confirmed live: an
+    // edit_wishlist-only token could read real member emails/phones and
+    // deleted contributions. Now requires a permission actually relevant to
+    // viewing this data (view_members or manage_funds), matching the scopes
+    // that gate the equivalent data elsewhere (members.js, funds.js).
+    const viewerAuth = await requireAuth(context);
+    const viewerPerms = viewerAuth.permissions || [];
+    const isAdmin = viewerAuth.ok && (
+      viewerPerms.includes("*") || viewerPerms.includes("view_members") || viewerPerms.includes("manage_funds")
+    );
+    const includeDeleted = isAdmin && url.searchParams.get("includeDeleted") === "1";
 
     // The created_by/updated_by/is_deleted columns come from migration 0012.
     // If that migration hasn't been applied to this database yet, selecting or
@@ -131,6 +157,16 @@ export async function onRequestGet(context) {
       contributions = legacyQuery.results || [];
     }
 
+    // Public callers never receive a contributor's raw Email/Phone (see the
+    // note above requireAuth) — only admin.html's edit-contribution form
+    // prefill needs the real values.
+    if (!isAdmin) {
+      contributions = contributions.map((c) => {
+        const { Email, Phone, ...rest } = c;
+        return rest;
+      });
+    }
+
     // 4. Fetch Member Profiles (emails, phones, verified statuses)
     const membersQuery = await db.prepare(
       "SELECT name, email, phone, is_verified FROM members"
@@ -140,11 +176,16 @@ export async function onRequestGet(context) {
     const memberEmails = {};
     const memberPhones = {};
     const memberStatus = {};
-    
+
     membersList.forEach(m => {
       if (m.name) {
-        if (m.email) memberEmails[m.name] = m.email;
-        if (m.phone) memberPhones[m.name] = m.phone;
+        // memberEmails/memberPhones are consumed publicly only as a truthy
+        // presence check (script.js's "Verified Profile" badge) — never
+        // rendered — so the public response carries `true`, not the real
+        // address/number. Admins (e.g. a future admin feature) still get
+        // the real values.
+        if (m.email) memberEmails[m.name] = isAdmin ? m.email : true;
+        if (m.phone) memberPhones[m.name] = isAdmin ? m.phone : true;
         memberStatus[m.name] = m.is_verified === 1;
       }
     });
@@ -220,6 +261,23 @@ export async function onRequestPost(context) {
     if (!member_name) return json({ success: false, message: "member_name is required" }, 400);
     if (!Number.isFinite(amount) || amount <= 0) return json({ success: false, message: "amount must be a positive number" }, 400);
     if (!date) return json({ success: false, message: "date is required" }, 400);
+
+    // ADVERSARIAL-PASS FIX (docs/audits/2026-08-21-production-hardening.md):
+    // this manual entry has no proof_id (it's NULL, unlike Razorpay-verified
+    // rows), so nothing stopped a double-click / stale-tab resubmit from
+    // silently double-counting a real cash gift — confirmed live: two
+    // concurrent identical POSTs created two independent rows, no error, no
+    // warning. Mirrors the same cheap same-actor/same-fields dedupe logs.js
+    // already uses for view-event ingestion.
+    const dupe = await db.prepare(
+      `SELECT id FROM contributions
+       WHERE member_name = ? AND amount = ? AND date = ? AND fund = ? AND created_by = ?
+         AND created_at > datetime('now', '-10 seconds')
+       LIMIT 1`
+    ).bind(member_name, amount, date, fund, auth.email).first();
+    if (dupe) {
+      return json({ success: true, message: `Contribution for '${member_name}' added`, id: dupe.id, deduped: true });
+    }
 
     const res = await db.prepare(
       "INSERT INTO contributions (member_name, amount, date, category, notes, proof_id, email, phone, fund, created_by) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)"

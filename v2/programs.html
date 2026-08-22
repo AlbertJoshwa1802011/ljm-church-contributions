@@ -134,7 +134,15 @@
       function renderList(items) {
         return '<div class="pg-list">' + items.map(function (p) {
           var dayName = p.dayOfWeek !== null && p.dayOfWeek !== undefined ? DAYS[p.dayOfWeek] : null;
-          var when = dayName ? dayName.slice(0, 3) : (p.recurrence === 'once' ? 'One-off' : '—');
+          var day = dayName ? dayName.slice(0, 3) : null;
+          // recurrence is never rendered implicitly from a bare day badge — a
+          // monthly program (e.g. "2nd Friday") must never look identical to
+          // a weekly one, so the cadence word is always shown, not just the day.
+          var when;
+          if (p.recurrence === 'daily') when = 'Daily';
+          else if (p.recurrence === 'monthly') when = 'Monthly' + (day ? ' · ' + day : '');
+          else if (p.recurrence === 'once') when = 'One-off' + (day ? ' · ' + day : '');
+          else when = day || 'Weekly';
           var time = [p.startTime, p.endTime].filter(Boolean).join(' – ');
           return '<div class="pg-item"><div class="pg-day">' + esc(when) + '</div><div><h4>' + esc(p.titleEn) + '</h4>' +
             (p.descriptionEn ? '<p>' + esc(p.descriptionEn) + '</p>' : '') + (p.location ? '<p>📍 ' + esc(p.location) + '</p>' : '') + '</div>' +

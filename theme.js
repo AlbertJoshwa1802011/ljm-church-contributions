@@ -3,12 +3,22 @@
 // applied before first paint — avoids a flash of the wrong theme.
 (function () {
     // ---- Global API Redirect for Local Preview to Live Production ----
+    // Read-only convenience so a static `file://`/localhost preview can show
+    // real content without standing up local D1. This must NEVER apply to a
+    // write (POST/PUT/DELETE/PATCH): doing so meant every admin.html action
+    // — create, edit, delete, publish, moderate — taken against what looks
+    // like a local/dev instance silently mutated the real production
+    // database instead, with no indication in the URL bar that anything
+    // other than localhost was touched. Confirmed live: a local `wrangler
+    // pages dev` session's admin.html POST to /api/events resolved to
+    // https://light-of-jesus-ministry-contributions.pages.dev/api/events.
     var isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     if (isLocalhost) {
         var originalFetch = window.fetch;
         window.fetch = function (input, init) {
+            var method = ((init && init.method) || (input instanceof Request ? input.method : "GET") || "GET").toUpperCase();
             var url = typeof input === "string" ? input : (input instanceof Request ? input.url : "");
-            if (url && url.startsWith("/api/")) {
+            if (method === "GET" && url && url.startsWith("/api/")) {
                 url = "https://light-of-jesus-ministry-contributions.pages.dev" + url;
             }
             return originalFetch.call(this, url, init);

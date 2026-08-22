@@ -17,9 +17,22 @@
   // functions/api/events.js falls back to storing photos as base64 data URLs in D1.
   "r2_buckets": [
     { "binding": "EVENT_PHOTOS", "bucket_name": "ljm-event-photos" }
-  ],
+  ]
 
-  "vars": {
-    "ALLOW_LEGACY_EMAIL_TOKEN": "true"
-  }
+  // SECURITY: do NOT add ALLOW_LEGACY_EMAIL_TOKEN=true here. This file's
+  // `vars` block is the deployed config for the real Cloudflare Pages
+  // project (production + preview) — there is no separate environment
+  // override, so anything set here ships live. POST_MIGRATION_SAFETY_REPORT.md
+  // §4 documents why this flag defaults to disabled: with it on, requireAuth()
+  // in functions/api/_lib.js accepts ANY plain email string as a Bearer
+  // token with zero proof of identity — and the three super-admin emails it
+  // would unlock are hardcoded in this same public repo (_lib.js,
+  // admin-session.js), so enabling it here means every admin API endpoint
+  // (members, contributions, funds, expenses, roles, delete operations —
+  // everything) is unauthenticated for anyone who reads this repo. This
+  // exact flag was previously committed as "true" in this file, silently
+  // undoing that fix — see docs/audits/2026-08-21-production-hardening.md.
+  // For local development, pass it as a CLI flag instead:
+  //   npx wrangler pages dev . --binding ALLOW_LEGACY_EMAIL_TOKEN=true
+  // or put it in a git-ignored .dev.vars file (see .dev.vars.example).
 }

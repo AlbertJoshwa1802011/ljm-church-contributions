@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
 import * as logs from "../../functions/api/logs.js";
+import { DEFAULT_GOOGLE_CLIENT_ID } from "../../functions/api/_lib.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
 
@@ -45,7 +46,7 @@ test("logs: POST with a verified Google JWT resolves the actor and classifies ad
   const db = freshDb();
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (url) => {
-    if (String(url).includes("tokeninfo")) return { ok: true, json: async () => ({ email: "albertjoshrock101@gmail.com" }) };
+    if (String(url).includes("tokeninfo")) return { ok: true, json: async () => ({ email: "albertjoshrock101@gmail.com", aud: DEFAULT_GOOGLE_CLIENT_ID }) };
     return realFetch(url);
   };
   try {

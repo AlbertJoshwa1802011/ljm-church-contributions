@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { freshDb } from "../helpers/mock-d1.mjs";
-import { getPermissions, requireAuth, verifyGoogleToken, audit } from "../../functions/api/_lib.js";
+import { getPermissions, requireAuth, verifyGoogleToken, audit, DEFAULT_GOOGLE_CLIENT_ID } from "../../functions/api/_lib.js";
 
 function withGoogleStub(handler, fn) {
   return async () => {
@@ -128,12 +128,38 @@ test("_lib verifyGoogleToken: a payload with no email yields null", withGoogleSt
   }
 ));
 
-test("_lib verifyGoogleToken: a valid payload with a matching (or unset) audience resolves an identity", withGoogleStub(
+test("_lib verifyGoogleToken: a valid payload with a matching audience resolves an identity", withGoogleStub(
   async () => ({ ok: true, json: async () => ({ email: "Real.Person@Example.com", name: "Real Person", aud: "the-client-id" }) }),
   async () => {
     const identity = await verifyGoogleToken("fake-token", { GOOGLE_CLIENT_ID: "the-client-id" });
     assert.equal(identity.email, "real.person@example.com", "email should be lowercased");
     assert.equal(identity.name, "Real Person");
+  }
+));
+
+// Regression test: audience validation used to be *optional* — when
+// env.GOOGLE_CLIENT_ID wasn't configured, `if (clientID && payload.aud !==
+// clientID)` skipped the check entirely, so a Google ID token minted for
+// ANY OTHER OAuth client (not this app) would still be accepted as a valid
+// identity here, as long as the token itself was genuinely Google-signed
+// and unexpired. That's a real "audience confusion" vulnerability: this
+// endpoint could not tell "signed into this app" apart from "signed into
+// some unrelated app with Sign in with Google". Fixed by always falling
+// back to this app's real (public, already client-side-embedded) client ID
+// when the env var isn't set, so the audience check is never skippable.
+test("_lib verifyGoogleToken: audience is validated even when GOOGLE_CLIENT_ID is not configured in env (falls back to the real app client ID)", withGoogleStub(
+  async () => ({ ok: true, json: async () => ({ email: "victim@example.com", name: "Victim", aud: "some-other-apps-client-id" }) }),
+  async () => {
+    const identity = await verifyGoogleToken("token-minted-for-a-different-app", {});
+    assert.equal(identity, null, "a token whose audience is a different OAuth client must never be accepted, even with no GOOGLE_CLIENT_ID configured");
+  }
+));
+
+test("_lib verifyGoogleToken: a token whose audience matches this app's real default client ID is accepted with no GOOGLE_CLIENT_ID configured", withGoogleStub(
+  async () => ({ ok: true, json: async () => ({ email: "real.admin@example.com", name: "Real Admin", aud: DEFAULT_GOOGLE_CLIENT_ID }) }),
+  async () => {
+    const identity = await verifyGoogleToken("real-token", {});
+    assert.equal(identity.email, "real.admin@example.com");
   }
 ));
 

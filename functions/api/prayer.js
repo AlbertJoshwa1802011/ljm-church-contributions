@@ -85,12 +85,15 @@ export async function onRequestPost(context) {
     }
 
     const ip = request.headers.get("CF-Connecting-IP") || null;
+    const name = body.name != null ? String(body.name).trim().substring(0, 120) : null;
+    const email = body.email != null ? String(body.email).trim().substring(0, 200) : null;
+    const phone = body.phone != null ? String(body.phone).trim().substring(0, 40) : null;
 
     const res = await db.prepare(
       `INSERT INTO prayer_requests (name, email, phone, request, wants_callback, language, church_id, submitted_ip)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
-      body.name || null, body.email || null, body.phone || null, requestText,
+      name, email, phone, requestText,
       body.wantsCallback ? 1 : 0, body.language === "ta" ? "ta" : "en",
       body.churchId ? Number(body.churchId) : null, ip
     ).run();
@@ -103,15 +106,15 @@ export async function onRequestPost(context) {
       await sendMail(env, {
         to: teamEmail,
         subject: "New prayer request — Light of Jesus Ministry",
-        html: teamNotifyHtml({ kind: "prayer request", fields: { Name: body.name, Email: body.email, Phone: body.phone, Request: requestText } })
+        html: teamNotifyHtml({ kind: "prayer request", fields: { Name: name, Email: email, Phone: phone, Request: requestText } })
       });
     }
-    if (body.email) {
-      await sendMail(env, { to: body.email, subject: "We received your prayer request", html: ackEmailHtml({ name: body.name }) });
+    if (email) {
+      await sendMail(env, { to: email, subject: "We received your prayer request", html: ackEmailHtml({ name }) });
     }
 
     await audit(context, {
-      actorEmail: body.email || "anonymous", actorType: "public", verified: false,
+      actorEmail: email || "anonymous", actorType: "public", verified: false,
       action: "prayer.submit", entityType: "prayer_request", entityId: id
     });
 

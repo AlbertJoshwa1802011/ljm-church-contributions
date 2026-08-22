@@ -1111,12 +1111,18 @@
             <div class="section" id="section-programs">
                 <div class="page-head"><h2>Programs &amp; service times</h2><p>Weekly/recurring programs, shown per church on the public site.</p></div>
                 <div class="card">
-                    <h3>Add a program</h3>
+                    <h3 id="pg_formTitle">Add a program</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Title (English) *</label><input class="input" id="pg_titleEn"></div>
                         <div><label class="f-label">Church</label><select class="input" id="pg_churchId"><option value="">Ministry-wide</option></select></div>
+                        <div><label class="f-label">Recurrence</label><select class="input" id="pg_recurrence">
+                            <option value="weekly" selected>Weekly</option>
+                            <option value="monthly">Monthly (e.g. 2nd Friday — say which in the title/description)</option>
+                            <option value="daily">Daily</option>
+                            <option value="once">One-off</option>
+                        </select></div>
                         <div><label class="f-label">Day of week</label><select class="input" id="pg_dayOfWeek">
-                            <option value="">One-off / other</option>
+                            <option value="">N/A — daily or one-off</option>
                             <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
                             <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
                         </select></div>
@@ -1128,12 +1134,58 @@
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="pg_saveBtn">Add program</button>
+                        <button class="btn btn-outline" id="pg_clearBtn">Clear</button>
                         <span class="msg" id="pg_msg"></span>
                     </div>
                 </div>
                 <div class="card">
                     <h3>All programs</h3>
                     <div class="table-wrap"><table id="pg_table"><thead><tr><th>Title</th><th>Church</th><th>When</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- EVENTS -->
+            <div class="section" id="section-events">
+                <div class="page-head"><h2>Events</h2><p>Showcase the good works God has done — shown on the public Events page.</p></div>
+                <div class="card">
+                    <h3 id="ev_formTitle">Add event</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Title *</label><input class="input" id="ev_title"></div>
+                        <div><label class="f-label">Category</label><input class="input" id="ev_category" placeholder="Outreach, Baptism, Jesus Calls…"></div>
+                        <div><label class="f-label">Event date</label><input class="input" id="ev_date" type="date"></div>
+                        <div><label class="f-label">Location</label><input class="input" id="ev_location"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="ev_status"><option value="draft" selected>Draft</option><option value="published">Published</option></select></div>
+                        <div class="span-all"><label style="display:flex; gap:8px; align-items:center; font-size:12.5px; color:var(--text-soft); cursor:pointer;"><input type="checkbox" id="ev_featured"> Feature on top of the page</label></div>
+                        <div class="span-all"><label class="f-label">Description</label><textarea class="input" id="ev_description" rows="3"></textarea></div>
+                        <div class="span-all">
+                            <label class="f-label">Additional details</label>
+                            <div id="ev_extraRows"></div>
+                            <button type="button" class="mini-btn" id="ev_addExtraBtn">＋ Add detail</button>
+                        </div>
+                        <div class="span-all">
+                            <label class="f-label">Cover photo</label>
+                            <input class="input" id="ev_coverFile" type="file" accept="image/*">
+                            <div id="ev_coverPreviewContainer" style="display:none; margin-top:8px;">
+                                <img id="ev_coverPreview" style="max-width:200px; max-height:200px; border-radius:8px; object-fit:cover;">
+                            </div>
+                        </div>
+                        <div class="span-all">
+                            <label class="f-label">Photos</label>
+                            <input class="input" id="ev_photoFiles" type="file" accept="image/*" multiple>
+                            <div id="ev_photoPreviews" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="ev_saveBtn">Save event</button>
+                        <button class="btn btn-outline" id="ev_clearBtn">Clear</button>
+                        <span class="msg" id="ev_msg"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Events (<span id="ev_count">–</span>)</h3>
+                    <div class="table-wrap"><table id="ev_table"><thead><tr>
+                        <th>Title</th><th>Category</th><th>Date</th><th>Status</th><th>Photos</th><th></th>
+                    </tr></thead><tbody id="ev_tbody"></tbody></table></div>
                 </div>
             </div>
 
@@ -1354,12 +1406,21 @@
             // so the picker can degrade to a plain free-text name field.
             membersPromise: null,
             membersError: null,
+            programsCache: [],
+            editingProgramId: null,
+            eventsCache: [],
+            editingEventId: null,
+            eventExtraRows: [],
+            eventCoverDataUrl: null,
+            eventNewPhotos: [],
+            eventExistingPhotos: [],
+            eventRemovePhotoIds: [],
             loaded: {}
         };
         var PERMISSION_SCOPES = [
             "edit_purchases", "edit_wishlist", "view_members", "manage_members",
             "manage_roles", "manage_funds", "delete_funds", "view_audit", "manage_expenses",
-            "manage_subscriptions", "manage_content"
+            "manage_subscriptions", "manage_content", "manage_events"
         ];
         // Two-level nav: a handful of top-level groups, each expanding to its
         // pages — replaces the old flat 13-item list that had to be rendered
@@ -1394,6 +1455,7 @@
                 ["prayer", "🕯️", "Prayer requests"],
                 ["contactmsgs", "✉️", "Contact messages"],
                 ["programs", "🗓️", "Programs"],
+                ["events", "🎉", "Events"],
                 ["blog", "📝", "Blog"]
             ] },
             { id: "admin", icon: "🛡️", label: "Admin", items: [
@@ -3206,41 +3268,291 @@
         function fetchPrograms() {
             api("/api/programs?all=1").then(function (d) {
                 if (!d.success) { setMsg("pg_msg", d.message || "No access", "err"); return; }
+                state.programsCache = d.programs || [];
                 var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                var recurrenceLabel = { daily: "Daily", weekly: "Weekly", monthly: "Monthly", once: "One-off" };
                 var tb = $("pg_table").querySelector("tbody");
-                tb.innerHTML = (d.programs || []).map(function (p) {
-                    var when = (p.dayOfWeek !== null && p.dayOfWeek !== undefined ? days[p.dayOfWeek] + " " : "") + (p.startTime || "");
+                tb.innerHTML = state.programsCache.map(function (p) {
+                    var day = p.dayOfWeek !== null && p.dayOfWeek !== undefined ? days[p.dayOfWeek] : null;
+                    var when = (recurrenceLabel[p.recurrence] || "Weekly") + (day ? " · " + day : "") + (p.startTime ? " " + p.startTime : "");
                     return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.churchNameEn || "Ministry-wide") + "</td>" +
                         "<td>" + esc(when || "—") + "</td>" +
                         "<td><span class='pill " + (p.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
-                        '<td><button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
+                        '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + p.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + p.id + '">Delete</button></td></tr>';
                 }).join("") || '<tr><td colspan="5" class="empty">No programs yet.</td></tr>';
-                tb.querySelectorAll("[data-id]").forEach(function (b) {
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
                     b.onclick = function () {
+                        if (b.dataset.act === "edit") { editProgram(Number(b.dataset.id)); return; }
                         if (!confirm("Delete this program?")) return;
                         api("/api/programs?id=" + b.dataset.id, { method: "DELETE" }).then(function (d2) { setMsg("pg_msg", d2.message, d2.success ? "ok" : "err"); fetchPrograms(); });
                     };
                 });
             }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
         }
+        function editProgram(id) {
+            var p = state.programsCache.filter(function (row) { return row.id === id; })[0];
+            if (!p) { setMsg("pg_msg", "Program not found", "err"); return; }
+            state.editingProgramId = id;
+            $("pg_formTitle").textContent = "Edit program — #" + id;
+            $("pg_saveBtn").textContent = "Update program";
+            $("pg_titleEn").value = p.titleEn || "";
+            $("pg_churchId").value = p.churchId || "";
+            $("pg_recurrence").value = p.recurrence || "weekly";
+            $("pg_dayOfWeek").value = p.dayOfWeek !== null && p.dayOfWeek !== undefined ? String(p.dayOfWeek) : "";
+            $("pg_startTime").value = p.startTime || "";
+            $("pg_endTime").value = p.endTime || "";
+            $("pg_ministryArea").value = p.ministryArea || "";
+            $("pg_location").value = p.location || "";
+            $("pg_descriptionEn").value = p.descriptionEn || "";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearProgramForm() {
+            state.editingProgramId = null;
+            $("pg_formTitle").textContent = "Add a program";
+            $("pg_saveBtn").textContent = "Add program";
+            ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn"].forEach(function (id) { $(id).value = ""; });
+            $("pg_dayOfWeek").value = ""; $("pg_churchId").value = ""; $("pg_recurrence").value = "weekly";
+        }
         function saveProgram() {
             var titleEn = $("pg_titleEn").value.trim();
             if (!titleEn) { setMsg("pg_msg", "Title is required", "err"); return; }
             var body = {
                 titleEn: titleEn, churchId: $("pg_churchId").value || null,
+                recurrence: $("pg_recurrence").value || "weekly",
                 dayOfWeek: $("pg_dayOfWeek").value === "" ? null : Number($("pg_dayOfWeek").value),
                 startTime: $("pg_startTime").value, endTime: $("pg_endTime").value,
                 ministryArea: $("pg_ministryArea").value.trim(), location: $("pg_location").value.trim(),
                 descriptionEn: $("pg_descriptionEn").value.trim()
             };
-            api("/api/programs", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+            var req;
+            if (state.editingProgramId) {
+                body.id = state.editingProgramId;
+                // Preserve the row's current status — the PUT endpoint requires it
+                // and defaults to "active" when omitted, which would silently
+                // re-publish a program an admin had deliberately deactivated.
+                var existing = state.programsCache.filter(function (row) { return row.id === state.editingProgramId; })[0];
+                body.status = (existing && existing.status) || "active";
+                req = api("/api/programs", { method: "PUT", body: JSON.stringify(body) });
+            } else {
+                req = api("/api/programs", { method: "POST", body: JSON.stringify(body) });
+            }
+            req.then(function (d) {
                 setMsg("pg_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn"].forEach(function (id) { $(id).value = ""; });
-                    $("pg_dayOfWeek").value = ""; $("pg_churchId").value = "";
-                    fetchPrograms();
-                }
+                if (d.success) { clearProgramForm(); fetchPrograms(); }
             }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Events ═══════════════
+        function compressImage(file, maxDim, quality) {
+            maxDim = maxDim || 1600; quality = quality || 0.82;
+            return new Promise(function (resolve, reject) {
+                var reader = new FileReader();
+                reader.onerror = function () { reject(new Error("Failed to read image file")); };
+                reader.onload = function (e) {
+                    var img = new Image();
+                    img.onerror = function () { reject(new Error("Failed to load image")); };
+                    img.onload = function () {
+                        var w = img.width, h = img.height;
+                        if (w > maxDim || h > maxDim) {
+                            if (w >= h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+                            else { w = Math.round(w * (maxDim / h)); h = maxDim; }
+                        }
+                        var canvas = document.createElement("canvas");
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL("image/jpeg", quality));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        function addExtraRow(label, value) {
+            state.eventExtraRows.push({ label: label || "", value: value || "" });
+            renderExtraRows();
+        }
+        function renderExtraRows() {
+            var host = $("ev_extraRows");
+            host.innerHTML = state.eventExtraRows.map(function (row, i) {
+                return '<div data-i="' + i + '" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">' +
+                    '<input class="input" placeholder="Label (e.g. Volunteers)" value="' + esc(row.label) + '" data-f="label">' +
+                    '<input class="input" placeholder="Value (e.g. 24)" value="' + esc(row.value) + '" data-f="value">' +
+                    '<button type="button" class="mini-btn danger" data-remove-extra title="Remove">✕</button>' +
+                    "</div>";
+            }).join("");
+            host.querySelectorAll("[data-i]").forEach(function (row) {
+                var i = Number(row.dataset.i);
+                row.querySelectorAll("[data-f]").forEach(function (field) {
+                    field.oninput = function () { state.eventExtraRows[i][field.dataset.f] = field.value; };
+                });
+                row.querySelector("[data-remove-extra]").onclick = function () {
+                    state.eventExtraRows.splice(i, 1);
+                    renderExtraRows();
+                };
+            });
+        }
+        function collectExtra() {
+            var out = {};
+            state.eventExtraRows.forEach(function (row) {
+                var label = (row.label || "").trim();
+                if (label) out[label] = row.value;
+            });
+            return out;
+        }
+        function renderEventPhotoPreviews() {
+            var host = $("ev_photoPreviews");
+            var html = "";
+            state.eventExistingPhotos.forEach(function (p, i) {
+                html += '<div data-existing="' + i + '" style="width:120px;">' +
+                    '<img src="' + p.photoUrl + '" style="width:120px; height:90px; object-fit:cover; border-radius:6px;">' +
+                    '<input class="input" style="margin-top:4px; font-size:11px; padding:4px 6px;" placeholder="Caption" value="' + esc(p.caption || "") + '" data-existing-caption="' + i + '">' +
+                    '<button type="button" class="mini-btn danger" style="width:100%; margin-top:4px;" data-remove-existing="' + i + '">✕ Remove</button>' +
+                    "</div>";
+            });
+            state.eventNewPhotos.forEach(function (p, i) {
+                html += '<div data-new="' + i + '" style="width:120px;">' +
+                    '<img src="' + p.dataUrl + '" style="width:120px; height:90px; object-fit:cover; border-radius:6px;">' +
+                    '<input class="input" style="margin-top:4px; font-size:11px; padding:4px 6px;" placeholder="Caption" value="' + esc(p.caption || "") + '" data-new-caption="' + i + '">' +
+                    '<button type="button" class="mini-btn danger" style="width:100%; margin-top:4px;" data-remove-new="' + i + '">✕ Remove</button>' +
+                    "</div>";
+            });
+            host.innerHTML = html;
+            host.querySelectorAll("[data-existing-caption]").forEach(function (inp) {
+                inp.oninput = function () { state.eventExistingPhotos[Number(inp.dataset.existingCaption)].caption = inp.value; };
+            });
+            host.querySelectorAll("[data-new-caption]").forEach(function (inp) {
+                inp.oninput = function () { state.eventNewPhotos[Number(inp.dataset.newCaption)].caption = inp.value; };
+            });
+            host.querySelectorAll("[data-remove-existing]").forEach(function (btn) {
+                btn.onclick = function () {
+                    var i = Number(btn.dataset.removeExisting);
+                    var removed = state.eventExistingPhotos.splice(i, 1)[0];
+                    if (removed && removed.id != null) state.eventRemovePhotoIds.push(removed.id);
+                    renderEventPhotoPreviews();
+                };
+            });
+            host.querySelectorAll("[data-remove-new]").forEach(function (btn) {
+                btn.onclick = function () {
+                    state.eventNewPhotos.splice(Number(btn.dataset.removeNew), 1);
+                    renderEventPhotoPreviews();
+                };
+            });
+        }
+        function loadEvents() {
+            fetchEvents();
+        }
+        function fetchEvents() {
+            api("/api/events?all=1&_t=" + Date.now()).then(function (d) {
+                state.eventsCache = d.events || [];
+                $("ev_count").textContent = state.eventsCache.length;
+                var statusPill = { published: "pill-green", draft: "pill-amber" };
+                var tb = $("ev_tbody");
+                tb.innerHTML = state.eventsCache.map(function (ev) {
+                    return "<tr><td><strong>" + esc(ev.title) + "</strong>" + (ev.featured ? " <span class='pill pill-accent'>featured</span>" : "") + "</td>" +
+                        "<td>" + (ev.category ? "<span class='pill pill-grey'>" + esc(ev.category) + "</span>" : "–") + "</td>" +
+                        "<td>" + esc((ev.eventDate || "").substring(0, 10) || "–") + "</td>" +
+                        "<td><span class='pill " + (statusPill[ev.status] || "pill-grey") + "'>" + esc(ev.status || "draft") + "</span></td>" +
+                        "<td>" + (ev.photoCount || 0) + "</td>" +
+                        '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + ev.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-act="del" data-id="' + ev.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="6" class="empty">No events yet — add the first one above.</td></tr>';
+                tb.querySelectorAll(".mini-btn").forEach(function (b) {
+                    b.onclick = function () { b.dataset.act === "edit" ? editEvent(Number(b.dataset.id)) : deleteEvent(Number(b.dataset.id)); };
+                });
+            }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+        }
+        function editEvent(id) {
+            api("/api/events?id=" + id + "&_t=" + Date.now()).then(function (d) {
+                var ev = d.event;
+                if (!ev) { setMsg("ev_msg", "Event not found", "err"); return; }
+                state.editingEventId = id;
+                $("ev_formTitle").textContent = "Edit event — #" + id;
+                $("ev_title").value = ev.title || "";
+                $("ev_category").value = ev.category || "";
+                $("ev_date").value = (ev.eventDate || "").substring(0, 10);
+                $("ev_location").value = ev.location || "";
+                $("ev_description").value = ev.description || "";
+                $("ev_status").value = ev.status || "draft";
+                $("ev_featured").checked = !!ev.featured;
+
+                state.eventExtraRows = Object.keys(ev.extra || {}).map(function (k) { return { label: k, value: ev.extra[k] }; });
+                renderExtraRows();
+
+                state.eventCoverDataUrl = null;
+                $("ev_coverFile").value = "";
+                if (ev.coverPhoto) {
+                    $("ev_coverPreview").src = ev.coverPhoto;
+                    $("ev_coverPreviewContainer").style.display = "block";
+                } else {
+                    $("ev_coverPreviewContainer").style.display = "none";
+                }
+
+                $("ev_photoFiles").value = "";
+                state.eventNewPhotos = [];
+                state.eventRemovePhotoIds = [];
+                state.eventExistingPhotos = (d.photos || []).map(function (p) {
+                    return { id: p.id, photoUrl: p.photoUrl, caption: p.caption || "" };
+                });
+                renderEventPhotoPreviews();
+
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+        }
+        function deleteEvent(id) {
+            if (!confirm("Delete this event? This cannot be undone.")) return;
+            api("/api/events?id=" + id, { method: "DELETE" })
+                .then(function (d) { setMsg("ev_msg", d.message, d.success ? "ok" : "err"); if (d.success) fetchEvents(); })
+                .catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+        }
+        function clearEventForm() {
+            state.editingEventId = null;
+            $("ev_formTitle").textContent = "Add event";
+            ["ev_title", "ev_category", "ev_date", "ev_location", "ev_description"].forEach(function (id) { $(id).value = ""; });
+            $("ev_status").value = "draft";
+            $("ev_featured").checked = false;
+            $("ev_coverFile").value = "";
+            $("ev_coverPreviewContainer").style.display = "none";
+            $("ev_photoFiles").value = "";
+            state.eventCoverDataUrl = null;
+            state.eventNewPhotos = [];
+            state.eventExistingPhotos = [];
+            state.eventRemovePhotoIds = [];
+            state.eventExtraRows = [];
+            renderExtraRows();
+            renderEventPhotoPreviews();
+        }
+        function saveEvent() {
+            var title = $("ev_title").value.trim();
+            if (!title) { setMsg("ev_msg", "Title is required", "err"); return; }
+            var payload = {
+                title: title,
+                category: $("ev_category").value.trim(),
+                eventDate: $("ev_date").value,
+                location: $("ev_location").value.trim(),
+                description: $("ev_description").value.trim(),
+                status: $("ev_status").value,
+                featured: $("ev_featured").checked,
+                extra: collectExtra()
+            };
+            var req;
+            if (state.editingEventId) {
+                payload.id = state.editingEventId;
+                if (state.eventCoverDataUrl) payload.coverPhoto = state.eventCoverDataUrl;
+                payload.addPhotos = state.eventNewPhotos;
+                payload.removePhotoIds = state.eventRemovePhotoIds;
+                req = api("/api/events", { method: "PUT", body: JSON.stringify(payload) });
+            } else {
+                payload.coverPhoto = state.eventCoverDataUrl || null;
+                payload.photos = state.eventNewPhotos;
+                req = api("/api/events", { method: "POST", body: JSON.stringify(payload) });
+            }
+            $("ev_saveBtn").disabled = true;
+            req.then(function (d) {
+                $("ev_saveBtn").disabled = false;
+                setMsg("ev_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearEventForm(); fetchEvents(); }
+            }).catch(function (e) { $("ev_saveBtn").disabled = false; setMsg("ev_msg", e.message, "err"); });
         }
 
         // ═══════════════ Blog ═══════════════
@@ -3630,7 +3942,8 @@
             roles: loadRoles, audit: loadAudit, beta: loadBeta,
             verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {},
             churches: loadChurches, promises: loadPromises, testimonies: loadTestimonies,
-            prayer: loadPrayer, contactmsgs: loadContactMsgs, programs: loadPrograms, blog: loadBlog
+            prayer: loadPrayer, contactmsgs: loadContactMsgs, programs: loadPrograms, blog: loadBlog,
+            events: loadEvents
         };
 
         function wireThemeToggle() {
@@ -3767,7 +4080,27 @@
             $("ts_filter").onchange = fetchTestimonies; $("ts_refreshBtn").onclick = fetchTestimonies;
             $("pq_filter").onchange = fetchPrayer; $("pq_refreshBtn").onclick = fetchPrayer;
             $("cm_filter").onchange = fetchContactMsgs; $("cm_refreshBtn").onclick = fetchContactMsgs;
-            $("pg_saveBtn").onclick = saveProgram;
+            $("pg_saveBtn").onclick = saveProgram; $("pg_clearBtn").onclick = clearProgramForm;
+            $("ev_saveBtn").onclick = saveEvent; $("ev_clearBtn").onclick = clearEventForm;
+            $("ev_addExtraBtn").onclick = function () { addExtraRow(); };
+            $("ev_coverFile").onchange = function () {
+                var file = this.files[0];
+                if (!file) return;
+                compressImage(file, 1600, 0.82).then(function (dataUrl) {
+                    state.eventCoverDataUrl = dataUrl;
+                    $("ev_coverPreview").src = dataUrl;
+                    $("ev_coverPreviewContainer").style.display = "block";
+                }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+            };
+            $("ev_photoFiles").onchange = function () {
+                var files = Array.prototype.slice.call(this.files || []);
+                if (!files.length) return;
+                Promise.all(files.map(function (f) { return compressImage(f, 1600, 0.82); })).then(function (dataUrls) {
+                    dataUrls.forEach(function (dataUrl) { state.eventNewPhotos.push({ dataUrl: dataUrl, caption: "" }); });
+                    renderEventPhotoPreviews();
+                    $("ev_photoFiles").value = "";
+                }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+            };
             $("bl_saveBtn").onclick = saveBlogPost;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };

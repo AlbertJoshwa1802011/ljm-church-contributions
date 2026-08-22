@@ -1,0 +1,5 @@
+# Local-only Wrangler dev vars. Copy to `.dev.vars` (git-ignored, never
+# committed) to enable the admin.html dev-login bypass when running
+# `npx wrangler pages dev .` locally. See wrangler.jsonc's comment on why
+# this must never be set in the committed config.
+ALLOW_LEGACY_EMAIL_TOKEN=true
