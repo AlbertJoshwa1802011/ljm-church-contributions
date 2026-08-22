@@ -121,6 +121,28 @@ test("settings: PUT with an empty updates object is rejected", async () => {
   assert.match(res.message, /No updates/);
 });
 
+test("settings: rejects javascript:/data:/quote-breaking values for Watch & Listen media URLs (regression: stored XSS in v2/watch.html)", async () => {
+  const db = freshDb();
+  for (const key of ["sunday_live_url", "daily_prayer_url", "podcast_playlist_url"]) {
+    for (const payload of [
+      "javascript:alert(document.cookie)",
+      "data:text/html,<script>alert(1)</script>",
+      '"><img src=x onerror=alert(1)>',
+      "not-a-url-at-all"
+    ]) {
+      const res = await readJson(await settings.onRequestPut(makeContext({ db, body: { key, value: payload } })));
+      assert.equal(res.success, false, `${key}=${JSON.stringify(payload)} should be rejected`);
+      assert.match(res.message, /http/i);
+    }
+
+    // A real https URL is still accepted.
+    const ok = await readJson(await settings.onRequestPut(makeContext({
+      db, body: { key, value: "https://www.youtube.com/live/abcdef123456" }
+    })));
+    assert.equal(ok.success, true, ok.message);
+  }
+});
+
 test("settings: GET only returns whitelisted public keys, not every writable key", async () => {
   const db = freshDb();
   // tech_goal_amount is WRITABLE but not in PUBLIC_KEYS.

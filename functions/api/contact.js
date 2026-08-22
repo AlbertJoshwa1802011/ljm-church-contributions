@@ -21,6 +21,12 @@ function corsHeaders(extra) {
 
 const STATUSES = ["new", "acknowledged", "replied", "closed"];
 
+// No length cap existed here at all — an unbounded public POST body is a
+// storage/DoS surface (see CONTRIBUTING.md's "extremely long text" test case).
+const MAX_SHORT_LEN = 300;
+const MAX_BODY_LEN = 10000;
+function tooLong(value, max) { return typeof value === "string" && value.length > max; }
+
 function toContactMessage(row) {
   return {
     id: row.id,
@@ -74,6 +80,13 @@ export async function onRequestPost(context) {
     const message = String(body.message || "").trim();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ success: false, message: "A valid email is required" }, 400);
     if (!message) return json({ success: false, message: "Please include a message" }, 400);
+
+    if (tooLong(email, MAX_SHORT_LEN) || tooLong(body.name, MAX_SHORT_LEN) || tooLong(body.subject, MAX_SHORT_LEN)) {
+      return json({ success: false, message: `Name/email/subject must be ${MAX_SHORT_LEN} characters or fewer` }, 400);
+    }
+    if (tooLong(message, MAX_BODY_LEN)) {
+      return json({ success: false, message: `Message must be ${MAX_BODY_LEN} characters or fewer` }, 400);
+    }
 
     const ip = request.headers.get("CF-Connecting-IP") || null;
 

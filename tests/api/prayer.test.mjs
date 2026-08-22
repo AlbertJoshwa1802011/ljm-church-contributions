@@ -30,6 +30,27 @@ test("prayer: validation rejects an empty request", async () => {
   assert.equal(res.success, false);
 });
 
+test("prayer: rejects extremely long text (regression: no length cap previously existed)", async () => {
+  const db = freshDb();
+  const tooLongName = await readJson(await prayer.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/prayer",
+    body: { name: "x".repeat(301), request: "Please pray for my family." }
+  })));
+  assert.equal(tooLongName.success, false);
+
+  const tooLongRequest = await readJson(await prayer.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/prayer",
+    body: { request: "x".repeat(10001) }
+  })));
+  assert.equal(tooLongRequest.success, false);
+
+  const ok = await readJson(await prayer.onRequestPost(makeContext({
+    db, authToken: null, method: "POST", url: "https://test.local/api/prayer",
+    body: { request: "x".repeat(9000) }
+  })));
+  assert.equal(ok.success, true, ok.message);
+});
+
 test("prayer: inbox (GET) and status update (PUT) require manage_content", async () => {
   const db = freshDb();
   const submit = await readJson(await prayer.onRequestPost(makeContext({

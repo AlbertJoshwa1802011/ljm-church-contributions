@@ -20,6 +20,12 @@ function corsHeaders(extra) {
 
 const STATUSES = ["new", "praying", "contacted", "closed"];
 
+// No length cap existed here at all — an unbounded public POST body is a
+// storage/DoS surface (see CONTRIBUTING.md's "extremely long text" test case).
+const MAX_SHORT_LEN = 300;
+const MAX_BODY_LEN = 10000;
+function tooLong(value, max) { return typeof value === "string" && value.length > max; }
+
 function toPrayerRequest(row) {
   return {
     id: row.id,
@@ -70,6 +76,13 @@ export async function onRequestPost(context) {
     const body = await request.json();
     const requestText = String(body.request || "").trim();
     if (!requestText) return json({ success: false, message: "Please share what you'd like prayer for." }, 400);
+
+    if (tooLong(body.name, MAX_SHORT_LEN) || tooLong(body.email, MAX_SHORT_LEN) || tooLong(body.phone, MAX_SHORT_LEN)) {
+      return json({ success: false, message: `Name/email/phone must be ${MAX_SHORT_LEN} characters or fewer` }, 400);
+    }
+    if (tooLong(requestText, MAX_BODY_LEN)) {
+      return json({ success: false, message: `Prayer request must be ${MAX_BODY_LEN} characters or fewer` }, 400);
+    }
 
     const ip = request.headers.get("CF-Connecting-IP") || null;
 
