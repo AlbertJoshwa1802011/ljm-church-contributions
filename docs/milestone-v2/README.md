@@ -49,6 +49,10 @@ the owner's sign-off before implementation planning continues** — see §3 of t
 
 ## 👉 Current status — see [`15-major-milestone-status.md`](./15-major-milestone-status.md)
 
+**Real-user review pass:** [`17-user-review-readiness.md`](./17-user-review-readiness.md)
+— what was fixed to make V2 reviewable end-to-end as a real visitor, pages/
+viewports/round-trips verified, and tests actually executed.
+
 **All six planning documents are complete.** The flag-gated beta-flow port
 ([`11-v2-flow-implementation.md`](./11-v2-flow-implementation.md)) shipped Home,
 Our Giving, Events, Give Flow, and My Giving. Follow-up sessions implemented the
