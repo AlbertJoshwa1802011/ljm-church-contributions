@@ -127,6 +127,15 @@
 <script>
   (function () {
     function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    // Cuts at the last whole word before the limit so a post with no
+    // excerpt (falling back to the body) never ends mid-word on the card.
+    function truncate(s, limit) {
+      if (!s || s.length <= limit) return s || "";
+      var cut = s.slice(0, limit);
+      var lastSpace = cut.lastIndexOf(" ");
+      if (lastSpace > limit * 0.6) cut = cut.slice(0, lastSpace);
+      return cut + "…";
+    }
     var slug = new URLSearchParams(location.search).get('slug');
 
     if (slug) {
@@ -153,7 +162,7 @@
           grid.innerHTML = posts.map(function (p) {
             return '<a class="bl-card" href="/v2/blog.html?slug=' + encodeURIComponent(p.slug) + '" style="color:inherit;">' +
               '<div class="bl-cover"></div><div class="bl-body"><h3>' + esc(p.titleEn) + '</h3>' +
-              '<p>' + esc(p.excerptEn || (p.bodyEn || '').slice(0, 100)) + '</p></div></a>';
+              '<p>' + esc(p.excerptEn || truncate(p.bodyEn || '', 100)) + '</p></div></a>';
           }).join('');
         }).catch(function () { document.getElementById('blGrid').innerHTML = '<div class="bl-empty">Couldn\'t load posts right now.</div>'; });
     }

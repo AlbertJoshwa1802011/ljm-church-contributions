@@ -587,6 +587,15 @@
         var events = (data && data.events) || [];
         var grid = document.getElementById("eventsGrid");
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+        // Cuts at the last whole word before the limit so a long description
+        // never ends mid-word (real seeded VBS copy hit this — "...Three").
+        function truncate(s, limit) {
+          if (!s || s.length <= limit) return s || "";
+          var cut = s.slice(0, limit);
+          var lastSpace = cut.lastIndexOf(" ");
+          if (lastSpace > limit * 0.6) cut = cut.slice(0, lastSpace);
+          return cut + "…";
+        }
         function render() {
           var I = window.LJM_I18N;
           if (!events.length) {
@@ -596,7 +605,7 @@
           grid.innerHTML = events.slice(0, 3).map(function (e) {
             return '<div class="event-card"><div class="event-photo"></div><div class="event-body">' +
               '<div class="event-date">' + esc(e.eventDate || "") + '</div><h4>' + esc(e.title) + '</h4>' +
-              '<p>' + esc((e.description || "").slice(0, 100)) + '</p>' +
+              '<p>' + esc(truncate(e.description || "", 100)) + '</p>' +
               '<a class="btn btn-secondary btn-sm" style="margin-top:auto" href="/v2/events.html">' + I.t("home.eventLearnMore") + '</a></div></div>';
           }).join("");
         }

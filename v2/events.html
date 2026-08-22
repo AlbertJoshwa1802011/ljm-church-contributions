@@ -206,6 +206,15 @@
 <script>
 (function () {
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  // Cuts at the last whole word before the limit so a long description never
+  // ends mid-word (e.g. "...Three days of B") — real seeded VBS copy hit this.
+  function truncate(s, limit) {
+    if (!s || s.length <= limit) return s || "";
+    var cut = s.slice(0, limit);
+    var lastSpace = cut.lastIndexOf(" ");
+    if (lastSpace > limit * 0.6) cut = cut.slice(0, lastSpace);
+    return cut + "…";
+  }
   var GRADIENTS = ["pg1", "pg2", "pg3", "pg4"];
   function tile(coverPhoto, idx, extraClass) {
     var cls = "photo-tile " + (extraClass || "");
@@ -238,7 +247,7 @@
       var when = esc(e.eventDate || "") + (e.photoCount ? I.tn("events.photosSuffix", e.photoCount) : "");
       return '<div class="event-card">' + tile(e.coverPhoto, i, "event-cover") +
         '<div class="event-info">' + tags + '<h3>' + esc(e.title) + '</h3><div class="when">' + when + '</div>' +
-        (e.description ? '<p class="desc">' + esc(e.description.slice(0, 110)) + '</p>' : "") +
+        (e.description ? '<p class="desc">' + esc(truncate(e.description, 110)) + '</p>' : "") +
         (e.photoCount > 0 ? '<button class="event-link" data-id="' + e.id + '">' + I.t("events.viewFullGallery") + '</button>' : "") +
         '</div></div>';
     }).join("");
