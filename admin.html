@@ -457,7 +457,7 @@
            the outer positioning/visibility needs a local, admin-scoped ID rule. */
         #navGroupSheet { position: fixed; inset: 0; z-index: 12000; }
         #navGroupSheet[hidden] { display: none !important; }
-        #navGroupSheet .ljmh-sheet-backdrop { opacity: 0; transition: opacity .2s; }
+        #navGroupSheet .ljmh-sheet-backdrop { opacity: 0; transition: opacity .2s; touch-action: none; }
         #navGroupSheet.open .ljmh-sheet-backdrop { opacity: 1; }
         #navGroupSheet .ljmh-sheet { transform: translateY(100%); transition: transform .22s cubic-bezier(0.16,1,0.3,1); touch-action: none; }
         #navGroupSheet.open .ljmh-sheet { transform: translateY(0); }
@@ -1605,6 +1605,31 @@
                 el.classList.toggle("open", el.dataset.group === groupId);
             });
         }
+        // iOS Safari (and some Android browsers) keep rubber-band-scrolling the
+        // page behind a fixed overlay even with documentElement.style.overflow
+        // set to "hidden" — that alone doesn't stop touch-driven scroll of the
+        // underlying body. Pinning body itself with position:fixed removes it
+        // from the scrollable flow entirely, which is the reliable cross-browser
+        // fix; scroll position is restored on close.
+        var navSheetScrollY = 0;
+        function lockPageScroll() {
+            navSheetScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+            document.documentElement.style.overflow = "hidden";
+            document.body.style.position = "fixed";
+            document.body.style.top = "-" + navSheetScrollY + "px";
+            document.body.style.left = "0";
+            document.body.style.right = "0";
+            document.body.style.width = "100%";
+        }
+        function unlockPageScroll() {
+            document.documentElement.style.overflow = "";
+            document.body.style.position = "";
+            document.body.style.top = "";
+            document.body.style.left = "";
+            document.body.style.right = "";
+            document.body.style.width = "";
+            window.scrollTo(0, navSheetScrollY);
+        }
         function openGroupSheet(groupId) {
             var g = NAV_GROUPS.filter(function (gr) { return gr.id === groupId; })[0];
             if (!g) return;
@@ -1619,13 +1644,13 @@
             var sheet = $("navGroupSheet");
             sheet.hidden = false;
             requestAnimationFrame(function () { sheet.classList.add("open"); });
-            document.documentElement.style.overflow = "hidden";
+            lockPageScroll();
         }
         function closeGroupSheet() {
             var sheet = $("navGroupSheet");
             if (!sheet || sheet.hidden) return;
             sheet.classList.remove("open");
-            document.documentElement.style.overflow = "";
+            unlockPageScroll();
             setTimeout(function () {
                 sheet.hidden = true;
                 // Clear any inline transform/transition left over from a swipe-to-dismiss
