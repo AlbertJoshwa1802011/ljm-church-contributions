@@ -63,6 +63,11 @@ migration/deploy status.
 branch that auto-deploys), a Youth Ministry hub page, full Tamil content, and a
 Playwright E2E suite.
 
+**Reviewer login:** see
+[`13-reviewer-test-login.md`](./13-reviewer-test-login.md) — the milestone
+owner's real Google account already has convenient V2 access via existing,
+unmodified mechanisms (no code changes were needed).
+
 Before coding any phase:
 - Read [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) (the zero-breakage rules + test
   net) and [`05-backend-schema.md`](./05-backend-schema.md) (additive tables + API
