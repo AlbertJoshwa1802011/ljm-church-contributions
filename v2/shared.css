@@ -175,11 +175,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 .site-header .wrap { display: flex; align-items: center; gap: 14px; height: 72px; max-width: 1360px; }
 .brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 700; font-size: 1.05rem; flex-shrink: 0; }
-/* The LJM mark: a red heart with an open Bible — per the real site, not a
-   generic cross. Rendered as inline SVG (not emoji) for crisp, consistent
-   rendering across platforms/screenshots. */
+/* The LJM mark: dove, cross and open Bible resting on a red heart — the
+   ministry's supplied logo artwork (v2/assets/logo/ljm-logo.png), cropped
+   from the source graphic with the background keyed to transparent so it
+   sits cleanly on both light and dark headers. object-fit: contain keeps
+   the (slightly non-square) source image from stretching inside the fixed
+   34x34 box. */
 .brand-mark { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 34px; height: 34px; }
-.brand-mark svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 2px rgba(0,0,0,.15)); }
+.brand-mark img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.15)); }
 .brand small { display: block; font-family: var(--sans); font-weight: 500; font-size: .66rem; color: var(--text-faint); letter-spacing: .02em; }
 .primary-nav { display: flex; gap: 14px; flex: 1; min-width: 0; }
 .primary-nav a { font-size: .83rem; font-weight: 500; color: var(--text-soft); white-space: nowrap; }
