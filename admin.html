@@ -457,7 +457,7 @@
            the outer positioning/visibility needs a local, admin-scoped ID rule. */
         #navGroupSheet { position: fixed; inset: 0; z-index: 12000; }
         #navGroupSheet[hidden] { display: none !important; }
-        #navGroupSheet .ljmh-sheet-backdrop { opacity: 0; transition: opacity .2s; }
+        #navGroupSheet .ljmh-sheet-backdrop { opacity: 0; transition: opacity .2s; touch-action: none; }
         #navGroupSheet.open .ljmh-sheet-backdrop { opacity: 1; }
         #navGroupSheet .ljmh-sheet { transform: translateY(100%); transition: transform .22s cubic-bezier(0.16,1,0.3,1); touch-action: none; }
         #navGroupSheet.open .ljmh-sheet { transform: translateY(0); }
@@ -1118,7 +1118,7 @@
             <div class="section" id="section-programs">
                 <div class="page-head"><h2>Programs &amp; service times</h2><p>Weekly/recurring programs, shown per church on the public site.</p></div>
                 <div class="card">
-                    <h3>Add a program</h3>
+                    <h3 id="pg_formTitle">Add a program</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Title (English) *</label><input class="input" id="pg_titleEn"></div>
                         <div><label class="f-label">Church</label><select class="input" id="pg_churchId"><option value="">Ministry-wide</option></select></div>
@@ -1131,10 +1131,12 @@
                         <div><label class="f-label">End time</label><input class="input" type="time" id="pg_endTime"></div>
                         <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. youth"></div>
                         <div><label class="f-label">Location</label><input class="input" id="pg_location"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="pg_status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Description (English)</label><textarea class="input" id="pg_descriptionEn" rows="2"></textarea></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="pg_saveBtn">Add program</button>
+                        <button class="btn btn-outline" id="pg_clearBtn" type="button">Clear</button>
                         <span class="msg" id="pg_msg"></span>
                     </div>
                 </div>
@@ -1603,6 +1605,31 @@
                 el.classList.toggle("open", el.dataset.group === groupId);
             });
         }
+        // iOS Safari (and some Android browsers) keep rubber-band-scrolling the
+        // page behind a fixed overlay even with documentElement.style.overflow
+        // set to "hidden" — that alone doesn't stop touch-driven scroll of the
+        // underlying body. Pinning body itself with position:fixed removes it
+        // from the scrollable flow entirely, which is the reliable cross-browser
+        // fix; scroll position is restored on close.
+        var navSheetScrollY = 0;
+        function lockPageScroll() {
+            navSheetScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+            document.documentElement.style.overflow = "hidden";
+            document.body.style.position = "fixed";
+            document.body.style.top = "-" + navSheetScrollY + "px";
+            document.body.style.left = "0";
+            document.body.style.right = "0";
+            document.body.style.width = "100%";
+        }
+        function unlockPageScroll() {
+            document.documentElement.style.overflow = "";
+            document.body.style.position = "";
+            document.body.style.top = "";
+            document.body.style.left = "";
+            document.body.style.right = "";
+            document.body.style.width = "";
+            window.scrollTo(0, navSheetScrollY);
+        }
         function openGroupSheet(groupId) {
             var g = NAV_GROUPS.filter(function (gr) { return gr.id === groupId; })[0];
             if (!g) return;
@@ -1617,13 +1644,13 @@
             var sheet = $("navGroupSheet");
             sheet.hidden = false;
             requestAnimationFrame(function () { sheet.classList.add("open"); });
-            document.documentElement.style.overflow = "hidden";
+            lockPageScroll();
         }
         function closeGroupSheet() {
             var sheet = $("navGroupSheet");
             if (!sheet || sheet.hidden) return;
             sheet.classList.remove("open");
-            document.documentElement.style.overflow = "";
+            unlockPageScroll();
             setTimeout(function () {
                 sheet.hidden = true;
                 // Clear any inline transform/transition left over from a swipe-to-dismiss
@@ -3260,26 +3287,56 @@
         }
 
         // ═══════════════ Programs ═══════════════
+        state.programsCache = [];
         function loadPrograms() { if (state.churchesCache && state.churchesCache.length) populateChurchSelect(); else fetchChurches(); fetchPrograms(); }
         function fetchPrograms() {
             api("/api/programs?all=1").then(function (d) {
                 if (!d.success) { setMsg("pg_msg", d.message || "No access", "err"); return; }
+                state.programsCache = d.programs || [];
                 var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                 var tb = $("pg_table").querySelector("tbody");
-                tb.innerHTML = (d.programs || []).map(function (p) {
+                tb.innerHTML = state.programsCache.map(function (p) {
                     var when = (p.dayOfWeek !== null && p.dayOfWeek !== undefined ? days[p.dayOfWeek] + " " : "") + (p.startTime || "");
                     return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.churchNameEn || "Ministry-wide") + "</td>" +
                         "<td>" + esc(when || "—") + "</td>" +
                         "<td><span class='pill " + (p.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
-                        '<td><button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
+                        '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + p.id + '">Edit</button> <button class="mini-btn danger" data-act="delete" data-id="' + p.id + '">Delete</button></td></tr>';
                 }).join("") || '<tr><td colspan="5" class="empty">No programs yet.</td></tr>';
-                tb.querySelectorAll("[data-id]").forEach(function (b) {
+                tb.querySelectorAll("[data-act='edit']").forEach(function (b) { b.onclick = function () { editProgram(Number(b.dataset.id)); }; });
+                tb.querySelectorAll("[data-act='delete']").forEach(function (b) {
                     b.onclick = function () {
                         if (!confirm("Delete this program?")) return;
-                        api("/api/programs?id=" + b.dataset.id, { method: "DELETE" }).then(function (d2) { setMsg("pg_msg", d2.message, d2.success ? "ok" : "err"); fetchPrograms(); });
+                        var id = Number(b.dataset.id);
+                        api("/api/programs?id=" + id, { method: "DELETE" }).then(function (d2) {
+                            setMsg("pg_msg", d2.message, d2.success ? "ok" : "err");
+                            if (d2.success && state.editingProgramId === id) clearProgramForm();
+                            fetchPrograms();
+                        });
                     };
                 });
             }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
+        }
+        function editProgram(id) {
+            var p = state.programsCache.filter(function (x) { return x.id === id; })[0];
+            if (!p) return;
+            state.editingProgramId = id;
+            $("pg_formTitle").textContent = "Edit program — " + p.titleEn;
+            $("pg_titleEn").value = p.titleEn || "";
+            $("pg_churchId").value = p.churchId || "";
+            $("pg_dayOfWeek").value = (p.dayOfWeek === null || p.dayOfWeek === undefined) ? "" : String(p.dayOfWeek);
+            $("pg_startTime").value = p.startTime || ""; $("pg_endTime").value = p.endTime || "";
+            $("pg_ministryArea").value = p.ministryArea || ""; $("pg_location").value = p.location || "";
+            $("pg_descriptionEn").value = p.descriptionEn || "";
+            $("pg_status").value = p.status === "inactive" ? "inactive" : "active";
+            $("pg_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        function clearProgramForm() {
+            state.editingProgramId = null;
+            $("pg_formTitle").textContent = "Add a program";
+            ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn"].forEach(function (id) { $(id).value = ""; });
+            $("pg_dayOfWeek").value = ""; $("pg_churchId").value = ""; $("pg_status").value = "active";
+            $("pg_saveBtn").textContent = "Add program";
         }
         function saveProgram() {
             var titleEn = $("pg_titleEn").value.trim();
@@ -3289,15 +3346,13 @@
                 dayOfWeek: $("pg_dayOfWeek").value === "" ? null : Number($("pg_dayOfWeek").value),
                 startTime: $("pg_startTime").value, endTime: $("pg_endTime").value,
                 ministryArea: $("pg_ministryArea").value.trim(), location: $("pg_location").value.trim(),
-                descriptionEn: $("pg_descriptionEn").value.trim()
+                descriptionEn: $("pg_descriptionEn").value.trim(), status: $("pg_status").value
             };
-            api("/api/programs", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+            var isEdit = !!state.editingProgramId;
+            if (isEdit) body.id = state.editingProgramId;
+            api("/api/programs", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
                 setMsg("pg_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn"].forEach(function (id) { $(id).value = ""; });
-                    $("pg_dayOfWeek").value = ""; $("pg_churchId").value = "";
-                    fetchPrograms();
-                }
+                if (d.success) { clearProgramForm(); fetchPrograms(); }
             }).catch(function (e) { setMsg("pg_msg", e.message, "err"); });
         }
 
@@ -3828,6 +3883,7 @@
             $("pq_filter").onchange = fetchPrayer; $("pq_refreshBtn").onclick = fetchPrayer;
             $("cm_filter").onchange = fetchContactMsgs; $("cm_refreshBtn").onclick = fetchContactMsgs;
             $("pg_saveBtn").onclick = saveProgram;
+            $("pg_clearBtn").onclick = clearProgramForm;
             $("bl_saveBtn").onclick = saveBlogPost;
             $("a_applyBtn").onclick = function () { state.auditOffset = 0; fetchAudit(); };
             $("a_prevBtn").onclick = function () { state.auditOffset = Math.max(0, state.auditOffset - 50); fetchAudit(); };
