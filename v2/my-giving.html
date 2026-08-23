@@ -57,7 +57,7 @@
       <a href="/v2/blog.html">Blog</a>
       <a href="/v2/testimonies.html">Testimonies</a>
       <a href="/v2/programs.html">Programs</a>
-      <a href="/our-giving.html">Our Giving</a>
+      <a href="/v2/our-giving.html">Our Giving</a>
     </nav>
     <div class="header-actions">
       <button class="lang-toggle" type="button">TA</button>
@@ -67,12 +67,12 @@
           <span class="user-avatar" id="userAvatar">··</span>
           <span class="user-meta">
             <span class="nm" id="userName"></span>
-            <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+            <a href="/v2/my-giving.html" class="mygiving-link">My Giving</a>
             <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
           </span>
         </div>
       </div>
-      <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+      <a href="/v2/give-flow.html" class="btn btn-primary btn-sm">Give</a>
       <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
@@ -94,7 +94,7 @@
     <a href="/v2/blog.html">Blog</a>
     <a href="/v2/testimonies.html">Testimonies</a>
     <a href="/v2/programs.html">Programs</a>
-    <a href="/our-giving.html">Our Giving</a>
+    <a href="/v2/our-giving.html">Our Giving</a>
   </nav>
   <div class="nav-drawer-section nav-drawer-auth">
     <div id="signinBtnDrawer"></div>
@@ -102,7 +102,7 @@
       <span class="user-avatar" id="userAvatarDrawer">··</span>
       <span class="user-meta">
         <span class="nm" id="userNameDrawer"></span>
-        <a href="/my-giving.html" class="mygiving-link">My Giving</a>
+        <a href="/v2/my-giving.html" class="mygiving-link">My Giving</a>
         <a href="/admin.html" class="admin-link" id="adminLinkDrawer">⚡ Admin Access</a>
       </span>
     </div>
@@ -114,7 +114,7 @@
     </button>
   </div>
   <div class="nav-drawer-actions">
-    <a href="/give-flow.html" class="btn btn-primary btn-sm">Give</a>
+    <a href="/v2/give-flow.html" class="btn btn-primary btn-sm">Give</a>
   </div>
 </div>
 <script>
@@ -195,7 +195,7 @@
       '<section class="tight"><div class="wrap"><div class="gate-card">' +
       '<div class="ic">👋</div><h2>Hi ' + esc(profile.name || "") + '!</h2>' +
       '<p>We couldn\'t find a giving record linked to this Google account yet. If you\'ve given before under a different name or email, contact the church office to get it linked — once linked, your history will show up here automatically.</p>' +
-      '<div class="signin-slot-wrap"><a href="/give-flow.html" class="btn btn-primary">Make your first gift</a></div>' +
+      '<div class="signin-slot-wrap"><a href="/v2/give-flow.html" class="btn btn-primary">Make your first gift</a></div>' +
       '</div></div></section>';
   }
 
@@ -209,7 +209,7 @@
     var html = '';
     html += '<section class="mg-hero"><div class="wrap"><span class="mg-avatar">' + esc(initials(profile.member)) + '</span>' +
       '<div><h1>Welcome back, ' + esc((profile.member || profile.name || "").split(" ")[0]) + '.</h1><p>' + esc(profile.member) + '</p></div>' +
-      '<a href="/give-flow.html" class="btn btn-primary">Give Again</a></div></section>';
+      '<a href="/v2/give-flow.html" class="btn btn-primary">Give Again</a></div></section>';
 
     html += '<section class="tight"><div class="wrap"><div class="mg-stats">' +
       '<div class="mg-stat-card"><div class="lbl">All-Time Total</div><div class="val tabular">' + inr(total) + '</div><div class="sub">Across ' + gifts.length + ' gift' + (gifts.length === 1 ? "" : "s") + '</div></div>' +
@@ -225,7 +225,7 @@
       }).join("") : '<div class="mg-row"><span style="color:var(--text-faint)">No gifts recorded yet.</span></div>') +
       '</div></div></section>';
 
-    html += '<section class="mg-cta-band"><div class="wrap"><h2>Keep the light shining.</h2><p>Every gift — big or small — helps both churches serve Coimbatore and beyond.</p><a href="/give-flow.html" class="btn btn-primary">Give Now</a></div></section>';
+    html += '<section class="mg-cta-band"><div class="wrap"><h2>Keep the light shining.</h2><p>Every gift — big or small — helps both churches serve Coimbatore and beyond.</p><a href="/v2/give-flow.html" class="btn btn-primary">Give Now</a></div></section>';
 
     document.getElementById("pageRoot").innerHTML = html;
   }
