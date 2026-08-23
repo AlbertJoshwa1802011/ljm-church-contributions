@@ -181,10 +181,14 @@ button { font-family: inherit; cursor: pointer; }
 .brand-mark { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 34px; height: 34px; }
 .brand-mark svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 2px rgba(0,0,0,.15)); }
 .brand small { display: block; font-family: var(--sans); font-weight: 500; font-size: .66rem; color: var(--text-faint); letter-spacing: .02em; }
-.primary-nav { display: flex; gap: 14px; flex: 1; min-width: 0; }
+/* The traditional always-visible link row is retired in favor of the
+   hamburger + drawer below (same destinations, same routing) — kept as a
+   real rule rather than deleted so any page-specific override still has
+   something to target. */
+.primary-nav { display: none; gap: 14px; flex: 1; min-width: 0; }
 .primary-nav a { font-size: .83rem; font-weight: 500; color: var(--text-soft); white-space: nowrap; }
 .primary-nav a:hover, .primary-nav a.current { color: var(--accent); }
-.header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
 .church-switch {
   display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--bg-soft); border: 1px solid var(--border);
   font-size: .74rem; font-weight: 600;
@@ -195,31 +199,27 @@ button { font-family: inherit; cursor: pointer; }
   font-size: .74rem; font-weight: 700; color: var(--text-soft); border: 1px solid var(--border);
   border-radius: 999px; padding: 6px 12px; letter-spacing: .02em;
 }
-@media (max-width: 980px) { .primary-nav, .church-switch, .lang-toggle { display: none; } }
-/* The header copies of church-switch/lang-toggle are meant to disappear
-   below 980px (they move into the drawer) — but that blanket rule was also
-   silently hiding the *drawer's own* copies of the same classes. Put them
-   back for anything nested inside .nav-drawer. */
+/* Header copies of church-switch/lang-toggle move into the drawer at every
+   width now (not just below 980px) — this blanket rule also silently hides
+   the *drawer's own* copies of the same classes, so put them back for
+   anything nested inside .nav-drawer. */
+.church-switch, .lang-toggle { display: none; }
 .nav-drawer .lang-toggle { display: block; }
 .nav-drawer .church-switch { display: flex; }
 
-/* ---- Mobile/tablet nav: hamburger + slide-in drawer (≤980px only) ----
-   The button only renders below 980px, and the drawer/backdrop are
-   position:fixed + hidden unless .open — nothing here can shift desktop
-   layout at any width. */
+/* ---- Nav: hamburger + slide-in drawer, at every viewport width ----
+   The header keeps only the brand + hamburger on mobile *and* desktop —
+   everything else (nav links, sign-in/admin chip, language, church switch,
+   Pray/Give) lives in the drawer, which is position:fixed + hidden unless
+   .open, so nothing here can shift the header layout. */
 .hamburger-btn {
-  display: none; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   width: 38px; height: 38px; border-radius: 10px;
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
   flex-shrink: 0; cursor: pointer; padding: 0;
 }
 .hamburger-btn svg { width: 19px; height: 19px; }
-@media (max-width: 980px) { .hamburger-btn { display: flex; } }
-/* Below 980px the header keeps only the brand + hamburger — everything else
-   (sign-in/admin chip, language, church switch, Pray/Give) moves into the
-   drawer so the header never has to squeeze more than two items into a
-   narrow viewport. */
-@media (max-width: 980px) { .header-actions > *:not(.hamburger-btn) { display: none; } }
+.header-actions > *:not(.hamburger-btn) { display: none; }
 
 .nav-drawer-backdrop {
   position: fixed; inset: 0; background: rgba(10, 12, 16, .5);

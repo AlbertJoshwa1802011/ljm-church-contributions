@@ -7,22 +7,34 @@
 <link rel="stylesheet" href="shared.css" />
 <style>
   /* ---- Home-page-specific composition ---- */
-  .hero-banner { position: relative; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--bg-soft); }
-  .hero-banner svg, .hero-banner picture, .hero-banner img {
-    display: block; width: 100%; height: clamp(150px, 24vw, 230px);
+  .hero-banner { position: relative; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--bg-soft); padding: 24px 0; }
+  /* The real photo carries its own crest/verse/service-time text baked in,
+     so it's shown at (near) its native size rather than cropped to fill a
+     wide banner strip — width:100%/height:auto keeps its aspect ratio
+     exact and guarantees nothing is ever cropped, on any breakpoint. */
+  .hero-banner .hero-photo {
+    display: block; width: 100%; max-width: 900px; height: auto; margin: 0 auto;
+  }
+  /* Only one photo exists per theme today (see docs/milestone-v2 — future
+     admin upload replaces these two files, not this markup). Swap with the
+     same data-theme mechanism used for the rest of the site's colors
+     (:root[data-theme] blocks above), falling back to the illustrated SVG
+     if a photo is missing entirely. */
+  .hero-banner .hero-photo-dark { display: none; }
+  @media (prefers-color-scheme: dark) {
+    .hero-banner .hero-photo-light { display: none; }
+    .hero-banner .hero-photo-dark { display: block; }
+  }
+  :root[data-theme="dark"] .hero-banner .hero-photo-light { display: none; }
+  :root[data-theme="dark"] .hero-banner .hero-photo-dark { display: block; }
+  :root[data-theme="light"] .hero-banner .hero-photo-light { display: block; }
+  :root[data-theme="light"] .hero-banner .hero-photo-dark { display: none; }
+  .hero-banner svg {
+    display: none; width: 100%; height: clamp(150px, 24vw, 230px);
     object-fit: cover; object-position: center;
   }
-  /* Real photo (once supplied) takes over automatically; the illustrated
-     SVG is only shown if the photo file for this breakpoint is missing —
-     see docs/milestone-v2/09-auth-demo-theme-verse-hero-spec.md §5. */
-  .hero-banner svg { display: none; }
-  .hero-banner-cap {
-    position: absolute; left: 0; right: 0; bottom: 12px; text-align: center;
-    font-family: var(--sans); font-weight: 700; font-size: .72rem; letter-spacing: .05em; text-transform: uppercase;
-    color: #fff; text-shadow: 0 1px 5px rgba(0,0,0,.4);
-  }
-  @media (max-width: 980px) { .hero-banner svg, .hero-banner picture, .hero-banner img { height: clamp(200px, 42vw, 300px); } }
-  @media (max-width: 640px) { .hero-banner svg, .hero-banner picture, .hero-banner img { height: 230px; } .hero-banner-cap { font-size: .68rem; } }
+  @media (max-width: 980px) { .hero-banner svg { height: clamp(200px, 42vw, 300px); } }
+  @media (max-width: 640px) { .hero-banner svg { height: 230px; } .hero-banner .hero-photo { max-width: 100%; } }
 
   .hero {
     padding: 76px 0 60px;
@@ -169,6 +181,7 @@
     <a href="/v2/programs.html">Programs</a>
     <a href="/our-giving.html">Our Giving</a>
   </nav>
+  <div class="nav-drawer-section"><button class="lang-toggle" type="button" style="display:block;width:100%;">TA</button></div>
   <div class="nav-drawer-section nav-drawer-auth">
     <div id="signinBtnDrawer"></div>
     <div class="user-chip" id="userChipDrawer">
@@ -208,11 +221,8 @@
 </script>
 
 <section class="hero-banner">
-  <picture>
-    <source media="(max-width: 640px)" srcset="assets/hero/hero-mobile.jpg">
-    <source media="(max-width: 980px)" srcset="assets/hero/hero-tablet.jpg">
-    <img src="assets/hero/hero-desktop.jpg" alt="Light of Jesus Ministry — Church of Light and City Worship Center" id="heroPhoto" onerror="this.closest('picture').style.display='none'; document.getElementById('heroFallback').style.display='block';">
-  </picture>
+  <img class="hero-photo hero-photo-light" id="heroPhotoLight" src="assets/hero/hero-light.jpg" alt="Light of Jesus Ministry family with Sunday service times (6:00–8:30 AM and 10:00 AM–12:00 PM) and location" onerror="this.style.display='none'; document.getElementById('heroFallback').style.display='block';">
+  <img class="hero-photo hero-photo-dark" id="heroPhotoDark" src="assets/hero/hero-dark.jpg" alt="Light of Jesus Ministry family with Sunday service times (6:00–8:30 AM and 10:00 AM–12:00 PM) and location" onerror="this.style.display='none'; document.getElementById('heroFallback').style.display='block';">
   <svg id="heroFallback" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of two church buildings under a radiant sky, representing Church of Light and City Worship Center">
     <defs>
       <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
@@ -255,7 +265,6 @@
       <line x1="20" y1="15.9" x2="20" y2="25.3" stroke="#C1443A" stroke-width="0.7"/>
     </g>
   </svg>
-  <div class="hero-banner-cap">Church of Light &middot; City Worship Center — Coimbatore</div>
 </section>
 
 <section class="hero tight">
