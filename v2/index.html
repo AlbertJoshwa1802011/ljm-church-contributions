@@ -537,28 +537,87 @@
 </script>
 <script>
   (function () {
-    // Real events — production has none published yet, so this shows a
-    // graceful empty state rather than a fabricated "happening now" card.
-    fetch("/api/events?_t=" + Date.now(), { cache: "no-store" })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var events = (data && data.events) || [];
-        var grid = document.getElementById("eventsGrid");
-        if (!events.length) {
-          grid.innerHTML = '<div class="events-empty" style="grid-column:1/-1">No upcoming events posted yet — check back soon, or see the full <a href="/events.html">Events page</a>.</div>';
-          return;
-        }
-        function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-        grid.innerHTML = events.slice(0, 3).map(function (e) {
-          return '<div class="event-card"><div class="event-photo"></div><div class="event-body">' +
-            '<div class="event-date">' + esc(e.eventDate || "") + '</div><h4>' + esc(e.title) + '</h4>' +
-            '<p>' + esc((e.description || "").slice(0, 100)) + '</p>' +
-            '<a class="btn btn-secondary btn-sm" style="margin-top:auto" href="/events.html">Learn more →</a></div></div>';
-        }).join("");
-      })
-      .catch(function () {
-        document.getElementById("eventsGrid").innerHTML = '<div class="events-empty" style="grid-column:1/-1">See the full <a href="/events.html">Events page</a>.</div>';
+    // Real "What's Happening" — merges dated events (/api/events) with active
+    // recurring programs (/api/programs), so a weekly service added in Admin's
+    // Programs tab shows up here too, not just on the standalone Programs page.
+    // LJM runs on IST; a program's dayOfWeek/startTime are plain local (IST)
+    // values with no timezone info, so "upcoming" is computed against IST wall
+    // time rather than the visitor's (or server's) local/UTC clock.
+    var DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    var IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+    function istNow() {
+      // Fields read back via the UTC getters below are IST wall-clock values.
+      return new Date(Date.now() + IST_OFFSET_MS);
+    }
+
+    function nextProgramOccurrence(p, nowIst) {
+      if (p.dayOfWeek === null || p.dayOfWeek === undefined) return null;
+      var parts = (p.startTime || "0:0").split(":");
+      var startH = Number(parts[0]) || 0, startM = Number(parts[1]) || 0;
+      var diff = (Number(p.dayOfWeek) - nowIst.getUTCDay() + 7) % 7;
+      if (diff === 0 && p.startTime && (startH * 60 + startM) < (nowIst.getUTCHours() * 60 + nowIst.getUTCMinutes())) {
+        diff = 7; // today's occurrence already started — roll to next week
+      }
+      return Date.UTC(nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate() + diff, startH, startM);
+    }
+
+    function eventSortKey(e) {
+      var m = e.eventDate && /^(\d{4})-(\d{2})-(\d{2})/.exec(e.eventDate);
+      return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+    }
+
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+    Promise.all([
+      fetch("/api/events?_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
+      fetch("/api/programs?_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); })
+    ]).then(function (res) {
+      var events = (res[0] && res[0].events) || [];
+      var programs = (res[1] && res[1].programs) || [];
+      var nowIst = istNow();
+      var todayStartIst = Date.UTC(nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate());
+
+      var items = [];
+      events.forEach(function (e) {
+        var key = eventSortKey(e);
+        if (key !== null && key < todayStartIst) return; // already happened — not "upcoming"
+        items.push({
+          title: e.title, description: e.description, churchNameEn: e.churchNameEn,
+          dateLabel: e.eventDate || "", link: "/events.html", linkText: "Learn more →",
+          sortKey: key === null ? Infinity : key
+        });
       });
+      // Only status=active programs are returned by /api/programs (no ?all=1) —
+      // a one-off/other program (no dayOfWeek) has no date to place it by, so it
+      // stays on the full Programs page rather than showing here with a guess.
+      programs.forEach(function (p) {
+        var occurrence = nextProgramOccurrence(p, nowIst);
+        if (occurrence === null) return;
+        items.push({
+          title: p.titleEn, description: p.descriptionEn, churchNameEn: p.churchNameEn,
+          dateLabel: DAY_ABBR[p.dayOfWeek] + (p.startTime ? " · " + p.startTime : ""),
+          link: "/v2/programs.html", linkText: "See schedule →",
+          sortKey: occurrence
+        });
+      });
+      items.sort(function (a, b) { return a.sortKey - b.sortKey; });
+
+      var grid = document.getElementById("eventsGrid");
+      if (!items.length) {
+        grid.innerHTML = '<div class="events-empty" style="grid-column:1/-1">No upcoming events or programs posted yet — check back soon, or see the full <a href="/events.html">Events page</a>.</div>';
+        return;
+      }
+      grid.innerHTML = items.slice(0, 3).map(function (item) {
+        var churchTag = item.churchNameEn ? " · " + esc(item.churchNameEn) : "";
+        return '<div class="event-card"><div class="event-photo"></div><div class="event-body">' +
+          '<div class="event-date">' + esc(item.dateLabel) + churchTag + '</div><h4>' + esc(item.title) + '</h4>' +
+          '<p>' + esc((item.description || "").slice(0, 100)) + '</p>' +
+          '<a class="btn btn-secondary btn-sm" style="margin-top:auto" href="' + item.link + '">' + item.linkText + '</a></div></div>';
+      }).join("");
+    }).catch(function () {
+      document.getElementById("eventsGrid").innerHTML = '<div class="events-empty" style="grid-column:1/-1">See the full <a href="/events.html">Events page</a>.</div>';
+    });
   })();
 </script>
 <script>
