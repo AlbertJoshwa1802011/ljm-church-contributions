@@ -137,34 +137,52 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--surface);
 }
 .signin-btn .g { width: 18px; height: 18px; border-radius: 50%; background: var(--bg-soft); display: flex; align-items: center; justify-content: center; font-size: .68rem; }
-.user-chip { display: none; align-items: center; gap: 8px; }
+.user-chip { display: none; position: relative; align-items: center; }
 .user-chip.on { display: flex; }
 .signin-btn.off { display: none; }
+.user-chip-trigger {
+  display: flex; align-items: center; gap: 8px; background: none; border: none; padding: 4px 6px 4px 4px;
+  border-radius: 999px; cursor: pointer; font: inherit; color: inherit;
+}
+.user-chip-trigger:hover { background: var(--bg-soft); }
 .user-avatar {
   width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-deep);
   display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .76rem; font-family: var(--sans); flex-shrink: 0;
-  cursor: pointer;
+  overflow: hidden;
 }
-.user-meta { display: flex; flex-direction: column; line-height: 1.25; }
-.user-meta .nm { font-size: .82rem; font-weight: 700; color: var(--text); }
-.admin-link {
-  display: none; align-items: center; gap: 4px; font-size: .7rem; font-weight: 700;
-  color: var(--gold); background: var(--gold-soft); padding: 3px 9px; border-radius: 999px; margin-top: 2px; width: fit-content;
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.user-chip-trigger .nm { font-size: .82rem; font-weight: 700; color: var(--text); }
+@media (max-width: 640px) { .user-chip-trigger .nm { display: none; } }
+
+/* Dropdown/popover account menu — opened via .user-chip.menu-open, toggled
+   from v2/auth.js (outside click / Escape close it). */
+.user-menu {
+  display: none; flex-direction: column; gap: 2px; position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+  min-width: 220px; max-width: min(280px, 84vw); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.18); padding: 8px;
 }
-.admin-link.on { display: flex; }
-/* Visible whenever the user-chip itself is visible (i.e. whenever signed
-   in) — no separate on/off state needed since the parent .user-chip.on
-   already gates visibility for everything inside .user-meta. */
-.mygiving-link { display: block; font-size: .72rem; font-weight: 600; color: var(--accent); margin-top: 2px; }
-@media (max-width: 640px) { .user-meta { display: none; } }
+.user-chip.menu-open .user-menu { display: flex; }
+.user-menu-head { padding: 6px 8px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.user-menu-name { display: block; font-size: .86rem; font-weight: 700; color: var(--text); }
+.user-menu-email { display: block; font-size: .74rem; color: var(--text-faint); margin-top: 2px; word-break: break-all; }
+.user-menu-link {
+  display: block; width: 100%; text-align: left; font-size: .82rem; font-weight: 600; color: var(--text-soft);
+  padding: 8px; border-radius: 8px; background: none; border: none; cursor: pointer; font-family: inherit;
+}
+.user-menu-link:hover { background: var(--bg-soft); color: var(--accent); }
+.admin-link { display: none; color: var(--gold); }
+.admin-link.on { display: block; }
+.user-menu-signout { color: #c0392b; }
 
 /* Auth slot repeated inside the nav drawer (header copy is hidden ≤980px) —
-   keep name + admin pill visible here even on small phones since the
+   keep the trigger's name visible here even on small phones since the
    drawer itself has plenty of width. */
 .nav-drawer-auth { padding-bottom: 4px; }
 .nav-drawer-auth .signin-btn { width: 100%; justify-content: center; padding: 10px 14px; }
 .nav-drawer-auth .user-chip { width: 100%; }
-.nav-drawer-auth .user-meta { display: flex; }
+.nav-drawer-auth .user-chip-trigger { width: 100%; }
+.nav-drawer-auth .user-chip-trigger .nm { display: block; }
+.nav-drawer-auth .user-menu { left: 0; right: 0; min-width: 0; max-width: none; }
 
 /* ---- Header ---- */
 .site-header {
