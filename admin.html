@@ -459,9 +459,16 @@
         #navGroupSheet[hidden] { display: none !important; }
         #navGroupSheet .ljmh-sheet-backdrop { opacity: 0; transition: opacity .2s; }
         #navGroupSheet.open .ljmh-sheet-backdrop { opacity: 1; }
-        #navGroupSheet .ljmh-sheet { transform: translateY(100%); transition: transform .22s cubic-bezier(0.16,1,0.3,1); }
+        #navGroupSheet .ljmh-sheet { transform: translateY(100%); transition: transform .22s cubic-bezier(0.16,1,0.3,1); touch-action: none; }
         #navGroupSheet.open .ljmh-sheet { transform: translateY(0); }
-        #navGroupSheetTitle { font-family: var(--serif); font-weight: 700; font-size: 15px; color: var(--text); padding: 0 4px 12px; }
+        #navGroupSheet .ngs-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 0 12px; }
+        #navGroupSheetTitle { font-family: var(--serif); font-weight: 700; font-size: 15px; color: var(--text); padding: 0 4px; }
+        .ngs-close-btn {
+            flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+            border: 1px solid var(--border); background: var(--surface); color: var(--text);
+            font-size: 14px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .ngs-close-btn:active { background: var(--accent-soft); }
 
         /* ── Search trigger (top-right, next to profile) ── */
         .search-trigger-btn {
@@ -1303,9 +1310,12 @@
         <!-- Mobile: tapping a group in #mobileNav opens this sheet with that group's pages -->
         <div id="navGroupSheet" hidden>
             <div class="ljmh-sheet-backdrop"></div>
-            <div class="ljmh-sheet" role="dialog" aria-label="Section pages">
-                <div class="ljmh-sheet-grip"></div>
-                <div id="navGroupSheetTitle"></div>
+            <div class="ljmh-sheet" role="dialog" aria-modal="true" aria-label="Section pages">
+                <div class="ljmh-sheet-grip" aria-hidden="true"></div>
+                <div class="ngs-head">
+                    <div id="navGroupSheetTitle"></div>
+                    <button type="button" class="ngs-close-btn" id="navGroupSheetCloseBtn" aria-label="Close">✕</button>
+                </div>
                 <div class="ljmh-sheet-grid" id="navGroupSheetGrid"></div>
             </div>
         </div>
@@ -1614,7 +1624,55 @@
             if (!sheet || sheet.hidden) return;
             sheet.classList.remove("open");
             document.documentElement.style.overflow = "";
-            setTimeout(function () { sheet.hidden = true; }, 220);
+            setTimeout(function () {
+                sheet.hidden = true;
+                // Clear any inline transform/transition left over from a swipe-to-dismiss
+                // drag so the next open starts clean from the stylesheet's closed state.
+                var sheetEl = sheet.querySelector(".ljmh-sheet");
+                if (sheetEl) { sheetEl.style.transform = ""; sheetEl.style.transition = ""; }
+            }, 220);
+        }
+        // Swipe-to-dismiss: drag the sheet down past a small threshold to close it.
+        // Bound once (the element is reused across opens, only its contents change).
+        function setupNavSheetGestures(sheet) {
+            var sheetEl = sheet.querySelector(".ljmh-sheet");
+            if (!sheetEl || sheetEl._swipeBound) return;
+            sheetEl._swipeBound = true;
+            var startY = 0, dragY = 0, dragging = false;
+            var IGNORE_PX = 4;   // absorbs finger jitter so taps on sheet items still register as taps
+            var CLOSE_PX = 70;   // downward drag distance that counts as "dismiss"
+
+            sheetEl.addEventListener("touchstart", function (e) {
+                if (e.touches.length !== 1) return;
+                startY = e.touches[0].clientY;
+                dragY = 0;
+                dragging = true;
+            }, { passive: true });
+
+            sheetEl.addEventListener("touchmove", function (e) {
+                if (!dragging) return;
+                var delta = e.touches[0].clientY - startY;
+                if (delta <= IGNORE_PX) { dragY = 0; return; }
+                dragY = delta;
+                sheetEl.style.transition = "none"; // track the finger 1:1 while dragging
+                sheetEl.style.transform = "translateY(" + dragY + "px)";
+                e.preventDefault(); // dragging the sheet down must not also scroll the page behind it
+            }, { passive: false });
+
+            function endDrag() {
+                if (!dragging) return;
+                dragging = false;
+                sheetEl.style.transition = ""; // restore the stylesheet's slide transition
+                if (dragY > CLOSE_PX) {
+                    sheetEl.style.transform = "translateY(100%)";
+                    closeGroupSheet();
+                } else {
+                    sheetEl.style.transform = ""; // snap back open
+                }
+                dragY = 0;
+            }
+            sheetEl.addEventListener("touchend", endDrag, false);
+            sheetEl.addEventListener("touchcancel", endDrag, false);
         }
 
         // ═══════════════ Search sheet ═══════════════
@@ -3715,6 +3773,8 @@
             try { wireSearchSheet(); } catch (e) { console.error("wireSearchSheet failed:", e); }
             try {
                 $("navGroupSheet").querySelector(".ljmh-sheet-backdrop").addEventListener("click", closeGroupSheet);
+                $("navGroupSheetCloseBtn").addEventListener("click", closeGroupSheet);
+                setupNavSheetGestures($("navGroupSheet"));
             } catch (e) { console.error(e); }
             document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeGroupSheet(); });
             $("f_saveBtn").onclick = saveFund;
