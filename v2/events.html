@@ -75,12 +75,19 @@
       <div class="auth-slot">
         <div id="signinBtn"></div>
         <div class="user-chip" id="userChip">
-          <span class="user-avatar" id="userAvatar">··</span>
-          <span class="user-meta">
+          <button type="button" class="user-chip-trigger" id="userChipTrigger" aria-haspopup="true" aria-expanded="false">
+            <span class="user-avatar" id="userAvatar">··</span>
             <span class="nm" id="userName"></span>
-            <a href="/v2/my-giving.html" class="mygiving-link">My Giving</a>
-            <a href="/admin.html" class="admin-link" id="adminLink">⚡ Admin Access</a>
-          </span>
+          </button>
+          <div class="user-menu" id="userMenu" role="menu" aria-hidden="true">
+            <div class="user-menu-head">
+              <span class="user-menu-name" id="userMenuName"></span>
+              <span class="user-menu-email" id="userMenuEmail"></span>
+            </div>
+            <a href="/v2/my-giving.html" class="user-menu-link mygiving-link" role="menuitem">My Giving</a>
+            <a href="/admin.html" class="user-menu-link admin-link" id="adminLink" role="menuitem">⚡ Admin Access</a>
+            <button type="button" class="user-menu-link user-menu-signout" id="userSignOut" role="menuitem">Sign out</button>
+          </div>
         </div>
       </div>
       <a href="/v2/give-flow.html" class="btn btn-primary btn-sm">Give</a>
@@ -110,13 +117,20 @@
   <div class="nav-drawer-section nav-drawer-auth">
     <div id="signinBtnDrawer"></div>
     <div class="user-chip" id="userChipDrawer">
-      <span class="user-avatar" id="userAvatarDrawer">··</span>
-      <span class="user-meta">
-        <span class="nm" id="userNameDrawer"></span>
-        <a href="/v2/my-giving.html" class="mygiving-link">My Giving</a>
-        <a href="/admin.html" class="admin-link" id="adminLinkDrawer">⚡ Admin Access</a>
-      </span>
-    </div>
+          <button type="button" class="user-chip-trigger" id="userChipTriggerDrawer" aria-haspopup="true" aria-expanded="false">
+            <span class="user-avatar" id="userAvatarDrawer">··</span>
+            <span class="nm" id="userNameDrawer"></span>
+          </button>
+          <div class="user-menu" id="userMenuDrawer" role="menu" aria-hidden="true">
+            <div class="user-menu-head">
+              <span class="user-menu-name" id="userMenuNameDrawer"></span>
+              <span class="user-menu-email" id="userMenuEmailDrawer"></span>
+            </div>
+            <a href="/v2/my-giving.html" class="user-menu-link mygiving-link" role="menuitem">My Giving</a>
+            <a href="/admin.html" class="user-menu-link admin-link" id="adminLinkDrawer" role="menuitem">⚡ Admin Access</a>
+            <button type="button" class="user-menu-link user-menu-signout" id="userSignOutDrawer" role="menuitem">Sign out</button>
+          </div>
+        </div>
   </div>
   <div class="nav-drawer-section">
     <button class="theme-toggle" aria-label="Toggle light/dark theme">
