@@ -192,7 +192,10 @@ button { font-family: inherit; cursor: pointer; }
   border-bottom: 1px solid var(--border);
 }
 .site-header .wrap { display: flex; align-items: center; gap: 14px; height: 72px; max-width: 1360px; }
-.brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 700; font-size: 1.05rem; flex-shrink: 0; }
+/* Brand may shrink so the hamburger (flex-shrink:0 in .header-actions) always
+   keeps its slot on the right. min-width:0 lets the flex item actually
+   compress instead of forcing overflow. */
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 700; font-size: 1.05rem; min-width: 0; flex: 1 1 auto; }
 /* The LJM mark: dove, cross and open Bible resting on a red heart — the
    ministry's supplied logo artwork (v2/assets/logo/ljm-logo.png), cropped
    from the source graphic with the background keyed to transparent so it
@@ -201,7 +204,18 @@ button { font-family: inherit; cursor: pointer; }
    34x34 box. */
 .brand-mark { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 34px; height: 34px; }
 .brand-mark img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.15)); }
-.brand small { display: block; font-family: var(--sans); font-weight: 500; font-size: .66rem; color: var(--text-faint); letter-spacing: .02em; }
+.brand small { display: block; font-family: var(--sans); font-weight: 500; font-size: .66rem; color: var(--text-faint); letter-spacing: .02em; white-space: nowrap; }
+/* .site-header used to clip overflow, and logo + "Light of Jesus Ministry" +
+   "Coimbatore · Worldwide" + the hamburger no longer fit below ~460px. The
+   subtitle is decorative — drop it on narrow viewports so the hamburger
+   (the only header nav control at every width) stays fully on-screen.
+   Re-applies a fix that was lost when the hamburger-everywhere header
+   landed on top of an older shared.css base. */
+@media (max-width: 720px) { .brand small { display: none; } }
+@media (max-width: 380px) {
+  .brand { gap: 6px; font-size: .9rem; }
+  .brand-mark { width: 28px; height: 28px; }
+}
 /* The traditional always-visible link row is retired in favor of the
    hamburger + drawer below (same destinations, same routing) — kept as a
    real rule rather than deleted so any page-specific override still has
@@ -239,7 +253,7 @@ button { font-family: inherit; cursor: pointer; }
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
   flex-shrink: 0; cursor: pointer; padding: 0;
 }
-.hamburger-btn svg { width: 19px; height: 19px; }
+.hamburger-btn svg { width: 19px; height: 19px; display: block; }
 .header-actions > *:not(.hamburger-btn) { display: none; }
 
 .nav-drawer-backdrop {
