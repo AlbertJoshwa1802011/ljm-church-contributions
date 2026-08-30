@@ -40,7 +40,16 @@
     if (location.protocol === "file:") return; // dev preview: never block
 
     fetch("/api/settings").then(function (r) { return r.json(); }).then(function (d) {
-        var forced = d && d.settings && d.settings.force_login === "true" ? true : true; // default to true (mandatory login)
+        // This was written `... === "true" ? true : true` — a degenerate ternary
+        // that discarded the setting and hard-gated every visitor, so the admin
+        // console's force_login toggle had never had any effect. The setting is
+        // now honoured, but an absent/unset value still defaults to forcing
+        // login, so behaviour is unchanged until an admin deliberately turns it
+        // off. (The V2 pages don't load this file at all.)
+        var configured = d && d.settings ? d.settings.force_login : undefined;
+        var forced = configured === undefined || configured === null || configured === ""
+            ? true                       // not configured — keep the existing hard gate
+            : configured === "true";
         if (getToken()) return; // already signed in
         try { if (sessionStorage.getItem("ljmAdminSession")) return; } catch (_) {} // admins pass
         try { if (!forced && sessionStorage.getItem("ljmGuest")) return; } catch (_) {} // guest already chose

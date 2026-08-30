@@ -4,7 +4,7 @@
 |---|---|
 | **Branch** | `claude/light-jesus-ministry-issues-0v9jmj` |
 | **Scope** | `/v2/*` public pages, `admin.html`, additive backend for hero slides + videos + program/church fields |
-| **Status** | In progress — see the phase checkboxes below |
+| **Status** | Phases 0–6 complete; suite green at 441 (baseline was 377) |
 | **Requested by** | Owner, listing 10 issues after reviewing the live V2 site |
 
 ## Why this doc exists
@@ -43,17 +43,17 @@ and follows their tracker pattern.
 
 ## Phase tracker
 
-- [ ] **Phase 0** — this doc, committed before any code.
-- [ ] **Phase 1** — migration `0023`, `_media.js`, `media.js`, `hero.js`,
+- [x] **Phase 0** — this doc, committed before any code.
+- [x] **Phase 1** — migration `0023`, `_media.js`, `media.js`, `hero.js`,
       `videos.js`; `programs.js` + `churches.js` additive fields and the
       archive-preservation fix; tests for each; `schema-contract` updated.
-- [ ] **Phase 2** — admin: Header Images, Videos, Events sections; Churches,
+- [x] **Phase 2** — admin: Header Images, Videos, Events sections; Churches,
       Promises, Programs fixes.
-- [ ] **Phase 3** — `v2/carousel.js`; hero carousel; theme persistence;
+- [x] **Phase 3** — `v2/carousel.js`; hero carousel; theme persistence;
       Tamil+English monthly promise; new section order; church hierarchy.
-- [ ] **Phase 4** — service-times section; expandable What's Happening.
-- [ ] **Phase 5** — live card + inline-playing video grid on Home.
-- [ ] **Phase 6** — link repoint across all 14 V2 pages; `portal-telemetry.js`
+- [x] **Phase 4** — service-times section; expandable What's Happening.
+- [x] **Phase 5** — live card + inline-playing video grid on Home.
+- [x] **Phase 6** — link repoint across all 14 V2 pages; `portal-telemetry.js`
       ternary fix (separate commit); `tests/frontend/v2-home.test.mjs`.
 
 ## Standing constraints (from `CONTRIBUTING.md`)
@@ -71,3 +71,36 @@ and follows their tracker pattern.
 who knows a super-admin's email address can pass `?token=<that email>` and get
 `["*"]` permissions. It is unrelated to these 10 issues and switching it off may
 break existing admin logins, so it needs its own session. Flagged to the owner.
+
+## Verification performed
+
+- `npm test` — **441 passing** (baseline before this work: 377). New suites:
+  `tests/api/hero.test.mjs`, `videos.test.mjs`, `media.test.mjs`,
+  `tests/frontend/v2-home.test.mjs`, plus extensions to `programs`, `churches`
+  and `schema-contract`.
+- **Mutation checks** (`CONTRIBUTING.md` §5) on five guards — the churches
+  archive-preservation fix, the hero permission gate, the programs merge in the
+  upcoming-programs test, the bare-`/events.html` link check, and the
+  `force_login` ternary. Each test was confirmed to fail with its fix reverted,
+  then restored.
+- **Frozen giving path** verified byte-identical to `origin/main` before every
+  commit.
+- **Real browser run** against `wrangler pages dev` with seeded D1 data, driven
+  in Chromium at 1440px and 390px: hero autoplay timing, swipe and drag, dark
+  image swap and theme persistence across navigation, both promise languages,
+  in-place card expansion, inline video playback, zero horizontal overflow —
+  and the issue-9 acceptance test: **with no cookies at all, clicking Events in
+  the drawer loads the V2 events page with no login overlay and no popup.**
+
+## What still needs the owner
+
+1. **Apply migration `0023`** to production D1 via the existing gated
+   `apply-d1-migration.yml` workflow (dry-run and back up first —
+   `CONTRIBUTING.md` §4).
+2. **Add content in the admin console** — header images (light + dark), this
+   month's promise in Tamil and English, videos, church addresses/photos/online
+   links, and programs' meet links. Every new section degrades gracefully while
+   empty, so nothing looks broken before that happens.
+3. **The public cutover** — `functions/_middleware.js` still serves V2 only to
+   beta-cookie holders, by the owner's decision. Opening it to everyone is a
+   separate, deliberate step.
