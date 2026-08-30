@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  // Applied before first paint so the page never flashes the wrong theme and
+  // the hero picks its light/dark image correctly on the very first render.
+  // Without this the toggle was per-page only: navigating anywhere reset the
+  // theme to the operating system's preference.
+  (function () {
+    try {
+      var saved = localStorage.getItem("ljmTheme");
+      if (saved === "light" || saved === "dark") document.documentElement.setAttribute("data-theme", saved);
+    } catch (_) { /* private mode — fall back to the OS preference */ }
+  })();
+</script>
 <title>About — Light of Jesus Ministry</title>
 <link rel="stylesheet" href="shared.css" />
 <style>
@@ -152,7 +164,19 @@
 <script>
   (function () {
     var root = document.documentElement;
-    document.querySelectorAll('.theme-toggle').forEach(function (t) { t.addEventListener('click', function () { root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }); });
+    function currentTheme() {
+      var attr = root.getAttribute('data-theme');
+      if (attr === 'dark' || attr === 'light') return attr;
+      try { return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch (_) { return 'light'; }
+    }
+    document.querySelectorAll('.theme-toggle').forEach(function (t) {
+      t.addEventListener('click', function () {
+        var next = currentTheme() === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('ljmTheme', next); } catch (_) {}
+        window.dispatchEvent(new CustomEvent('ljm-theme-changed', { detail: next }));
+      });
+    });
   })();
 </script>
 <script>
