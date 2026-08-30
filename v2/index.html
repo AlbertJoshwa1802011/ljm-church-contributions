@@ -1016,11 +1016,21 @@
       return null;
     }
 
+    // The church record carries the photo, map and meet link; but if the lookup
+    // misses — /api/churches failed, or the row points at an archived church —
+    // the name still comes through on the item itself, so a card never loses its
+    // church label just because the extra detail is unavailable.
+    function churchName(item, church) {
+      if (church) return H.bi(church, "name");
+      return item.churchNameEn || "";
+    }
+
     function detailHtml(item) {
       var church = item.churchId ? churchById(item.churchId) : null;
       var rows = "";
       if (item.whenFull) rows += "<dt>When</dt><dd>" + H.esc(item.whenFull) + "</dd>";
-      if (church) rows += "<dt>Church</dt><dd>" + H.esc(H.bi(church, "name")) + (church.isMotherChurch ? " (mother church)" : "") + "</dd>";
+      var cname = churchName(item, church);
+      if (cname) rows += "<dt>Church</dt><dd>" + H.esc(cname) + (church && church.isMotherChurch ? " (mother church)" : "") + "</dd>";
       var place = item.location || (church ? (H.bi(church, "address") || church.city) : "");
       if (place) rows += "<dt>Where</dt><dd>" + H.esc(place) + "</dd>";
       if (item.beneficiariesCount) rows += "<dt>People served</dt><dd>" + H.esc(String(item.beneficiariesCount)) + "</dd>";
@@ -1051,7 +1061,8 @@
       }
       grid.innerHTML = items.slice(0, shown).map(function (item) {
         var church = item.churchId ? churchById(item.churchId) : null;
-        var churchTag = church ? " · " + H.esc(H.bi(church, "name")) : "";
+        var cname = churchName(item, church);
+        var churchTag = cname ? " · " + H.esc(cname) : "";
         // A real cover photo when there is one; the gradient is the fallback,
         // not the default it used to be.
         var photoStyle = item.photo ? ' style="background-image:url(\'' + H.esc(item.photo) + '\')"' : "";
@@ -1106,6 +1117,7 @@
           dateLabel: ev.eventDate || "Upcoming",
           whenFull: ev.eventDate || "",
           churchId: ev.churchId || null,
+          churchNameEn: ev.churchNameEn || "",
           location: ev.location || "",
           photo: ev.coverPhoto || "",
           beneficiariesCount: ev.beneficiariesCount || null,
@@ -1127,6 +1139,7 @@
           dateLabel: H.DAY_ABBR[dow] + timeBit,
           whenFull: "Every " + H.DAY_FULL[dow] + timeBit,
           churchId: p.churchId || null,
+          churchNameEn: p.churchNameEn || "",
           location: p.location || "",
           photo: "",
           beneficiariesCount: null,

@@ -28,18 +28,31 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const html = readFileSync(path.join(REPO_ROOT, "v2", "index.html"), "utf8");
 
-function extractHappeningScript(source) {
-  const blocks = [...source.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
-  const block = blocks.find(b => b.includes("DAY_ABBR") && b.includes("eventsGrid"));
-  assert.ok(block, "Expected to find the 'Upcoming at both churches' (#eventsGrid) script in v2/index.html");
+// Harness note: the home page was restructured in
+// docs/milestone-v2/13-home-experience-rework.md. The merge logic still lives in
+// v2/index.html and still does the same job, but it is now the named function
+// initHappening() using the shared window.LJMHome helpers, instead of an IIFE
+// calling fetch() inline. Only the plumbing below changed to match — every
+// assertion this file made is kept, and the "both endpoints are fetched" check
+// now looks at the shared getJson() calls that replaced the raw fetch() ones.
+function extractBlock(source, predicate, what) {
+  const blocks = [...source.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+  const block = blocks.find(predicate);
+  assert.ok(block, `Expected to find ${what} in v2/index.html`);
   return block;
 }
 
-const happeningScript = extractHappeningScript(html);
+const happeningScript = extractBlock(
+  html,
+  b => b.includes("initHappening") && b.includes("eventsGrid"),
+  "the 'Upcoming at what's happening' (#eventsGrid) script"
+);
+// The shared helpers (esc/getJson/bi/istNow/DAY_ABBR) the merge logic builds on.
+const helpersScript = extractBlock(html, b => b.includes("window.LJMHome ="), "the LJMHome helpers");
 
 test("home page 'Upcoming at both churches' fetches both /api/events and /api/programs", () => {
-  assert.match(happeningScript, /fetch\(\s*"\/api\/events/, "should still fetch events");
-  assert.match(happeningScript, /fetch\(\s*"\/api\/programs/, "should also fetch programs — this is the fix for the reported bug");
+  assert.match(happeningScript, /getJson\(\s*"\/api\/events/, "should still fetch events");
+  assert.match(happeningScript, /getJson\(\s*"\/api\/programs/, "should also fetch programs — this is the fix for the reported bug");
 });
 
 // IST 08:00, Sunday 23 Aug 2026 — fixed so the test is deterministic regardless
@@ -49,18 +62,34 @@ const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const NOW_IST_EPOCH = Date.UTC(2026, 7, 23, 8, 0);
 const FIXED_DATE_NOW = NOW_IST_EPOCH - IST_OFFSET_MS;
 
-function runHappeningScript({ events, programs }) {
-  const grid = { innerHTML: "" };
+function runHappeningScript({ events, programs, churches = [] }) {
+  const grid = { innerHTML: "", querySelectorAll: () => [] };
+  // "Show more" and the grid are the only elements this block touches.
+  const moreWrap = { hidden: false };
+  const moreBtn = { addEventListener() {} };
   const sandbox = {
-    document: { getElementById: (id) => (id === "eventsGrid" ? grid : null) },
+    console,
+    document: {
+      getElementById: (id) => {
+        if (id === "eventsGrid") return grid;
+        if (id === "eventsMoreWrap") return moreWrap;
+        if (id === "eventsMoreBtn") return moreBtn;
+        return null;
+      }
+    },
     fetch: (url) => {
       const body = String(url).indexOf("/api/programs") !== -1 ? { programs } : { events };
       return Promise.resolve({ json: () => Promise.resolve(body) });
     }
   };
+  sandbox.window = sandbox;
+  sandbox.localStorage = { getItem: () => null, setItem() {} };
   vm.createContext(sandbox);
   vm.runInContext(`Date.now = function () { return ${FIXED_DATE_NOW}; };`, sandbox);
+  vm.runInContext(helpersScript, sandbox, { filename: "v2/index.html#helpers" });
+  vm.runInContext(`window.LJMHome.churches = ${JSON.stringify(churches)};`, sandbox);
   vm.runInContext(happeningScript, sandbox, { filename: "v2/index.html#happening" });
+  vm.runInContext("initHappening();", sandbox, { filename: "v2/index.html#happening-init" });
   return grid;
 }
 
