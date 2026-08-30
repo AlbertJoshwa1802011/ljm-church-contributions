@@ -549,6 +549,24 @@
             font-family: var(--sans); font-size: 11px; font-weight: 600; background: var(--bg-soft);
             border: 1px solid var(--border-strong); border-radius: 5px; padding: 1px 5px; margin: 0 2px;
         }
+    
+        /* ---- Header-image / video / church media pickers ---- */
+        .hs-preview-slot { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+        .hs-preview-slot img { max-width: 100%; max-height: 150px; width: auto; border-radius: 8px; border: 1px solid var(--line, #e2e2e2); object-fit: contain; }
+        .hs-row-thumb { width: 96px; height: 54px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line, #e2e2e2); background: var(--bg-soft, #f4f4f4); }
+        .hs-row-actions { white-space: nowrap; }
+        .hs-theme-previews { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        @media (max-width: 720px) { .hs-theme-previews { grid-template-columns: 1fr; } }
+        .hs-theme-preview { border: 1px solid var(--line, #e2e2e2); border-radius: 10px; padding: 10px; }
+        .hs-theme-tag { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; opacity: .75; }
+        /* The two stages are deliberately hard-coded light and dark: the point
+           is to show both themes at once, whichever theme the console is in. */
+        .hs-theme-light { background: #faf8f4; color: #1c1c1c; }
+        .hs-theme-dark { background: #14171f; color: #f2f2f2; }
+        .hs-theme-stage { min-height: 96px; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden; position: relative; }
+        .hs-theme-stage img { max-width: 100%; max-height: 190px; object-fit: contain; }
+        .hs-theme-note { position: absolute; right: 6px; bottom: 6px; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; }
+        .hs-theme-dark .hint { color: #b9c0cc; }
     </style>
 </head>
 <body>
@@ -1022,8 +1040,18 @@
                         <div><label class="f-label">Phone</label><input class="input" id="ch_phone"></div>
                         <div><label class="f-label">Email</label><input class="input" id="ch_email"></div>
                         <div><label class="f-label">Map URL</label><input class="input" id="ch_mapUrl"></div>
+                        <div><label class="f-label">Online prayer link</label><input class="input" id="ch_onlineUrl" placeholder="https://meet.google.com/..."></div>
+                        <div><label class="f-label">Order</label><input class="input" type="number" id="ch_sortOrder" value="0"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="ch_status"><option value="active">Active</option><option value="archived">Archived (hidden from the site)</option></select></div>
+                        <div>
+                            <label class="f-label">Church photo</label>
+                            <input class="input" type="file" id="ch_photoFile" accept="image/*">
+                            <div class="hs-preview-slot" id="ch_photoSlot" style="display:none"><img id="ch_photoPreview" alt="Church photo preview"><span class="hint" id="ch_photoInfo"></span></div>
+                        </div>
                         <div style="grid-column:1/-1;"><label class="f-label">Address (English)</label><textarea class="input" id="ch_addressEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Address (Tamil)</label><textarea class="input" id="ch_addressTa" rows="2"></textarea></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Service times (English)</label><textarea class="input" id="ch_serviceTimesEn" rows="2" placeholder="Sunday 9:00 AM, 6:00 PM"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Service times (Tamil)</label><textarea class="input" id="ch_serviceTimesTa" rows="2"></textarea></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="ch_saveBtn">Add church</button>
@@ -1041,7 +1069,7 @@
             <div class="section" id="section-promises">
                 <div class="page-head"><h2>Promises</h2><p>Daily/monthly/yearly promise words — auto-shown on the public Home by date (ministry timezone: IST). See docs/milestone-v2/01-PRD.md §7.2.</p></div>
                 <div class="card">
-                    <h3>Add a promise</h3>
+                    <h3 id="pr_formTitle">Add a promise</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Scope *</label><select class="input" id="pr_scope">
                             <option value="daily">Daily</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option>
@@ -1054,9 +1082,11 @@
                         <div style="grid-column:1/-1;"><label class="f-label">Promise text (English) *</label><textarea class="input" id="pr_textEn" rows="2"></textarea></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Promise text (Tamil)</label><textarea class="input" id="pr_textTa" rows="2"></textarea></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Reflection (English)</label><textarea class="input" id="pr_reflectionEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Reflection (Tamil)</label><textarea class="input" id="pr_reflectionTa" rows="2"></textarea></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="pr_saveBtn">Add promise</button>
+                        <button class="btn btn-outline" id="pr_clearBtn" type="button">Clear</button>
                         <span class="msg" id="pr_msg"></span>
                     </div>
                 </div>
@@ -1131,8 +1161,12 @@
                         <div><label class="f-label">End time</label><input class="input" type="time" id="pg_endTime"></div>
                         <div><label class="f-label">Ministry area</label><input class="input" id="pg_ministryArea" placeholder="e.g. youth"></div>
                         <div><label class="f-label">Location</label><input class="input" id="pg_location"></div>
+                        <div><label class="f-label">Meets online?</label><select class="input" id="pg_isOnline"><option value="0">In person</option><option value="1">Yes &mdash; show a join button</option></select></div>
+                        <div><label class="f-label">Online join link</label><input class="input" id="pg_onlineUrl" placeholder="https://meet.google.com/..."></div>
+                        <div><label class="f-label">Title (Tamil)</label><input class="input" id="pg_titleTa"></div>
                         <div><label class="f-label">Status</label><select class="input" id="pg_status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
                         <div style="grid-column:1/-1;"><label class="f-label">Description (English)</label><textarea class="input" id="pg_descriptionEn" rows="2"></textarea></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Description (Tamil)</label><textarea class="input" id="pg_descriptionTa" rows="2"></textarea></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="pg_saveBtn">Add program</button>
@@ -1200,6 +1234,129 @@
                         <button class="btn btn-outline" id="a_nextBtn">Older →</button>
                         <span class="msg" id="a_pageInfo"></span>
                     </div>
+                </div>
+            </div>
+
+            <!-- HEADER IMAGES -->
+            <div class="section" id="section-heroimages">
+                <div class="page-head"><h2>Header images</h2><p>The rotating banner at the top of the home page. Slides advance automatically every 2.5 seconds, and visitors can swipe between them. Upload a separate dark-mode version if you want a different picture at night &mdash; if you don't, the light one is used for both.</p></div>
+
+                <div class="card">
+                    <h3 id="hs_formTitle">Add a header image</h3>
+                    <p class="hint">Best results at <strong>1600 &times; 900</strong> (16:9) or larger, with the important part &mdash; faces, the church, the poster text &mdash; near the middle. Big photos are shrunk automatically before upload.</p>
+                    <div class="form-grid">
+                        <div>
+                            <label class="f-label">Light-mode image *</label>
+                            <input class="input" type="file" id="hs_lightFile" accept="image/*">
+                            <div class="hs-preview-slot" id="hs_lightSlot" style="display:none"><img id="hs_lightPreview" alt="Light mode preview"><span class="hint" id="hs_lightInfo"></span></div>
+                        </div>
+                        <div>
+                            <label class="f-label">Dark-mode image <span style="font-weight:400;color:var(--text-soft)">(optional)</span></label>
+                            <input class="input" type="file" id="hs_darkFile" accept="image/*">
+                            <div class="hs-preview-slot" id="hs_darkSlot" style="display:none"><img id="hs_darkPreview" alt="Dark mode preview"><span class="hint" id="hs_darkInfo"></span></div>
+                        </div>
+                        <div><label class="f-label">Title (English)</label><input class="input" id="hs_titleEn" placeholder="e.g. Christmas service"></div>
+                        <div><label class="f-label">Title (Tamil)</label><input class="input" id="hs_titleTa"></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Description for screen readers</label><input class="input" id="hs_altEn" placeholder="What the picture shows, for people who can't see it"></div>
+                        <div><label class="f-label">Church</label><select class="input" id="hs_churchId"><option value="">Ministry-wide</option></select></div>
+                        <div><label class="f-label">Links to <span style="font-weight:400;color:var(--text-soft)">(optional)</span></label><input class="input" id="hs_linkUrl" placeholder="/v2/events.html"></div>
+                        <div><label class="f-label">Show from</label><input class="input" type="date" id="hs_startsOn"></div>
+                        <div><label class="f-label">Show until</label><input class="input" type="date" id="hs_endsOn"></div>
+                        <div><label class="f-label">Order</label><input class="input" type="number" id="hs_sortOrder" value="0"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="hs_status"><option value="active">Showing</option><option value="archived">Hidden</option></select></div>
+                    </div>
+
+                    <h4 style="margin:18px 0 8px">How it will look</h4>
+                    <div class="hs-theme-previews">
+                        <div class="hs-theme-preview hs-theme-light"><span class="hs-theme-tag">Light mode</span><div class="hs-theme-stage" id="hs_previewLight"><span class="hint">Choose a light-mode image</span></div></div>
+                        <div class="hs-theme-preview hs-theme-dark"><span class="hs-theme-tag">Dark mode</span><div class="hs-theme-stage" id="hs_previewDark"><span class="hint">Uses the light image unless you add a dark one</span></div></div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="hs_saveBtn">Add header image</button>
+                        <button class="btn btn-outline" id="hs_clearBtn" type="button">Clear</button>
+                        <span class="msg" id="hs_msg"></span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>All header images</h3>
+                    <p class="hint">Use &#9650; and &#9660; to change the order visitors see them in.</p>
+                    <div class="table-wrap"><table id="hs_table"><thead><tr><th>Preview</th><th>Title</th><th>Modes</th><th>Showing</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- VIDEOS -->
+            <div class="section" id="section-videos">
+                <div class="page-head"><h2>Videos</h2><p>YouTube videos shown on the home page. Visitors press play and watch without leaving the site. Mark one as the live service to pin it to the top with a live badge.</p></div>
+
+                <div class="card">
+                    <h3 id="vd_formTitle">Add a video</h3>
+                    <div class="form-grid">
+                        <div style="grid-column:1/-1;">
+                            <label class="f-label">YouTube link *</label>
+                            <input class="input" id="vd_youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+                            <span class="hint" id="vd_urlCheck"></span>
+                        </div>
+                        <div><label class="f-label">Title (English) *</label><input class="input" id="vd_titleEn"></div>
+                        <div><label class="f-label">Title (Tamil)</label><input class="input" id="vd_titleTa"></div>
+                        <div>
+                            <label class="f-label">Thumbnail <span style="font-weight:400;color:var(--text-soft)">(optional)</span></label>
+                            <input class="input" type="file" id="vd_thumbFile" accept="image/*">
+                            <span class="hint">Leave empty to use YouTube's own picture.</span>
+                        </div>
+                        <div><label class="f-label">Church</label><select class="input" id="vd_churchId"><option value="">Ministry-wide</option></select></div>
+                        <div><label class="f-label">Live service?</label><select class="input" id="vd_isLive"><option value="0">No</option><option value="1">Yes &mdash; pin to the top</option></select></div>
+                        <div><label class="f-label">Order</label><input class="input" type="number" id="vd_sortOrder" value="0"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="vd_status"><option value="published">Published</option><option value="draft">Draft</option></select></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Description (English)</label><textarea class="input" id="vd_descriptionEn" rows="2"></textarea></div>
+                    </div>
+                    <div class="hs-preview-slot" id="vd_previewSlot" style="display:none"><img id="vd_preview" alt="Video thumbnail preview"><span class="hint" id="vd_previewInfo"></span></div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="vd_saveBtn">Add video</button>
+                        <button class="btn btn-outline" id="vd_clearBtn" type="button">Clear</button>
+                        <span class="msg" id="vd_msg"></span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>All videos</h3>
+                    <div class="table-wrap"><table id="vd_table"><thead><tr><th>Thumbnail</th><th>Title</th><th>Church</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- EVENTS -->
+            <div class="section" id="section-adminevents">
+                <div class="page-head"><h2>Events</h2><p>Dated events shown in &ldquo;What&rsquo;s Happening&rdquo; on the home page and on the Events page. Drafts stay hidden until you publish them.</p></div>
+
+                <div class="card">
+                    <h3 id="ev_formTitle">Add an event</h3>
+                    <div class="form-grid">
+                        <div><label class="f-label">Title *</label><input class="input" id="ev_title"></div>
+                        <div><label class="f-label">Date</label><input class="input" type="date" id="ev_eventDate"></div>
+                        <div><label class="f-label">Church</label><select class="input" id="ev_churchId"><option value="">Ministry-wide</option></select></div>
+                        <div><label class="f-label">Category</label><input class="input" id="ev_category" placeholder="e.g. Outreach"></div>
+                        <div><label class="f-label">Location</label><input class="input" id="ev_location"></div>
+                        <div><label class="f-label">People served</label><input class="input" type="number" id="ev_beneficiaries" placeholder="optional"></div>
+                        <div><label class="f-label">Status</label><select class="input" id="ev_status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
+                        <div><label class="f-label">Feature it?</label><select class="input" id="ev_featured"><option value="0">No</option><option value="1">Yes &mdash; pin to the top</option></select></div>
+                        <div style="grid-column:1/-1;"><label class="f-label">Description</label><textarea class="input" id="ev_description" rows="3"></textarea></div>
+                        <div style="grid-column:1/-1;">
+                            <label class="f-label">Cover photo</label>
+                            <input class="input" type="file" id="ev_coverFile" accept="image/*">
+                            <div class="hs-preview-slot" id="ev_coverSlot" style="display:none"><img id="ev_coverPreview" alt="Cover photo preview"><span class="hint" id="ev_coverInfo"></span></div>
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="ev_saveBtn">Add event</button>
+                        <button class="btn btn-outline" id="ev_clearBtn" type="button">Clear</button>
+                        <span class="msg" id="ev_msg"></span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>All events</h3>
+                    <div class="table-wrap"><table id="ev_table"><thead><tr><th>Title</th><th>Date</th><th>Church</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
                 </div>
             </div>
 
@@ -1371,7 +1528,7 @@
         var PERMISSION_SCOPES = [
             "edit_purchases", "edit_wishlist", "view_members", "manage_members",
             "manage_roles", "manage_funds", "delete_funds", "view_audit", "manage_expenses",
-            "manage_subscriptions", "manage_content"
+            "manage_subscriptions", "manage_content", "manage_events"
         ];
         // Two-level nav: a handful of top-level groups, each expanding to its
         // pages — replaces the old flat 13-item list that had to be rendered
@@ -1398,6 +1555,11 @@
                 ["wishlist", "📋", "Wishlist"],
                 ["verses", "📖", "Verses"],
                 ["about", "📰", "About page"]
+            ] },
+            { id: "homepage", icon: "🏠", label: "Home page", items: [
+                ["heroimages", "🖼️", "Header images"],
+                ["videos", "▶️", "Videos"],
+                ["adminevents", "📅", "Events"]
             ] },
             { id: "ministry", icon: "🕊️", label: "Ministry", items: [
                 ["churches", "⛪", "Churches"],
@@ -3086,9 +3248,468 @@
                 .catch(function (e) { setMsg("bt_msg", e.message, "err"); });
         }
 
+
+        // ═══════════════ Shared: client-side image downscaling ═══════════════
+        // Hero photos come off a phone at several megabytes. Shrinking in the
+        // browser before upload keeps R2 objects small and the home page fast,
+        // and means the admin never has to resize anything by hand.
+        var MEDIA_MAX_WIDTH = 1920;
+        var MEDIA_MAX_BYTES = 1.5 * 1024 * 1024;
+
+        function humanBytes(n) {
+            if (n < 1024) return n + " B";
+            if (n < 1024 * 1024) return Math.round(n / 1024) + " KB";
+            return (n / (1024 * 1024)).toFixed(1) + " MB";
+        }
+
+        // Reads a File, downscales it to at most MEDIA_MAX_WIDTH and re-encodes
+        // as JPEG, then hands back a data URL. Falls back to the original bytes
+        // if anything about the canvas path fails, so a stubborn image can still
+        // be uploaded rather than silently failing.
+        function readImageDownscaled(file, cb, onError) {
+            var reader = new FileReader();
+            reader.onerror = function () { onError("Couldn't read that file"); };
+            reader.onload = function (e) {
+                var original = e.target.result;
+                var img = new Image();
+                img.onerror = function () { onError("That file doesn't look like an image"); };
+                img.onload = function () {
+                    try {
+                        var scale = Math.min(1, MEDIA_MAX_WIDTH / img.naturalWidth);
+                        var w = Math.round(img.naturalWidth * scale);
+                        var h = Math.round(img.naturalHeight * scale);
+                        var canvas = document.createElement("canvas");
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                        var out = canvas.toDataURL("image/jpeg", 0.82);
+                        if (!out || out.length < 32) out = original;
+                        // A data URL is ~4/3 the size of the bytes it encodes.
+                        var bytes = Math.round((out.length - out.indexOf(",") - 1) * 0.75);
+                        if (bytes > MEDIA_MAX_BYTES) {
+                            onError("That image is still " + humanBytes(bytes) + " after shrinking — please use a smaller one (under " + humanBytes(MEDIA_MAX_BYTES) + ").");
+                            return;
+                        }
+                        cb(out, { width: w, height: h, bytes: bytes, originalWidth: img.naturalWidth });
+                    } catch (_) {
+                        cb(original, null);
+                    }
+                };
+                img.src = original;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Wires a file input to a preview <img> + info line, storing the
+        // resulting data URL on state[stateKey].
+        function wireImagePicker(fileId, slotId, imgId, infoId, stateKey, msgId, afterChange) {
+            var input = $(fileId);
+            if (!input) return;
+            input.onchange = function () {
+                var file = input.files && input.files[0];
+                if (!file) return;
+                readImageDownscaled(file, function (dataUrl, info) {
+                    state[stateKey] = dataUrl;
+                    var slot = $(slotId); if (slot) slot.style.display = "";
+                    var img = $(imgId); if (img) img.src = dataUrl;
+                    var line = $(infoId);
+                    if (line) line.textContent = info ? (info.width + "×" + info.height + " · " + humanBytes(info.bytes)) : "Ready to upload";
+                    if (msgId) setMsg(msgId, "", "ok");
+                    if (afterChange) afterChange();
+                }, function (err) {
+                    input.value = "";
+                    if (msgId) setMsg(msgId, err, "err");
+                });
+            };
+        }
+
+        function showStoredImage(url, slotId, imgId, infoId, label) {
+            var slot = $(slotId); if (!slot) return;
+            if (!url) { slot.style.display = "none"; return; }
+            slot.style.display = "";
+            var img = $(imgId); if (img) img.src = url;
+            var line = $(infoId); if (line) line.textContent = label || "Currently saved";
+        }
+
+        // ═══════════════ Header images ═══════════════
+        state.heroCache = [];
+        state.editingHeroId = null;
+        state.heroLightUrl = null;
+        state.heroDarkUrl = null;
+
+        function loadHeroImages() {
+            wireImagePicker("hs_lightFile", "hs_lightSlot", "hs_lightPreview", "hs_lightInfo", "heroLightUrl", "hs_msg", paintHeroPreview);
+            wireImagePicker("hs_darkFile", "hs_darkSlot", "hs_darkPreview", "hs_darkInfo", "heroDarkUrl", "hs_msg", paintHeroPreview);
+            $("hs_saveBtn").onclick = saveHeroImage;
+            $("hs_clearBtn").onclick = clearHeroForm;
+            fetchHeroImages();
+            if (!state.churchesCache.length) fetchChurches();
+            else populateChurchSelects();
+        }
+
+        // Shows the slide exactly as each theme will render it, including the
+        // "no dark image → the light one is used" fallback.
+        function paintHeroPreview() {
+            var light = state.heroLightUrl;
+            var dark = state.heroDarkUrl || state.heroLightUrl;
+            var lightStage = $("hs_previewLight"), darkStage = $("hs_previewDark");
+            if (!lightStage || !darkStage) return;
+            lightStage.innerHTML = light ? '<img src="' + esc(light) + '" alt="">' : '<span class="hint">Choose a light-mode image</span>';
+            darkStage.innerHTML = dark
+                ? '<img src="' + esc(dark) + '" alt="">' + (state.heroDarkUrl ? "" : '<span class="hs-theme-note">Using the light image</span>')
+                : '<span class="hint">Uses the light image unless you add a dark one</span>';
+        }
+
+        function fetchHeroImages() {
+            api("/api/hero?all=1").then(function (d) {
+                if (!d.success) { setMsg("hs_msg", d.message || "No access", "err"); return; }
+                state.heroCache = d.slides || [];
+                var tb = $("hs_table").querySelector("tbody");
+                tb.innerHTML = state.heroCache.map(function (h, i) {
+                    var modes = '<span class="pill pill-grey">Light</span>' +
+                        (h.imageDarkUrl ? ' <span class="pill pill-grey">Dark</span>' : ' <span class="pill pill-grey" title="No dark image — the light one is used in dark mode">uses light</span>');
+                    var window_ = (h.startsOn || h.endsOn)
+                        ? esc((h.startsOn || "always") + " → " + (h.endsOn || "no end"))
+                        : "Always";
+                    return "<tr><td><img class='hs-row-thumb' src='" + esc(h.imageLightUrl) + "' alt=''></td>" +
+                        "<td><strong>" + esc(h.titleEn || "Untitled") + "</strong>" + (h.churchNameEn ? "<br><span class='hint'>" + esc(h.churchNameEn) + "</span>" : "") + "</td>" +
+                        "<td>" + modes + "</td><td class='hint'>" + window_ + "</td>" +
+                        "<td><span class='pill " + (h.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(h.status === "active" ? "showing" : "hidden") + "</span></td>" +
+                        '<td class="hs-row-actions">' +
+                        '<button class="mini-btn" data-up="' + h.id + '"' + (i === 0 ? " disabled" : "") + '>&#9650;</button> ' +
+                        '<button class="mini-btn" data-down="' + h.id + '"' + (i === state.heroCache.length - 1 ? " disabled" : "") + '>&#9660;</button> ' +
+                        '<button class="mini-btn" data-edit="' + h.id + '">Edit</button> ' +
+                        '<button class="mini-btn danger" data-del="' + h.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="6" class="empty">No header images yet — the home page falls back to its built-in banner.</td></tr>';
+
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editHeroImage(Number(b.dataset.edit)); }; });
+                tb.querySelectorAll("[data-up]").forEach(function (b) { b.onclick = function () { moveHeroImage(Number(b.dataset.up), -1); }; });
+                tb.querySelectorAll("[data-down]").forEach(function (b) { b.onclick = function () { moveHeroImage(Number(b.dataset.down), 1); }; });
+                tb.querySelectorAll("[data-del]").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Delete this header image for good?")) return;
+                        api("/api/hero?hard=1&id=" + b.dataset.del, { method: "DELETE" }).then(function (d2) {
+                            setMsg("hs_msg", d2.message, d2.success ? "ok" : "err");
+                            fetchHeroImages();
+                        });
+                    };
+                });
+            }).catch(function (e) { setMsg("hs_msg", e.message, "err"); });
+        }
+
+        // Swaps this slide's sort_order with its neighbour's, then saves both.
+        function moveHeroImage(id, direction) {
+            var idx = state.heroCache.findIndex(function (h) { return h.id === id; });
+            var swapIdx = idx + direction;
+            if (idx < 0 || swapIdx < 0 || swapIdx >= state.heroCache.length) return;
+            var a = state.heroCache[idx], b = state.heroCache[swapIdx];
+            var aOrder = a.sortOrder, bOrder = b.sortOrder;
+            // Equal orders (all zero by default) would make the swap a no-op —
+            // fall back to their list positions so the first click still moves.
+            if (aOrder === bOrder) { aOrder = idx; bOrder = swapIdx; }
+            Promise.all([
+                api("/api/hero", { method: "PUT", body: JSON.stringify(heroPayloadFrom(a, { sortOrder: bOrder })) }),
+                api("/api/hero", { method: "PUT", body: JSON.stringify(heroPayloadFrom(b, { sortOrder: aOrder })) })
+            ]).then(fetchHeroImages).catch(function (e) { setMsg("hs_msg", e.message, "err"); });
+        }
+
+        // Full round-trip payload for an existing slide, so a reorder or a
+        // partial edit never blanks a field the form didn't touch.
+        function heroPayloadFrom(h, overrides) {
+            return Object.assign({
+                id: h.id, titleEn: h.titleEn, titleTa: h.titleTa, altEn: h.altEn, altTa: h.altTa,
+                imageLightUrl: h.imageLightUrl, imageDarkUrl: h.imageDarkUrl,
+                linkUrl: h.linkUrl, churchId: h.churchId, status: h.status,
+                sortOrder: h.sortOrder, startsOn: h.startsOn, endsOn: h.endsOn
+            }, overrides || {});
+        }
+
+        function editHeroImage(id) {
+            var h = state.heroCache.filter(function (x) { return x.id === id; })[0];
+            if (!h) return;
+            state.editingHeroId = id;
+            state.heroLightUrl = h.imageLightUrl;
+            state.heroDarkUrl = h.imageDarkUrl;
+            $("hs_formTitle").textContent = "Edit " + (h.titleEn || "header image");
+            $("hs_titleEn").value = h.titleEn || ""; $("hs_titleTa").value = h.titleTa || "";
+            $("hs_altEn").value = h.altEn || ""; $("hs_linkUrl").value = h.linkUrl || "";
+            $("hs_churchId").value = h.churchId || ""; $("hs_status").value = h.status || "active";
+            $("hs_sortOrder").value = h.sortOrder || 0;
+            $("hs_startsOn").value = h.startsOn || ""; $("hs_endsOn").value = h.endsOn || "";
+            $("hs_lightFile").value = ""; $("hs_darkFile").value = "";
+            showStoredImage(h.imageLightUrl, "hs_lightSlot", "hs_lightPreview", "hs_lightInfo", "Currently saved");
+            showStoredImage(h.imageDarkUrl, "hs_darkSlot", "hs_darkPreview", "hs_darkInfo", "Currently saved");
+            paintHeroPreview();
+            $("hs_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function clearHeroForm() {
+            state.editingHeroId = null;
+            state.heroLightUrl = null;
+            state.heroDarkUrl = null;
+            ["hs_titleEn", "hs_titleTa", "hs_altEn", "hs_linkUrl", "hs_startsOn", "hs_endsOn", "hs_lightFile", "hs_darkFile"].forEach(function (id) { $(id).value = ""; });
+            $("hs_churchId").value = ""; $("hs_status").value = "active"; $("hs_sortOrder").value = "0";
+            $("hs_lightSlot").style.display = "none";
+            $("hs_darkSlot").style.display = "none";
+            $("hs_formTitle").textContent = "Add a header image";
+            $("hs_saveBtn").textContent = "Add header image";
+            paintHeroPreview();
+            setMsg("hs_msg", "", "ok");
+        }
+
+        function saveHeroImage() {
+            if (!state.heroLightUrl) { setMsg("hs_msg", "A light-mode image is required", "err"); return; }
+            var body = {
+                titleEn: $("hs_titleEn").value.trim(), titleTa: $("hs_titleTa").value.trim(),
+                altEn: $("hs_altEn").value.trim(), linkUrl: $("hs_linkUrl").value.trim(),
+                imageLightUrl: state.heroLightUrl, imageDarkUrl: state.heroDarkUrl,
+                churchId: $("hs_churchId").value || null, status: $("hs_status").value,
+                sortOrder: Number($("hs_sortOrder").value) || 0,
+                startsOn: $("hs_startsOn").value, endsOn: $("hs_endsOn").value
+            };
+            var isEdit = !!state.editingHeroId;
+            if (isEdit) body.id = state.editingHeroId;
+            setMsg("hs_msg", "Saving…", "ok");
+            api("/api/hero", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
+                setMsg("hs_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearHeroForm(); fetchHeroImages(); }
+            }).catch(function (e) { setMsg("hs_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Videos ═══════════════
+        state.videosCache = [];
+        state.editingVideoId = null;
+        state.videoThumbUrl = null;
+
+        // Mirrors parseYouTubeId in functions/api/videos.js so the admin sees
+        // whether a pasted link is usable before saving. The server validates
+        // again — this is feedback, not the gate.
+        function parseYouTubeIdClient(input) {
+            if (!input) return null;
+            var raw = String(input).trim();
+            if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
+            var url;
+            try { url = new URL(raw.indexOf("http") === 0 ? raw : "https://" + raw); } catch (_) { return null; }
+            var host = url.hostname.replace(/^www\./, "").toLowerCase();
+            if (["youtube.com", "m.youtube.com", "youtube-nocookie.com", "youtu.be"].indexOf(host) === -1) return null;
+            if (host === "youtu.be") {
+                var short = url.pathname.split("/").filter(Boolean)[0];
+                return short && /^[A-Za-z0-9_-]{11}$/.test(short) ? short : null;
+            }
+            var v = url.searchParams.get("v");
+            if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) return v;
+            var parts = url.pathname.split("/").filter(Boolean);
+            if (parts.length >= 2 && ["live", "embed", "shorts", "v"].indexOf(parts[0]) !== -1) {
+                return /^[A-Za-z0-9_-]{11}$/.test(parts[1]) ? parts[1] : null;
+            }
+            return null;
+        }
+
+        function loadVideos() {
+            wireImagePicker("vd_thumbFile", "vd_previewSlot", "vd_preview", "vd_previewInfo", "videoThumbUrl", "vd_msg");
+            $("vd_saveBtn").onclick = saveVideo;
+            $("vd_clearBtn").onclick = clearVideoForm;
+            $("vd_youtubeUrl").oninput = paintVideoUrlCheck;
+            fetchVideos();
+            if (!state.churchesCache.length) fetchChurches();
+            else populateChurchSelects();
+        }
+
+        function paintVideoUrlCheck() {
+            var line = $("vd_urlCheck");
+            var raw = $("vd_youtubeUrl").value.trim();
+            if (!raw) { line.textContent = ""; return; }
+            var id = parseYouTubeIdClient(raw);
+            line.textContent = id ? "✓ Video " + id : "✗ That doesn't look like a YouTube video link";
+            line.style.color = id ? "var(--green, #2e7d32)" : "var(--red, #c62828)";
+            if (id && !state.videoThumbUrl) {
+                showStoredImage("https://i.ytimg.com/vi/" + id + "/hqdefault.jpg", "vd_previewSlot", "vd_preview", "vd_previewInfo", "YouTube's own picture");
+            }
+        }
+
+        function fetchVideos() {
+            api("/api/videos?all=1").then(function (d) {
+                if (!d.success) { setMsg("vd_msg", d.message || "No access", "err"); return; }
+                state.videosCache = d.videos || [];
+                var tb = $("vd_table").querySelector("tbody");
+                tb.innerHTML = state.videosCache.map(function (v) {
+                    return "<tr><td><img class='hs-row-thumb' src='" + esc(v.thumbnailUrl || "") + "' alt=''></td>" +
+                        "<td><strong>" + esc(v.titleEn) + "</strong>" + (v.isLive ? ' <span class="pill pill-accent">Live</span>' : "") +
+                        "<br><span class='hint'>" + esc(v.videoId || "") + (v.hasCustomThumbnail ? " · custom thumbnail" : "") + "</span></td>" +
+                        "<td>" + esc(v.churchNameEn || "Ministry-wide") + "</td>" +
+                        "<td><span class='pill " + (v.status === "published" ? "pill-green" : "pill-grey") + "'>" + esc(v.status) + "</span></td>" +
+                        '<td><button class="mini-btn" data-edit="' + v.id + '">Edit</button> <button class="mini-btn danger" data-del="' + v.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">No videos yet.</td></tr>';
+
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editVideo(Number(b.dataset.edit)); }; });
+                tb.querySelectorAll("[data-del]").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Delete this video?")) return;
+                        api("/api/videos?id=" + b.dataset.del, { method: "DELETE" }).then(function (d2) {
+                            setMsg("vd_msg", d2.message, d2.success ? "ok" : "err");
+                            fetchVideos();
+                        });
+                    };
+                });
+            }).catch(function (e) { setMsg("vd_msg", e.message, "err"); });
+        }
+
+        function editVideo(id) {
+            var v = state.videosCache.filter(function (x) { return x.id === id; })[0];
+            if (!v) return;
+            state.editingVideoId = id;
+            state.videoThumbUrl = v.hasCustomThumbnail ? v.thumbnailUrl : null;
+            $("vd_formTitle").textContent = "Edit " + v.titleEn;
+            $("vd_youtubeUrl").value = v.youtubeUrl || "";
+            $("vd_titleEn").value = v.titleEn || ""; $("vd_titleTa").value = v.titleTa || "";
+            $("vd_descriptionEn").value = v.descriptionEn || "";
+            $("vd_churchId").value = v.churchId || "";
+            $("vd_isLive").value = v.isLive ? "1" : "0";
+            $("vd_status").value = v.status || "published";
+            $("vd_sortOrder").value = v.sortOrder || 0;
+            $("vd_thumbFile").value = "";
+            showStoredImage(v.thumbnailUrl, "vd_previewSlot", "vd_preview", "vd_previewInfo", v.hasCustomThumbnail ? "Currently saved" : "YouTube's own picture");
+            paintVideoUrlCheck();
+            $("vd_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function clearVideoForm() {
+            state.editingVideoId = null;
+            state.videoThumbUrl = null;
+            ["vd_youtubeUrl", "vd_titleEn", "vd_titleTa", "vd_descriptionEn", "vd_thumbFile"].forEach(function (id) { $(id).value = ""; });
+            $("vd_churchId").value = ""; $("vd_isLive").value = "0";
+            $("vd_status").value = "published"; $("vd_sortOrder").value = "0";
+            $("vd_previewSlot").style.display = "none";
+            $("vd_urlCheck").textContent = "";
+            $("vd_formTitle").textContent = "Add a video";
+            $("vd_saveBtn").textContent = "Add video";
+            setMsg("vd_msg", "", "ok");
+        }
+
+        function saveVideo() {
+            var youtubeUrl = $("vd_youtubeUrl").value.trim();
+            var titleEn = $("vd_titleEn").value.trim();
+            if (!titleEn) { setMsg("vd_msg", "Title is required", "err"); return; }
+            if (!parseYouTubeIdClient(youtubeUrl)) { setMsg("vd_msg", "Please paste a YouTube video link", "err"); return; }
+
+            var body = {
+                titleEn: titleEn, titleTa: $("vd_titleTa").value.trim(),
+                descriptionEn: $("vd_descriptionEn").value.trim(),
+                youtubeUrl: youtubeUrl, thumbnailUrl: state.videoThumbUrl,
+                churchId: $("vd_churchId").value || null,
+                isLive: $("vd_isLive").value === "1",
+                status: $("vd_status").value, sortOrder: Number($("vd_sortOrder").value) || 0
+            };
+            var isEdit = !!state.editingVideoId;
+            if (isEdit) body.id = state.editingVideoId;
+            setMsg("vd_msg", "Saving…", "ok");
+            api("/api/videos", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
+                setMsg("vd_msg", d.message, d.success ? "ok" : "err");
+                if (d.success) { clearVideoForm(); fetchVideos(); }
+            }).catch(function (e) { setMsg("vd_msg", e.message, "err"); });
+        }
+
+        // ═══════════════ Events ═══════════════
+        state.eventsCache = [];
+        state.editingEventId = null;
+        state.eventCoverUrl = null;
+
+        function loadAdminEvents() {
+            wireImagePicker("ev_coverFile", "ev_coverSlot", "ev_coverPreview", "ev_coverInfo", "eventCoverUrl", "ev_msg");
+            $("ev_saveBtn").onclick = saveAdminEvent;
+            $("ev_clearBtn").onclick = clearEventForm;
+            fetchAdminEvents();
+            if (!state.churchesCache.length) fetchChurches();
+            else populateChurchSelects();
+        }
+
+        function fetchAdminEvents() {
+            api("/api/events?all=1").then(function (d) {
+                if (!d.success && !d.events) { setMsg("ev_msg", d.message || d.error || "No access", "err"); return; }
+                state.eventsCache = d.events || [];
+                var tb = $("ev_table").querySelector("tbody");
+                tb.innerHTML = state.eventsCache.map(function (ev) {
+                    return "<tr><td><strong>" + esc(ev.title) + "</strong>" + (ev.featured ? ' <span class="pill pill-accent">Featured</span>' : "") + "</td>" +
+                        "<td>" + esc(ev.eventDate || "—") + "</td>" +
+                        "<td>" + esc(ev.churchNameEn || "Ministry-wide") + "</td>" +
+                        "<td><span class='pill " + (ev.status === "published" ? "pill-green" : "pill-grey") + "'>" + esc(ev.status) + "</span></td>" +
+                        '<td><button class="mini-btn" data-edit="' + ev.id + '">Edit</button> <button class="mini-btn danger" data-del="' + ev.id + '">Delete</button></td></tr>';
+                }).join("") || '<tr><td colspan="5" class="empty">No events yet.</td></tr>';
+
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editAdminEvent(Number(b.dataset.edit)); }; });
+                tb.querySelectorAll("[data-del]").forEach(function (b) {
+                    b.onclick = function () {
+                        if (!confirm("Delete this event and its photos?")) return;
+                        api("/api/events?id=" + b.dataset.del, { method: "DELETE" }).then(function (d2) {
+                            setMsg("ev_msg", d2.message, d2.success ? "ok" : "err");
+                            fetchAdminEvents();
+                        });
+                    };
+                });
+            }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+        }
+
+        function editAdminEvent(id) {
+            var ev = state.eventsCache.filter(function (x) { return x.id === id; })[0];
+            if (!ev) return;
+            state.editingEventId = id;
+            state.eventCoverUrl = ev.coverPhoto || null;
+            $("ev_formTitle").textContent = "Edit " + ev.title;
+            $("ev_title").value = ev.title || "";
+            $("ev_eventDate").value = ev.eventDate || "";
+            $("ev_category").value = ev.category || "";
+            $("ev_location").value = ev.location || "";
+            $("ev_description").value = ev.description || "";
+            $("ev_churchId").value = ev.churchId || "";
+            $("ev_beneficiaries").value = ev.beneficiariesCount || "";
+            $("ev_status").value = ev.status || "draft";
+            $("ev_featured").value = ev.featured ? "1" : "0";
+            $("ev_coverFile").value = "";
+            showStoredImage(ev.coverPhoto, "ev_coverSlot", "ev_coverPreview", "ev_coverInfo", "Currently saved");
+            $("ev_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function clearEventForm() {
+            state.editingEventId = null;
+            state.eventCoverUrl = null;
+            ["ev_title", "ev_eventDate", "ev_category", "ev_location", "ev_description", "ev_beneficiaries", "ev_coverFile"].forEach(function (id) { $(id).value = ""; });
+            $("ev_churchId").value = ""; $("ev_status").value = "draft"; $("ev_featured").value = "0";
+            $("ev_coverSlot").style.display = "none";
+            $("ev_formTitle").textContent = "Add an event";
+            $("ev_saveBtn").textContent = "Add event";
+            setMsg("ev_msg", "", "ok");
+        }
+
+        function saveAdminEvent() {
+            var title = $("ev_title").value.trim();
+            if (!title) { setMsg("ev_msg", "Title is required", "err"); return; }
+            var body = {
+                title: title, eventDate: $("ev_eventDate").value || null,
+                category: $("ev_category").value.trim(), location: $("ev_location").value.trim(),
+                description: $("ev_description").value.trim(),
+                churchId: $("ev_churchId").value || null,
+                beneficiariesCount: $("ev_beneficiaries").value ? Number($("ev_beneficiaries").value) : null,
+                status: $("ev_status").value, featured: $("ev_featured").value === "1",
+                coverPhoto: state.eventCoverUrl
+            };
+            var isEdit = !!state.editingEventId;
+            if (isEdit) body.id = state.editingEventId;
+            setMsg("ev_msg", "Saving…", "ok");
+            api("/api/events", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
+                setMsg("ev_msg", d.message || d.error, d.success ? "ok" : "err");
+                if (d.success) { clearEventForm(); fetchAdminEvents(); }
+            }).catch(function (e) { setMsg("ev_msg", e.message, "err"); });
+        }
+
         // ═══════════════ Churches ═══════════════
         state.churchesCache = [];
-        function loadChurches() { fetchChurches(); }
+        state.churchPhotoUrl = null;
+        function loadChurches() {
+            wireImagePicker("ch_photoFile", "ch_photoSlot", "ch_photoPreview", "ch_photoInfo", "churchPhotoUrl", "ch_msg");
+            fetchChurches();
+        }
         function fetchChurches() {
             api("/api/churches?all=1").then(function (d) {
                 if (!d.success) { setMsg("ch_msg", d.message || "No access", "err"); return; }
@@ -3098,7 +3719,10 @@
                     return "<tr><td><strong>" + esc(c.nameEn) + "</strong>" + (c.isMotherChurch ? ' <span class="pill pill-accent">Mother church</span>' : "") + "</td>" +
                         "<td style='color:var(--text-soft)'>" + esc(c.slug) + "</td><td>" + esc(c.city || "") + "</td>" +
                         "<td><span class='pill " + (c.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(c.status) + "</span></td>" +
-                        '<td><button class="mini-btn" data-edit="' + c.id + '">Edit</button> <button class="mini-btn danger" data-archive="' + c.id + '">Archive</button></td></tr>';
+                        '<td><button class="mini-btn" data-edit="' + c.id + '">Edit</button> ' +
+                        (c.status === "archived"
+                            ? '<button class="mini-btn" data-restore="' + c.id + '">Restore</button>'
+                            : '<button class="mini-btn danger" data-archive="' + c.id + '">Archive</button>') + "</td></tr>";
                 }).join("") || '<tr><td colspan="5" class="empty">No churches yet.</td></tr>';
                 tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editChurch(Number(b.dataset.edit)); }; });
                 tb.querySelectorAll("[data-archive]").forEach(function (b) {
@@ -3107,17 +3731,39 @@
                         api("/api/churches?id=" + b.dataset.archive, { method: "DELETE" }).then(function (d2) { setMsg("ch_msg", d2.message, d2.success ? "ok" : "err"); fetchChurches(); });
                     };
                 });
-                populateChurchSelect();
+                tb.querySelectorAll("[data-restore]").forEach(function (b) {
+                    b.onclick = function () {
+                        var c = state.churchesCache.filter(function (x) { return x.id === Number(b.dataset.restore); })[0];
+                        if (!c) return;
+                        api("/api/churches", { method: "PUT", body: JSON.stringify(Object.assign({}, c, { status: "active" })) })
+                            .then(function (d2) { setMsg("ch_msg", d2.message, d2.success ? "ok" : "err"); fetchChurches(); });
+                    };
+                });
+                populateChurchSelects();
             }).catch(function (e) { setMsg("ch_msg", e.message, "err"); });
         }
-        function populateChurchSelect() {
-            var sel = $("pg_churchId"); if (!sel) return;
-            var current = sel.value;
-            sel.innerHTML = '<option value="">Ministry-wide</option>' + state.churchesCache.map(function (c) {
-                return '<option value="' + c.id + '">' + esc(c.nameEn) + "</option>";
-            }).join("");
-            sel.value = current;
+        // Fills every church picker in the console from one cache. Archived
+        // churches are left out so a removed campus can't be re-attached to new
+        // content, but the one currently selected is kept so editing an old row
+        // doesn't silently reassign it.
+        function populateChurchSelects() {
+            var options = state.churchesCache.filter(function (c) { return c.status === "active"; });
+            ["pg_churchId", "hs_churchId", "vd_churchId", "ev_churchId"].forEach(function (id) {
+                var sel = $(id); if (!sel) return;
+                var current = sel.value;
+                var list = options.slice();
+                if (current && !list.some(function (c) { return String(c.id) === String(current); })) {
+                    var archived = state.churchesCache.filter(function (c) { return String(c.id) === String(current); })[0];
+                    if (archived) list.push(archived);
+                }
+                sel.innerHTML = '<option value="">Ministry-wide</option>' + list.map(function (c) {
+                    return '<option value="' + c.id + '">' + esc(c.nameEn) + (c.status === "archived" ? " (archived)" : "") + "</option>";
+                }).join("");
+                sel.value = current;
+            });
         }
+        // Kept as an alias: older call sites used the singular name.
+        function populateChurchSelect() { populateChurchSelects(); }
         function editChurch(id) {
             var c = state.churchesCache.filter(function (x) { return x.id === id; })[0];
             if (!c) return;
@@ -3128,21 +3774,37 @@
             $("ch_isMother").value = c.isMotherChurch ? "1" : "0";
             $("ch_city").value = c.city || ""; $("ch_phone").value = c.phone || ""; $("ch_email").value = c.email || "";
             $("ch_mapUrl").value = c.mapUrl || ""; $("ch_addressEn").value = c.addressEn || ""; $("ch_serviceTimesEn").value = c.serviceTimesEn || "";
+            $("ch_addressTa").value = c.addressTa || ""; $("ch_serviceTimesTa").value = c.serviceTimesTa || "";
+            $("ch_onlineUrl").value = c.onlineUrl || ""; $("ch_sortOrder").value = c.sortOrder || 0;
+            $("ch_status").value = c.status || "active";
+            state.churchPhotoUrl = c.photoUrl || null;
+            $("ch_photoFile").value = "";
+            showStoredImage(c.photoUrl, "ch_photoSlot", "ch_photoPreview", "ch_photoInfo", "Currently saved");
             $("ch_saveBtn").textContent = "Save changes";
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
         function clearChurchForm() {
             state.editingChurchId = null;
             $("ch_formTitle").textContent = "Add a church";
-            ["ch_slug", "ch_nameEn", "ch_nameTa", "ch_city", "ch_phone", "ch_email", "ch_mapUrl", "ch_addressEn", "ch_serviceTimesEn"].forEach(function (id) { $(id).value = ""; });
+            ["ch_slug", "ch_nameEn", "ch_nameTa", "ch_city", "ch_phone", "ch_email", "ch_mapUrl", "ch_addressEn", "ch_serviceTimesEn",
+             "ch_addressTa", "ch_serviceTimesTa", "ch_onlineUrl", "ch_photoFile"].forEach(function (id) { $(id).value = ""; });
             $("ch_slug").disabled = false; $("ch_isMother").value = "0"; $("ch_saveBtn").textContent = "Add church";
+            $("ch_status").value = "active"; $("ch_sortOrder").value = "0";
+            $("ch_photoSlot").style.display = "none";
+            state.churchPhotoUrl = null;
         }
         function saveChurch() {
             var body = {
                 slug: $("ch_slug").value.trim(), nameEn: $("ch_nameEn").value.trim(), nameTa: $("ch_nameTa").value.trim(),
                 isMotherChurch: $("ch_isMother").value === "1", city: $("ch_city").value.trim(), phone: $("ch_phone").value.trim(),
                 email: $("ch_email").value.trim(), mapUrl: $("ch_mapUrl").value.trim(),
-                addressEn: $("ch_addressEn").value.trim(), serviceTimesEn: $("ch_serviceTimesEn").value.trim()
+                addressEn: $("ch_addressEn").value.trim(), serviceTimesEn: $("ch_serviceTimesEn").value.trim(),
+                addressTa: $("ch_addressTa").value.trim(), serviceTimesTa: $("ch_serviceTimesTa").value.trim(),
+                onlineUrl: $("ch_onlineUrl").value.trim(), photoUrl: state.churchPhotoUrl,
+                sortOrder: Number($("ch_sortOrder").value) || 0,
+                // Always sent explicitly. Omitting it used to let the API default
+                // an archived church back to active on every edit (issue 6).
+                status: $("ch_status").value
             };
             if (!body.nameEn) { setMsg("ch_msg", "Name (English) is required", "err"); return; }
             var isEdit = !!state.editingChurchId;
@@ -3154,6 +3816,8 @@
         }
 
         // ═══════════════ Promises ═══════════════
+        state.promisesCache = [];
+        state.editingPromiseId = null;
         function loadPromises() { fetchPromises(); wirePromiseScopeFields(); }
         function wirePromiseScopeFields() {
             var syncFields = function () {
@@ -3168,13 +3832,14 @@
         function fetchPromises() {
             api("/api/promises").then(function (d) {
                 if (!d.success) { setMsg("pr_msg", d.message || "No access", "err"); return; }
+                state.promisesCache = d.promises || [];
                 var tb = $("pr_table").querySelector("tbody");
                 tb.innerHTML = (d.promises || []).map(function (p) {
                     var when = p.scope === "daily" ? (p.onDate || "") : p.scope === "monthly" ? (p.month + "/" + p.year) : String(p.year || "");
                     return "<tr><td><span class='pill pill-grey'>" + esc(p.scope) + "</span></td><td>" + esc(when) + "</td>" +
                         "<td style='max-width:340px;'>" + esc((p.textEn || "").substring(0, 90)) + "</td>" +
                         "<td>" + (p.isPublished ? "<span class='pill pill-green'>Yes</span>" : "<span class='pill pill-grey'>Draft</span>") + "</td>" +
-                        '<td><button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
+                        '<td><button class="mini-btn" data-edit="' + p.id + '">Edit</button> <button class="mini-btn danger" data-id="' + p.id + '">Delete</button></td></tr>';
                 }).join("") || '<tr><td colspan="5" class="empty">No promises yet — add one above.</td></tr>';
                 tb.querySelectorAll("[data-id]").forEach(function (b) {
                     b.onclick = function () {
@@ -3182,22 +3847,52 @@
                         api("/api/promises?id=" + b.dataset.id, { method: "DELETE" }).then(function (d2) { setMsg("pr_msg", d2.message, d2.success ? "ok" : "err"); fetchPromises(); });
                     };
                 });
+                tb.querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { editPromise(Number(b.dataset.edit)); }; });
             }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
         }
+        function editPromise(id) {
+            var p = (state.promisesCache || []).filter(function (x) { return x.id === id; })[0];
+            if (!p) return;
+            state.editingPromiseId = id;
+            $("pr_scope").value = p.scope || "daily";
+            $("pr_scope").onchange();
+            $("pr_onDate").value = p.onDate || "";
+            $("pr_month").value = p.month || "";
+            $("pr_year").value = p.year || "";
+            $("pr_reference").value = p.reference || "";
+            $("pr_textEn").value = p.textEn || "";
+            $("pr_textTa").value = p.textTa || "";
+            $("pr_reflectionEn").value = p.reflectionEn || "";
+            $("pr_reflectionTa").value = p.reflectionTa || "";
+            $("pr_published").value = p.isPublished ? "1" : "0";
+            $("pr_formTitle").textContent = "Edit promise";
+            $("pr_saveBtn").textContent = "Save changes";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function clearPromiseForm() {
+            state.editingPromiseId = null;
+            ["pr_onDate", "pr_month", "pr_year", "pr_reference", "pr_textEn", "pr_textTa", "pr_reflectionEn", "pr_reflectionTa"].forEach(function (id) { $(id).value = ""; });
+            $("pr_published").value = "1";
+            $("pr_formTitle").textContent = "Add a promise";
+            $("pr_saveBtn").textContent = "Add promise";
+            setMsg("pr_msg", "", "ok");
+        }
+
         function savePromise() {
             var scope = $("pr_scope").value;
             var body = {
                 scope: scope, onDate: $("pr_onDate").value, month: $("pr_month").value, year: $("pr_year").value,
                 reference: $("pr_reference").value.trim(), textEn: $("pr_textEn").value.trim(), textTa: $("pr_textTa").value.trim(),
-                reflectionEn: $("pr_reflectionEn").value.trim(), isPublished: $("pr_published").value === "1"
+                reflectionEn: $("pr_reflectionEn").value.trim(), reflectionTa: $("pr_reflectionTa").value.trim(),
+                isPublished: $("pr_published").value === "1"
             };
             if (!body.textEn) { setMsg("pr_msg", "Promise text (English) is required", "err"); return; }
-            api("/api/promises", { method: "POST", body: JSON.stringify(body) }).then(function (d) {
+            var isEdit = !!state.editingPromiseId;
+            if (isEdit) body.id = state.editingPromiseId;
+            api("/api/promises", { method: isEdit ? "PUT" : "POST", body: JSON.stringify(body) }).then(function (d) {
                 setMsg("pr_msg", d.message, d.success ? "ok" : "err");
-                if (d.success) {
-                    ["pr_onDate", "pr_month", "pr_year", "pr_reference", "pr_textEn", "pr_textTa", "pr_reflectionEn"].forEach(function (id) { $(id).value = ""; });
-                    fetchPromises();
-                }
+                if (d.success) { clearPromiseForm(); fetchPromises(); }
             }).catch(function (e) { setMsg("pr_msg", e.message, "err"); });
         }
 
@@ -3288,7 +3983,7 @@
 
         // ═══════════════ Programs ═══════════════
         state.programsCache = [];
-        function loadPrograms() { if (state.churchesCache && state.churchesCache.length) populateChurchSelect(); else fetchChurches(); fetchPrograms(); }
+        function loadPrograms() { if (state.churchesCache && state.churchesCache.length) populateChurchSelects(); else fetchChurches(); fetchPrograms(); }
         function fetchPrograms() {
             api("/api/programs?all=1").then(function (d) {
                 if (!d.success) { setMsg("pg_msg", d.message || "No access", "err"); return; }
@@ -3297,7 +3992,7 @@
                 var tb = $("pg_table").querySelector("tbody");
                 tb.innerHTML = state.programsCache.map(function (p) {
                     var when = (p.dayOfWeek !== null && p.dayOfWeek !== undefined ? days[p.dayOfWeek] + " " : "") + (p.startTime || "");
-                    return "<tr><td><strong>" + esc(p.titleEn) + "</strong></td><td>" + esc(p.churchNameEn || "Ministry-wide") + "</td>" +
+                    return "<tr><td><strong>" + esc(p.titleEn) + "</strong>" + (p.isOnline ? ' <span class="pill pill-accent">Online</span>' : "") + "</td><td>" + esc(p.churchNameEn || "Ministry-wide") + "</td>" +
                         "<td>" + esc(when || "—") + "</td>" +
                         "<td><span class='pill " + (p.status === "active" ? "pill-green" : "pill-grey") + "'>" + esc(p.status) + "</span></td>" +
                         '<td style="white-space:nowrap;"><button class="mini-btn" data-act="edit" data-id="' + p.id + '">Edit</button> <button class="mini-btn danger" data-act="delete" data-id="' + p.id + '">Delete</button></td></tr>';
@@ -3327,6 +4022,8 @@
             $("pg_startTime").value = p.startTime || ""; $("pg_endTime").value = p.endTime || "";
             $("pg_ministryArea").value = p.ministryArea || ""; $("pg_location").value = p.location || "";
             $("pg_descriptionEn").value = p.descriptionEn || "";
+            $("pg_titleTa").value = p.titleTa || ""; $("pg_descriptionTa").value = p.descriptionTa || "";
+            $("pg_isOnline").value = p.isOnline ? "1" : "0"; $("pg_onlineUrl").value = p.onlineUrl || "";
             $("pg_status").value = p.status === "inactive" ? "inactive" : "active";
             $("pg_saveBtn").textContent = "Save changes";
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3334,8 +4031,10 @@
         function clearProgramForm() {
             state.editingProgramId = null;
             $("pg_formTitle").textContent = "Add a program";
-            ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn"].forEach(function (id) { $(id).value = ""; });
+            ["pg_titleEn", "pg_startTime", "pg_endTime", "pg_ministryArea", "pg_location", "pg_descriptionEn",
+             "pg_titleTa", "pg_descriptionTa", "pg_onlineUrl"].forEach(function (id) { $(id).value = ""; });
             $("pg_dayOfWeek").value = ""; $("pg_churchId").value = ""; $("pg_status").value = "active";
+            $("pg_isOnline").value = "0";
             $("pg_saveBtn").textContent = "Add program";
         }
         function saveProgram() {
@@ -3346,7 +4045,9 @@
                 dayOfWeek: $("pg_dayOfWeek").value === "" ? null : Number($("pg_dayOfWeek").value),
                 startTime: $("pg_startTime").value, endTime: $("pg_endTime").value,
                 ministryArea: $("pg_ministryArea").value.trim(), location: $("pg_location").value.trim(),
-                descriptionEn: $("pg_descriptionEn").value.trim(), status: $("pg_status").value
+                descriptionEn: $("pg_descriptionEn").value.trim(), status: $("pg_status").value,
+                titleTa: $("pg_titleTa").value.trim(), descriptionTa: $("pg_descriptionTa").value.trim(),
+                isOnline: $("pg_isOnline").value === "1", onlineUrl: $("pg_onlineUrl").value.trim()
             };
             var isEdit = !!state.editingProgramId;
             if (isEdit) body.id = state.editingProgramId;
@@ -3743,7 +4444,8 @@
             roles: loadRoles, audit: loadAudit, beta: loadBeta,
             verses: loadVerses, about: loadAbout, settings: loadSettings, selftest: function () {},
             churches: loadChurches, promises: loadPromises, testimonies: loadTestimonies,
-            prayer: loadPrayer, contactmsgs: loadContactMsgs, programs: loadPrograms, blog: loadBlog
+            prayer: loadPrayer, contactmsgs: loadContactMsgs, programs: loadPrograms, blog: loadBlog,
+            heroimages: loadHeroImages, videos: loadVideos, adminevents: loadAdminEvents
         };
 
         function wireThemeToggle() {
@@ -3879,6 +4581,7 @@
             $("bt_addBtn").onclick = addBetaTester;
             $("ch_saveBtn").onclick = saveChurch; $("ch_clearBtn").onclick = clearChurchForm;
             $("pr_saveBtn").onclick = savePromise;
+            $("pr_clearBtn").onclick = clearPromiseForm;
             $("ts_filter").onchange = fetchTestimonies; $("ts_refreshBtn").onclick = fetchTestimonies;
             $("pq_filter").onchange = fetchPrayer; $("pq_refreshBtn").onclick = fetchPrayer;
             $("cm_filter").onchange = fetchContactMsgs; $("cm_refreshBtn").onclick = fetchContactMsgs;
