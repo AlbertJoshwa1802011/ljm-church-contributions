@@ -657,3 +657,53 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   updated_at    DATETIME
 );
 CREATE INDEX IF NOT EXISTS idx_blog_status ON blog_posts(status, published_at DESC);
+
+-- 27. Home experience rework — hero carousel + videos (see migrations/0023_home_experience.sql)
+CREATE TABLE IF NOT EXISTS hero_slides (
+  id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+  title_en            TEXT,
+  title_ta            TEXT,
+  caption_en          TEXT,
+  caption_ta          TEXT,
+  alt_en              TEXT,
+  alt_ta              TEXT,
+  image_light_url     TEXT NOT NULL,
+  image_light_storage TEXT DEFAULT 'r2',
+  image_dark_url      TEXT,
+  image_dark_storage  TEXT,
+  link_url            TEXT,
+  church_id           INTEGER,
+  status              TEXT DEFAULT 'active',
+  sort_order          INTEGER DEFAULT 0,
+  starts_on           TEXT,
+  ends_on             TEXT,
+  created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at          DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_hero_slides_status ON hero_slides(status, sort_order);
+
+CREATE TABLE IF NOT EXISTS videos (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  title_en          TEXT NOT NULL,
+  title_ta          TEXT,
+  description_en    TEXT,
+  description_ta    TEXT,
+  youtube_url       TEXT NOT NULL,
+  video_id          TEXT,
+  thumbnail_url     TEXT,
+  thumbnail_storage TEXT,
+  church_id         INTEGER,
+  is_live           INTEGER DEFAULT 0,
+  status            TEXT DEFAULT 'published',
+  sort_order        INTEGER DEFAULT 0,
+  published_at      TEXT,
+  created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at        DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_videos_status ON videos(status, sort_order);
+
+ALTER TABLE programs ADD COLUMN online_url TEXT;
+ALTER TABLE programs ADD COLUMN is_online INTEGER DEFAULT 0;
+ALTER TABLE churches ADD COLUMN photo_url TEXT;
+ALTER TABLE churches ADD COLUMN photo_storage TEXT;
+ALTER TABLE churches ADD COLUMN online_url TEXT;

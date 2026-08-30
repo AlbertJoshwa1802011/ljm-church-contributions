@@ -79,3 +79,46 @@ test("programs: DELETE requires manage_content", async () => {
   })));
   assert.equal(denied.success, false);
 });
+
+// ── Online join links (issue 8 of docs/milestone-v2/13-home-experience-rework.md) ──
+
+test("programs: onlineUrl and isOnline round-trip through POST, GET and PUT", async () => {
+  const db = freshDb();
+  const meet = "https://meet.google.com/abc-defg-hij";
+
+  const created = await readJson(await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs",
+    body: { titleEn: "Online prayer", dayOfWeek: 3, startTime: "20:00", isOnline: true, onlineUrl: meet }
+  })));
+  assert.equal(created.success, true);
+
+  const list = await readJson(await programs.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/programs"
+  })));
+  assert.equal(list.programs[0].isOnline, true);
+  assert.equal(list.programs[0].onlineUrl, meet);
+
+  const updated = "https://meet.google.com/zzz-zzzz-zzz";
+  await programs.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/programs",
+    body: { id: created.id, titleEn: "Online prayer", isOnline: true, onlineUrl: updated }
+  }));
+
+  const after = await readJson(await programs.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/programs"
+  })));
+  assert.equal(after.programs[0].onlineUrl, updated);
+});
+
+test("programs: an in-person program reports isOnline false with no link", async () => {
+  const db = freshDb();
+  await programs.onRequestPost(makeContext({
+    db, method: "POST", url: "https://test.local/api/programs", body: { titleEn: "Sunday service" }
+  }));
+
+  const list = await readJson(await programs.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/programs"
+  })));
+  assert.equal(list.programs[0].isOnline, false);
+  assert.equal(list.programs[0].onlineUrl, null);
+});

@@ -22,7 +22,9 @@ const REQUIRED = {
   prayer_requests: ["id", "request", "status", "is_private"],
   contact_messages: ["id", "email", "message", "status"],
   programs: ["id", "title_en", "church_id", "status"],
-  blog_posts: ["id", "slug", "title_en", "body_en", "status"]
+  blog_posts: ["id", "slug", "title_en", "body_en", "status"],
+  hero_slides: ["id", "image_light_url", "image_dark_url", "status", "sort_order", "starts_on", "ends_on"],
+  videos: ["id", "title_en", "youtube_url", "video_id", "thumbnail_url", "is_live", "status"]
 };
 
 test("schema contract: critical tables and columns still exist (guards against a breaking migration)", () => {

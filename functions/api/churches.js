@@ -11,6 +11,7 @@
 //   DELETE /api/churches?id=NN      → admin: archive (soft-delete: status='archived')
 
 import { requireAuth, audit, json } from "./_lib.js";
+import { storeMedia, deleteMedia } from "./_media.js";
 
 function corsHeaders(extra) {
   return {
@@ -37,6 +38,8 @@ function toChurch(row) {
     mapUrl: row.map_url,
     serviceTimesEn: row.service_times_en,
     serviceTimesTa: row.service_times_ta,
+    photoUrl: row.photo_url,
+    onlineUrl: row.online_url,
     status: row.status,
     sortOrder: row.sort_order
   };
@@ -79,14 +82,18 @@ export async function onRequestPost(context) {
     const nameEn = String(body.nameEn || "").trim();
     if (!slug || !nameEn) return json({ success: false, message: "slug and nameEn are required" }, 400);
 
+    const photo = await storeMedia(env, "churches", body.photoUrl);
+
     const res = await db.prepare(
-      `INSERT INTO churches (slug, name_en, name_ta, is_mother_church, address_en, address_ta, city, country, phone, email, map_url, service_times_en, service_times_ta, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO churches (slug, name_en, name_ta, is_mother_church, address_en, address_ta, city, country, phone, email, map_url, service_times_en, service_times_ta, photo_url, photo_storage, online_url, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       slug, nameEn, body.nameTa || null, body.isMotherChurch ? 1 : 0,
       body.addressEn || null, body.addressTa || null, body.city || null, body.country || "India",
       body.phone || null, body.email || null, body.mapUrl || null,
-      body.serviceTimesEn || null, body.serviceTimesTa || null, Number(body.sortOrder) || 0
+      body.serviceTimesEn || null, body.serviceTimesTa || null,
+      photo ? photo.url : null, photo ? photo.storage : null, body.onlineUrl || null,
+      Number(body.sortOrder) || 0
     ).run();
 
     const id = res.meta && res.meta.last_row_id;
@@ -119,18 +126,36 @@ export async function onRequestPut(context) {
     const nameEn = String(body.nameEn || "").trim();
     if (!nameEn) return json({ success: false, message: "nameEn is required" }, 400);
 
+    const existing = await db.prepare("SELECT * FROM churches WHERE id = ?").bind(id).first();
+    if (!existing) return json({ success: false, message: "Church not found" }, 404);
+
+    // An omitted `status` keeps whatever the church already had. Before this,
+    // status defaulted to 'active' on every PUT, so simply editing an archived
+    // church silently brought it back onto the public site — which is why a
+    // removed church kept reappearing (issue 6).
+    const status = body.status === undefined || body.status === null || body.status === ""
+      ? existing.status
+      : (body.status === "archived" ? "archived" : "active");
+
+    const photo = await storeMedia(env, "churches", body.photoUrl);
+
     const res = await db.prepare(
-      `UPDATE churches SET name_en=?, name_ta=?, is_mother_church=?, address_en=?, address_ta=?, city=?, country=?, phone=?, email=?, map_url=?, service_times_en=?, service_times_ta=?, status=?, sort_order=?, updated_at=CURRENT_TIMESTAMP
+      `UPDATE churches SET name_en=?, name_ta=?, is_mother_church=?, address_en=?, address_ta=?, city=?, country=?, phone=?, email=?, map_url=?, service_times_en=?, service_times_ta=?, photo_url=?, photo_storage=?, online_url=?, status=?, sort_order=?, updated_at=CURRENT_TIMESTAMP
        WHERE id=?`
     ).bind(
       nameEn, body.nameTa || null, body.isMotherChurch ? 1 : 0,
       body.addressEn || null, body.addressTa || null, body.city || null, body.country || "India",
       body.phone || null, body.email || null, body.mapUrl || null,
       body.serviceTimesEn || null, body.serviceTimesTa || null,
-      body.status === "archived" ? "archived" : "active", Number(body.sortOrder) || 0, id
+      photo ? photo.url : null, photo ? photo.storage : null, body.onlineUrl || null,
+      status, Number(body.sortOrder) || 0, id
     ).run();
 
     if (!res.meta || res.meta.changes === 0) return json({ success: false, message: "Church not found" }, 404);
+
+    if (existing.photo_url && existing.photo_url !== (photo ? photo.url : null)) {
+      await deleteMedia(env, existing.photo_url, existing.photo_storage);
+    }
 
     await audit(context, {
       actorEmail: auth.email, actorType: "admin", verified: auth.verified,
