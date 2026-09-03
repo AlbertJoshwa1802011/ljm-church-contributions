@@ -137,7 +137,7 @@
       <a href="/" class="current">Home</a>
       <a href="/v2/about.html">About</a>
       <a href="/v2/watch.html">Watch &amp; Listen</a>
-      <a href="/events.html">Events</a>
+      <a href="/v2/events.html">Events</a>
       <a href="/v2/blog.html">Blog</a>
       <a href="/v2/testimonies.html">Testimonies</a>
       <a href="/v2/programs.html">Programs</a>
@@ -182,7 +182,7 @@
     <a href="/" class="current">Home</a>
     <a href="/v2/about.html">About</a>
     <a href="/v2/watch.html">Watch &amp; Listen</a>
-    <a href="/events.html">Events</a>
+    <a href="/v2/events.html">Events</a>
     <a href="/v2/blog.html">Blog</a>
     <a href="/v2/testimonies.html">Testimonies</a>
     <a href="/v2/programs.html">Programs</a>
@@ -607,7 +607,7 @@
         if (key !== null && key < todayStartIst) return; // already happened — not "upcoming"
         items.push({
           title: e.title, description: e.description, churchNameEn: e.churchNameEn,
-          dateLabel: e.eventDate || "", link: "/events.html", linkText: "Learn more →",
+          dateLabel: e.eventDate || "", link: "/v2/events.html", linkText: "Learn more →",
           sortKey: key === null ? Infinity : key
         });
       });
@@ -628,7 +628,7 @@
 
       var grid = document.getElementById("eventsGrid");
       if (!items.length) {
-        grid.innerHTML = '<div class="events-empty" style="grid-column:1/-1">No upcoming events or programs posted yet — check back soon, or see the full <a href="/events.html">Events page</a>.</div>';
+        grid.innerHTML = '<div class="events-empty" style="grid-column:1/-1">No upcoming events or programs posted yet — check back soon, or see the full <a href="/v2/events.html">Events page</a>.</div>';
         return;
       }
       grid.innerHTML = items.slice(0, 3).map(function (item) {
@@ -639,7 +639,7 @@
           '<a class="btn btn-secondary btn-sm" style="margin-top:auto" href="' + item.link + '">' + item.linkText + '</a></div></div>';
       }).join("");
     }).catch(function () {
-      document.getElementById("eventsGrid").innerHTML = '<div class="events-empty" style="grid-column:1/-1">See the full <a href="/events.html">Events page</a>.</div>';
+      document.getElementById("eventsGrid").innerHTML = '<div class="events-empty" style="grid-column:1/-1">See the full <a href="/v2/events.html">Events page</a>.</div>';
     });
   })();
 </script>

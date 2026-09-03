@@ -6,7 +6,7 @@
 // any real network access.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { freshDb } from "../helpers/mock-d1.mjs";
+import { freshDb, makeContext } from "../helpers/mock-d1.mjs";
 import * as auth from "../../functions/api/auth.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
@@ -111,6 +111,71 @@ test("auth: PUT links a Google email to an unclaimed member and 400s if already 
     assert.equal(again.status, 400);
   }
 ));
+
+function scopedContext({ db, email, url = "https://test.local/api/auth" }) {
+  return {
+    env: { DB: db, ADMIN_API_TOKEN: "test-admin-token", ALLOW_LEGACY_EMAIL_TOKEN: "true" },
+    request: {
+      url,
+      method: "GET",
+      headers: { get: (k) => (k === "Authorization" ? "Bearer " + email : null) },
+      json: async () => ({})
+    }
+  };
+}
+
+test("auth: GET with the machine admin token reports isAdmin and wildcard permissions", async () => {
+  const db = freshDb();
+  const res = await readJson(await auth.onRequestGet(makeContext({ db, url: "https://test.local/api/auth" })));
+  assert.equal(res.success, true);
+  assert.equal(res.isAdmin, true);
+  assert.ok(res.permissions.includes("*"));
+});
+
+test("auth: GET unlocks a lesser-role admin (manage_content, not manage_roles)", async () => {
+  const db = freshDb();
+  db._sqlite.exec(
+    `INSERT INTO roles (role_name, permissions) VALUES ('content_only', '["manage_content"]');
+     INSERT INTO member_roles (email, role_name) VALUES ('content@example.com', 'content_only');`
+  );
+  const res = await readJson(await auth.onRequestGet(scopedContext({ db, email: "content@example.com" })));
+  assert.equal(res.success, true);
+  assert.equal(res.isAdmin, true);
+  assert.deepEqual(res.permissions, ["manage_content"]);
+});
+
+test("auth: GET unlocks a manage_events-only admin (the Events console role)", async () => {
+  const db = freshDb();
+  db._sqlite.exec(
+    `INSERT INTO roles (role_name, permissions) VALUES ('events_only', '["manage_events"]');
+     INSERT INTO member_roles (email, role_name) VALUES ('events@example.com', 'events_only');`
+  );
+  const res = await readJson(await auth.onRequestGet(scopedContext({ db, email: "events@example.com" })));
+  assert.equal(res.success, true);
+  assert.equal(res.isAdmin, true);
+  assert.ok(res.permissions.includes("manage_events"));
+});
+
+test("auth: GET rejects a signed-in email with no admin role", async () => {
+  const db = freshDb();
+  const res = await auth.onRequestGet(scopedContext({ db, email: "member@example.com" }));
+  assert.equal(res.status, 401);
+  const body = await readJson(res);
+  assert.equal(body.success, false);
+  assert.equal(body.isAdmin, false);
+  assert.match(body.message, /no admin role/i);
+});
+
+test("auth: GET without credentials returns 401", async () => {
+  const db = freshDb();
+  const res = await auth.onRequestGet(makeContext({ db, authToken: null, url: "https://test.local/api/auth" }));
+  assert.equal(res.status, 401);
+});
+
+test("auth: GET with a missing DB binding returns 500", async () => {
+  const res = await auth.onRequestGet({ env: {}, request: { url: "https://test.local/api/auth", headers: { get: () => null } } });
+  assert.equal(res.status, 500);
+});
 
 test("auth: PUT rejects when Google verification fails", async () => {
   const db = freshDb();

@@ -78,6 +78,7 @@
 - [x] `auth.js` POST name-match fallback (`mappingRecommendation`) + `unclaimedMembers` picker — `tests/api/auth.test.mjs`
 - [x] `auth.js` POST `isAdmin`/`permissions` awareness — `tests/api/auth.test.mjs`
 - [x] `auth.js` PUT link success + "already linked" 400 + Google-verify-failure 401 — `tests/api/auth.test.mjs`
+- [x] `auth.js` GET any-admin probe (machine token, lesser-role, events-only, no-role 401, missing credentials 401, missing DB 500) — `tests/api/auth.test.mjs`
   **Bug found and fixed while writing this test:** `functions/api/auth.js`'s PUT handler
   checked `result.changes === 0` to detect an already-linked member, but D1's
   `.run()` result puts that count under `.meta.changes`, not a top-level
@@ -142,8 +143,11 @@ offline harness and are tracked here so nobody re-discovers them as a surprise:
   `admin.html` and asserts (a) every helper a feature calls is defined, (b) every
   element id the JS reads exists in the markup, (c) the feature is actually wired
   up at init, and (d) the behavioural invariants that matter, as source-shape
-  assertions. Extend that file's approach for other admin sections. Still open:
-  Funds, Purchases, Expenses, Wishlist, Roles, Families and Events wiring.
+  assertions. Events wiring is now covered by `tests/frontend/admin-events-wiring.test.mjs`;
+  the nav/loader contract by `tests/frontend/admin-nav.test.mjs`; Roles checkbox
+  parity by `tests/frontend/admin-roles-scopes.test.mjs`; the any-admin gate +
+  hash routing by `tests/frontend/admin-auth-hash.test.mjs`. Still open:
+  Funds, Purchases, Expenses, Wishlist, Families wiring.
 - **Concurrent-duplicate-delivery race** in `webhook.js` (the `UNIQUE|constraint`
   catch branch, as opposed to the pre-check `SELECT`) — architecturally hard to
   trigger in a single-threaded mock-D1 test. The idempotency guarantee itself
