@@ -4,7 +4,7 @@
 
 ## Navigation structure
 
-Everything is organized into 5 top-level groups, each expanding to its pages:
+Everything is organized into 6 top-level groups, each expanding to its pages:
 
 | Group | Pages | What it's for |
 |---|---|---|
@@ -12,11 +12,12 @@ Everything is organized into 5 top-level groups, each expanding to its pages:
 | **Giving** | Funds, Contributions, Subscriptions, Purchases, Expenses | Money in and money out |
 | **People** | Members, Families | The church directory and household grouping |
 | **Content** | Wishlist, Verses, About page | What believers see on the public site, editable without a code deploy |
-| **Admin** | Roles, Audit log, Settings, Self-test | Permissions, configuration, and system health |
+| **Ministry** | Churches, Events, Promises, Testimonies, Prayer, Contact, Programs, Blog | What appears on the v2 public site — publish here, it shows there |
+| **Admin** | Roles, Audit log, Settings, Beta Access, Self-test | Permissions, configuration, and system health |
 
 **Desktop**: the sidebar is an accordion — clicking a group header expands its pages and collapses the others; navigating to a page (including via a `#hash` link or browser back/forward) automatically opens the group it belongs to, so the sidebar always shows "you are here."
 
-**Mobile**: the bottom bar shows only the 5 group icons — never a horizontally-scrolling strip of every page. Tapping a group opens a slide-up sheet listing that group's pages (the same visual pattern as the public site's mobile "More" menu, reusing its `.ljmh-sheet-*` styles).
+**Mobile**: the bottom bar shows only the 6 group icons — never a horizontally-scrolling strip of every page. Tapping a group opens a slide-up sheet listing that group's pages (the same visual pattern as the public site's mobile "More" menu, reusing its `.ljmh-sheet-*` styles).
 
 This replaced a single flat list of 13 pages that was rendered **twice** (once into the desktop sidebar, once into a horizontally-scrolling mobile strip) from one `NAV` array — the same list, duplicated DOM/event-listener surface, no grouping. If you're adding a new admin page, add it to the appropriate group in the `NAV_GROUPS` array near the top of the `<script>` block (search for `var NAV_GROUPS`) — everything else (sidebar rendering, mobile sheet, hash routing, active-state highlighting) derives from that one array.
 
@@ -30,7 +31,7 @@ The whole console now supports dark mode (previously it was permanently light-th
 
 ## Permissions
 
-Every admin action is gated server-side by a permission scope (checked in the relevant `functions/api/*.js` file via `requireAuth(context, "scope_name")`), not just hidden in the UI. Current scopes: `edit_purchases`, `edit_wishlist`, `manage_roles`, `view_members`, `manage_funds`, `delete_funds`, `view_audit`, `manage_expenses`, `manage_sandha`, `manage_members` (families), `manage_content` (About page + Bible verse import). Manage who has which scopes from **Admin → Roles**. `super_admin` (and the three hardcoded bootstrap emails in `_lib.js`) always has every scope.
+Every admin action is gated server-side by a permission scope (checked in the relevant `functions/api/*.js` file via `requireAuth(context, "scope_name")`), not just hidden in the UI. Current scopes: `edit_purchases`, `edit_wishlist`, `manage_roles`, `view_members`, `manage_funds`, `delete_funds`, `view_audit`, `manage_expenses`, `manage_subscriptions`, `manage_members` (families), `manage_content` (About page, verses, ministry inboxes), `manage_events` (Events console), `edit_contributions`. The admin console gate (`GET /api/auth`) unlocks for **any** of these scopes, not only `manage_roles`. Manage who has which scopes from **Admin → Roles**. `super_admin` (and the three hardcoded bootstrap emails in `_lib.js`) always has every scope.
 
 ## Content the pastor can edit without a deploy
 
@@ -39,6 +40,7 @@ Three admin sections exist specifically so the site's content stays current with
 - **Content → About page**: the entire public About page — hero text, mission cards, Bible verses shown there, the motivation banner and its buttons, and the "Connect With Us" links — all editable as structured fields (add/remove rows for each list), stored as one JSON setting (`about_content`). See the About page section of the admin form for the exact fields.
 - **Content → Verses**: the Verse of the Month/Year cards shown on the dashboard and to signed-in believers. Search by reference (e.g. `Philippians 4:13`) or keyword, click a result to fill in the reference and text — see [BIBLE_VERSES.md](BIBLE_VERSES.md).
 - **Admin → Settings**: force-login toggle, fund goals, and pastor contact info (name, phone, email, address) — shown at the top of every public page and in the mobile "More" menu.
+- **Ministry → Events**: create/edit/delete gatherings with cover + gallery photos, draft vs published, optional church scope. Published rows appear on `/v2/events.html` and, if featured, on the v2 Home "What's Happening" grid.
 
 ## Families & Subscriptions
 

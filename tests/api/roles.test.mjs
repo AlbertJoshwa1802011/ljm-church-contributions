@@ -7,6 +7,19 @@ async function readJson(response) {
   return JSON.parse(await response.text());
 }
 
+test("roles: a custom role can be granted manage_events and edit_contributions", async () => {
+  const db = freshDb();
+  const res = await readJson(await roles.onRequestPost(makeContext({
+    db, body: { action: "save_role", roleName: "events_editor", permissions: ["manage_events", "edit_contributions"] }
+  })));
+  assert.equal(res.success, true, res.message);
+
+  const listRes = await readJson(await roles.onRequestGet(makeContext({ db })));
+  const role = listRes.roles.find(r => r.role_name === "events_editor");
+  assert.ok(role);
+  assert.deepEqual(JSON.parse(role.permissions), ["manage_events", "edit_contributions"]);
+});
+
 test("roles: a custom role can be granted the new manage_members and manage_content scopes", async () => {
   const db = freshDb();
   const res = await readJson(await roles.onRequestPost(makeContext({

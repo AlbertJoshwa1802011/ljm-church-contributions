@@ -1,7 +1,38 @@
 // Cloudflare Pages Function: /api/auth
 // Receives a Google Identity Service JWT token, verifies it, and links/maps it to a member profile.
 
-import { getPermissions } from "./_lib.js";
+import { getPermissions, requireAuth, json } from "./_lib.js";
+
+// GET: any-admin probe for the admin console gate and session resume.
+// requireAuth() with no permission means "this caller holds any recognized
+// admin role" — not a specific scope. Super-admins and lesser roles (content
+// editors, fund managers, events managers, …) all pass; signed-in members
+// with no role, and anonymous callers, do not.
+export async function onRequestGet(context) {
+  const { env } = context;
+  if (!env || !env.DB) {
+    return json({ error: "D1 database binding missing" }, 500);
+  }
+
+  const auth = await requireAuth(context);
+  if (!auth.ok) {
+    return json({
+      success: false,
+      isAdmin: false,
+      email: auth.email || null,
+      message: auth.email
+        ? "This Google account has no admin role. Ask a super admin to link your email under Roles."
+        : "Missing or invalid credentials"
+    }, 401);
+  }
+
+  return json({
+    success: true,
+    isAdmin: true,
+    email: auth.email,
+    permissions: auth.permissions || []
+  });
+}
 
 export async function onRequestPost(context) {
   const { env, request } = context;

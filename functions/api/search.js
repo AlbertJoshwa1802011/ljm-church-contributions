@@ -6,6 +6,10 @@
 
 import { requireAuth, json } from "./_lib.js";
 
+// LIKE clauses use repeated `?` placeholders (one bind per occurrence), not
+// D1 numbered `?1`. Numbered params work on Cloudflare D1 but throw
+// "column index out of range" under node:sqlite in `npm test`.
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const db = env.DB;
@@ -29,16 +33,16 @@ export async function onRequestGet(context) {
       tasks.push(
         db.prepare(
           `SELECT id, name, email, phone FROM members
-           WHERE name LIKE ?1 OR email LIKE ?1 OR phone LIKE ?1
+           WHERE name LIKE ? OR email LIKE ? OR phone LIKE ?
            ORDER BY name LIMIT 6`
-        ).bind(like).all().then((r) => { results.members = r.results || []; })
+        ).bind(like, like, like).all().then((r) => { results.members = r.results || []; })
       );
       tasks.push(
         db.prepare(
           `SELECT id, family_name AS name, primary_phone AS phone, primary_email AS email FROM families
-           WHERE status != 'deleted' AND (family_name LIKE ?1 OR primary_phone LIKE ?1 OR primary_email LIKE ?1)
+           WHERE status != 'deleted' AND (family_name LIKE ? OR primary_phone LIKE ? OR primary_email LIKE ?)
            ORDER BY family_name LIMIT 6`
-        ).bind(like).all().then((r) => { results.families = r.results || []; })
+        ).bind(like, like, like).all().then((r) => { results.families = r.results || []; })
       );
     }
 
@@ -46,9 +50,9 @@ export async function onRequestGet(context) {
       tasks.push(
         db.prepare(
           `SELECT id, slug, name, description FROM funds
-           WHERE status != 'deleted' AND (name LIKE ?1 OR slug LIKE ?1 OR description LIKE ?1)
+           WHERE status != 'deleted' AND (name LIKE ? OR slug LIKE ? OR description LIKE ?)
            ORDER BY name LIMIT 6`
-        ).bind(like).all().then((r) => { results.funds = r.results || []; })
+        ).bind(like, like, like).all().then((r) => { results.funds = r.results || []; })
       );
     }
 
@@ -56,9 +60,9 @@ export async function onRequestGet(context) {
       tasks.push(
         db.prepare(
           `SELECT id, name, amount, fund FROM purchases
-           WHERE name LIKE ?1 OR vendor LIKE ?1 OR description LIKE ?1
+           WHERE name LIKE ? OR vendor LIKE ? OR description LIKE ?
            ORDER BY date DESC LIMIT 6`
-        ).bind(like).all().then((r) => { results.purchases = r.results || []; })
+        ).bind(like, like, like).all().then((r) => { results.purchases = r.results || []; })
       );
     }
 
@@ -66,9 +70,9 @@ export async function onRequestGet(context) {
       tasks.push(
         db.prepare(
           `SELECT id, item_name AS name, cost, priority FROM wishlist
-           WHERE item_name LIKE ?1 OR notes LIKE ?1
+           WHERE item_name LIKE ? OR notes LIKE ?
            ORDER BY item_name LIMIT 6`
-        ).bind(like).all().then((r) => { results.wishlist = r.results || []; })
+        ).bind(like, like).all().then((r) => { results.wishlist = r.results || []; })
       );
     }
 
