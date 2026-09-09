@@ -38,6 +38,10 @@ exist and are approved.**
 **Supporting:** [`SAFETY-AND-TESTS.md`](./SAFETY-AND-TESTS.md) — the zero-breakage
 guarantee + regression test net (applies to all phases).
 
+**v2 Liquid Glass (visual only):** [`13-liquid-glass-v2.md`](./13-liquid-glass-v2.md)
+— Apple-style glass materials + WhatsApp-style bottom tab bar on `/v2/*`. Does
+not change the frozen giving path.
+
 **Round 1 UI/UX mockups (awaiting owner review):**
 [`07-ui-mockups-review.md`](./07-ui-mockups-review.md) — static HTML previews of the
 redesigned Home, Our Giving (the full stats report), and Give flow +
