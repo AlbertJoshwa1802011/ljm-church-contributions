@@ -155,6 +155,15 @@ offline harness and are tracked here so nobody re-discovers them as a surprise:
 
 ---
 
+## Frontend — v2 Liquid Glass / tab bar (no new API)
+
+- [x] v2 glass tokens in light + dark + reduced-transparency fallback — `tests/frontend/v2-liquid-glass.test.mjs`
+- [x] WhatsApp-style tab bar (Home/Events/Give/Pray/More) on every v2 page — `tests/frontend/v2-liquid-glass.test.mjs`
+- [x] Give flow still loads `/razorpay-checkout.js` and frozen class names — `tests/frontend/v2-liquid-glass.test.mjs`
+- [x] Hamburger/drawer IDs preserved (no clip / overflow:hidden) — `tests/frontend/v2-hamburger-header.test.mjs` + `v2-liquid-glass.test.mjs`
+
+---
+
 ## How to use this tracker
 
 1. Before starting any new backend work, skim this file for open (`[ ]`) items in

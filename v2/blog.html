@@ -10,7 +10,7 @@
   .bl-hero .wrap { max-width: 760px; text-align: center; }
   .bl-hero h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); margin-top: 14px; }
   .bl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .bl-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+  .bl-card { background: var(--glass); border: 1px solid var(--glass-stroke); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
   .bl-cover { height: 140px; background: linear-gradient(140deg, var(--accent-deep), var(--accent)); }
   .bl-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
   .bl-body h3 { font-size: 1.02rem; }
@@ -76,6 +76,7 @@
     <a href="/v2/watch.html" data-i18n="nav.watch">Watch &amp; Listen</a><a href="/v2/events.html" data-i18n="nav.events">Events</a>
     <a href="/v2/programs.html" data-i18n="nav.programs">Programs</a><a href="/v2/blog.html" data-i18n="nav.blog">Blog</a>
     <a href="/v2/testimonies.html" data-i18n="nav.testimonies">Testimonies</a><a href="/v2/our-giving.html" data-i18n="nav.ourGiving">Our Giving</a>
+    <a href="/v2/contact.html" data-i18n="nav.contact">Contact</a>
   </nav>
   <div class="nav-drawer-section"><button class="lang-toggle" type="button" style="display:block;width:100%;">TA</button></div>
   <div class="nav-drawer-section nav-drawer-auth">
@@ -135,7 +136,6 @@
   </div>
 </footer>
 
-<div class="mobile-actions"><a href="/v2/prayer.html" class="btn btn-secondary">Pray</a><a href="/v2/give-flow.html" class="btn btn-primary">Give</a></div>
 <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
   <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
   <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
@@ -144,6 +144,7 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
+<script src="tabbar.js"></script>
 <script>
   (function () {
     var root = document.documentElement;

@@ -54,8 +54,8 @@
   .hero-church .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 
   .promise-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lift); padding: 34px 32px 28px; position: relative; overflow: hidden;
+    background: var(--glass); border: 1px solid var(--glass-stroke); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow); padding: 34px 32px 28px; position: relative; overflow: visible;
   }
   .promise-card::before {
     content: ""; position: absolute; inset: 0 0 auto 0; height: 4px;
@@ -83,7 +83,7 @@
   .actions-band { background: var(--bg-soft); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
   .actions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .action-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--glass); border: 1px solid var(--glass-stroke); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); border-radius: var(--radius);
     padding: 26px; display: flex; flex-direction: column; gap: 12px; transition: transform .18s ease, box-shadow .18s ease;
   }
   .action-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
@@ -95,7 +95,7 @@
   .action-card p { font-size: .88rem; }
   .action-card .go { margin-top: auto; font-size: .82rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 5px; }
 
-  .glance-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .glance-card { background: var(--glass); border: 1px solid var(--glass-stroke); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
   .glance-top { padding: 26px 28px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
   .glance-top h3 { font-size: 1.2rem; }
   .glance-top p { font-size: .88rem; margin-top: 6px; max-width: 46ch; }
@@ -112,7 +112,7 @@
   @media (max-width: 760px) { .glance-stats { grid-template-columns: 1fr 1fr; } .glance-stat:nth-child(2) { border-right: none; } }
 
   .events-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .event-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+  .event-card { background: var(--glass); border: 1px solid var(--glass-stroke); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
   .event-photo { height: 130px; background: linear-gradient(140deg, var(--accent-deep), var(--accent)); position: relative; }
   .event-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
   .event-date { font-size: .72rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .04em; }
@@ -187,6 +187,7 @@
     <a href="/v2/testimonies.html">Testimonies</a>
     <a href="/v2/programs.html">Programs</a>
     <a href="/v2/our-giving.html">Our Giving</a>
+    <a href="/v2/contact.html" data-i18n="nav.contact">Contact</a>
   </nav>
   <div class="nav-drawer-section"><button class="lang-toggle" type="button" style="display:block;width:100%;">TA</button></div>
   <div class="nav-drawer-section nav-drawer-auth">
@@ -428,11 +429,6 @@
   </div>
 </footer>
 
-<div class="mobile-actions">
-  <a href="/v2/prayer.html" class="btn btn-secondary">Pray</a>
-  <a href="/v2/contact.html" class="btn btn-ghost">Contact</a>
-  <a href="/v2/give-flow.html" class="btn btn-primary">Give</a>
-</div>
 
 <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
   <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
@@ -442,6 +438,7 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
+<script src="tabbar.js"></script>
 <script>
   (function () {
     var root = document.documentElement;

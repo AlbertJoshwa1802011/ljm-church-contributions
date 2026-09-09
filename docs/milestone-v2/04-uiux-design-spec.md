@@ -180,6 +180,9 @@ construction.
 - Purposeful and quiet: 150–250ms ease for hover lift, drawer, modal, tab changes.
 - Promise card and live badge get a subtle, slow emphasis; nothing flashy.
 - Respect `prefers-reduced-motion` — disable non-essential animation.
+- **v2 Liquid Glass addendum:** floating glass header + WhatsApp-style bottom
+  tab bar (Home · Events · Give · Pray · More). Materials, light/dark tokens,
+  and fallbacks: [`13-liquid-glass-v2.md`](./13-liquid-glass-v2.md).
 
 ---
 
