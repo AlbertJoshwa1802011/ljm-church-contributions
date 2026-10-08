@@ -3,6 +3,7 @@
 // Also supports manual add/edit/(soft)delete of contributions from the admin console.
 
 import { requireAuth, audit, json } from "./_lib.js";
+import { canonicalFundSlug, fundLedgerName, systemGoalConfigKey, normalizeFundForWrite } from "./_fund.js";
 
 // TODO: replace with a real role-based permission ("edit_contributions",
 // already registered in roles.js's VALID_PERMISSIONS) once ready to extend
@@ -10,10 +11,7 @@ import { requireAuth, audit, json } from "./_lib.js";
 const MANUAL_ENTRY_ALLOWLIST = ["albertjoshrock101@gmail.com"];
 
 function normalizeFund(fund) {
-  fund = String(fund || "").toLowerCase().replace(/\s+/g, "");
-  if (fund === "tech" || fund === "techfund") return "tech-contributions";
-  if (fund === "christmas" || fund === "christmasfund") return "christmas-fund";
-  return fund || "tech-contributions";
+  return normalizeFundForWrite(fund);
 }
 
 async function requireManualEntryAdmin(context) {
@@ -55,8 +53,7 @@ export async function onRequestGet(context) {
       
       // Match the Apps Script fund capitalization for frontend compatibility
       purchases.forEach(p => {
-        if (p.fund === "tech-contributions") p.fund = "Tech Fund";
-        else if (p.fund === "christmas-fund") p.fund = "Christmas Fund";
+        p.fund = fundLedgerName(p.fund);
       });
 
       return new Response(JSON.stringify({
@@ -73,13 +70,7 @@ export async function onRequestGet(context) {
       });
     }
 
-    if (fund === "tech" || fund === "techfund" || fund === "tech-contributions") {
-      fund = "tech-contributions";
-    } else if (fund === "christmas" || fund === "christmasfund" || fund === "christmas-fund") {
-      fund = "christmas-fund";
-    } else {
-      fund = "tech-contributions"; // Fallback default
-    }
+    fund = canonicalFundSlug(fund);
 
     // 2. Fetch Goal Amount — funds table is the source of truth; config keys are the legacy fallback
     let goalAmount = 0;
@@ -88,7 +79,7 @@ export async function onRequestGet(context) {
       if (fundRow) goalAmount = Number(fundRow.goal_amount) || 0;
     } catch (_) { /* funds table may not exist yet (pre-0002 database) */ }
     if (!goalAmount) {
-      const goalKey = fund === "tech-contributions" ? "tech_goal_amount" : "christmas_goal_amount";
+      const goalKey = systemGoalConfigKey(fund) || "tech_goal_amount";
       const goalResult = await db.prepare("SELECT value FROM config WHERE key = ?")
         .bind(goalKey)
         .first();

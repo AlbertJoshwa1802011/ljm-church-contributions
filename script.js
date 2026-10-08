@@ -69,6 +69,7 @@ function setCachedFund(fundKey, data) {
         try {
             localStorage.removeItem('techFundData');
             localStorage.removeItem('christmasFundData');
+            localStorage.removeItem('christmasFund2k26Data');
             localStorage.setItem(fundKey, JSON.stringify({
                 data,
                 lastFetched: Date.now(),
@@ -114,17 +115,62 @@ function getCachedMembersList() {
 }
 
 // Preload members list in background (so Members page opens fast)
+function identifySelectedFund(raw) {
+    const f = String(raw || "").toLowerCase().replace(/\s+/g, "");
+    if (f === "tech" || f === "techfund" || f === "tech-contributions") {
+        return { kind: "tech", slug: "tech-contributions", cacheKey: "techFundData" };
+    }
+    if (f === "christmas-fund-2k26" || f === "christmasfund2k26" || f === "christmas2k26"
+        || f === "christmas2k26fund" || f === "christmasfund2026" || f === "christmas-fund-2026"
+        || f === "christmas2026" || f === "christmas2026fund") {
+        return { kind: "xmas2k26", slug: "christmas-fund-2k26", cacheKey: "christmasFund2k26Data" };
+    }
+    if (f === "christmas" || f === "christmasfund" || f === "christmas-fund"
+        || f === "christmasfund2025" || f === "christmas-fund-2025" || f === "christmas2025") {
+        return { kind: "xmas2025", slug: "christmas-fund", cacheKey: "christmasFundData" };
+    }
+    return { kind: "dynamic", slug: f, cacheKey: "fundData_" + f };
+}
+
+function christmasDashboardConfig(kind) {
+    if (kind === "xmas2k26") {
+        return {
+            slug: "christmas-fund-2k26",
+            cacheKey: "christmasFund2k26Data",
+            heading: "🎄 Christmas Fund 2k26 Contributions",
+            subtitle: "Oct · Nov · Dec — Christmas 2026 season",
+            emptyText: "Be the first to contribute to our Christmas Fund 2k26!",
+            displayName: "Christmas Fund 2k26",
+            eventFund: "christmas-2k26"
+        };
+    }
+    if (kind === "xmas2025") {
+        return {
+            slug: "christmas-fund",
+            cacheKey: "christmasFundData",
+            heading: "🎄 Christmas Fund 2025 Contributions",
+            subtitle: "2025 season — viewing last year's giving",
+            emptyText: "No contributions were recorded for Christmas Fund 2025.",
+            displayName: "Christmas Fund 2025",
+            eventFund: "christmas",
+            hidePayment: true
+        };
+    }
+    return null;
+}
+
 async function preloadMembersList() {
-    const techUrl = "/api/contributions?fund=tech-contributions";
-    const christmasUrl = "/api/contributions?fund=christmas-fund";
+    const urls = [
+        "/api/contributions?fund=tech-contributions",
+        "/api/contributions?fund=christmas-fund",
+        "/api/contributions?fund=christmas-fund-2k26"
+    ];
     try {
-        const [techRes, christmasRes] = await Promise.all([
-            fetch(techUrl + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' }),
-            fetch(christmasUrl + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' })
-        ]);
-        const tech = await techRes.json();
-        const christmas = await christmasRes.json();
-        const contributions = [...(tech.contributions || []), ...(christmas.contributions || [])];
+        const responses = await Promise.all(urls.map(url =>
+            fetch(url + '&_t=' + Date.now(), { credentials: 'omit', cache: 'no-store' })
+        ));
+        const payloads = await Promise.all(responses.map(r => r.json()));
+        const contributions = payloads.flatMap(d => d.contributions || []);
         const members = [...new Set(contributions.map(c => c.Member).filter(Boolean))].sort();
         setCachedMembersList(members);
     } catch (err) {
@@ -1161,14 +1207,11 @@ async function silentBackgroundRefresh(selectedFund) {
     const indicator = document.getElementById('updateIndicator');
 
     try {
-        let apiUrl, fundKey;
-        if (selectedFund === 'christmasfund') {
-            apiUrl = "/api/contributions?fund=christmas-fund";
-            fundKey = "christmasFundData";
-        } else {
-            apiUrl = "/api/contributions?fund=tech-contributions";
-            fundKey = "techFundData";
-        }
+        const ident = identifySelectedFund(selectedFund);
+        const apiUrl = ident.kind === "dynamic"
+            ? "/api/funds?slug=" + encodeURIComponent(ident.slug)
+            : "/api/contributions?fund=" + encodeURIComponent(ident.slug);
+        const fundKey = ident.cacheKey;
 
         // Show subtle indicator
         if (indicator) indicator.style.display = 'flex';
@@ -1188,11 +1231,13 @@ async function silentBackgroundRefresh(selectedFund) {
         // If data changed, reload dashboard silently
         if (newCount !== oldCount) {
             console.log('[BACKGROUND] Data changed! Refreshing UI...');
-            // Trigger a re-render by re-initializing
-            if (selectedFund === 'christmasfund') {
-                await initChristmasFundDashboard();
-            } else {
+            const xmasOpts = christmasDashboardConfig(ident.kind);
+            if (xmasOpts) {
+                await initChristmasFundDashboard(xmasOpts);
+            } else if (ident.kind === "tech") {
                 await initDashboard();
+            } else {
+                await initDashboard({ slug: ident.slug });
             }
         }
 
@@ -1292,6 +1337,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (navEntries.length > 0 && navEntries[0].type === "reload") {
                 localStorage.removeItem("techFundData");
                 localStorage.removeItem("christmasFundData");
+                localStorage.removeItem("christmasFund2k26Data");
                 console.log("[CACHE] Cache cleared on page reload - will fetch fresh data");
             }
         }
@@ -1302,8 +1348,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const params = new URLSearchParams(window.location.search);
     let selectedFund = params.get("fund") || "tech";
     selectedFund = selectedFund.toLowerCase().replace(/\s+/g, '');
+    const selectedIdent = identifySelectedFund(selectedFund);
 
-    const fundKey = selectedFund === "christmasfund" ? "christmasFundData" : "techFundData";
+    const fundKey = selectedIdent.cacheKey;
     const hasCachedData = getCachedFund(fundKey) !== null;
 
     // --------------------
@@ -1367,12 +1414,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Initializing dashboard for fund:", selectedFund);
 
     try {
-        const LEGACY_TECH = ["tech", "techfund", "tech-contributions"];
-        const LEGACY_XMAS = ["christmas", "christmasfund", "christmas-fund"];
-
-        if (LEGACY_XMAS.includes(selectedFund)) {
-            await initChristmasFundDashboard();
-        } else if (LEGACY_TECH.includes(selectedFund)) {
+        const xmasOpts = christmasDashboardConfig(selectedIdent.kind);
+        if (xmasOpts) {
+            await initChristmasFundDashboard(xmasOpts);
+        } else if (selectedIdent.kind === "tech") {
             await initDashboard();
         } else {
             // Dynamic fund: same dashboard pipeline, served by /api/funds?slug=…
@@ -1380,10 +1425,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const heading = document.getElementById("fundHeading");
-        if (heading && (LEGACY_TECH.includes(selectedFund) || LEGACY_XMAS.includes(selectedFund))) {
-            heading.textContent = selectedFund.includes("christmas")
-                ? "🎄 Christmas Fund Contributions"
-                : "💻 Tech Fund Contributions";
+        if (heading && selectedIdent.kind !== "dynamic") {
+            heading.textContent = selectedIdent.kind === "xmas2k26"
+                ? "🎄 Christmas Fund 2k26 Contributions"
+                : selectedIdent.kind === "xmas2025"
+                    ? "🎄 Christmas Fund 2025 Contributions"
+                    : "💻 Tech Fund Contributions";
         }
 
         console.log("Dashboard initialized");
@@ -1420,7 +1467,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // When user returns to tab (e.g. Android: reopen app): if cache is expired, refresh immediately
     document.addEventListener("visibilitychange", function () {
         if (document.visibilityState !== "visible") return;
-        const currentKey = selectedFund === "christmasfund" ? "christmasFundData" : "techFundData";
+        const currentKey = selectedIdent.cacheKey;
         if (getCachedFund(currentKey) === null) {
             console.log("[CACHE] Tab visible and cache expired - refreshing in background");
             silentBackgroundRefresh(selectedFund);
@@ -1798,19 +1845,35 @@ async function initDashboard(dynamicFund) {
 // ==================================================
 // CHRISTMAS FUND DASHBOARD
 // ==================================================
-async function initChristmasFundDashboard() {
-    const API_URL = "/api/contributions?fund=christmas-fund";
-    const FUND_KEY = "christmasFundData";
+async function initChristmasFundDashboard(opts) {
+    opts = opts || {};
+    const slug = opts.slug || "christmas-fund";
+    const API_URL = "/api/contributions?fund=" + encodeURIComponent(slug);
+    const FUND_KEY = opts.cacheKey || "christmasFundData";
+    const headingText = opts.heading || "🎄 Christmas Fund 2025 Contributions";
+    const emptyText = opts.emptyText || "Be the first to contribute to our Christmas Fund 2025!";
+    const displayName = opts.displayName || "Christmas Fund 2025";
+    const eventFund = opts.eventFund || "christmas";
 
     let contributionsData = [];
     let goalAmount = 0;
     let currentDisplayCount = 0;
 
     const heading = document.getElementById("fundHeading");
-    if (heading) heading.textContent = "🎄 Christmas Fund Contributions";
+    if (heading) heading.textContent = headingText;
+    const subtitle = document.getElementById("fundSubtitle");
+    if (subtitle && opts.subtitle) subtitle.textContent = opts.subtitle;
 
     const banner = document.getElementById("motivationalBanner");
     if (banner) banner.style.display = "none";
+
+    if (opts.hidePayment) {
+        const payBtn = document.getElementById("rzp-button1");
+        if (payBtn) {
+            payBtn.style.display = "none";
+            payBtn.dataset.paymentsClosed = "1";
+        }
+    }
 
     const fetchData = async () => {
         try {
@@ -1828,7 +1891,7 @@ async function initChristmasFundDashboard() {
             // LOCAL PREVIEW: override from mock if running on file:// or ?mock=1
             if (window.__LJM_USE_MOCK_PURCHASES__ && window.__LJM_PURCHASES_MOCK__) {
                 const mock = window.__LJM_PURCHASES_MOCK__;
-                const christmasKey = "Christmas Fund";
+                const christmasKey = displayName;
                 const fundSpent = (mock.fundContribByFund && mock.fundContribByFund[christmasKey]) || 0;
                 const fundCount = (mock.purchases || []).filter(p => p.fund === christmasKey).length;
                 window._spentOnProducts = fundSpent;
@@ -1846,10 +1909,10 @@ async function initChristmasFundDashboard() {
             renderDashboard();
             renderTopContributors(contributionsData);
             document.dispatchEvent(new CustomEvent('LJM_DATA_READY', {
-                detail: { fund: 'christmas', members: Array.from(new Set(contributionsData.map(c => c.Member))) }
+                detail: { fund: eventFund, members: Array.from(new Set(contributionsData.map(c => c.Member))) }
             }));
         } catch (err) {
-            console.error("Error fetching Christmas Fund:", err);
+            console.error("Error fetching " + displayName + ":", err);
             const cached = getCachedFund(FUND_KEY, true);
             if (cached) {
                 contributionsData = cached.contributions || [];
@@ -1862,7 +1925,7 @@ async function initChristmasFundDashboard() {
                 // LOCAL PREVIEW: apply mock override when running from file:// or ?mock=1
                 if (window.__LJM_USE_MOCK_PURCHASES__ && window.__LJM_PURCHASES_MOCK__) {
                     const mock = window.__LJM_PURCHASES_MOCK__;
-                    const christmasKey = "Christmas Fund";
+                    const christmasKey = displayName;
                     window._spentOnProducts = (mock.fundContribByFund && mock.fundContribByFund[christmasKey]) || 0;
                     window._productsBoughtCount = (mock.purchases || []).filter(p => p.fund === christmasKey).length;
                 }
@@ -1905,7 +1968,7 @@ async function initChristmasFundDashboard() {
                     <div class="empty-state">
                         <div class="empty-icon">💫</div>
                         <h3>No contributions yet</h3>
-                        <p>Be the first to contribute to our Christmas Fund!</p>
+                        <p>${emptyText}</p>
                     </div>
                 `;
             } else {

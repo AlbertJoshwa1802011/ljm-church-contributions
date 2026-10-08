@@ -50,10 +50,13 @@ test("schema contract: contributions.proof_id is UNIQUE (webhook idempotency dep
   );
 });
 
-test("schema contract: the two legacy system funds are seeded and marked is_system", async () => {
+test("schema contract: the system funds are seeded and marked is_system", async () => {
   const db = freshDb();
-  const rows = (await db.prepare("SELECT slug, is_system FROM funds ORDER BY slug").all()).results;
-  const bySlug = Object.fromEntries(rows.map(r => [r.slug, r.is_system]));
-  assert.equal(bySlug["tech-contributions"], 1);
-  assert.equal(bySlug["christmas-fund"], 1);
+  const rows = (await db.prepare("SELECT slug, name, is_system FROM funds ORDER BY slug").all()).results;
+  const bySlug = Object.fromEntries(rows.map(r => [r.slug, r]));
+  assert.equal(bySlug["tech-contributions"].is_system, 1);
+  assert.equal(bySlug["christmas-fund"].is_system, 1);
+  assert.equal(bySlug["christmas-fund"].name, "Christmas Fund 2025");
+  assert.equal(bySlug["christmas-fund-2k26"].is_system, 1);
+  assert.equal(bySlug["christmas-fund-2k26"].name, "Christmas Fund 2k26");
 });

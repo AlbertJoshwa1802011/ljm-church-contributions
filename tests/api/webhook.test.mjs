@@ -116,6 +116,31 @@ test("webhook: fund names are normalized (christmas variants → christmas-fund,
   assert.equal(x2.fund, "tech-contributions");
 });
 
+test("webhook: Christmas Fund 2k26 notes land on christmas-fund-2k26, not Tech or 2025", async () => {
+  const db = freshDb();
+  const variants = [
+    ["pay_26a", "christmas-fund-2k26"],
+    ["pay_26b", "Christmas Fund 2k26"],
+    ["pay_26c", "Christmas 2k26 fund"],
+    ["pay_26d", "christmas2k26"]
+  ];
+  for (const [id, fundName] of variants) {
+    await webhook.onRequestPost(makeWebhookContext(db, capturedPayment({ id, notes: { memberName: "Giver", fundName } })));
+    const row = await db.prepare("SELECT fund FROM contributions WHERE proof_id = ?").bind(id).first();
+    assert.equal(row.fund, "christmas-fund-2k26", `"${fundName}" must record on the 2k26 ledger`);
+  }
+});
+
+test("webhook: Christmas Fund 2025 aliases still record on the historical christmas-fund slug", async () => {
+  const db = freshDb();
+  await webhook.onRequestPost(makeWebhookContext(db, capturedPayment({ id: "pay_25a", notes: { memberName: "A", fundName: "Christmas Fund 2025" } })));
+  await webhook.onRequestPost(makeWebhookContext(db, capturedPayment({ id: "pay_25b", notes: { memberName: "B", fundName: "christmas-fund" } })));
+  const a = await db.prepare("SELECT fund FROM contributions WHERE proof_id = 'pay_25a'").first();
+  const b = await db.prepare("SELECT fund FROM contributions WHERE proof_id = 'pay_25b'").first();
+  assert.equal(a.fund, "christmas-fund");
+  assert.equal(b.fund, "christmas-fund");
+});
+
 // ── Timestamps are stored in IST ──────────────────────────────────────────
 // The handler used to store UTC while every other row in `contributions` came
 // from the Google Sheet in IST. It went unnoticed because the webhook had never

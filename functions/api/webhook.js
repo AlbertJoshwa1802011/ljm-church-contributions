@@ -1,6 +1,8 @@
 // Cloudflare Pages Function: /api/webhook
 // Receives payments from Razorpay, writes them to D1 database, and syncs them to Google Sheets in the background.
 
+import { canonicalFundSlug } from "./_fund.js";
+
 // Contribution timestamps are stored in IST to match every other row in the
 // table (see the paymentDate comment below). Workers run in UTC with no tz
 // database, so the offset is applied explicitly. India has no DST, so a fixed
@@ -67,15 +69,7 @@ export async function onRequestPost(context) {
     const phone = payment.notes?.memberPhone || payment.contact || "";
     const memberName = payment.notes?.memberName || "Anonymous";
     
-    let fundName = payment.notes?.fundName || "tech-contributions";
-    fundName = fundName.toLowerCase().replace(/\s+/g, '');
-    if (fundName === "tech" || fundName === "techfund" || fundName === "tech-contributions") {
-      fundName = "tech-contributions";
-    } else if (fundName === "christmas" || fundName === "christmasfund" || fundName === "christmas-fund") {
-      fundName = "christmas-fund";
-    } else {
-      fundName = "tech-contributions";
-    }
+    const fundName = canonicalFundSlug(payment.notes?.fundName || "tech-contributions");
 
     const monthFor = payment.notes?.month || "";
     const category = "Online (Verified)";

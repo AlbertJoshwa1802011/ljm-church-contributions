@@ -241,7 +241,8 @@
     <div class="fund-switch">
       <div class="chip-row">
         <span class="chip" id="fundTechChip">💻 Tech Fund</span>
-        <span class="chip" id="fundChristmasChip">🎄 Christmas Fund</span>
+        <span class="chip" id="fundChristmas2k26Chip">🎄 Christmas Fund 2k26</span>
+        <span class="chip" id="fundChristmasChip">🎄 Christmas Fund 2025</span>
       </div>
       <span class="fund-meta" id="fundMeta">Loading live figures…</span>
     </div>
@@ -525,6 +526,7 @@
   function loadFund(fund) {
     currentFund = fund;
     document.getElementById("fundTechChip").classList.toggle("active", fund === "tech-contributions");
+    document.getElementById("fundChristmas2k26Chip").classList.toggle("active", fund === "christmas-fund-2k26");
     document.getElementById("fundChristmasChip").classList.toggle("active", fund === "christmas-fund");
     document.getElementById("reportRoot").innerHTML = '<div class="loading-note">Loading the live ledger…</div>';
     var url = new URL(location.href);
@@ -545,6 +547,7 @@
   }
 
   document.getElementById("fundTechChip").addEventListener("click", function () { loadFund("tech-contributions"); });
+  document.getElementById("fundChristmas2k26Chip").addEventListener("click", function () { loadFund("christmas-fund-2k26"); });
   document.getElementById("fundChristmasChip").addEventListener("click", function () { loadFund("christmas-fund"); });
   loadFund(currentFund);
 

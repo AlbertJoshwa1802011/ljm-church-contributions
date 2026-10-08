@@ -96,6 +96,10 @@ test("settings: writing tech_goal_amount/christmas_goal_amount syncs the funds t
   await settings.onRequestPut(makeContext({ db, body: { key: "christmas_goal_amount", value: "12345" } }));
   const xmasFund = await db.prepare("SELECT goal_amount FROM funds WHERE slug='christmas-fund'").first();
   assert.equal(xmasFund.goal_amount, 12345);
+
+  await settings.onRequestPut(makeContext({ db, body: { key: "christmas_2k26_goal_amount", value: "18000" } }));
+  const xmas26 = await db.prepare("SELECT goal_amount FROM funds WHERE slug='christmas-fund-2k26'").first();
+  assert.equal(xmas26.goal_amount, 18000);
 });
 
 test("settings: rejects a value exceeding the max length for its key", async () => {

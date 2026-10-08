@@ -1324,6 +1324,46 @@ footer {
     color: #e74c3c;
 }
 
+.fund-status.past {
+    background: rgba(61, 96, 121, 0.12);
+    color: #3D6079;
+}
+
+.fund-card.featured {
+    position: relative;
+    border: 2px solid rgba(185, 28, 28, 0.22);
+    box-shadow: 0 18px 44px rgba(185, 28, 28, 0.14);
+    background: linear-gradient(180deg, rgba(254, 242, 242, 0.9), rgba(255,255,255,0.97));
+}
+
+.fund-badge-new {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 999px;
+    box-shadow: 0 4px 10px rgba(185, 28, 28, 0.35);
+}
+
+.fund-closed-note {
+    margin: 10px auto 0;
+    max-width: 420px;
+    font-size: 13px;
+    color: #5c6570;
+    line-height: 1.45;
+}
+
+.fund-closed-note a {
+    color: #b91c1c;
+    font-weight: 700;
+}
+
 .fund-card button {
     background: linear-gradient(135deg, var(--accent, #3D6079), var(--accent-deep, #2E4A5E));
     color: white;

@@ -67,6 +67,35 @@ test("contributions: an unknown fund falls back to tech-contributions", async ()
   assert.equal(body.goalAmount, 50000);
 });
 
+test("contributions: christmas-fund-2k26 is its own empty ledger with the ₹15000 goal", async () => {
+  const db = freshDb();
+  await addContribution(db, "Alice", 1000, "tech-only");
+  await addContribution(db, "Noel", 500, "xmas-25", "christmas-fund");
+  const body = await readJson(await contributions.onRequestGet(
+    ctx(db, "https://test.local/api/contributions?fund=christmas-fund-2k26")));
+  assert.equal(body.goalAmount, 15000);
+  assert.equal(body.contributions.length, 0, "2k26 starts empty; 2025 and Tech gifts must not leak in");
+});
+
+test("contributions: Christmas Fund 2025 still reads the historical christmas-fund ledger", async () => {
+  const db = freshDb();
+  await addContribution(db, "Noel", 500, "xmas-25b", "christmas-fund");
+  const body = await readJson(await contributions.onRequestGet(
+    ctx(db, "https://test.local/api/contributions?fund=Christmas%20Fund%202025")));
+  assert.equal(body.contributions.length, 1);
+  assert.equal(body.contributions[0].Member, "Noel");
+});
+
+test("contributions: purchases remap christmas slugs to year-labelled display names", async () => {
+  const db = freshDb();
+  await addPurchase(db, "P-x25", 1000, 1000, "christmas-fund");
+  await addPurchase(db, "P-x26", 2000, 2000, "christmas-fund-2k26");
+  const body = await readJson(await contributions.onRequestGet(ctx(db, "https://test.local/api/contributions?fund=purchases")));
+  const byId = Object.fromEntries(body.purchases.map(p => [p.id, p.fund]));
+  assert.equal(byId["P-x25"], "Christmas Fund 2025");
+  assert.equal(byId["P-x26"], "Christmas Fund 2k26");
+});
+
 test("contributions: memberEmails/memberPhones/memberStatus dictionaries are populated from the members table", async () => {
   const db = freshDb();
   await db.prepare("INSERT INTO members (name, email, phone, is_verified) VALUES ('Verified Giver','v@x.com','111',1)").run();

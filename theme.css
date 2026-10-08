@@ -351,6 +351,19 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
 }
 .ljmh-fundopt:hover { background: var(--bg-soft); }
 .ljmh-fundopt.ljmh-fund-active { background: var(--accent-soft); color: var(--accent-deep); font-weight: 600; }
+.ljmh-fund-new {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    background: #dc2626;
+    padding: 1px 6px;
+    border-radius: 999px;
+    vertical-align: middle;
+}
 .ljmh-fundempty { padding: 12px; font-size: 13px; color: var(--text-faint); text-align: center; }
 
 /* Theme toggle (now on a light surface, not the purple bar) */
@@ -644,6 +657,10 @@ button.bottom-nav-item {
     box-shadow: var(--glass-shadow) !important;
     backdrop-filter: var(--glass-filter);
     -webkit-backdrop-filter: var(--glass-filter);
+}
+[data-theme="dark"] .fund-card.featured {
+    background: linear-gradient(180deg, rgba(127, 29, 29, 0.35), var(--glass)) !important;
+    border-color: rgba(248, 113, 113, 0.35) !important;
 }
 /* Rows sit inside a glass card — a second blur layer is a GPU + contrast kink. */
 [data-theme="dark"] .activity-row {

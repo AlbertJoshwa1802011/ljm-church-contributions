@@ -260,13 +260,15 @@ body {
 <script>
 // ===== GLOBAL CACHE USING LOCAL STORAGE =====
 const FUND_URLS = [
-    "/api/contributions?fund=tech-contributions", // Tech
-    "/api/contributions?fund=christmas-fund"  // Christmas
+    "/api/contributions?fund=tech-contributions",
+    "/api/contributions?fund=christmas-fund",
+    "/api/contributions?fund=christmas-fund-2k26"
 ];
 
 // Cache keys - use SAME keys as main dashboard for cache sharing
 const CACHE_KEY_TECH = "techFundData";
 const CACHE_KEY_CHRISTMAS = "christmasFundData";
+const CACHE_KEY_CHRISTMAS_2K26 = "christmasFund2k26Data";
 const MEMBERS_LIST_CACHE_KEY = "membersListCache";
 const CACHE_VERSION = 1;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -343,16 +345,19 @@ async function fetchFundData(force=false){
     if (!force) {
         const cachedTech = getCachedFund(CACHE_KEY_TECH);
         const cachedChristmas = getCachedFund(CACHE_KEY_CHRISTMAS);
+        const cachedChristmas2k26 = getCachedFund(CACHE_KEY_CHRISTMAS_2K26);
         
-        if (cachedTech && cachedChristmas) {
+        if (cachedTech && cachedChristmas && cachedChristmas2k26) {
             const mergedData = { 
                 contributions: [
                     ...(cachedTech.contributions || []),
-                    ...(cachedChristmas.contributions || [])
+                    ...(cachedChristmas.contributions || []),
+                    ...(cachedChristmas2k26.contributions || [])
                 ], 
                 goals: {
                     tech: cachedTech.goalAmount || 0,
-                    christmas: cachedChristmas.goalAmount || 0
+                    christmas: cachedChristmas.goalAmount || 0,
+                    christmas2k26: cachedChristmas2k26.goalAmount || 0
                 },
                 memberStatus: cachedTech.memberStatus || {},
                 memberEmails: cachedTech.memberEmails || {}
@@ -367,19 +372,16 @@ async function fetchFundData(force=false){
             fetch(url + '&_t=' + Date.now(), { cache: 'no-store' }).then(r => r.json())
         ));
         const mergedData = { contributions: [], goals:{} };
+        const cacheKeys = [CACHE_KEY_TECH, CACHE_KEY_CHRISTMAS, CACHE_KEY_CHRISTMAS_2K26];
+        const goalKeys = ["tech", "christmas", "christmas2k26"];
 
         results.forEach((data, idx)=>{
             if(data.contributions) mergedData.contributions.push(...data.contributions);
-            mergedData.goals[idx===0?"tech":"christmas"] = Number(data.goalAmount || 0);
+            mergedData.goals[goalKeys[idx] || ("fund" + idx)] = Number(data.goalAmount || 0);
             if(data.memberStatus) mergedData.memberStatus = data.memberStatus;
             if(data.memberEmails) mergedData.memberEmails = data.memberEmails;
             
-            // Cache each fund separately in localStorage
-            if (idx === 0) {
-                setCachedFund(CACHE_KEY_TECH, data);
-            } else {
-                setCachedFund(CACHE_KEY_CHRISTMAS, data);
-            }
+            if (cacheKeys[idx]) setCachedFund(cacheKeys[idx], data);
         });
 
         return mergedData;

@@ -730,7 +730,7 @@
                 <div class="page-head"><h2>Contributions</h2><p>Full ledger per fund.</p></div>
                 <div class="card" id="c_addCard">
                     <h3 id="c_formTitle">Add a contribution</h3>
-                    <p class="msg" style="margin-bottom:10px;">For cash/in-hand gifts that never went through Razorpay — recorded as "Direct Cash" and attributed to your signed-in admin account. Only available for the Tech Fund and Christmas Fund ledgers.</p>
+                    <p class="msg" style="margin-bottom:10px;">For cash/in-hand gifts that never went through Razorpay — recorded as "Direct Cash" and attributed to your signed-in admin account. Use Christmas Fund 2k26 for this season's gifts; Christmas Fund 2025 is the historical 2025 ledger.</p>
                     <div class="form-grid">
                         <div class="span-all">
                             <label class="f-label" for="c_member">Member *</label>
@@ -759,7 +759,8 @@
                         <div><label class="f-label">Date *</label><input class="input" id="c_date" type="date"></div>
                         <div><label class="f-label">Fund *</label><select class="input" id="c_fund">
                             <option value="tech-contributions">Tech Fund</option>
-                            <option value="christmas-fund">Christmas Fund</option>
+                            <option value="christmas-fund-2k26">Christmas Fund 2k26</option>
+                            <option value="christmas-fund">Christmas Fund 2025</option>
                         </select></div>
                         <div><label class="f-label">Category</label><input class="input" id="c_category" value="Direct Cash"></div>
                         <div><label class="f-label">Email <span style="font-weight:400;color:var(--text-faint);">(auto-filled from the member)</span></label><input class="input" id="c_email"></div>
@@ -1284,7 +1285,8 @@
                     <h3>Fund goals (system funds)</h3>
                     <div class="form-grid">
                         <div><label class="f-label">Tech Fund goal (₹)</label><input class="input" id="s_techGoal" type="number"></div>
-                        <div><label class="f-label">Christmas Fund goal (₹)</label><input class="input" id="s_xmasGoal" type="number"></div>
+                        <div><label class="f-label">Christmas Fund 2025 goal (₹)</label><input class="input" id="s_xmasGoal" type="number"></div>
+                        <div><label class="f-label">Christmas Fund 2k26 goal (₹)</label><input class="input" id="s_xmas2k26Goal" type="number"></div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="s_saveGoals">Save goals</button>
@@ -1917,13 +1919,15 @@
             Promise.all([
                 fetch("/api/contributions?fund=tech-contributions&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
                 fetch("/api/contributions?fund=christmas-fund&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
+                fetch("/api/contributions?fund=christmas-fund-2k26&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
                 api("/api/funds")
             ]).then(function (res) {
-                var tech = res[0], xmas = res[1], fundsRes = res[2];
+                var tech = res[0], xmas = res[1], xmas26 = res[2], fundsRes = res[3];
                 state.fundsCache = (fundsRes && fundsRes.funds) || [];
                 var all = [];
                 (tech.contributions || []).forEach(function (c) { c._fund = "Tech Fund"; all.push(c); });
-                (xmas.contributions || []).forEach(function (c) { c._fund = "Christmas Fund"; all.push(c); });
+                (xmas.contributions || []).forEach(function (c) { c._fund = "Christmas Fund 2025"; all.push(c); });
+                (xmas26.contributions || []).forEach(function (c) { c._fund = "Christmas Fund 2k26"; all.push(c); });
 
                 var total = all.reduce(function (s, c) { return s + (Number(c.Amount) || 0); }, 0);
                 var names = {}; all.forEach(function (c) { if (c.Member) names[c.Member] = 1; });
@@ -1935,8 +1939,8 @@
                     var lm = cm === 0 ? 11 : cm - 1, ly = cm === 0 ? cy - 1 : cy;
                     if (d.getFullYear() === ly && d.getMonth() === lm) lastM += Number(c.Amount) || 0;
                 });
-                var spent = (tech.spentOnProducts || 0) + (xmas.spentOnProducts || 0);
-                var avail = (tech.availableBalance || 0) + (xmas.availableBalance || 0);
+                var spent = (tech.spentOnProducts || 0) + (xmas.spentOnProducts || 0) + (xmas26.spentOnProducts || 0);
+                var avail = (tech.availableBalance || 0) + (xmas.availableBalance || 0) + (xmas26.availableBalance || 0);
                 var growthPct = lastM > 0 ? Math.round(((thisM - lastM) / lastM) * 100) : null;
                 var growthValue = growthPct === null ? (thisM > 0 ? "New" : "—") : Math.abs(growthPct) + "%";
                 var growthTrend = growthPct === null
@@ -1955,7 +1959,8 @@
                 renderTrend(all);
                 renderDist(state.fundsCache.length ? state.fundsCache : [
                     { name: "Tech Fund", totalCollected: (tech.contributions || []).reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0) },
-                    { name: "Christmas Fund", totalCollected: (xmas.contributions || []).reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0) }
+                    { name: "Christmas Fund 2025", totalCollected: (xmas.contributions || []).reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0) },
+                    { name: "Christmas Fund 2k26", totalCollected: (xmas26.contributions || []).reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0) }
                 ]);
 
                 all.sort(function (a, b) { return new Date(b.Date) - new Date(a.Date); });
@@ -2369,7 +2374,7 @@
             $("c_addCard").style.display = isContribAdmin ? "" : "none";
 
             var sel = $("contribFund");
-            var options = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund", name: "Christmas Fund" }];
+            var options = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund-2k26", name: "Christmas Fund 2k26" }, { slug: "christmas-fund", name: "Christmas Fund 2025" }];
             sel.innerHTML = options.map(function (f) { return '<option value="' + esc(f.slug) + '">' + esc(f.name) + "</option>"; }).join("");
             sel.onchange = fetchContribTable;
             $("contribSearch").oninput = renderContribTable;
@@ -2628,7 +2633,7 @@
             var slug = $("contribFund").value;
             var tb = $("contribTable").querySelector("tbody");
             tb.innerHTML = '<tr><td colspan="7" class="empty">Loading…</td></tr>';
-            contribIsLegacy = slug === "tech-contributions" || slug === "christmas-fund";
+            contribIsLegacy = slug === "tech-contributions" || slug === "christmas-fund" || slug === "christmas-fund-2k26";
             var url = contribIsLegacy ? "/api/contributions?fund=" + slug + "&includeDeleted=1" : "/api/funds?slug=" + encodeURIComponent(slug);
             api(url + "&_t=" + Date.now()).then(function (d) {
                 contribRows = d.contributions || [];
@@ -2723,7 +2728,7 @@
         // ═══════════════ Purchases ═══════════════
         function loadPurchases() {
             var sel = $("p_fund");
-            var options = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund", name: "Christmas Fund" }];
+            var options = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund-2k26", name: "Christmas Fund 2k26" }, { slug: "christmas-fund", name: "Christmas Fund 2025" }];
             sel.innerHTML = options.filter(function (f) { return f.status !== "archived"; })
                 .map(function (f) { return '<option value="' + esc(f.slug) + '">' + esc(f.name) + "</option>"; }).join("");
             if (!$("p_date").value) $("p_date").valueAsDate = new Date();
@@ -2754,7 +2759,10 @@
             state.editingPurchaseId = id;
             $("p_formTitle").textContent = "Edit purchase — " + p.id;
             $("p_name").value = p.name; $("p_cost").value = p.cost; $("p_date").value = (p.date || "").substring(0, 10);
-            var slug = p.fund === "Tech Fund" ? "tech-contributions" : p.fund === "Christmas Fund" ? "christmas-fund" : p.fund;
+            var slug = p.fund === "Tech Fund" ? "tech-contributions"
+                : (p.fund === "Christmas Fund" || p.fund === "Christmas Fund 2025") ? "christmas-fund"
+                : (p.fund === "Christmas Fund 2k26") ? "christmas-fund-2k26"
+                : p.fund;
             $("p_fund").value = slug;
             $("p_fundContrib").value = p.fundContribution != null ? p.fundContribution : "";
             $("p_extContrib").value = p.externalContribution || "";
@@ -2918,7 +2926,7 @@
         // ═══════════════ Expenses ═══════════════
         function loadExpenses() {
             var sel = $("x_fund");
-            var opts = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund", name: "Christmas Fund" }];
+            var opts = state.fundsCache.length ? state.fundsCache : [{ slug: "tech-contributions", name: "Tech Fund" }, { slug: "christmas-fund-2k26", name: "Christmas Fund 2k26" }, { slug: "christmas-fund", name: "Christmas Fund 2025" }];
             sel.innerHTML = '<option value="">General funds</option>' +
                 opts.map(function (f) { return '<option value="' + esc(f.slug) + '">' + esc(f.name) + "</option>"; }).join("");
             if (!$("x_date").value) $("x_date").valueAsDate = new Date();
@@ -3769,13 +3777,16 @@
             });
             var tech = state.fundsCache.find(function (f) { return f.slug === "tech-contributions"; });
             var xmas = state.fundsCache.find(function (f) { return f.slug === "christmas-fund"; });
+            var xmas26 = state.fundsCache.find(function (f) { return f.slug === "christmas-fund-2k26"; });
             if (tech) $("s_techGoal").value = tech.goalAmount;
             if (xmas) $("s_xmasGoal").value = xmas.goalAmount;
-            if (!tech || !xmas) {
+            if (xmas26) $("s_xmas2k26Goal").value = xmas26.goalAmount;
+            if (!tech || !xmas || !xmas26) {
                 api("/api/funds").then(function (d) {
                     (d.funds || []).forEach(function (f) {
                         if (f.slug === "tech-contributions") $("s_techGoal").value = f.goalAmount;
                         if (f.slug === "christmas-fund") $("s_xmasGoal").value = f.goalAmount;
+                        if (f.slug === "christmas-fund-2k26") $("s_xmas2k26Goal").value = f.goalAmount;
                     });
                 });
             }
@@ -3830,7 +3841,8 @@
         function saveGoals() {
             Promise.all([
                 api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "tech_goal_amount", value: String(Number($("s_techGoal").value) || 0) }) }),
-                api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "christmas_goal_amount", value: String(Number($("s_xmasGoal").value) || 0) }) })
+                api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "christmas_goal_amount", value: String(Number($("s_xmasGoal").value) || 0) }) }),
+                api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "christmas_2k26_goal_amount", value: String(Number($("s_xmas2k26Goal").value) || 0) }) })
             ]).then(function (res) {
                 var ok = res.every(function (d) { return d.success; });
                 setMsg("s_goalMsg", ok ? "Goals updated" : (res[0].message || res[1].message), ok ? "ok" : "err");
