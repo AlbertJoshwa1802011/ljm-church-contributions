@@ -12,17 +12,41 @@ function getFundContext() {
     return urlParams.get("fund") || "tech-contributions";
 }
 
-// Mirrors the fund normalisation in functions/api/webhook.js (lowercase, strip
-// whitespace, default to the tech fund) so the label shown on the Razorpay
-// screen always matches the fund the payment is actually recorded against.
-// The ?fund= parameter is not case-normalised — it arrives as "Tech Fund" as
-// often as "tech-contributions" — and a plain `.includes("tech")` test is
-// case-sensitive, so it returned false for "Tech Fund" and every tech-fund
-// payer was shown "Contribution towards Christmas Fund" on the payment screen.
+function compactFundKey(raw) {
+    return String(raw || "").toLowerCase().replace(/\s+/g, "");
+}
+
+function canonicalFundSlug(raw) {
+    const f = compactFundKey(raw);
+    if (f === "tech" || f === "techfund" || f === "tech-contributions") return "tech-contributions";
+    if (f === "christmas-fund-2k26" || f === "christmasfund2k26" || f === "christmas2k26"
+        || f === "christmas2k26fund" || f === "christmasfund2026" || f === "christmas-fund-2026"
+        || f === "christmas2026" || f === "christmas2026fund") {
+        return "christmas-fund-2k26";
+    }
+    if (f === "christmas" || f === "christmasfund" || f === "christmas-fund"
+        || f === "christmasfund2025" || f === "christmas-fund-2025" || f === "christmas2025") {
+        return "christmas-fund";
+    }
+    return "tech-contributions";
+}
+
+// Mirrors functions/api/_fund.js so the Razorpay / Google Pay note matches
+// the ledger the webhook will record the gift against. Unknown funds still
+// fall through to Tech Fund (same as webhook.js).
 function fundDisplayName(raw) {
-    const f = String(raw || "").toLowerCase().replace(/\s+/g, "");
-    const isChristmas = f === "christmas" || f === "christmasfund" || f === "christmas-fund";
-    return isChristmas ? "Christmas Fund" : "Tech Fund";
+    const slug = canonicalFundSlug(raw);
+    if (slug === "christmas-fund-2k26") return "Christmas 2k26 fund";
+    if (slug === "christmas-fund") return "Christmas Fund 2025";
+    return "Tech Fund";
+}
+
+function isChristmas2k26Fund(raw) {
+    return canonicalFundSlug(raw) === "christmas-fund-2k26";
+}
+
+function isClosedChristmas2025(raw) {
+    return canonicalFundSlug(raw) === "christmas-fund";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -51,10 +75,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!btn || !modal) return;
 
-    // Show main button after a sec
-    setTimeout(() => {
-        btn.style.display = "inline-block";
-    }, 1000);
+    // Christmas Fund 2025 is history-only — new gifts go to Christmas Fund 2k26.
+    if (isClosedChristmas2025(getFundContext())) {
+        btn.style.display = "none";
+        btn.dataset.paymentsClosed = "1";
+        const notice = document.createElement("p");
+        notice.className = "fund-closed-note";
+        notice.innerHTML = 'This is the 2025 Christmas ledger. Give to <a href="index.html?fund=christmas-fund-2k26">Christmas Fund 2k26</a> instead.';
+        if (btn.parentNode) btn.parentNode.appendChild(notice);
+    } else {
+        setTimeout(() => {
+            btn.style.display = "inline-block";
+        }, 1000);
+    }
 
     // Load existing members
     let memberLoadInterval = null;
@@ -119,12 +152,40 @@ document.addEventListener("DOMContentLoaded", () => {
         loadMembers();
     });
 
+    function applySeasonMonthOptions() {
+        const monthEl = document.getElementById("monthSelect");
+        if (!monthEl) return;
+        const seasonOnly = isChristmas2k26Fund(getFundContext());
+        const seasonMonths = ["October", "November", "December"];
+        Array.from(monthEl.options).forEach(opt => {
+            if (!opt.value) return;
+            opt.hidden = seasonOnly && !seasonMonths.includes(opt.value);
+            opt.disabled = seasonOnly && !seasonMonths.includes(opt.value);
+        });
+        const hint = monthEl.parentNode && monthEl.parentNode.querySelector(".field-hint");
+        if (hint) {
+            hint.textContent = seasonOnly
+                ? "Christmas Fund 2k26 is for October, November and December 📅"
+                : "Select which month you are paying for 📅";
+        }
+        if (seasonOnly) {
+            const currentName = new Date().toLocaleString("default", { month: "long" });
+            if (seasonMonths.includes(currentName)) monthEl.value = currentName;
+            else if (!seasonMonths.includes(monthEl.value)) monthEl.value = "October";
+        }
+    }
+
     // Modal behavior
     function openModal() {
+        if (isClosedChristmas2025(getFundContext())) {
+            window.location.assign("index.html?fund=christmas-fund-2k26");
+            return;
+        }
         modal.style.display = "flex";
         modal.classList.add("insight-modal-visible");
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = "hidden";
+        applySeasonMonthOptions();
         
         const success = loadMembers();
         
@@ -252,9 +313,10 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            pills.innerHTML = monthNamesShort.map((m, i) => `
+            const seasonIndexes = isChristmas2k26Fund(getFundContext()) ? [9, 10, 11] : monthNamesShort.map((_, i) => i);
+            pills.innerHTML = seasonIndexes.map(i => `
                 <span class="month-pill" style="opacity: ${monthsPaid.has(i) ? '1' : '0.4'}; background: ${monthsPaid.has(i) ? 'var(--green, #5f8d4e)' : 'var(--bg-soft, #f4f2ec)'}; color: ${monthsPaid.has(i) ? '#fff' : 'var(--text-faint, #a09a8a)'}">
-                    ${m} ${monthsPaid.has(i) ? '✓' : ''}
+                    ${monthNamesShort[i]} ${monthsPaid.has(i) ? '✓' : ''}
                 </span>
             `).join('');
 
@@ -315,10 +377,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const phone = inputPhone ? inputPhone.value.trim() : "";
 
+            if (isClosedChristmas2025(getFundContext())) {
+                window.location.assign("index.html?fund=christmas-fund-2k26");
+                return;
+            }
+
             const amount = parsedAmount;
-            const fundName = getFundContext();
+            const fundName = canonicalFundSlug(getFundContext());
             const monthEl = document.getElementById('monthSelect');
-            const selectedMonth = monthEl ? monthEl.value : '';
+            let selectedMonth = monthEl ? monthEl.value : '';
+            if (isChristmas2k26Fund(fundName) && !selectedMonth) {
+                const currentName = new Date().toLocaleString("default", { month: "long" });
+                selectedMonth = ["October", "November", "December"].includes(currentName) ? currentName : "October";
+            }
 
             paymentInProgress = true;
             const originalText = proceedBtn.innerText;

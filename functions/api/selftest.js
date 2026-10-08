@@ -43,7 +43,7 @@ export async function onRequestGet(context) {
 
   try {
     // ── 1+2. Legacy payload contract (Tech + Christmas) ──
-    for (const fund of ["tech-contributions", "christmas-fund"]) {
+    for (const fund of ["tech-contributions", "christmas-fund", "christmas-fund-2k26"]) {
       try {
         const res = await fetch(`${origin}/api/contributions?fund=${fund}&_t=${ts}`, { headers: { "Cache-Control": "no-cache" } });
         const data = await res.json();
@@ -59,7 +59,7 @@ export async function onRequestGet(context) {
       const data = await res.json();
       const slugs = (data.funds || []).map(f => f.slug);
       record("funds listing has system funds",
-        slugs.includes("tech-contributions") && slugs.includes("christmas-fund"),
+        slugs.includes("tech-contributions") && slugs.includes("christmas-fund") && slugs.includes("christmas-fund-2k26"),
         `slugs: ${slugs.join(", ")}`);
     } catch (e) { record("funds listing has system funds", false, e.message); }
 

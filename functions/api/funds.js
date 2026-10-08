@@ -4,6 +4,7 @@
 // stay served by /api/contributions unchanged; here they are list-only + goal edits.
 
 import { requireAuth, resolveViewer, audit, json } from "./_lib.js";
+import { systemGoalConfigKey } from "./_fund.js";
 
 const RESERVED_SLUGS = ["purchases", "api", "admin", "all"];
 
@@ -256,9 +257,11 @@ export async function onRequestPut(context) {
 
     // Keep legacy config keys in sync so /api/contributions fallback stays consistent
     if (changes.goal_amount != null && isSystem) {
-      const configKey = slug === "tech-contributions" ? "tech_goal_amount" : "christmas_goal_amount";
-      await db.prepare("UPDATE config SET value = ? WHERE key = ?")
-        .bind(String(changes.goal_amount), configKey).run();
+      const configKey = systemGoalConfigKey(slug);
+      if (configKey) {
+        await db.prepare("INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+          .bind(configKey, String(changes.goal_amount)).run();
+      }
     }
 
     await audit(context, {

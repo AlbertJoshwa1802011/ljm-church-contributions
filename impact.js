@@ -132,7 +132,13 @@
     function renderGrid() {
         const filtered = currentFilter === "all"
             ? allPurchases
-            : allPurchases.filter(p => (p.fund || "").toLowerCase() === currentFilter.toLowerCase());
+            : allPurchases.filter(p => {
+                const fund = (p.fund || "").toLowerCase();
+                const want = currentFilter.toLowerCase();
+                if (fund === want) return true;
+                if (want === "christmas fund 2025" && fund === "christmas fund") return true;
+                return false;
+            });
 
         if (!filtered.length) {
             els.grid.innerHTML = "";

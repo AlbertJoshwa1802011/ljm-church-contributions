@@ -250,10 +250,11 @@
     document.getElementById("pageRoot").innerHTML = '<section class="tight"><div class="wrap"><p style="color:var(--text-faint)">Loading your giving history…</p></div></section>';
     Promise.all([
       fetch("/api/contributions?fund=tech-contributions&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
-      fetch("/api/contributions?fund=christmas-fund&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); })
+      fetch("/api/contributions?fund=christmas-fund&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }),
+      fetch("/api/contributions?fund=christmas-fund-2k26&_t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); })
     ]).then(function (results) {
       var gifts = [];
-      var labels = ["Tech Fund", "Christmas Fund"];
+      var labels = ["Tech Fund", "Christmas Fund 2025", "Christmas Fund 2k26"];
       results.forEach(function (data, i) {
         ((data && data.contributions) || []).forEach(function (c) {
           if (c.Member === profile.member) gifts.push(Object.assign({}, c, { fundLabel: labels[i] }));

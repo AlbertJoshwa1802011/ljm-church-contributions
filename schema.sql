@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS contributions (
     proof_id TEXT UNIQUE, -- Stores Razorpay Payment ID or reference ID
     email TEXT,
     phone TEXT,
-    fund TEXT NOT NULL DEFAULT 'tech-contributions', -- 'tech-contributions' or 'christmas-fund'
+    fund TEXT NOT NULL DEFAULT 'tech-contributions', -- 'tech-contributions', 'christmas-fund', or 'christmas-fund-2k26'
     created_by TEXT, -- admin email who manually logged this row (see migrations/0012_contribution_attribution.sql)
     updated_by TEXT, -- admin email who last edited this row
     is_deleted INTEGER NOT NULL DEFAULT 0, -- soft delete: 1 = hidden from public dashboard, kept for admin reconciliation
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS purchases (
     name TEXT NOT NULL,
     amount REAL NOT NULL, -- Total cost
     date TEXT NOT NULL,
-    fund TEXT NOT NULL, -- e.g., 'tech-contributions' or 'christmas-fund'
+    fund TEXT NOT NULL, -- e.g., 'tech-contributions', 'christmas-fund', or 'christmas-fund-2k26'
     photo TEXT,
     vendor TEXT,
     description TEXT,
@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS wishlist (
 -- Seed Initial Values
 INSERT OR IGNORE INTO config (key, value) VALUES ('tech_goal_amount', '50000');
 INSERT OR IGNORE INTO config (key, value) VALUES ('christmas_goal_amount', '30000');
+INSERT OR IGNORE INTO config (key, value) VALUES ('christmas_2k26_goal_amount', '15000');
 
 -- Seed initial wishlist items
 INSERT OR IGNORE INTO wishlist (id, item_name, cost, priority, notes) VALUES (1, 'Professional In-Ear Monitors (Stage Setup)', 15000, 'High', 'To improve audio output clarity for stage musicians');
@@ -240,8 +241,12 @@ SELECT 'tech-contributions', 'Tech Fund', CAST(value AS REAL), 1, 'active', 'pub
 FROM config WHERE key = 'tech_goal_amount';
 
 INSERT OR IGNORE INTO funds (slug, name, goal_amount, is_system, status, visibility)
-SELECT 'christmas-fund', 'Christmas Fund', CAST(value AS REAL), 1, 'active', 'public'
+SELECT 'christmas-fund', 'Christmas Fund 2025', CAST(value AS REAL), 1, 'active', 'public'
 FROM config WHERE key = 'christmas_goal_amount';
+
+INSERT OR IGNORE INTO funds (slug, name, goal_amount, is_system, status, visibility, description)
+SELECT 'christmas-fund-2k26', 'Christmas Fund 2k26', CAST(value AS REAL), 1, 'active', 'public', 'Oct · Nov · Dec — Christmas 2026 season'
+FROM config WHERE key = 'christmas_2k26_goal_amount';
 
 -- Config flags
 INSERT OR IGNORE INTO config (key, value) VALUES ('force_login', 'false');

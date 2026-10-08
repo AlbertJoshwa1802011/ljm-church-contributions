@@ -9,14 +9,18 @@ import * as funds from "../../functions/api/funds.js";
 
 async function readJson(res) { return JSON.parse(await res.text()); }
 
-test("funds: public listing shows the two seeded system funds", async () => {
+test("funds: public listing shows the seeded system funds", async () => {
   const db = freshDb();
   const res = await readJson(await funds.onRequestGet(makeContext({
     db, authToken: null, url: "https://test.local/api/funds"
   })));
   const slugs = res.funds.map(f => f.slug).sort();
-  assert.deepEqual(slugs, ["christmas-fund", "tech-contributions"]);
+  assert.deepEqual(slugs, ["christmas-fund", "christmas-fund-2k26", "tech-contributions"]);
   assert.ok(res.funds.every(f => f.isSystem === 1));
+  const bySlug = Object.fromEntries(res.funds.map(f => [f.slug, f]));
+  assert.equal(bySlug["christmas-fund"].name, "Christmas Fund 2025");
+  assert.equal(bySlug["christmas-fund-2k26"].name, "Christmas Fund 2k26");
+  assert.equal(bySlug["christmas-fund-2k26"].goalAmount, 15000);
 });
 
 test("funds: an admin can create a custom fund and it becomes visible", async () => {

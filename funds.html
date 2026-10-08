@@ -48,13 +48,23 @@
             <button>View Fund →</button>
         </div>
 
-        <!-- Christmas Fund -->
-        <div class="fund-card archived" onclick="openFund('Christmas Fund')">
+        <!-- Christmas Fund 2k26 -->
+        <div class="fund-card active featured" onclick="openFund('christmas-fund-2k26')">
+            <span class="fund-badge-new">New</span>
             <div class="fund-icon">🎄</div>
-            <h3>Christmas Fund</h3>
-            <p>Seasonal contributions for Christmas celebrations</p>
-            <span class="fund-status archived">Archived</span>
-            <button>View Fund →</button>
+            <h3>Christmas Fund 2k26</h3>
+            <p>Oct · Nov · Dec — seasonal giving for Christmas 2026</p>
+            <span class="fund-status active">Active this season</span>
+            <button>Give now →</button>
+        </div>
+
+        <!-- Christmas Fund 2025 (history only) -->
+        <div class="fund-card active" onclick="openFund('christmas-fund')">
+            <div class="fund-icon">🎄</div>
+            <h3>Christmas Fund 2025</h3>
+            <p>Last year's Christmas giving — view the 2025 ledger</p>
+            <span class="fund-status past">2025 season</span>
+            <button>View history →</button>
         </div>
 
     </div>
@@ -107,7 +117,10 @@ function openFund(fundName) {
     fetch("/api/funds").then(function (r) { return r.json(); }).then(function (d) {
         var grid = document.getElementById("fundsGrid");
         if (!grid || !d || !d.funds) return;
-        d.funds.filter(function (f) { return !f.isSystem && f.status === "active"; })
+        d.funds.filter(function (f) {
+            return !f.isSystem && f.status === "active"
+                && f.slug !== "christmas-fund-2k26" && f.slug !== "christmas-fund" && f.slug !== "tech-contributions";
+        })
             .forEach(function (f, i) {
                 var card = document.createElement("div");
                 card.className = "fund-card active";

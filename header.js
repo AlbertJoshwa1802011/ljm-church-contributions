@@ -121,11 +121,12 @@
         }).catch(function () {
             return [
                 { slug: "tech-contributions", name: "Tech Fund" },
-                { slug: "christmas-fund", name: "Christmas Fund" }
+                { slug: "christmas-fund-2k26", name: "Christmas Fund 2k26" },
+                { slug: "christmas-fund", name: "Christmas Fund 2025" }
             ];
         });
     }
-    var FUND_EMOJI = { "tech-contributions": "💻", "christmas-fund": "🎄" };
+    var FUND_EMOJI = { "tech-contributions": "💻", "christmas-fund": "🎄", "christmas-fund-2k26": "🎄" };
     function fundLabel(f) { return (FUND_EMOJI[f.slug] || "⛪") + " " + f.name; }
 
     function getSettings() {
@@ -292,8 +293,9 @@
             }
             menu.innerHTML = funds.map(function (f) {
                 var active = f.slug === slug ? " ljmh-fund-active" : "";
+                var badge = f.slug === "christmas-fund-2k26" ? ' <span class="ljmh-fund-new">New</span>' : "";
                 return '<a class="ljmh-fundopt' + active + '" role="option" href="index.html?fund=' +
-                    encodeURIComponent(f.slug) + '">' + esc(fundLabel(f)) + "</a>";
+                    encodeURIComponent(f.slug) + '">' + esc(fundLabel(f)) + badge + "</a>";
             }).join("") || '<div class="ljmh-fundempty">No funds yet</div>';
         });
 
@@ -373,8 +375,16 @@
     }
 
     function triggerGive() {
+        var slug = currentFundSlug();
+        var compact = String(slug || "").toLowerCase().replace(/\s+/g, "");
+        var is2025 = compact === "christmas" || compact === "christmasfund" || compact === "christmas-fund"
+            || compact === "christmasfund2025" || compact === "christmas-fund-2025";
+        if (is2025) {
+            location.assign("index.html?fund=christmas-fund-2k26");
+            return;
+        }
         var pay = document.getElementById("rzp-button1");
-        if (pay) { pay.click(); return; }
+        if (pay && pay.dataset.paymentsClosed !== "1") { pay.click(); return; }
         var target = document.querySelector(".fund-heading") || document.body;
         target.scrollIntoView({ behavior: "smooth" });
     }

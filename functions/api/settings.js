@@ -20,7 +20,7 @@ const CONTENT_KEYS = ["about_content"];
 // operational secret, set via env.TEAM_NOTIFY_EMAIL, not a public-readable setting.
 const MEDIA_KEYS = ["sunday_live_url", "daily_prayer_url", "podcast_playlist_url"];
 const PUBLIC_KEYS = ["force_login", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS, ...MEDIA_KEYS];
-const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS, ...MEDIA_KEYS];
+const WRITABLE_KEYS = ["force_login", "tech_goal_amount", "christmas_goal_amount", "christmas_2k26_goal_amount", "sandha_amount", ...VERSE_KEYS, ...PASTOR_KEYS, ...CONTENT_KEYS, ...MEDIA_KEYS];
 
 const MAX_VALUE_LEN = 1000;
 // about_content is a whole page's worth of JSON (hero, mission cards, verses,
@@ -102,6 +102,8 @@ export async function onRequestPut(context) {
         await db.prepare("UPDATE funds SET goal_amount = ? WHERE slug = 'tech-contributions'").bind(Number(value) || 0).run();
       } else if (key === "christmas_goal_amount") {
         await db.prepare("UPDATE funds SET goal_amount = ? WHERE slug = 'christmas-fund'").bind(Number(value) || 0).run();
+      } else if (key === "christmas_2k26_goal_amount") {
+        await db.prepare("UPDATE funds SET goal_amount = ? WHERE slug = 'christmas-fund-2k26'").bind(Number(value) || 0).run();
       }
     }
 
