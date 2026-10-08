@@ -25,7 +25,13 @@ tables.
 6. *Repeat this step for both "Production" and "Preview" environments* — bindings
    are per-environment and won't carry over automatically.
 
-`wrangler.jsonc` already declares this binding for local `wrangler pages dev` runs:
+Do **not** add this binding to `wrangler.jsonc` until the bucket actually exists
+in the Cloudflare account. `wrangler pages deploy` validates every declared
+binding and will refuse to publish Functions if `ljm-event-photos` is missing
+(this blocked production after the switch from `cloudflare/pages-action` to
+`wrangler-action`). Bind the bucket in the Pages dashboard first, confirm a
+deploy succeeds, then add:
+
 ```jsonc
 "r2_buckets": [
   { "binding": "EVENT_PHOTOS", "bucket_name": "ljm-event-photos" }
