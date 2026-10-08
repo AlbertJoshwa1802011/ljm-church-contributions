@@ -180,7 +180,10 @@
             '<div class="ljmh-inner">' +
                 '<a class="ljmh-brand" href="index.html" aria-label="' + BRAND + ' home">' +
                     '<span class="ljmh-mark">' + ICONS.mark + "</span>" +
-                    '<span class="ljmh-word">' + BRAND + "</span>" +
+                    '<span class="ljmh-wordmark">' +
+                        '<span class="ljmh-word">' + BRAND + "</span>" +
+                        '<span class="ljmh-sub">' + BRAND_SUB + "</span>" +
+                    "</span>" +
                 "</a>" +
                 '<nav class="ljmh-nav">' + navHtml + "</nav>" +
                 '<div class="ljmh-actions">' +

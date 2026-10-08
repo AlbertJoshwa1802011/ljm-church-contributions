@@ -1325,15 +1325,15 @@ footer {
 }
 
 .fund-status.past {
-    background: rgba(61, 96, 121, 0.12);
-    color: #3D6079;
+    background: var(--bg-soft, rgba(61, 96, 121, 0.12));
+    color: var(--text-soft, #3D6079);
 }
 
 .fund-card.featured {
     position: relative;
-    border: 2px solid rgba(185, 28, 28, 0.22);
-    box-shadow: 0 18px 44px rgba(185, 28, 28, 0.14);
-    background: linear-gradient(180deg, rgba(254, 242, 242, 0.9), rgba(255,255,255,0.97));
+    border: 2px solid color-mix(in srgb, var(--gold, #F6C453) 45%, transparent);
+    box-shadow: var(--shadow-card, 0 18px 44px rgba(7,17,31,0.14));
+    background: var(--card-gradient, linear-gradient(180deg, rgba(18,42,67,0.9), rgba(11,23,40,0.97)));
 }
 
 .fund-badge-new {
