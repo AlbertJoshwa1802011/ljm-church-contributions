@@ -34,10 +34,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Publish to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+        # cloudflare/pages-action was removed on 2026-09-18 (CVE-2026-11325).
+        # wrangler-action is the supported replacement.
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: 'light-of-jesus-ministry-contributions'
-          directory: '.'
-          # Since it is a static site without a build step, we upload the root directory.
+          command: pages deploy . --project-name=light-of-jesus-ministry-contributions
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
