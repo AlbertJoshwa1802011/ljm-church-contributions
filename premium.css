@@ -3,10 +3,16 @@
    Tokens live in theme.css. This file is visual hierarchy only.
    ================================================================== */
 
+html, body { overflow-x: hidden; max-width: 100%; }
+
 .container,
 .ljmh-inner,
 .footer-inner {
     max-width: var(--content-max);
+}
+.ljmh-nav {
+    flex-wrap: nowrap;
+    overflow: visible;
 }
 
 main.container {
