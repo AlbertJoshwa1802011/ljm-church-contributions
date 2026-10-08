@@ -439,6 +439,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     proceedBtn.innerText = originalText;
                     proceedBtn.disabled = false;
                     closeModal();
+                    var shown = typeof window.showContributionSuccess === "function" && window.showContributionSuccess({
+                        amount: amount,
+                        fund: fundDisplayName(fundName),
+                        paymentId: response.razorpay_payment_id,
+                        method: "Online"
+                    });
+                    if (shown) return;
                     alert("Thank you! Payment successful. Payment ID: " + response.razorpay_payment_id + ". Your contribution will reflect shortly.");
                     
                     const ind = document.getElementById("updateIndicator");
@@ -479,7 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "month": selectedMonth || (new Date().toLocaleString('default', { month: 'long' }))
                 },
                 "theme": {
-                    "color": "#3D6079"
+                    "color": "#07111F"
                 }
             };
 

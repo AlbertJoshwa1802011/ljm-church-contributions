@@ -5,37 +5,73 @@
    existing components that already read the --google-* tokens.
    ================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Lora:ital,wght@0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --bg: #faf9f5;
-    --bg-soft: #f4f2ec;
+    /* Premium LJM identity — light counterpart. Dark navy/gold is the product
+       default (theme.js); this block keeps light mode trustworthy and calm. */
+    --bg: #F4F7FB;
+    --bg-soft: #E8EEF6;
     --surface: #ffffff;
-    --border: #e8e5dc;
-    --border-strong: #d9d5c9;
-    --text: #1f1e1a;
-    --text-soft: #6e6a5e;
-    --text-faint: #a09a8a;
+    --elevated: #F7FAFD;
+    --border: #D5E0EC;
+    --border-strong: #B7C8D9;
+    --divider: #D5E0EC;
+    --text: #07111F;
+    --text-soft: #4A5B6E;
+    --text-faint: #718096;
     --accent: #3D6079;
     --accent-deep: #2E4A5E;
     --accent-soft: #E8ECEF;
-    --green: #5f8d4e;
-    --green-soft: #eef4ea;
-    --red: #b3452f;
-    --red-soft: #fbeae5;
-    --amber: #b98a2e;
-    --amber-soft: #f9f1df;
-    --info: #3f7a94;
-    --info-soft: #e7f0f4;
+    --green: #1F9A68;
+    --green-soft: #E6F7EF;
+    --red: #D64555;
+    --red-soft: #FDECEE;
+    --amber: #C48A12;
+    --amber-soft: #FBF3DE;
+    --info: #4DA3FF;
+    --info-soft: #E7F3FF;
+    --gold: #F6C453;
+    --gold-bright: #FFD978;
+    --gold-dark: #B88624;
+    --on-gold: #07111F;
+    --blue-accent: #4DA3FF;
+    --fund-tech: #4DA3FF;
+    --fund-christmas: #48C78E;
+    --fund-general: #E96B7A;
+    --fund-mission: #7B8CFF;
+    --fund-building: #D8A04A;
+    --hero-gradient: linear-gradient(135deg, #07111F 0%, #0B1E33 55%, #102E48 100%);
+    --card-gradient: linear-gradient(145deg, #122A43 0%, #0B1A2C 100%);
+    --cta-gradient: linear-gradient(135deg, #FFD978 0%, #F6C453 50%, #D89B2B 100%);
     --radius: 14px;
     --radius-sm: 10px;
+    --radius-md: 16px;
     --radius-lg: 20px;
+    --radius-hero: 24px;
+    --radius-btn: 14px;
     --radius-bubble: 24px;
     --radius-capsule: 28px;
-    --shadow: 0 1px 2px rgba(60,50,30,0.05), 0 4px 16px rgba(60,50,30,0.06);
-    --shadow-lift: 0 2px 6px rgba(60,50,30,0.08), 0 10px 32px rgba(60,50,30,0.10);
+    --radius-pill: 999px;
+    --shadow: 0 8px 24px rgba(7,17,31,0.08);
+    --shadow-lift: 0 12px 40px rgba(7,17,31,0.12);
+    --shadow-card: 0 12px 40px rgba(0,0,0,0.12);
+    --shadow-gold: 0 8px 30px rgba(246,196,83,0.22);
     --serif: "Lora", Georgia, serif;
-    --sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    --sans: "Plus Jakarta Sans", Inter, system-ui, sans-serif;
+    --space-1: 8px;
+    --space-2: 12px;
+    --space-3: 16px;
+    --space-4: 20px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 40px;
+    --space-8: 48px;
+    --space-9: 64px;
+    --content-max: 1240px;
+    --duration: 180ms;
+    --duration-lg: 300ms;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
     /* Liquid Glass — same recipe as v2/shared.css so admin + the live portal
        inherit Apple-style bubbles without forking a third palette. */
     --glass: color-mix(in srgb, var(--surface) 62%, transparent);
@@ -57,7 +93,7 @@
     --google-text: var(--text);
     --google-text-secondary: var(--text-soft);
     --google-border: var(--border);
-    --font-heading: var(--serif);
+    --font-heading: var(--sans);
     --font-body: var(--sans);
     --shadow-sm: var(--shadow);
     --shadow-md: var(--shadow);
@@ -67,34 +103,39 @@
 }
 
 [data-theme="dark"] {
-    /* True pitch black base for maximum contrast and premium feel.
-       Cards stand out sharply against the deep black background. */
-    --bg: #000000;
-    --bg-soft: #0a0a0a;
-    --surface: #1a1a1a;
-    --surface-2: #242424;
-    --border: #38332a;
-    --border-strong: #4a4438;
-    --text: #f2ede4;
-    --text-soft: #bfb7a8;
-    --text-faint: #8a8274;
-    /* Default accent = Wedgwood, a muted "English heritage" dusty blue. The
-       dark-mode variant is the same hue lifted to a medium tone so it reads as
-       refined against the dark surface (and members can swap it for any palette
-       in the Appearance panel — see theme.js PALETTES). */
-    --accent: #5E90AB;
-    --accent-deep: #A9C7DB;
-    --accent-soft: rgba(94, 144, 171, 0.16);
-    --green: #7fb56a;
-    --green-soft: rgba(127,181,106,0.14);
-    --red: #e0705c;
-    --red-soft: rgba(224,112,92,0.14);
-    --amber: #dcb35c;
-    --amber-soft: rgba(220,179,92,0.14);
-    --info: #6fa8c2;
-    --info-soft: rgba(111,168,194,0.14);
-    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.5);
-    --shadow-lift: 0 4px 16px rgba(0,0,0,0.5), 0 12px 32px rgba(0,0,0,0.6);
+    /* Premium navy church portal — cinematic, calm, gold as action only. */
+    --bg: #07111F;
+    --bg-soft: #0B1728;
+    --surface: #0E2035;
+    --elevated: #122A43;
+    --surface-2: #122A43;
+    --border: #21415F;
+    --border-strong: #2C5274;
+    --divider: #193149;
+    --text: #F7F8FA;
+    --text-soft: #B7C2CF;
+    --text-faint: #718096;
+    /* Informational accent (blue). Gold CTAs use --gold, not --accent.
+       Appearance palettes still override these three tokens. */
+    --accent: #4DA3FF;
+    --accent-deep: #7BB8FF;
+    --accent-soft: rgba(77, 163, 255, 0.16);
+    --green: #39C98A;
+    --green-soft: rgba(57,201,138,0.14);
+    --red: #FF6675;
+    --red-soft: rgba(255,102,117,0.14);
+    --amber: #F5B942;
+    --amber-soft: rgba(245,185,66,0.14);
+    --info: #4DA3FF;
+    --info-soft: rgba(77,163,255,0.14);
+    --gold: #F6C453;
+    --gold-bright: #FFD978;
+    --gold-dark: #B88624;
+    --on-gold: #07111F;
+    --shadow: 0 8px 24px rgba(0,0,0,0.28);
+    --shadow-lift: 0 12px 40px rgba(0,0,0,0.28);
+    --shadow-card: 0 12px 40px rgba(0,0,0,0.28);
+    --shadow-gold: 0 8px 30px rgba(246,196,83,0.16);
     /* Dark glass stays more opaque than light so 14px body text remains AA. */
     --glass: color-mix(in srgb, var(--surface) 78%, transparent);
     --glass-strong: color-mix(in srgb, var(--surface) 88%, transparent);
@@ -121,18 +162,21 @@
     }
 }
 
-html { color-scheme: light; }
+html { color-scheme: dark; }
+html[data-theme="light"] { color-scheme: light; }
 html[data-theme="dark"] { color-scheme: dark; }
 
 body {
-    /* Soft accent/gold washes so Liquid Glass has something to refract.
-       Matches the v2 ambient paper without a background photo. */
+    /* Quiet navy field. Gold is reserved for action, not atmosphere. */
     background:
-        radial-gradient(1100px 520px at 8% -8%, color-mix(in srgb, var(--accent-soft) 90%, transparent), transparent 58%),
-        radial-gradient(900px 480px at 100% 12%, color-mix(in srgb, var(--amber-soft) 70%, transparent), transparent 52%),
+        radial-gradient(900px 480px at 12% -12%, color-mix(in srgb, var(--gold) 8%, transparent), transparent 55%),
+        radial-gradient(800px 420px at 100% 0%, color-mix(in srgb, var(--blue-accent) 10%, transparent), transparent 50%),
         var(--bg) !important;
     color: var(--text) !important;
+    font-family: var(--sans);
+    letter-spacing: 0;
     position: relative;
+    -webkit-font-smoothing: antialiased;
 }
 
 body::before {
@@ -141,7 +185,13 @@ body::before {
 }
 
 h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-title, .insights-title {
-    font-family: var(--serif) !important;
+    font-family: var(--sans) !important;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+}
+blockquote, .verse-text, .vc-text, .ljm-scripture-text {
+    font-family: var(--serif);
+    font-weight: 500;
 }
 
 /* ==================================================================
@@ -262,11 +312,25 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
     flex-shrink: 0;
 }
 .ljmh-mark svg { width: 20px; height: 20px; }
+.ljmh-wordmark {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.15;
+}
 .ljmh-word {
-    font-family: var(--serif);
+    font-family: var(--sans);
     font-weight: 700;
-    font-size: 18px;
-    letter-spacing: -0.01em;
+    font-size: 16px;
+    letter-spacing: -0.025em;
+    white-space: nowrap;
+}
+.ljmh-sub {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-faint);
+    letter-spacing: 0.01em;
     white-space: nowrap;
 }
 .ljmh-nav {
@@ -419,12 +483,13 @@ h1, h2, h3, h4, .fund-heading h2, .insight-modal-title, .page-heading, .top-titl
 .ljmh-signin {
     display: inline-flex; align-items: center;
     height: 36px; padding: 0 16px;
-    border-radius: 999px;
-    background: var(--accent); color: #fff;
-    font: 600 13px var(--sans); text-decoration: none;
-    white-space: nowrap; transition: background .15s;
+    border-radius: var(--radius-pill);
+    background: var(--cta-gradient); color: var(--on-gold);
+    font: 700 13px var(--sans); text-decoration: none;
+    white-space: nowrap; transition: transform var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+    box-shadow: var(--shadow-gold);
 }
-.ljmh-signin:hover { background: var(--accent-deep); }
+.ljmh-signin:hover { transform: translateY(-1px); }
 .ljmh-avatar {
     width: 36px; height: 36px; border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), var(--accent-deep));
@@ -592,9 +657,18 @@ button.bottom-nav-item {
     }
     .bottom-nav-item.active { color: var(--accent) !important; background: var(--accent-soft); }
     .bottom-nav-item.action-btn {
-        border-color: var(--glass-strong) !important;
-        background: linear-gradient(135deg, var(--accent), var(--accent-deep)) !important;
-        color: #fff !important;
+        width: 56px !important;
+        height: 56px !important;
+        min-width: 56px;
+        min-height: 56px;
+        margin-top: -12px;
+        border-radius: 50% !important;
+        border: 3px solid var(--bg) !important;
+        background: var(--cta-gradient) !important;
+        color: var(--on-gold) !important;
+        box-shadow: var(--shadow-gold) !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
     }
     body { padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
 }
@@ -609,6 +683,7 @@ button.bottom-nav-item {
     /* Let the brand shrink and truncate so the action cluster never clips. */
     .ljmh-brand { flex: 0 1 auto; min-width: 0; gap: 8px; }
     .ljmh-word { font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ljmh-sub { display: none; }
     .ljmh-actions { flex-shrink: 0; gap: 8px; }
     .ljmh-fundlabel { display: none; }
     .ljmh-fundbtn { padding: 0 10px; height: 34px; }
@@ -802,7 +877,11 @@ button.bottom-nav-item {
 }
 [data-theme="dark"] .bottom-nav-item { color: var(--text-faint) !important; }
 [data-theme="dark"] .bottom-nav-item.active { color: var(--accent) !important; }
-[data-theme="dark"] .bottom-nav-item.action-btn { border-color: var(--bg) !important; }
+[data-theme="dark"] .bottom-nav-item.action-btn {
+    border-color: var(--bg) !important;
+    background: var(--cta-gradient) !important;
+    color: var(--on-gold) !important;
+}
 
 [data-theme="dark"] #debugConsole { background: #000 !important; }
 

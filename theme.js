@@ -52,7 +52,7 @@
     function effectiveTheme() {
         var stored = getStoredTheme();
         if (stored === "light" || stored === "dark") return stored;
-        return systemPrefersDark() ? "dark" : "light";
+        return "dark";
     }
 
     // Stored palette id for a given mode ("light"|"dark"), defaulting to indigo.
@@ -92,7 +92,7 @@
     // Follow system changes live, unless the user has explicitly overridden.
     if (window.matchMedia) {
         window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function (e) {
-            if (!getStoredTheme()) applyTheme(e.matches ? "dark" : "light");
+            if (!getStoredTheme()) applyTheme("dark");
         });
     }
 

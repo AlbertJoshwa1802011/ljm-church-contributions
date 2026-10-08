@@ -12,6 +12,7 @@
 
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="premium.css">
 <script src="theme.js"></script>
 <script src="header.js"></script>
 <script src="appearance.js"></script>
@@ -40,7 +41,7 @@
     <div class="funds-grid" id="fundsGrid">
 
         <!-- Tech Fund -->
-        <div class="fund-card active" onclick="openFund('Tech Fund')">
+        <div class="fund-card active" data-fund-accent="tech" onclick="openFund('Tech Fund')">
             <div class="fund-icon">💻</div>
             <h3>Tech Fund</h3>
             <p>Monthly contributions for technology & infrastructure</p>
@@ -49,7 +50,7 @@
         </div>
 
         <!-- Christmas Fund 2k26 -->
-        <div class="fund-card active featured" onclick="openFund('christmas-fund-2k26')">
+        <div class="fund-card active featured" data-fund-accent="christmas" onclick="openFund('christmas-fund-2k26')">
             <span class="fund-badge-new">New</span>
             <div class="fund-icon">🎄</div>
             <h3>Christmas Fund 2k26</h3>
@@ -59,7 +60,7 @@
         </div>
 
         <!-- Christmas Fund 2025 (history only) -->
-        <div class="fund-card active" onclick="openFund('christmas-fund')">
+        <div class="fund-card active" data-fund-accent="christmas-past" onclick="openFund('christmas-fund')">
             <div class="fund-icon">🎄</div>
             <h3>Christmas Fund 2025</h3>
             <p>Last year's Christmas giving — view the 2025 ledger</p>

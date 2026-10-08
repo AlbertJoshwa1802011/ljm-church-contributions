@@ -14,10 +14,10 @@
     border: 1px solid var(--glass-stroke, var(--border, rgba(0,0,0,0.05)));
 }
 .contrib-header {
-    background: linear-gradient(135deg, var(--accent-soft, #E8ECEF), var(--bg-soft, #f4f2ec));
+    background: var(--hero-gradient, linear-gradient(135deg, #07111F 0%, #0B1E33 55%, #102E48 100%));
     padding: 30px 20px 20px;
     text-align: center;
-    border-bottom: 1px solid var(--border, rgba(0,0,0,0.05));
+    border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 .contrib-icon {
     font-size: 40px;
@@ -27,12 +27,12 @@
 .contrib-header h2 {
     margin: 0 0 5px;
     font-size: 22px;
-    color: var(--text, #1f1e1a);
+    color: #FFFFFF;
 }
 .contrib-header p {
     margin: 0;
     font-size: 14px;
-    color: var(--text-soft, #6e6a5e);
+    color: #B7C2CF;
 }
 .contrib-body {
     padding: 25px 25px 30px;
@@ -58,9 +58,10 @@
     font-size: 14px;
 }
 .contrib-toggle.active {
-    background: var(--surface, #fff);
-    color: var(--accent-deep, #2E4A5E);
-    box-shadow: var(--shadow, 0 2px 8px rgba(0,0,0,0.1));
+    background: var(--elevated, var(--surface, #122A43));
+    color: var(--text, #F7F8FA);
+    box-shadow: none;
+    border: 1px solid var(--gold, #F6C453);
 }
 .contrib-field {
     margin-bottom: 20px;
@@ -138,27 +139,28 @@
     transition: all 0.2s;
 }
 .amount-chip:hover, .amount-chip.selected {
-    background: var(--accent-soft, #E8ECEF);
-    border-color: var(--accent, #3D6079);
-    color: var(--accent-deep, #2E4A5E);
+    background: color-mix(in srgb, var(--gold, #F6C453) 16%, transparent);
+    border-color: var(--gold, #F6C453);
+    color: var(--text, #F7F8FA);
 }
 .proceed-btn {
     width: 100%;
     margin-top: 10px;
     padding: 15px;
-    font-size: 18px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent, #3D6079), var(--accent-deep, #2E4A5E));
-    box-shadow: 0 4px 15px color-mix(in srgb, var(--accent, #3D6079) 30%, transparent);
-    color: #fff;
+    min-height: 48px;
+    font-size: 16px;
+    border-radius: var(--radius-btn, 14px);
+    background: var(--cta-gradient, linear-gradient(135deg, #FFD978 0%, #F6C453 50%, #D89B2B 100%));
+    box-shadow: var(--shadow-gold, 0 8px 30px rgba(246,196,83,0.16));
+    color: var(--on-gold, #07111F);
     border: none;
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 .proceed-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px color-mix(in srgb, var(--accent, #3D6079) 40%, transparent);
+    box-shadow: var(--shadow-gold, 0 8px 30px rgba(246,196,83,0.22));
 }
 .proceed-btn:disabled {
     opacity: 0.6;

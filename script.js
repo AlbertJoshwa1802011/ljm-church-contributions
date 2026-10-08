@@ -1257,12 +1257,16 @@ async function silentBackgroundRefresh(selectedFund) {
 // ==================================================
 // HERO GREETING (time-aware, personalized greeting)
 // ==================================================
+function getAuthProfile() {
+    try { return JSON.parse(sessionStorage.getItem("ljmAuthProfile") || "null"); } catch (_) { return null; }
+}
+
 function renderHeroGreeting() {
     const section = document.getElementById("heroGreeting");
     if (!section) return;
 
     try {
-        const profile = JSON.parse(sessionStorage.getItem("ljmAuthProfile") || "null");
+        const profile = getAuthProfile();
         if (!profile || !profile.email) {
             section.style.display = "none";
             return;
@@ -1275,15 +1279,132 @@ function renderHeroGreeting() {
         else if (hour < 18) timeGreeting = "Good afternoon";
         else timeGreeting = "Good evening";
 
-        const emojis = ["🙏", "✝️", "🕊️", "💫"];
-        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-
-        document.getElementById("greetingText").textContent = `${timeGreeting}, ${firstName} ${emoji}`;
+        document.getElementById("greetingText").textContent = `${timeGreeting}, ${firstName} 🙏`;
+        const note = document.getElementById("greetingNote");
+        if (note) note.textContent = "Your giving is making an impact.";
         section.style.display = "block";
     } catch (_) {
         section.style.display = "none";
     }
 }
+
+function renderPublicHero() {
+    const publicHero = document.getElementById("ljmPublicHero");
+    if (!publicHero) return;
+    const profile = getAuthProfile();
+    const signedIn = !!(profile && profile.email);
+    publicHero.style.display = signedIn ? "none" : "";
+    const giveNow = document.getElementById("ljmGiveNowBtn");
+    if (giveNow && !giveNow.dataset.wired) {
+        giveNow.dataset.wired = "1";
+        giveNow.addEventListener("click", function () {
+            const pay = document.getElementById("rzp-button1");
+            if (pay && pay.dataset.paymentsClosed !== "1") pay.click();
+        });
+    }
+}
+
+function renderPersonalSummary(contributions) {
+    const box = document.getElementById("ljmPersonalSummary");
+    if (!box) return;
+    const profile = getAuthProfile();
+    const memberName = profile && profile.member;
+    if (!memberName || !Array.isArray(contributions) || contributions.length === 0) {
+        box.style.display = "none";
+        box.hidden = true;
+        return;
+    }
+    const mine = contributions.filter(c => c.Member === memberName);
+    if (mine.length === 0) {
+        box.style.display = "none";
+        box.hidden = true;
+        return;
+    }
+    const total = mine.reduce((s, c) => s + (Number(c.Amount) || 0), 0);
+    const now = new Date();
+    const thisMonth = mine.filter(c => {
+        const d = parseContributionDate(c.Date);
+        return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonth = mine.filter(c => {
+        const d = parseContributionDate(c.Date);
+        return d && d.getMonth() === lastMonthDate.getMonth() && d.getFullYear() === lastMonthDate.getFullYear();
+    });
+    const thisSum = thisMonth.reduce((s, c) => s + (Number(c.Amount) || 0), 0);
+    const lastSum = lastMonth.reduce((s, c) => s + (Number(c.Amount) || 0), 0);
+    let deltaHtml = thisMonth.length ? `${thisMonth.length} this month` : "";
+    if (lastSum > 0) {
+        const pct = Math.round(((thisSum - lastSum) / lastSum) * 100);
+        deltaHtml = `<span class="${pct >= 0 ? "up" : ""}">${pct >= 0 ? "+" : ""}${pct}% this month</span>`;
+    }
+    const ranked = getTopContributors(contributions, 1000);
+    const idx = ranked.findIndex(r => r.Member === memberName);
+    const unique = new Set(contributions.map(c => c.Member).filter(Boolean)).size;
+    const setText = function (id, text) { const el = document.getElementById(id); if (el) el.textContent = text; };
+    setText("ljmPersonalTotal", "₹" + total.toLocaleString("en-IN"));
+    const deltaEl = document.getElementById("ljmPersonalDelta");
+    if (deltaEl) deltaEl.innerHTML = deltaHtml;
+    setText("ljmPersonalCount", mine.length + (mine.length === 1 ? " contribution" : " contributions"));
+    setText("ljmPersonalRank", idx >= 0 ? "#" + (idx + 1) : "—");
+    setText("ljmPersonalCommunity", String(unique));
+    box.hidden = false;
+    box.style.display = "grid";
+}
+
+function paintPremiumHome(contributions) {
+    const rows = contributions || window._currentContributions || [];
+    try { renderPublicHero(); } catch (err) { console.error("renderPublicHero failed:", err); }
+    try { renderHeroGreeting(); } catch (err) { console.error("renderHeroGreeting failed:", err); }
+    try { renderPersonalSummary(rows); } catch (err) { console.error("renderPersonalSummary failed:", err); }
+}
+
+function showContributionSuccess(detail) {
+    const modal = document.getElementById("ljmSuccessModal");
+    if (!modal) return false;
+    const amount = Number(detail && detail.amount) || 0;
+    const fund = (detail && detail.fund) || "Fund";
+    const txn = (detail && detail.paymentId) || "";
+    const method = (detail && detail.method) || "Online";
+    const now = new Date();
+    const dateStr = now.toLocaleString("en-IN", {
+        day: "numeric", month: "short", year: "numeric",
+        hour: "numeric", minute: "2-digit"
+    });
+    const setText = function (id, text) { const el = document.getElementById(id); if (el) el.textContent = text; };
+    setText("ljmSuccessAmount", "₹" + amount.toLocaleString("en-IN"));
+    setText("ljmSuccessFund", fund);
+    setText("ljmSuccessDate", dateStr);
+    setText("ljmSuccessMethod", method);
+    setText("ljmSuccessTxn", txn);
+    modal.classList.add("insight-modal-visible");
+    modal.setAttribute("aria-hidden", "false");
+
+    const close = function () {
+        modal.classList.remove("insight-modal-visible");
+        modal.setAttribute("aria-hidden", "true");
+        window.location.reload();
+    };
+    const home = document.getElementById("ljmSuccessHome");
+    const receipt = document.getElementById("ljmSuccessReceipt");
+    const backdrop = document.getElementById("ljmSuccessBackdrop");
+    if (home && !home.dataset.wired) {
+        home.dataset.wired = "1";
+        home.addEventListener("click", close);
+    }
+    if (receipt && !receipt.dataset.wired) {
+        receipt.dataset.wired = "1";
+        receipt.addEventListener("click", function () {
+            try { window.print(); } catch (_) {}
+        });
+    }
+    if (backdrop && !backdrop.dataset.wired) {
+        backdrop.dataset.wired = "1";
+        backdrop.addEventListener("click", close);
+    }
+    return true;
+}
+window.showContributionSuccess = showContributionSuccess;
 
 // ==================================================
 // TAB SYSTEM (Part 2: Dashboard Redesign)
@@ -1548,7 +1669,7 @@ async function initDashboard(dynamicFund) {
                 productsBoughtCount: window._productsBoughtCount
             });
             currentDisplayCount = 0;
-            renderHeroGreeting();
+            paintPremiumHome(contributionsData);
             initTabs();
             renderDashboard();
             renderTopContributors(contributionsData);
@@ -1575,7 +1696,7 @@ async function initDashboard(dynamicFund) {
                     window._productsBoughtCount = (mock.purchases || []).filter(p => p.fund === techKey).length;
                 }
                 currentDisplayCount = 0;
-                renderHeroGreeting();
+                paintPremiumHome(contributionsData);
                 initTabs();
                 renderDashboard();
                 renderTopContributors(contributionsData);
@@ -1906,6 +2027,7 @@ async function initChristmasFundDashboard(opts) {
                 productsBoughtCount: window._productsBoughtCount
             });
             currentDisplayCount = 0;
+            paintPremiumHome(contributionsData);
             renderDashboard();
             renderTopContributors(contributionsData);
             document.dispatchEvent(new CustomEvent('LJM_DATA_READY', {
@@ -1930,6 +2052,7 @@ async function initChristmasFundDashboard(opts) {
                     window._productsBoughtCount = (mock.purchases || []).filter(p => p.fund === christmasKey).length;
                 }
                 currentDisplayCount = 0;
+                paintPremiumHome(contributionsData);
                 renderDashboard();
                 renderTopContributors(contributionsData);
             } else {
