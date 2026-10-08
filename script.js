@@ -132,6 +132,33 @@ function identifySelectedFund(raw) {
     return { kind: "dynamic", slug: f, cacheKey: "fundData_" + f };
 }
 
+function christmasDashboardConfig(kind) {
+    if (kind === "xmas2k26") {
+        return {
+            slug: "christmas-fund-2k26",
+            cacheKey: "christmasFund2k26Data",
+            heading: "🎄 Christmas Fund 2k26 Contributions",
+            subtitle: "Oct · Nov · Dec — Christmas 2026 season",
+            emptyText: "Be the first to contribute to our Christmas Fund 2k26!",
+            displayName: "Christmas Fund 2k26",
+            eventFund: "christmas-2k26"
+        };
+    }
+    if (kind === "xmas2025") {
+        return {
+            slug: "christmas-fund",
+            cacheKey: "christmasFundData",
+            heading: "🎄 Christmas Fund 2025 Contributions",
+            subtitle: "2025 season — viewing last year's giving",
+            emptyText: "No contributions were recorded for Christmas Fund 2025.",
+            displayName: "Christmas Fund 2025",
+            eventFund: "christmas",
+            hidePayment: true
+        };
+    }
+    return null;
+}
+
 async function preloadMembersList() {
     const urls = [
         "/api/contributions?fund=tech-contributions",
@@ -1204,11 +1231,13 @@ async function silentBackgroundRefresh(selectedFund) {
         // If data changed, reload dashboard silently
         if (newCount !== oldCount) {
             console.log('[BACKGROUND] Data changed! Refreshing UI...');
-            // Trigger a re-render by re-initializing
-            if (selectedFund === 'christmasfund') {
-                await initChristmasFundDashboard();
-            } else {
+            const xmasOpts = christmasDashboardConfig(ident.kind);
+            if (xmasOpts) {
+                await initChristmasFundDashboard(xmasOpts);
+            } else if (ident.kind === "tech") {
                 await initDashboard();
+            } else {
+                await initDashboard({ slug: ident.slug });
             }
         }
 
@@ -1385,27 +1414,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Initializing dashboard for fund:", selectedFund);
 
     try {
-        if (selectedIdent.kind === "xmas2k26") {
-            await initChristmasFundDashboard({
-                slug: "christmas-fund-2k26",
-                cacheKey: "christmasFund2k26Data",
-                heading: "🎄 Christmas Fund 2k26 Contributions",
-                subtitle: "Oct · Nov · Dec — Christmas 2026 season",
-                emptyText: "Be the first to contribute to our Christmas Fund 2k26!",
-                displayName: "Christmas Fund 2k26",
-                eventFund: "christmas-2k26"
-            });
-        } else if (selectedIdent.kind === "xmas2025") {
-            await initChristmasFundDashboard({
-                slug: "christmas-fund",
-                cacheKey: "christmasFundData",
-                heading: "🎄 Christmas Fund 2025 Contributions",
-                subtitle: "2025 season — viewing last year's giving",
-                emptyText: "No contributions were recorded for Christmas Fund 2025.",
-                displayName: "Christmas Fund 2025",
-                eventFund: "christmas",
-                hidePayment: true
-            });
+        const xmasOpts = christmasDashboardConfig(selectedIdent.kind);
+        if (xmasOpts) {
+            await initChristmasFundDashboard(xmasOpts);
         } else if (selectedIdent.kind === "tech") {
             await initDashboard();
         } else {

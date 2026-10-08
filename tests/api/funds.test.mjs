@@ -104,6 +104,42 @@ test("funds: GET ?slug= detail returns the legacy-shape payload with assignedMem
   assert.deepEqual(detail.assignedMembers, []);
 });
 
+test("funds: GET ?slug=christmas-fund-2k26 returns an empty ledger with the ₹15000 goal", async () => {
+  const db = freshDb();
+  const detail = await readJson(await funds.onRequestGet(makeContext({
+    db, authToken: null, url: "https://test.local/api/funds?slug=christmas-fund-2k26"
+  })));
+  assert.equal(detail.fund.slug, "christmas-fund-2k26");
+  assert.equal(detail.fund.name, "Christmas Fund 2k26");
+  assert.equal(detail.fund.isSystem, true);
+  assert.equal(detail.goalAmount, 15000);
+  assert.deepEqual(detail.contributions, []);
+});
+
+test("funds: Christmas Fund 2k26 is a system fund — rename and delete are blocked, goal edits sync config", async () => {
+  const db = freshDb();
+  const rename = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "christmas-fund-2k26", name: "Renamed" }
+  })));
+  assert.equal(rename.success, false);
+
+  const goal = await readJson(await funds.onRequestPut(makeContext({
+    db, method: "PUT", url: "https://test.local/api/funds",
+    body: { slug: "christmas-fund-2k26", goal_amount: 18000 }
+  })));
+  assert.equal(goal.success, true, goal.message);
+  const row = await db.prepare("SELECT goal_amount FROM funds WHERE slug='christmas-fund-2k26'").first();
+  assert.equal(row.goal_amount, 18000);
+  const cfg = await db.prepare("SELECT value FROM config WHERE key='christmas_2k26_goal_amount'").first();
+  assert.equal(cfg.value, "18000");
+
+  const del = await readJson(await funds.onRequestDelete(makeContext({
+    db, method: "DELETE", url: "https://test.local/api/funds?slug=christmas-fund-2k26"
+  })));
+  assert.equal(del.success, false);
+});
+
 test("funds: GET ?slug= for a nonexistent fund is a 404", async () => {
   const db = freshDb();
   const res = await readJson(await funds.onRequestGet(makeContext({

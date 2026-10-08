@@ -101,6 +101,8 @@ Closed alongside the Aug 2026 incident in which no online payment reached D1 for
 - [x] `razorpay-checkout.js` fund label matches the fund for any `?fund=` casing — `tests/frontend/razorpay-fund-label.test.mjs`
 - [x] `webhook.js` Christmas Fund 2k26 notes record on `christmas-fund-2k26` (not Tech / 2025) — `tests/api/webhook.test.mjs`
 - [x] `contributions.js` GET `christmas-fund-2k26` is an isolated empty ledger with the ₹15000 goal — `tests/api/contributions.test.mjs`
+- [x] Funds page cards + 2k26 routing helpers (`identifySelectedFund` / `christmasDashboardConfig`) — `tests/frontend/christmas-fund-2k26.test.mjs`
+- [x] `funds.js` GET/PUT/DELETE for `christmas-fund-2k26` (empty ledger, system-fund guards) — `tests/api/funds.test.mjs`
 
 ## P2 — cross-cutting (efficient, high-leverage)
 
